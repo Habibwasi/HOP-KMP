@@ -14,7 +14,7 @@ data class User(
     val id: String,
     val fullName: String,
     val email: String,
-    val phone: String,
+    val phone: String?,
     val phoneVerified: Boolean,
     val roles: List<UserRole>,
     val isBanned: Boolean,
