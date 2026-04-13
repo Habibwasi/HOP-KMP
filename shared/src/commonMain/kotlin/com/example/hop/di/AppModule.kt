@@ -15,4 +15,5 @@ import org.koin.core.module.Module
 val appModules: List<Module> = listOf(
     networkModule,
     repositoryModule,
+    presentationModule,
 )
