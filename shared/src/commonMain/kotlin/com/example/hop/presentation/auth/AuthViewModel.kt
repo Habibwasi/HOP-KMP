@@ -1,7 +1,7 @@
 package com.example.hop.presentation.auth
 
-import org.jetbrains.androidx.lifecycle.ViewModel
-import org.jetbrains.androidx.lifecycle.viewModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
