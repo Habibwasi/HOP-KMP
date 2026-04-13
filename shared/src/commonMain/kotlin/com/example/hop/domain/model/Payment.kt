@@ -1,5 +1,8 @@
 package com.example.hop.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class PaymentStatus {
     HELD,
     RELEASED,
@@ -7,6 +10,7 @@ enum class PaymentStatus {
     FAILED,
 }
 
+@Serializable
 data class Payment(
     val id: String,
     val bookingId: String,

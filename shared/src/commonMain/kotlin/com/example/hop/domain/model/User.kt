@@ -1,11 +1,15 @@
 package com.example.hop.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class UserRole {
     DRIVER,
     PASSENGER,
     ADMIN,
 }
 
+@Serializable
 data class User(
     val id: String,
     val fullName: String,

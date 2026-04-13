@@ -1,5 +1,8 @@
 package com.example.hop.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TaxRecord(
     val id: String,
     val driverId: String,

@@ -1,10 +1,14 @@
 package com.example.hop.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class TripModel {
     A,
     B,
 }
 
+@Serializable
 enum class TripStatus {
     ACTIVE,
     CONFIRMED,
@@ -12,6 +16,7 @@ enum class TripStatus {
     COMPLETED,
 }
 
+@Serializable
 data class Trip(
     val id: String,
     val driverId: String,
@@ -30,5 +35,5 @@ data class Trip(
     val priceOerePerSeat: Int,
     val driverNetOere: Int,
     val status: TripStatus,
-    val recurrenceDays: List<Int>?,
+    val recurrenceDays: List<String>?,
 )

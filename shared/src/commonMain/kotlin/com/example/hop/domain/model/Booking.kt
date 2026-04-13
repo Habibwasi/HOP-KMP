@@ -1,5 +1,8 @@
 package com.example.hop.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class BookingStatus {
     PENDING,
     CONFIRMED,
@@ -7,6 +10,7 @@ enum class BookingStatus {
     COMPLETED,
 }
 
+@Serializable
 data class Booking(
     val id: String,
     val tripId: String,
