@@ -28,7 +28,9 @@ object HttpClientFactory {
         }
 
         install(Logging) {
-            logger = Logger.DEFAULT
+            logger = object : Logger {
+                override fun log(message: String) = println("Ktor: $message")
+            }
             level = LogLevel.ALL // Reduce to LogLevel.NONE for production builds
         }
 
