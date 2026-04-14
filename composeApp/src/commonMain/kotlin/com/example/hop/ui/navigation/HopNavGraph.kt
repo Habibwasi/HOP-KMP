@@ -17,6 +17,7 @@ import com.example.hop.ui.screens.auth.OtpVerificationRoute
 import com.example.hop.ui.screens.auth.SignUpRoute
 import com.example.hop.ui.screens.passenger.PassengerHomeRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
+import com.example.hop.ui.screens.passenger.TripDetailRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -127,8 +128,16 @@ fun HopNavGraph(
 
         composable<HopRoutes.TripDetail> { backStackEntry ->
             val route: HopRoutes.TripDetail = backStackEntry.toRoute()
-            // TODO: Replace with TripDetailScreen composable (PA-03)
-            TodoScreen("Trip Detail — ${route.id}")
+            TripDetailRoute(
+                tripId = route.id,
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToOtherProfile = { driverId ->
+                    navController.navigate(HopRoutes.OtherProfile(userId = driverId))
+                },
+                onNavigateToBookingConfirmation = { tripId ->
+                    navController.navigate(HopRoutes.BookingConfirmation(tripId = tripId))
+                },
+            )
         }
 
         composable<HopRoutes.BookingConfirmation> { backStackEntry ->
@@ -257,7 +266,9 @@ fun HopNavGraph(
 
         composable<HopRoutes.OtherProfile> { backStackEntry ->
             val route: HopRoutes.OtherProfile = backStackEntry.toRoute()
-            // TODO: Replace with OtherProfileScreen composable (SH-03)
+            // TODO: Replace with OtherProfileScreen composable (SH-03).
+            // Demo-safe: avatar tap from TripDetailScreen navigates here; stub renders a
+            // labelled placeholder screen rather than crashing.
             TodoScreen("Other Profile — ${route.userId}")
         }
 

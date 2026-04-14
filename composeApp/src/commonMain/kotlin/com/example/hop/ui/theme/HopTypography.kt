@@ -17,6 +17,13 @@ import androidx.compose.ui.unit.sp
 private val SyneFontFamily  = FontFamily.SansSerif  // TODO: replace with Syne
 private val InterFontFamily = FontFamily.SansSerif  // TODO: replace with Inter
 
+// RELEASE BLOCKER (PA-03): replace FontFamily.Monospace with a real JetBrains Mono resource.
+// Steps: download JetBrainsMono-Regular.ttf + JetBrainsMono-Bold.ttf → place in
+//   composeApp/src/commonMain/composeResources/font/
+// then replace the line below with:
+//   FontFamily(Font(Res.font.jetbrains_mono_regular), Font(Res.font.jetbrains_mono_bold, FontWeight.Bold))
+val HopMonoFontFamily: FontFamily = FontFamily.Monospace
+
 val HopTypography = Typography(
     // ── Display ──────────────────────────────────────────────────────────────
     displayLarge = TextStyle(
