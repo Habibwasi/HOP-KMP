@@ -484,7 +484,7 @@ private fun LocationRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = HopSpacing.sm, end = 44.dp), // right padding leaves room for swap button
+            .padding(top = HopSpacing.sm, bottom = HopSpacing.sm, end = 44.dp), // right padding leaves room for swap button
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(

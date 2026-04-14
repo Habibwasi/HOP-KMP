@@ -16,6 +16,7 @@ import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.OtpVerificationRoute
 import com.example.hop.ui.screens.auth.SignUpRoute
 import com.example.hop.ui.screens.passenger.PassengerHomeRoute
+import com.example.hop.ui.screens.passenger.SearchResultsRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -116,8 +117,12 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.SearchResults> {
-            // TODO: Replace with SearchResultsScreen composable (PA-02)
-            TodoScreen("Search Results")
+            SearchResultsRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToTripDetail = { tripId ->
+                    navController.navigate(HopRoutes.TripDetail(id = tripId))
+                },
+            )
         }
 
         composable<HopRoutes.TripDetail> { backStackEntry ->
