@@ -1,5 +1,6 @@
 package com.example.hop.ui.screens.auth
 
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -230,3 +231,15 @@ private fun SlideDots(
         }
     }
 }
+
+// ── Previews ──────────────────────────────────────────────────────────────────
+
+@Preview(name = "Onboarding – Light", showBackground = true)
+@Composable
+private fun OnboardingScreenPreview() {
+    OnboardingScreen(
+        onNavigateToSignUp = {},
+        onNavigateToLogin = {},
+    )
+}
+

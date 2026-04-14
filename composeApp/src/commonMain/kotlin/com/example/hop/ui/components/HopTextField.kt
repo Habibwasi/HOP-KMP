@@ -134,7 +134,7 @@ fun HopTextField(
         )
 
         // Error message below field
-        if (hasError && errorMessage != null) {
+        if (errorMessage != null) {
             Text(
                 text = errorMessage,
                 style = MaterialTheme.typography.labelSmall,
