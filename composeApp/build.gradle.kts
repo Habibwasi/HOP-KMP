@@ -34,7 +34,7 @@ kotlin {
             implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.koin.compose.viewmodel)
-            implementation(libs.compose.material.icons.extended)
+            implementation(compose.materialIconsExtended)
             implementation(projects.shared)
         }
         commonTest.dependencies {
