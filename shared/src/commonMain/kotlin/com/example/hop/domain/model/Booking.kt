@@ -8,6 +8,7 @@ enum class BookingStatus {
     CONFIRMED,
     CANCELLED,
     COMPLETED,
+    UNKNOWN, // Fallback for version mismatch or API drift
 }
 
 @Serializable
