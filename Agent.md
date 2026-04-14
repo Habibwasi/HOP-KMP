@@ -259,6 +259,8 @@ Admin     GET   /admin/licences
 ---
 
 ## Screen Inventory (39 screens)
+-Also add preview for all the screens
+-`ui-ux-pro-max` skills while making the screens
 
 ### Onboarding
 ON-01 Splash · ON-02 Sign Up · ON-03 Log In · ON-04 Phone OTP Verification
@@ -342,4 +344,3 @@ Do not suggest microservices.
 
 Every decision should be evaluated against MVP scope.
 Scope creep, premature optimisation, and over-engineering are the primary risks.
-When in doubt, ship the simpler version and iterate post-MVP.

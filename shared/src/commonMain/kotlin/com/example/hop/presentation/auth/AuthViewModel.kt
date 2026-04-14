@@ -1,7 +1,7 @@
 package com.example.hop.presentation.auth
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import org.jetbrains.androidx.lifecycle.ViewModel
+import org.jetbrains.androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
@@ -67,13 +67,14 @@ class AuthViewModel(
                         isAuthenticated = true,
                         currentUser = response.data,
                     )
-                    _effect.send(AuthEffect.NavigateToHome)
+                    _effect.send(AuthEffect.NavigateToOtpVerification(phone = ""))
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = response.message,
                     )
+                    _effect.send(AuthEffect.ShowSnackbar(response.message))
                 }
             }
         }
@@ -96,6 +97,7 @@ class AuthViewModel(
                         isLoading = false,
                         error = response.message,
                     )
+                    _effect.send(AuthEffect.ShowSnackbar(response.message))
                 }
             }
         }
@@ -117,6 +119,7 @@ class AuthViewModel(
                         isLoading = false,
                         error = response.message,
                     )
+                    _effect.send(AuthEffect.ShowSnackbar(response.message))
                 }
             }
         }
@@ -140,6 +143,7 @@ class AuthViewModel(
                         isLoading = false,
                         error = response.message,
                     )
+                    _effect.send(AuthEffect.ShowSnackbar(response.message))
                 }
             }
         }

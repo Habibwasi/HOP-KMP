@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
+import com.example.hop.ui.screens.auth.SignUpRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -43,8 +44,14 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.SignUp> {
-            // TODO: Replace with SignUpScreen composable (ON-02)
-            TodoScreen("Sign Up")
+            SignUpRoute(
+                onNavigateToOtpVerification = { phone ->
+                    navController.navigate(HopRoutes.OtpVerification(phone = phone))
+                },
+                onNavigateToLogin = {
+                    navController.navigate(HopRoutes.Login)
+                },
+            )
         }
 
         composable<HopRoutes.Login> {
