@@ -38,6 +38,9 @@ data class Trip(
     val driverNetOere: Int,
     val status: TripStatus,
     val recurrenceDays: List<String>?,
+    // Set only when fetched from passenger-scoped endpoints (e.g. /trips/me/passenger).
+    // Null on driver or search results. Use this for PA-08 TripDetailActive navigation.
+    val bookingId: String? = null,
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

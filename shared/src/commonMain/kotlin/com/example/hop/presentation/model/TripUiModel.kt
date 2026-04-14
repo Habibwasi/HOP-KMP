@@ -25,6 +25,8 @@ data class TripUiModel(
     val seatsTotal get() = trip.seatsTotal
     val seatsBooked get() = trip.seatsBooked
     val priceOerePerSeat get() = trip.priceOerePerSeat
+    // Non-null only on passenger-scoped trip lists. Use for PA-08 TripDetailActive navigation.
+    val bookingId: String? get() = trip.bookingId
 }
 
 /**

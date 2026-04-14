@@ -18,6 +18,7 @@ import com.example.hop.ui.screens.auth.SignUpRoute
 import com.example.hop.ui.screens.passenger.BookingConfirmationRoute
 import com.example.hop.ui.screens.passenger.BookingSuccessRoute
 import com.example.hop.ui.screens.passenger.MobilePayHandoffRoute
+import com.example.hop.ui.screens.passenger.MyTripsPassengerRoute
 import com.example.hop.ui.screens.passenger.PassengerHomeRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
@@ -187,8 +188,31 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.MyTripsPassenger> {
-            // TODO: Replace with MyTripsPassengerScreen composable (PA-07)
-            TodoScreen("My Trips (Passenger)")
+            MyTripsPassengerRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToTripDetailActive = { tripId ->
+                    navController.navigate(HopRoutes.TripDetailActive(bookingId = tripId))
+                },
+                onNavigateToTripDetail = { tripId ->
+                    navController.navigate(HopRoutes.TripDetail(id = tripId))
+                },
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.PassengerHome) {
+                        popUpTo(HopRoutes.PassengerHome) { inclusive = false }
+                    }
+                },
+                onNavigateToChat = {
+                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                },
+                onNavigateToProfile = {
+                    // TODO: Replace with ProfileScreen navigation
+                },
+                onNavigateToFindRide = {
+                    navController.navigate(HopRoutes.PassengerHome) {
+                        popUpTo(HopRoutes.PassengerHome) { inclusive = false }
+                    }
+                },
+            )
         }
 
         composable<HopRoutes.TripDetailActive> { backStackEntry ->

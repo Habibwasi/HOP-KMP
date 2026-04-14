@@ -45,6 +45,8 @@ data class TripDto(
     val driverNetOere: Int,
     val status: String,
     val recurrenceDays: List<String>?,
+    // Populated by /trips/me/passenger — absent on driver/search endpoints.
+    val bookingId: String? = null,
 )
 
 // Note: Trips endpoints return list directly in ApiEnvelope.data field,
@@ -71,4 +73,5 @@ fun TripDto.toDomain(): Trip = Trip(
     driverNetOere = driverNetOere,
     status = TripStatus.entries.firstOrNull { it.name == status } ?: TripStatus.UNKNOWN,
     recurrenceDays = recurrenceDays,
+    bookingId = bookingId,
 )
