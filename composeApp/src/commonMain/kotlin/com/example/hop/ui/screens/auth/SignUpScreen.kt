@@ -141,6 +141,7 @@ fun SignUpScreen(
     // ── Local form state ──────────────────────────────────────────────────────
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var termsAccepted by remember { mutableStateOf(false) }
@@ -148,8 +149,10 @@ fun SignUpScreen(
     // ── Derived validation ────────────────────────────────────────────────────
     val fullNameValid = fullName.trim().isNotEmpty()
     val emailValid = email.contains("@") && email.substringAfter("@").contains(".")
+    // Minimal phone check: +45 followed by 8 digits is the Danish mobile format
+    val phoneValid = phone.trim().length >= 8
     val passwordValid = password.length >= 8
-    val formValid = fullNameValid && emailValid && passwordValid && termsAccepted
+    val formValid = fullNameValid && emailValid && phoneValid && passwordValid && termsAccepted
     val canSubmit = formValid && !state.isLoading
 
     Column(
@@ -203,6 +206,22 @@ fun SignUpScreen(
             enabled = !state.isLoading,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(HopSpacing.md))
+
+        // ── Phone number ──────────────────────────────────────────────────────
+        HopTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = "Phone number",
+            placeholder = "+45 20 12 34 56",
+            enabled = !state.isLoading,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Phone,
                 imeAction = ImeAction.Next,
             ),
             modifier = Modifier.fillMaxWidth(),
@@ -268,6 +287,7 @@ fun SignUpScreen(
                     AuthEvent.Register(
                         fullName = fullName.trim(),
                         email = email.trim(),
+                        phone = phone.trim(),
                         password = password,
                     )
                 )

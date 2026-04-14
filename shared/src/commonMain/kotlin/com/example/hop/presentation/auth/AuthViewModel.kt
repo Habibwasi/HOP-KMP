@@ -18,10 +18,12 @@ data class AuthUiState(
     val isAuthenticated: Boolean = false,
     val currentUser: User? = null,
     val otpSent: Boolean = false,
+    /** Phone number waiting for OTP confirmation — set during registration, cleared on verify. */
+    val pendingOtpPhone: String = "",
 )
 
 sealed interface AuthEvent {
-    data class Register(val fullName: String, val email: String, val password: String) : AuthEvent
+    data class Register(val fullName: String, val email: String, val phone: String, val password: String) : AuthEvent
     data class Login(val email: String, val password: String) : AuthEvent
     data class SendOtp(val phone: String) : AuthEvent
     data class VerifyOtp(val phone: String, val code: String) : AuthEvent
@@ -48,7 +50,7 @@ class AuthViewModel(
 
     fun onEvent(event: AuthEvent) {
         when (event) {
-            is AuthEvent.Register -> register(event.fullName, event.email, event.password)
+            is AuthEvent.Register -> register(event.fullName, event.email, event.phone, event.password)
             is AuthEvent.Login -> login(event.email, event.password)
             is AuthEvent.SendOtp -> sendOtp(event.phone)
             is AuthEvent.VerifyOtp -> verifyOtp(event.phone, event.code)
@@ -57,9 +59,9 @@ class AuthViewModel(
         }
     }
 
-    private fun register(fullName: String, email: String, password: String) {
+    private fun register(fullName: String, email: String, phone: String, password: String) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            _state.value = _state.value.copy(isLoading = true, error = null, pendingOtpPhone = phone)
             when (val response = authRepository.register(fullName, email, password)) {
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(
@@ -67,7 +69,7 @@ class AuthViewModel(
                         isAuthenticated = true,
                         currentUser = response.data,
                     )
-                    _effect.send(AuthEffect.NavigateToOtpVerification(phone = ""))
+                    _effect.send(AuthEffect.NavigateToOtpVerification(phone = phone))
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(

@@ -78,6 +78,9 @@ class BookingViewModel(
     }
 
     private fun createBooking(tripId: String, seats: Int) {
+        // Idempotency guard: prevent double-booking if the user taps the button
+        // before the PROCESSING state propagates back to the UI and disables it.
+        if (_state.value.paymentState == PaymentState.PROCESSING) return
         viewModelScope.launch {
             _state.value = _state.value.copy(
                 isLoading = true,
