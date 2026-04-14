@@ -123,6 +123,7 @@ fun TripDetailActiveRoute(
                 }
                 is BookingEffect.NavigateToMobilePay -> Unit
                 is BookingEffect.NavigateToSuccess -> Unit
+                is BookingEffect.NavigateToMyTripsPassenger -> Unit     // not reachable here
             }
         }
     }

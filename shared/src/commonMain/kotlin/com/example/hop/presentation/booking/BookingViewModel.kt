@@ -58,6 +58,7 @@ sealed interface BookingEffect {
     data class NavigateToMobilePay(val bookingId: String) : BookingEffect
     data class NavigateToSuccess(val bookingId: String) : BookingEffect
     data class NavigateToCancellationConfirmation(val bookingId: String) : BookingEffect
+    data object NavigateToMyTripsPassenger : BookingEffect
     data class ShowSnackbar(val message: String) : BookingEffect
 }
 
@@ -167,7 +168,7 @@ class BookingViewModel(
             when (val response = bookingRepository.rateBooking(bookingId, stars, comment)) {
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(isLoading = false)
-                    _effect.send(BookingEffect.NavigateToSuccess(bookingId))
+                    _effect.send(BookingEffect.NavigateToMyTripsPassenger)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(

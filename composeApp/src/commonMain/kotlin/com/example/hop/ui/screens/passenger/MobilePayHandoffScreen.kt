@@ -142,6 +142,7 @@ fun MobilePayHandoffRoute(
                     onNavigateToSuccess(effect.bookingId)
                 is BookingEffect.NavigateToMobilePay -> Unit            // already on this screen
                 is BookingEffect.NavigateToCancellationConfirmation -> Unit // not reachable here
+                is BookingEffect.NavigateToMyTripsPassenger -> Unit     // not reachable here
                 is BookingEffect.ShowSnackbar -> Unit                   // not surfaced here
             }
         }

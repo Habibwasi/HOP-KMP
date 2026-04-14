@@ -23,7 +23,7 @@ import com.example.hop.ui.screens.passenger.MyTripsPassengerRoute
 import com.example.hop.ui.screens.passenger.PassengerHomeRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
-import com.example.hop.ui.screens.passenger.TripDetailRoute
+import com.example.hop.ui.screens.passenger.RateDriverRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -235,8 +235,17 @@ fun HopNavGraph(
 
         composable<HopRoutes.RateDriver> { backStackEntry ->
             val route: HopRoutes.RateDriver = backStackEntry.toRoute()
-            // TODO: Replace with RateDriverScreen composable (PA-09)
-            TodoScreen("Rate Driver — ${route.bookingId}")
+            RateDriverRoute(
+                bookingId = route.bookingId,
+                driverName = route.driverName,
+                driverInitials = route.driverInitials,
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToMyTrips = {
+                    navController.navigate(HopRoutes.MyTripsPassenger) {
+                        popUpTo(HopRoutes.MyTripsPassenger) { inclusive = true }
+                    }
+                },
+            )
         }
 
         composable<HopRoutes.CancellationConfirmation> { backStackEntry ->
