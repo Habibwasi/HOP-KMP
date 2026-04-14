@@ -23,6 +23,7 @@ import com.example.hop.ui.screens.passenger.MyTripsPassengerRoute
 import com.example.hop.ui.screens.passenger.PassengerHomeRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
+import com.example.hop.ui.screens.passenger.TripDetailRoute
 import com.example.hop.ui.screens.passenger.RateDriverRoute
 
 /**
