@@ -240,10 +240,10 @@ fun OtpVerificationScreen(
         }
 
         // ── Inline error ──────────────────────────────────────────────────────
-        if (state.error != null) {
+        state.error?.let { error ->
             Spacer(modifier = Modifier.height(HopSpacing.sm))
             Text(
-                text = state.error,
+                text = error,
                 style = MaterialTheme.typography.bodySmall,
                 color = HopColors.error,
             )
