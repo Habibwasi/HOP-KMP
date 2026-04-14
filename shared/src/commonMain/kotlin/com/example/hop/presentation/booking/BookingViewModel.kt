@@ -57,6 +57,7 @@ sealed interface BookingEvent {
 sealed interface BookingEffect {
     data class NavigateToMobilePay(val bookingId: String) : BookingEffect
     data class NavigateToSuccess(val bookingId: String) : BookingEffect
+    data class NavigateToCancellationConfirmation(val bookingId: String) : BookingEffect
     data class ShowSnackbar(val message: String) : BookingEffect
 }
 
@@ -146,7 +147,7 @@ class BookingViewModel(
                         isLoading = false,
                         booking = null,
                     )
-                    _effect.send(BookingEffect.ShowSnackbar("Booking cancelled"))
+                    _effect.send(BookingEffect.NavigateToCancellationConfirmation(id))
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(

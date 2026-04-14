@@ -17,10 +17,12 @@ import com.example.hop.ui.screens.auth.OtpVerificationRoute
 import com.example.hop.ui.screens.auth.SignUpRoute
 import com.example.hop.ui.screens.passenger.BookingConfirmationRoute
 import com.example.hop.ui.screens.passenger.BookingSuccessRoute
+import com.example.hop.ui.screens.passenger.CancellationConfirmationRoute
 import com.example.hop.ui.screens.passenger.MobilePayHandoffRoute
 import com.example.hop.ui.screens.passenger.MyTripsPassengerRoute
 import com.example.hop.ui.screens.passenger.PassengerHomeRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
+import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
 
 /**
@@ -217,8 +219,18 @@ fun HopNavGraph(
 
         composable<HopRoutes.TripDetailActive> { backStackEntry ->
             val route: HopRoutes.TripDetailActive = backStackEntry.toRoute()
-            // TODO: Replace with TripDetailActiveScreen composable (PA-08)
-            TodoScreen("Active Trip — ${route.bookingId}")
+            TripDetailActiveRoute(
+                bookingId = route.bookingId,
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToChat = {
+                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                },
+                onNavigateToCancellationConfirmation = { bookingId ->
+                    navController.navigate(HopRoutes.CancellationConfirmation(bookingId = bookingId)) {
+                        popUpTo(HopRoutes.TripDetailActive(bookingId = bookingId)) { inclusive = true }
+                    }
+                },
+            )
         }
 
         composable<HopRoutes.RateDriver> { backStackEntry ->
@@ -229,8 +241,14 @@ fun HopNavGraph(
 
         composable<HopRoutes.CancellationConfirmation> { backStackEntry ->
             val route: HopRoutes.CancellationConfirmation = backStackEntry.toRoute()
-            // TODO: Replace with CancellationConfirmationScreen composable (PA-10)
-            TodoScreen("Cancellation Confirmation — ${route.bookingId}")
+            CancellationConfirmationRoute(
+                bookingId = route.bookingId,
+                onNavigateToMyTrips = {
+                    navController.navigate(HopRoutes.MyTripsPassenger) {
+                        popUpTo(HopRoutes.MyTripsPassenger) { inclusive = true }
+                    }
+                },
+            )
         }
 
         // ── Driver ────────────────────────────────────────────────────────

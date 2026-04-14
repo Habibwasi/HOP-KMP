@@ -95,6 +95,7 @@ fun BookingConfirmationRoute(
                 is BookingEffect.NavigateToMobilePay ->
                     onNavigateToMobilePayHandoff(effect.bookingId)
                 is BookingEffect.NavigateToSuccess -> Unit // handled downstream
+                is BookingEffect.NavigateToCancellationConfirmation -> Unit // not reachable here
                 is BookingEffect.ShowSnackbar ->
                     snackbarHostState.showSnackbar(effect.message)
             }
