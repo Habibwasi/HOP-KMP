@@ -32,6 +32,10 @@ sealed interface HopRoutes {
     @Serializable
     data class OtpVerification(val phone: String) : HopRoutes
 
+    /** ON-03b — Password Reset (stub) */
+    @Serializable
+    data object ForgotPassword : HopRoutes
+
     // ── Passenger ──────────────────────────────────────────────────────────
 
     /** PA-01 */

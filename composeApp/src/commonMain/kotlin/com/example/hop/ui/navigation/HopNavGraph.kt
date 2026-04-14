@@ -11,6 +11,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.SignUpRoute
 
@@ -55,8 +56,24 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.Login> {
-            // TODO: Replace with LoginScreen composable (ON-03)
-            TodoScreen("Log In")
+            LoginRoute(
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.PassengerHome) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(HopRoutes.ForgotPassword)
+                },
+                onNavigateToSignUp = {
+                    navController.navigate(HopRoutes.SignUp)
+                },
+            )
+        }
+
+        composable<HopRoutes.ForgotPassword> {
+            // TODO: Replace with ForgotPasswordScreen composable (ON-03b)
+            TodoScreen("Forgot Password")
         }
 
         composable<HopRoutes.OtpVerification> { backStackEntry ->

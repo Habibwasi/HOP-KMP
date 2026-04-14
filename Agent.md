@@ -5,6 +5,8 @@ Always load and apply these skills before generating any code:
 
 - `kmp-compose-multiplatform` — KMP architecture, Ktor, Koin, expect/actual, iOS interop
 - `compose-skill` — MVI, Compose UI, state management, navigation, performance, anti-patterns
+-Also add preview for all the screens
+-`ui-ux-pro-max` skills while making the screens
 
 When a skill suggestion conflicts with a decision in this file, stop and notify me with:
 1. What the skill recommends
