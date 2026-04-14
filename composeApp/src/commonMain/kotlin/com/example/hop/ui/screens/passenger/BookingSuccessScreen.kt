@@ -121,6 +121,7 @@ fun BookingSuccessScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = HopSpacing.md),
             horizontalAlignment = Alignment.CenterHorizontally,
