@@ -328,7 +328,8 @@ private fun TripResultsList(
     LazyColumn(
         modifier = modifier.navigationBarsPadding(),
         contentPadding = PaddingValues(
-            horizontal = HopSpacing.md,
+            start = HopSpacing.md,
+            end = HopSpacing.md,
             bottom = HopSpacing.md,
         ),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
