@@ -165,7 +165,7 @@ fun MobilePayHandoffRoute(
  *  - [HandoffPhase.Failed]       : Error card with retry and go-back buttons
  */
 @Composable
-internal fun MobilePayHandoffScreen(
+private fun MobilePayHandoffScreen(
     phase: HandoffPhase,
     onRetry: () -> Unit,
     onGoBack: () -> Unit,
