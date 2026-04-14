@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 enum class TripModel {
     A,
     B,
+    UNKNOWN, // Fallback for version mismatch or API drift
 }
 
 @Serializable
@@ -14,6 +15,7 @@ enum class TripStatus {
     CONFIRMED,
     CANCELLED,
     COMPLETED,
+    UNKNOWN, // Fallback for version mismatch or API drift
 }
 
 @Serializable
@@ -37,3 +39,12 @@ data class Trip(
     val status: TripStatus,
     val recurrenceDays: List<String>?,
 )
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Returns true if the trip state is unknown (version mismatch, API drift, or corruption).
+ * UI-layer should render as disabled/greyed-out, not filtered.
+ * ViewModels should mark such trips and soft-log for observability.
+ */
+fun Trip.isBroken(): Boolean = status == TripStatus.UNKNOWN || model == TripModel.UNKNOWN
