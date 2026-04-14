@@ -21,6 +21,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
             implementation(libs.androidx.security.crypto)
+            implementation(compose.materialIconsExtended)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

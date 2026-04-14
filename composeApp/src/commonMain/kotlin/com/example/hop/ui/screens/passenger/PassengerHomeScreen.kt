@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -135,6 +136,7 @@ fun PassengerHomeRoute(
     Scaffold(
         modifier = modifier,
         containerColor = HopColors.surface,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         PassengerHomeScreen(
@@ -507,16 +509,18 @@ private fun LocationRow(
             cursorBrush = SolidColor(HopColors.primaryGreen),
             singleLine = true,
             decorationBox = { innerTextField ->
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color(0xFFB0B0B0),
-                            fontWeight = FontWeight.Normal,
-                        ),
-                    )
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = Color(0xFFB0B0B0),
+                                fontWeight = FontWeight.Normal,
+                            ),
+                        )
+                    }
+                    innerTextField()
                 }
-                innerTextField()
             },
         )
     }
