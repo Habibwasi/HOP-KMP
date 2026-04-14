@@ -15,6 +15,7 @@ import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.OtpVerificationRoute
 import com.example.hop.ui.screens.auth.SignUpRoute
+import com.example.hop.ui.screens.passenger.PassengerHomeRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -92,8 +93,26 @@ fun HopNavGraph(
         // ── Passenger ─────────────────────────────────────────────────────
 
         composable<HopRoutes.PassengerHome> {
-            // TODO: Replace with PassengerHomeScreen composable (PA-01)
-            TodoScreen("Passenger Home")
+            PassengerHomeRoute(
+                onNavigateToSearchResults = {
+                    navController.navigate(HopRoutes.SearchResults)
+                },
+                onNavigateToMyTrips = {
+                    navController.navigate(HopRoutes.MyTripsPassenger)
+                },
+                onNavigateToChat = {
+                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                },
+                onNavigateToProfile = {
+                    // TODO: Replace with ProfileScreen navigation
+                },
+                onNavigateToTripDetail = { tripId ->
+                    navController.navigate(HopRoutes.TripDetail(id = tripId))
+                },
+                onNavigateToDriverHome = {
+                    navController.navigate(HopRoutes.DriverHome)
+                },
+            )
         }
 
         composable<HopRoutes.SearchResults> {
