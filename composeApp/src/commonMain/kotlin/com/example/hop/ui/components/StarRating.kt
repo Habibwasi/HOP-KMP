@@ -12,8 +12,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Path
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
@@ -169,7 +171,7 @@ private fun StarCanvas(
             // Filled (foreground) star — clipped to fillFraction width
             if (fillFraction > 0f) {
                 val clipWidth = this.size.width * fillFraction.coerceIn(0f, 1f)
-                androidx.compose.ui.graphics.drawscope.clipRect(
+                clipRect(
                     left   = 0f,
                     top    = 0f,
                     right  = clipWidth,
@@ -188,6 +190,6 @@ private fun StarCanvas(
 /** Translates a Path by (dx, dy) by creating a new Path. */
 private fun translatePath(source: Path, dx: Float, dy: Float): Path {
     val result = Path()
-    result.addPath(source, offset = androidx.compose.ui.geometry.Offset(dx, dy))
+    result.addPath(source, offset = Offset(dx, dy))
     return result
 }

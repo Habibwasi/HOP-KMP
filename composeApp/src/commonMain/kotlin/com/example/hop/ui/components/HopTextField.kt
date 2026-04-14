@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -105,34 +106,28 @@ fun HopTextField(
                 color = HopColors.textPrimary.copy(alpha = contentAlpha),
             ),
             decorationBox = { innerTextField ->
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .padding(horizontal = HopSpacing.md),
-                    contentAlignment = Alignment.CenterStart,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Placeholder text
-                    if (value.isEmpty() && placeholder.isNotEmpty()) {
-                        Text(
-                            text = placeholder,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = HopColors.textSecondary.copy(alpha = if (enabled) 0.6f else 0.38f),
-                        )
-                    }
-
-                    // Actual text content
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                    // Placeholder + actual text content, expanding to fill available width
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (value.isEmpty() && placeholder.isNotEmpty()) {
+                            Text(
+                                text = placeholder,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = HopColors.textSecondary.copy(alpha = if (enabled) 0.6f else 0.38f),
+                            )
+                        }
                         innerTextField()
                     }
 
                     // Trailing icon
                     if (trailingIcon != null) {
-                        Box(
-                            modifier = Modifier.align(Alignment.CenterEnd),
-                        ) {
-                            trailingIcon()
-                        }
+                        trailingIcon()
                     }
                 }
             },
