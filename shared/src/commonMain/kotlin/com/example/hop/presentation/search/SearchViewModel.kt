@@ -49,6 +49,7 @@ sealed interface SearchEvent {
     ) : SearchEvent
     data class ApplyFilter(val filter: SearchFilter) : SearchEvent
     data object ClearFilters : SearchEvent
+    data class SelectTrip(val tripId: String) : SearchEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -74,6 +75,9 @@ class SearchViewModel(
             is SearchEvent.Search -> search(event.origin, event.dest, event.date, event.seats)
             is SearchEvent.ApplyFilter -> applyFilter(event.filter)
             is SearchEvent.ClearFilters -> _state.value = _state.value.copy(activeFilters = emptySet())
+            is SearchEvent.SelectTrip -> viewModelScope.launch {
+                _effect.send(SearchEffect.NavigateToTripDetail(event.tripId))
+            }
         }
     }
 
