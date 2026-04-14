@@ -43,6 +43,10 @@ sealed interface BookingEvent {
         val stars: Int,
         val comment: String?,
     ) : BookingEvent
+    // Fired by MobilePayHandoffRoute on entry to prepare a fresh ViewModel instance
+    // for the handoff flow. Sets paymentState to AWAITING_PAYMENT so the subsequent
+    // ConfirmPaymentSuccess event passes the idempotency guard.
+    data class BeginHandoff(val bookingId: String) : BookingEvent
     // Fired when the app returns from MobilePay (via deep-link or onResume callback).
     // The UI layer is responsible for emitting this after confirming payment success.
     data class ConfirmPaymentSuccess(val bookingId: String) : BookingEvent
@@ -73,6 +77,7 @@ class BookingViewModel(
             is BookingEvent.CreateBooking -> createBooking(event.tripId, event.seats)
             is BookingEvent.CancelBooking -> cancelBooking(event.id)
             is BookingEvent.SubmitRating -> submitRating(event.bookingId, event.stars, event.comment)
+            is BookingEvent.BeginHandoff -> beginHandoff(event.bookingId)
             is BookingEvent.ConfirmPaymentSuccess -> confirmPaymentSuccess(event.bookingId)
         }
     }
@@ -111,6 +116,16 @@ class BookingViewModel(
         }
     }
 
+    private fun beginHandoff(bookingId: String) {
+        // Prepares a fresh ViewModel (created for the MobilePayHandoff destination)
+        // to accept ConfirmPaymentSuccess once the user returns from the MobilePay app.
+        if (_state.value.paymentState == PaymentState.AWAITING_PAYMENT) return
+        _state.value = _state.value.copy(
+            paymentState = PaymentState.AWAITING_PAYMENT,
+            error = null,
+        )
+    }
+
     private fun confirmPaymentSuccess(bookingId: String) {
         // Idempotency guard: onResume can fire this multiple times during the MobilePay flow.
         // Only proceed if we are still waiting for payment confirmation.
@@ -122,6 +137,7 @@ class BookingViewModel(
     }
 
     private fun cancelBooking(id: String) {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = bookingRepository.cancelBooking(id)) {
@@ -144,6 +160,7 @@ class BookingViewModel(
     }
 
     private fun submitRating(bookingId: String, stars: Int, comment: String?) {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = bookingRepository.rateBooking(bookingId, stars, comment)) {
