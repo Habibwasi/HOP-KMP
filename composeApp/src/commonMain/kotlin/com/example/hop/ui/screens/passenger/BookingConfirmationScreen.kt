@@ -183,15 +183,16 @@ fun BookingConfirmationScreen(
                         )
                     }
 
+                    val minThreshold = tripState.minThreshold
                     if (tripState.model == TripModel.B &&
-                        tripState.minThreshold != null &&
-                        tripState.minThreshold > 0
+                        minThreshold != null &&
+                        minThreshold > 0
                     ) {
                         item {
                             Spacer(modifier = Modifier.height(HopSpacing.md))
                             ModelBNoticeCard(
                                 seatsBooked = tripState.seatsBooked,
-                                minThreshold = tripState.minThreshold,
+                                minThreshold = minThreshold,
                                 modifier = Modifier.padding(horizontal = HopSpacing.md),
                             )
                         }
