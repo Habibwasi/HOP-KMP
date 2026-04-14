@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
+import com.example.hop.ui.screens.auth.OtpVerificationRoute
 import com.example.hop.ui.screens.auth.SignUpRoute
 
 /**
@@ -78,8 +79,14 @@ fun HopNavGraph(
 
         composable<HopRoutes.OtpVerification> { backStackEntry ->
             val route: HopRoutes.OtpVerification = backStackEntry.toRoute()
-            // TODO: Replace with OtpVerificationScreen composable (ON-04)
-            TodoScreen("OTP Verification — ${route.phone}")
+            OtpVerificationRoute(
+                phone = route.phone,
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.PassengerHome) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+            )
         }
 
         // ── Passenger ─────────────────────────────────────────────────────
