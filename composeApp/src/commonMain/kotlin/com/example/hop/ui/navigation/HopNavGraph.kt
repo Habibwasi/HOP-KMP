@@ -16,6 +16,7 @@ import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.OtpVerificationRoute
 import com.example.hop.ui.screens.auth.SignUpRoute
 import com.example.hop.ui.screens.passenger.BookingConfirmationRoute
+import com.example.hop.ui.screens.passenger.BookingSuccessRoute
 import com.example.hop.ui.screens.passenger.MobilePayHandoffRoute
 import com.example.hop.ui.screens.passenger.PassengerHomeRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
@@ -170,8 +171,19 @@ fun HopNavGraph(
 
         composable<HopRoutes.BookingSuccess> { backStackEntry ->
             val route: HopRoutes.BookingSuccess = backStackEntry.toRoute()
-            // TODO: Replace with BookingSuccessScreen composable (PA-06)
-            TodoScreen("Booking Success — ${route.bookingId}")
+            BookingSuccessRoute(
+                bookingId = route.bookingId,
+                onNavigateToMyTrips = {
+                    navController.navigate(HopRoutes.MyTripsPassenger) {
+                        popUpTo(HopRoutes.PassengerHome) { inclusive = false }
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.PassengerHome) {
+                        popUpTo(HopRoutes.PassengerHome) { inclusive = true }
+                    }
+                },
+            )
         }
 
         composable<HopRoutes.MyTripsPassenger> {
