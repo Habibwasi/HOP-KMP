@@ -1,6 +1,7 @@
 package com.example.hop.presentation.model
 
 import com.example.hop.domain.model.Trip
+import com.example.hop.domain.model.isBroken
 
 /**
  * Trip wrapped with UI-layer concerns.

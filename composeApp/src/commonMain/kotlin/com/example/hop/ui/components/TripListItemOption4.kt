@@ -1,6 +1,5 @@
 package com.example.hop.ui.components
 
-import androidx.compose.foundation.alpha
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -9,6 +8,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.semantics
 import com.example.hop.domain.model.TripStatus
 import com.example.hop.presentation.model.TripUiModel
@@ -35,11 +35,11 @@ fun TripListItemOption4(
     modifier: Modifier = Modifier,
 ) {
     val isEnabled = !tripUi.isBroken
-    val alpha = if (isEnabled) 1f else 0.6f
+    val alphaValue = if (isEnabled) 1f else 0.6f
 
     Surface(
         modifier = modifier
-            .alpha(alpha)
+            .alpha(alphaValue)
             .clickable(enabled = isEnabled) {
                 onTapTrip(tripUi.id)
             }
@@ -72,21 +72,21 @@ fun TripListItemOption4(
             Text(
                 text = "${tripUi.originName} → ${tripUi.destName}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textPrimary.copy(alpha = alpha),
+                color = HopColors.textPrimary.copy(alpha = alphaValue),
             )
 
             // ─ Time and seats ─────────────────────────────────────────────
             Text(
                 text = "${tripUi.departsAt} · ${tripUi.seatsBooked}/${tripUi.seatsTotal} seats",
                 style = MaterialTheme.typography.bodySmall,
-                color = HopColors.textSecondary.copy(alpha = alpha),
+                color = HopColors.textSecondary.copy(alpha = alphaValue),
             )
 
             // ─ Price (in DKK) ─────────────────────────────────────────────
             Text(
                 text = "DKK ${tripUi.priceOerePerSeat / 100}",
                 style = MaterialTheme.typography.labelMedium,
-                color = HopColors.success.copy(alpha = alpha),
+                color = HopColors.success.copy(alpha = alphaValue),
             )
         }
     }
