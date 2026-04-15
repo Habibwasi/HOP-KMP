@@ -2,6 +2,7 @@ package com.example.hop.di
 
 import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.presentation.booking.BookingViewModel
+import com.example.hop.presentation.driver.DriverViewModel
 import com.example.hop.presentation.bookingsuccess.BookingSuccessViewModel
 import com.example.hop.presentation.cancellationconfirmation.CancellationConfirmationViewModel
 import com.example.hop.presentation.mytrips.MyTripsPassengerViewModel
@@ -15,6 +16,7 @@ import org.koin.dsl.module
 
 val presentationModule = module {
     viewModelOf(::AuthViewModel)
+    viewModelOf(::DriverViewModel)
     viewModelOf(::BookingViewModel)
     viewModelOf(::BookingSuccessViewModel)
     viewModelOf(::CancellationConfirmationViewModel)
