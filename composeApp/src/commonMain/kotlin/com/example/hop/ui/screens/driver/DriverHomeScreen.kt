@@ -126,6 +126,8 @@ fun DriverHomeRoute(
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
+                // Onboarding effects are handled by their own routes; ignore here.
+                else -> Unit
             }
         }
     }

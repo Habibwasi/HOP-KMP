@@ -2,6 +2,7 @@ package com.example.hop.presentation.driver
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.hop.domain.model.CarDetails
 import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.PostTripRequest
@@ -23,6 +24,8 @@ data class DriverUiState(
     val trips: List<TripUiModel> = emptyList(),
     val error: String? = null,
     val licenceStatus: LicenceStatus? = null,
+    val onboardingCarDetails: CarDetails? = null,
+    val isSubmittingOnboarding: Boolean = false,
     /** Total earnings for current month in øre (1 DKK = 100 øre). */
     val monthlyEarningsOere: Int = 0,
     /** Platform-estimated tax for current month in øre. */
@@ -40,6 +43,8 @@ sealed interface DriverEvent {
     data object LoadLicenceStatus : DriverEvent
     data class SelectTrip(val tripId: String) : DriverEvent
     data object TapEarningsBanner : DriverEvent
+    data class SaveCarDetails(val carDetails: CarDetails) : DriverEvent
+    data class SubmitLicence(val photoUrl: String) : DriverEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -49,6 +54,8 @@ sealed interface DriverEffect {
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
     data class ShowSnackbar(val message: String) : DriverEffect
     data object NavigateToTaxDashboard : DriverEffect
+    data object NavigateToLicenceUpload : DriverEffect
+    data object NavigateToReviewPending : DriverEffect
 }
 
 // ─ ViewModel ──────────────────────────────────────────────────────────────────
@@ -77,6 +84,8 @@ class DriverViewModel(
             is DriverEvent.LoadLicenceStatus -> loadLicenceStatus()
             is DriverEvent.SelectTrip -> selectTrip(event.tripId)
             is DriverEvent.TapEarningsBanner -> tapEarningsBanner()
+            is DriverEvent.SaveCarDetails -> saveCarDetails(event.carDetails)
+            is DriverEvent.SubmitLicence -> submitLicence(event.photoUrl)
         }
     }
 
@@ -176,6 +185,31 @@ class DriverViewModel(
     private fun tapEarningsBanner() {
         viewModelScope.launch {
             _effect.send(DriverEffect.NavigateToTaxDashboard)
+        }
+    }
+
+    private fun saveCarDetails(carDetails: CarDetails) {
+        _state.value = _state.value.copy(onboardingCarDetails = carDetails)
+        viewModelScope.launch {
+            _effect.send(DriverEffect.NavigateToLicenceUpload)
+        }
+    }
+
+    private fun submitLicence(photoUrl: String) {
+        val carDetails = _state.value.onboardingCarDetails ?: return
+        if (_state.value.isSubmittingOnboarding) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isSubmittingOnboarding = true)
+            when (val response = driverRepository.submitLicence(carDetails, photoUrl)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(isSubmittingOnboarding = false)
+                    _effect.send(DriverEffect.NavigateToReviewPending)
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isSubmittingOnboarding = false)
+                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                }
+            }
         }
     }
 }
