@@ -139,6 +139,98 @@ val modelMatch = activeModels.isEmpty() || trip.model in activeModels
 
 ---
 
+## 10. GitHub Issue Workflow
+
+After every audit, create one GitHub issue per bug found. After each fix is applied, close the issue with a resolution comment. Repo: `Habibwasi/HOP-KMP`.
+
+---
+
+### 10a. Prerequisite Check
+
+Before any issue operations, verify `gh` is authenticated:
+
+```powershell
+gh auth status
+```
+
+If it fails, print this warning and **skip GitHub steps without blocking the audit**:
+
+> ⚠️ `gh` is not authenticated. Run `gh auth login` to enable automatic issue creation. Audit results are still shown above.
+
+---
+
+### 10b. Create One Issue Per Bug
+
+Immediately after the audit findings table is shown, run one `gh issue create` per bug found:
+
+```powershell
+gh issue create `
+  --repo Habibwasi/HOP-KMP `
+  --title "[hop-audit] <Severity> — <short description>" `
+  --body "<body block — see template below>" `
+  --label "bug,hop-audit"
+```
+
+**Title format:**
+```
+[hop-audit] Critical — submitLicence safeEnvelopeCall<Unit> crashes on null data
+[hop-audit] High — postTrip missing idempotency guard
+```
+
+**Body template:**
+```
+## Bug Report — hop-audit
+
+**Severity:** Critical | High | Medium
+**Checklist item:** #N (e.g. #3 ViewModel Action Idempotency)
+**File:** `shared/src/…/FooViewModel.kt`
+**Function:** `postTrip()`
+
+### Symptom
+One-line description of what goes wrong at runtime.
+
+### Fix to apply
+Exact code change or pattern to apply (copy from audit output).
+```
+
+After each `gh issue create`, capture the returned issue URL and number and include it in the reply:
+> Created issue #42: https://github.com/Habibwasi/HOP-KMP/issues/42
+
+---
+
+### 10c. Close Issue After Fix
+
+Immediately after each fix is applied to the file, run:
+
+```powershell
+gh issue close <number> `
+  --repo Habibwasi/HOP-KMP `
+  --comment "Fixed: <one-line description of change applied, including file and function>"
+```
+
+**Example:**
+```powershell
+gh issue close 42 `
+  --repo Habibwasi/HOP-KMP `
+  --comment "Fixed: switched submitLicence to safeApiCall{} in DriverRepositoryImpl.kt to avoid checkNotNull crash on Unit envelope response"
+```
+
+---
+
+### 10d. End-of-Session Summary
+
+After all fixes, print a summary table:
+
+| Issue | Title | Status |
+|-------|-------|--------|
+| #42 | [hop-audit] Critical — submitLicence crash | ✅ Closed |
+| #43 | [hop-audit] High — postTrip idempotency | ✅ Closed |
+
+If no bugs were found, print:
+> ✅ Audit complete — no issues found. No GitHub issues created.
+
+---
+
 ## Common File Locations
 
 | Concern | File |

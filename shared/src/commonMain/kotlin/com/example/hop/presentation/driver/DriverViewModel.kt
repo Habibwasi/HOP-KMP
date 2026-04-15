@@ -3,11 +3,12 @@ package com.example.hop.presentation.driver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.LicenceStatus
-import com.example.hop.domain.model.Trip
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.PostTripRequest
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
+import com.example.hop.presentation.model.TripUiModel
+import com.example.hop.presentation.model.toUiModels
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 
 data class DriverUiState(
     val isLoading: Boolean = false,
-    val trips: List<Trip> = emptyList(),
+    val trips: List<TripUiModel> = emptyList(),
     val error: String? = null,
     val licenceStatus: LicenceStatus? = null,
     /** Total earnings for current month in øre (1 DKK = 100 øre). */
@@ -37,6 +38,8 @@ sealed interface DriverEvent {
     data class PostTripModelB(val request: PostTripRequest) : DriverEvent
     data class CompleteTrip(val tripId: String) : DriverEvent
     data object LoadLicenceStatus : DriverEvent
+    data class SelectTrip(val tripId: String) : DriverEvent
+    data object TapEarningsBanner : DriverEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -45,6 +48,7 @@ sealed interface DriverEffect {
     data object NavigateToPostTrip : DriverEffect
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
     data class ShowSnackbar(val message: String) : DriverEffect
+    data object NavigateToTaxDashboard : DriverEffect
 }
 
 // ─ ViewModel ──────────────────────────────────────────────────────────────────
@@ -60,6 +64,9 @@ class DriverViewModel(
     private val _effect = Channel<DriverEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
+    // Prevents double-tap from queuing duplicate navigation effects
+    private var isNavigating = false
+
     fun onEvent(event: DriverEvent) {
         when (event) {
             is DriverEvent.LoadDriverHome -> loadDriverHome()
@@ -68,6 +75,8 @@ class DriverViewModel(
             is DriverEvent.PostTripModelB -> postTrip(event.request)
             is DriverEvent.CompleteTrip -> completeTrip(event.tripId)
             is DriverEvent.LoadLicenceStatus -> loadLicenceStatus()
+            is DriverEvent.SelectTrip -> selectTrip(event.tripId)
+            is DriverEvent.TapEarningsBanner -> tapEarningsBanner()
         }
     }
 
@@ -79,7 +88,7 @@ class DriverViewModel(
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        trips = response.data,
+                        trips = response.data.toUiModels(),
                     )
                 }
                 is ApiResponse.Error -> {
@@ -94,8 +103,11 @@ class DriverViewModel(
     }
 
     private fun requestPostTrip() {
+        if (isNavigating) return
+        isNavigating = true
         viewModelScope.launch {
             _effect.send(DriverEffect.NavigateToPostTrip)
+            isNavigating = false
         }
     }
 
@@ -127,7 +139,7 @@ class DriverViewModel(
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        trips = _state.value.trips.filter { it.id != tripId },
+                        trips = _state.value.trips.filterNot { it.id == tripId },
                     )
                     _effect.send(DriverEffect.NavigateToTripDetail(tripId))
                 }
@@ -152,6 +164,18 @@ class DriverViewModel(
                     _effect.send(DriverEffect.ShowSnackbar(response.message))
                 }
             }
+        }
+    }
+
+    private fun selectTrip(tripId: String) {
+        viewModelScope.launch {
+            _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+        }
+    }
+
+    private fun tapEarningsBanner() {
+        viewModelScope.launch {
+            _effect.send(DriverEffect.NavigateToTaxDashboard)
         }
     }
 }
