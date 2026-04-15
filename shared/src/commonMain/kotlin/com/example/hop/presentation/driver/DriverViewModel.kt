@@ -17,6 +17,41 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
+// ─ Post-trip draft models ─────────────────────────────────────────────────────
+
+/**
+ * Mutable draft for DR-06 Model A form.
+ * Submitted as a whole when the driver taps "Next: Review Price".
+ */
+data class ModelADraft(
+    val originName: String = "",
+    val destName: String = "",
+    /** ISO day abbreviations e.g. "MON", "TUE", "WED", "THU", "FRI" */
+    val recurrenceDays: List<String> = emptyList(),
+    /** "HH:mm" 24-hour format */
+    val departureTime: String = "",
+    val seatsTotal: Int = 1,
+    /** Metres — populated from a routing API; 0 until resolved. */
+    val distanceMetres: Int = 0,
+)
+
+/**
+ * Mutable draft for DR-07 Model B form.
+ * Submitted as a whole when the driver taps "Next: Review Price".
+ */
+data class ModelBDraft(
+    val originName: String = "",
+    val destName: String = "",
+    /** "YYYY-MM-DD" */
+    val date: String = "",
+    /** "HH:mm" 24-hour format */
+    val departureTime: String = "",
+    val seatsTotal: Int = 1,
+    val minThreshold: Int = 1,
+    /** Metres — populated from a routing API; 0 until resolved. */
+    val distanceMetres: Int = 0,
+)
+
 // ─ State ──────────────────────────────────────────────────────────────────────
 
 data class DriverUiState(
@@ -30,6 +65,10 @@ data class DriverUiState(
     val monthlyEarningsOere: Int = 0,
     /** Platform-estimated tax for current month in øre. */
     val estimatedTaxOere: Int = 0,
+    // ── Post-trip flow ──────────────────────────────────────────────────────
+    val pendingModelADraft: ModelADraft? = null,
+    val pendingModelBDraft: ModelBDraft? = null,
+    val isPostingTrip: Boolean = false,
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -37,6 +76,11 @@ data class DriverUiState(
 sealed interface DriverEvent {
     data object LoadDriverHome : DriverEvent
     data object RequestPostTrip : DriverEvent
+    data object SelectModelA : DriverEvent
+    data object SelectModelB : DriverEvent
+    data class SubmitModelADraft(val draft: ModelADraft) : DriverEvent
+    data class SubmitModelBDraft(val draft: ModelBDraft) : DriverEvent
+    data object ConfirmAndPostTrip : DriverEvent
     data class PostTripModelA(val request: PostTripRequest) : DriverEvent
     data class PostTripModelB(val request: PostTripRequest) : DriverEvent
     data class CompleteTrip(val tripId: String) : DriverEvent
@@ -51,6 +95,10 @@ sealed interface DriverEvent {
 
 sealed interface DriverEffect {
     data object NavigateToPostTrip : DriverEffect
+    data object NavigateToModelAForm : DriverEffect
+    data object NavigateToModelBForm : DriverEffect
+    data object NavigateToPriceReview : DriverEffect
+    data object NavigateToMyTrips : DriverEffect
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
     data class ShowSnackbar(val message: String) : DriverEffect
     data object NavigateToTaxDashboard : DriverEffect
@@ -78,6 +126,11 @@ class DriverViewModel(
         when (event) {
             is DriverEvent.LoadDriverHome -> loadDriverHome()
             is DriverEvent.RequestPostTrip -> requestPostTrip()
+            is DriverEvent.SelectModelA -> selectModel(modelA = true)
+            is DriverEvent.SelectModelB -> selectModel(modelA = false)
+            is DriverEvent.SubmitModelADraft -> submitModelADraft(event.draft)
+            is DriverEvent.SubmitModelBDraft -> submitModelBDraft(event.draft)
+            is DriverEvent.ConfirmAndPostTrip -> confirmAndPostTrip()
             is DriverEvent.PostTripModelA -> postTrip(event.request)
             is DriverEvent.PostTripModelB -> postTrip(event.request)
             is DriverEvent.CompleteTrip -> completeTrip(event.tripId)
@@ -117,6 +170,86 @@ class DriverViewModel(
         viewModelScope.launch {
             _effect.send(DriverEffect.NavigateToPostTrip)
             isNavigating = false
+        }
+    }
+
+    private fun selectModel(modelA: Boolean) {
+        if (isNavigating) return
+        isNavigating = true
+        viewModelScope.launch {
+            _effect.send(
+                if (modelA) DriverEffect.NavigateToModelAForm
+                else DriverEffect.NavigateToModelBForm
+            )
+            isNavigating = false
+        }
+    }
+
+    private fun submitModelADraft(draft: ModelADraft) {
+        _state.value = _state.value.copy(
+            pendingModelADraft = draft,
+            pendingModelBDraft = null,
+        )
+        viewModelScope.launch { _effect.send(DriverEffect.NavigateToPriceReview) }
+    }
+
+    private fun submitModelBDraft(draft: ModelBDraft) {
+        _state.value = _state.value.copy(
+            pendingModelBDraft = draft,
+            pendingModelADraft = null,
+        )
+        viewModelScope.launch { _effect.send(DriverEffect.NavigateToPriceReview) }
+    }
+
+    private fun confirmAndPostTrip() {
+        if (_state.value.isPostingTrip) return
+        val modelADraft = _state.value.pendingModelADraft
+        val modelBDraft = _state.value.pendingModelBDraft
+        val request = when {
+            modelADraft != null -> PostTripRequest(
+                model = "A",
+                originName = modelADraft.originName,
+                originLat = 0.0,
+                originLng = 0.0,
+                destName = modelADraft.destName,
+                destLat = 0.0,
+                destLng = 0.0,
+                distanceMetres = modelADraft.distanceMetres,
+                departsAt = "${modelADraft.departureTime}:00Z",
+                seatsTotal = modelADraft.seatsTotal,
+                recurrenceDays = modelADraft.recurrenceDays,
+            )
+            modelBDraft != null -> PostTripRequest(
+                model = "B",
+                originName = modelBDraft.originName,
+                originLat = 0.0,
+                originLng = 0.0,
+                destName = modelBDraft.destName,
+                destLat = 0.0,
+                destLng = 0.0,
+                distanceMetres = modelBDraft.distanceMetres,
+                departsAt = "${modelBDraft.date}T${modelBDraft.departureTime}:00Z",
+                seatsTotal = modelBDraft.seatsTotal,
+                minThreshold = modelBDraft.minThreshold,
+            )
+            else -> return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isPostingTrip = true, error = null)
+            when (val response = tripRepository.postTrip(request)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(
+                        isPostingTrip = false,
+                        pendingModelADraft = null,
+                        pendingModelBDraft = null,
+                    )
+                    _effect.send(DriverEffect.NavigateToMyTrips)
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isPostingTrip = false, error = response.message)
+                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                }
+            }
         }
     }
 
