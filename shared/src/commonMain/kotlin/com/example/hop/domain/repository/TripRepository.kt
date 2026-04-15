@@ -1,5 +1,6 @@
 package com.example.hop.domain.repository
 
+import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.model.Trip
 import com.example.hop.network.ApiResponse
 
@@ -22,6 +23,9 @@ interface TripRepository {
     suspend fun completeTrip(tripId: String): ApiResponse<Unit>
 
     suspend fun cancelTrip(tripId: String): ApiResponse<Unit>
+
+    /** Returns booked passenger summaries for a driver's active trip. */
+    suspend fun getTripPassengers(tripId: String): ApiResponse<List<PassengerSummary>>
 }
 
 data class PostTripRequest(

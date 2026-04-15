@@ -3,10 +3,12 @@ package com.example.hop.di
 import com.example.hop.data.repository.AuthRepositoryImpl
 import com.example.hop.data.repository.BookingRepositoryImpl
 import com.example.hop.data.repository.DriverRepositoryImpl
+import com.example.hop.data.repository.TaxRepositoryImpl
 import com.example.hop.data.repository.TripRepositoryImpl
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.domain.repository.BookingRepository
 import com.example.hop.domain.repository.DriverRepository
+import com.example.hop.domain.repository.TaxRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.TokenStorage
 import io.ktor.client.HttpClient
@@ -31,6 +33,11 @@ val repositoryModule = module {
     }
     single<DriverRepository> {
         DriverRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<TaxRepository> {
+        TaxRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
     }

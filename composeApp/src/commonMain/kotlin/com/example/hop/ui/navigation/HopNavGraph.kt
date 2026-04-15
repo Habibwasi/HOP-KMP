@@ -26,6 +26,10 @@ import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
 import com.example.hop.ui.screens.passenger.RateDriverRoute
 import com.example.hop.ui.screens.driver.MyTripsDriverRoute
+import com.example.hop.ui.screens.driver.TripDetailActiveDriverRoute
+import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
+import com.example.hop.ui.screens.driver.RatePassengerRoute
+import com.example.hop.ui.screens.driver.TaxReportDownloadRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -329,20 +333,67 @@ fun HopNavGraph(
 
         composable<HopRoutes.TripDetailActiveDriver> { backStackEntry ->
             val route: HopRoutes.TripDetailActiveDriver = backStackEntry.toRoute()
-            // TODO: Replace with TripDetailActiveDriverScreen composable (DR-10)
-            TodoScreen("Active Trip (Driver) — ${route.tripId}")
+            TripDetailActiveDriverRoute(
+                tripId = route.tripId,
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToMarkTripComplete = { tripId, driverNetOere ->
+                    navController.navigate(HopRoutes.MarkTripComplete(tripId = tripId, driverNetOere = driverNetOere))
+                },
+                onNavigateToRatePassenger = { bookingId, passengerName, passengerInitials ->
+                    navController.navigate(
+                        HopRoutes.RatePassenger(
+                            bookingId = bookingId,
+                            passengerName = passengerName,
+                            passengerInitials = passengerInitials,
+                        )
+                    ) {
+                        popUpTo(HopRoutes.TripDetailActiveDriver(tripId = route.tripId)) { inclusive = true }
+                    }
+                },
+                onNavigateToChat = { bookingId ->
+                    navController.navigate(HopRoutes.Chat(bookingId = bookingId))
+                },
+            )
         }
 
         composable<HopRoutes.MarkTripComplete> { backStackEntry ->
             val route: HopRoutes.MarkTripComplete = backStackEntry.toRoute()
-            // TODO: Replace with MarkTripCompleteScreen composable (DR-11)
-            TodoScreen("Mark Trip Complete — ${route.tripId}")
+            MarkTripCompleteRoute(
+                tripId = route.tripId,
+                driverNetOere = route.driverNetOere,
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToRatePassenger = { bookingId, passengerName, passengerInitials ->
+                    navController.navigate(
+                        HopRoutes.RatePassenger(
+                            bookingId = bookingId,
+                            passengerName = passengerName,
+                            passengerInitials = passengerInitials,
+                        )
+                    ) {
+                        popUpTo(HopRoutes.MyTripsDriver) { inclusive = false }
+                    }
+                },
+                onNavigateToMyTrips = {
+                    navController.navigate(HopRoutes.MyTripsDriver) {
+                        popUpTo(HopRoutes.MyTripsDriver) { inclusive = true }
+                    }
+                },
+            )
         }
 
         composable<HopRoutes.RatePassenger> { backStackEntry ->
             val route: HopRoutes.RatePassenger = backStackEntry.toRoute()
-            // TODO: Replace with RatePassengerScreen composable (DR-12)
-            TodoScreen("Rate Passenger — ${route.bookingId}")
+            RatePassengerRoute(
+                bookingId = route.bookingId,
+                passengerName = route.passengerName,
+                passengerInitials = route.passengerInitials,
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToDriverHome = {
+                    navController.navigate(HopRoutes.DriverHome) {
+                        popUpTo(HopRoutes.DriverHome) { inclusive = true }
+                    }
+                },
+            )
         }
 
         composable<HopRoutes.TaxDashboard> {
@@ -351,8 +402,9 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.TaxReportDownload> {
-            // TODO: Replace with TaxReportDownloadScreen composable (DR-14)
-            TodoScreen("Annual Tax Report Download")
+            TaxReportDownloadRoute(
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         // ── Shared ────────────────────────────────────────────────────────

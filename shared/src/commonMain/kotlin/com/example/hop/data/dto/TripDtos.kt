@@ -1,5 +1,6 @@
 package com.example.hop.data.dto
 
+import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.model.Trip
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.model.TripStatus
@@ -74,4 +75,12 @@ fun TripDto.toDomain(): Trip = Trip(
     status = TripStatus.entries.firstOrNull { it.name == status } ?: TripStatus.UNKNOWN,
     recurrenceDays = recurrenceDays,
     bookingId = bookingId,
+)
+
+fun PassengerSummaryDto.toDomain(): PassengerSummary = PassengerSummary(
+    bookingId = bookingId,
+    passengerId = passengerId,
+    fullName = fullName,
+    rating = rating,
+    seats = seats,
 )

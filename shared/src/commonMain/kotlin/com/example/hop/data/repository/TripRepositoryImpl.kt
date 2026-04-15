@@ -1,9 +1,11 @@
 package com.example.hop.data.repository
 
 import com.example.hop.data.dto.ApiEnvelope
+import com.example.hop.data.dto.PassengerSummaryDto
 import com.example.hop.data.dto.PostTripRequestDto
 import com.example.hop.data.dto.TripDto
 import com.example.hop.data.dto.toDomain
+import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.model.Trip
 import com.example.hop.domain.repository.PostTripRequest
 import com.example.hop.domain.repository.TripRepository
@@ -118,6 +120,16 @@ class TripRepositoryImpl(
     override suspend fun cancelTrip(tripId: String): ApiResponse<Unit> = safeApiCall {
         httpClient.delete("trips/$tripId")
         Unit
+    }
+
+    override suspend fun getTripPassengers(tripId: String): ApiResponse<List<PassengerSummary>> {
+        val response = safeEnvelopeCall<List<PassengerSummaryDto>> {
+            httpClient.get("trips/$tripId/bookings").body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.map { it.toDomain() })
+            is ApiResponse.Error -> response
+        }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

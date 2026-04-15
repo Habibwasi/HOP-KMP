@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.CarDetails
 import com.example.hop.domain.model.LicenceStatus
+import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.PostTripRequest
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
+import com.example.hop.presentation.model.toUiModel
 import com.example.hop.presentation.model.toUiModels
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +54,23 @@ data class ModelBDraft(
     val distanceMetres: Int = 0,
 )
 
+// ─ Active trip detail sub-state ──────────────────────────────────────────────
+
+/**
+ * Holds the loaded detail for DR-10 TripDetailActiveDriverScreen.
+ * Loaded by [DriverEvent.LoadActiveTripDetail] and consumed by the
+ * TripDetailActiveDriverRoute.
+ */
+data class ActiveTripDetailUiState(
+    val isLoading: Boolean = false,
+    val trip: TripUiModel? = null,
+    val passengers: List<PassengerSummary> = emptyList(),
+    val error: String? = null,
+) {
+    /** First booking id — used to seed the RatePassenger flow. */
+    val firstBookingId: String? get() = passengers.firstOrNull()?.bookingId
+}
+
 // ─ State ──────────────────────────────────────────────────────────────────────
 
 data class DriverUiState(
@@ -69,6 +88,7 @@ data class DriverUiState(
     val pendingModelADraft: ModelADraft? = null,
     val pendingModelBDraft: ModelBDraft? = null,
     val isPostingTrip: Boolean = false,
+    val activeTripDetail: ActiveTripDetailUiState = ActiveTripDetailUiState(),
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -84,6 +104,7 @@ sealed interface DriverEvent {
     data class PostTripModelA(val request: PostTripRequest) : DriverEvent
     data class PostTripModelB(val request: PostTripRequest) : DriverEvent
     data class CompleteTrip(val tripId: String) : DriverEvent
+    data class LoadActiveTripDetail(val tripId: String) : DriverEvent
     data object LoadLicenceStatus : DriverEvent
     data class SelectTrip(val tripId: String) : DriverEvent
     data object TapEarningsBanner : DriverEvent
@@ -100,6 +121,8 @@ sealed interface DriverEffect {
     data object NavigateToPriceReview : DriverEffect
     data object NavigateToMyTrips : DriverEffect
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
+    data class NavigateToRatePassenger(val bookingId: String) : DriverEffect
+    data class NavigateToMarkTripComplete(val tripId: String, val driverNetOere: Int) : DriverEffect
     data class ShowSnackbar(val message: String) : DriverEffect
     data object NavigateToTaxDashboard : DriverEffect
     data object NavigateToLicenceUpload : DriverEffect
@@ -134,6 +157,7 @@ class DriverViewModel(
             is DriverEvent.PostTripModelA -> postTrip(event.request)
             is DriverEvent.PostTripModelB -> postTrip(event.request)
             is DriverEvent.CompleteTrip -> completeTrip(event.tripId)
+            is DriverEvent.LoadActiveTripDetail -> loadActiveTripDetail(event.tripId)
             is DriverEvent.LoadLicenceStatus -> loadLicenceStatus()
             is DriverEvent.SelectTrip -> selectTrip(event.tripId)
             is DriverEvent.TapEarningsBanner -> tapEarningsBanner()
@@ -279,11 +303,17 @@ class DriverViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = tripRepository.completeTrip(tripId)) {
                 is ApiResponse.Success -> {
+                    val firstBookingId = _state.value.activeTripDetail.firstBookingId
                     _state.value = _state.value.copy(
                         isLoading = false,
                         trips = _state.value.trips.filterNot { it.id == tripId },
                     )
-                    _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+                    if (firstBookingId != null) {
+                        _effect.send(DriverEffect.NavigateToRatePassenger(firstBookingId))
+                    } else {
+                        // Fallback: no passengers to rate — return to trip list
+                        _effect.send(DriverEffect.NavigateToMyTrips)
+                    }
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
@@ -293,6 +323,44 @@ class DriverViewModel(
                     _effect.send(DriverEffect.ShowSnackbar(response.message))
                 }
             }
+        }
+    }
+
+    private fun loadActiveTripDetail(tripId: String) {
+        if (_state.value.activeTripDetail.isLoading) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                activeTripDetail = _state.value.activeTripDetail.copy(
+                    isLoading = true,
+                    error = null,
+                )
+            )
+            val tripResponse = tripRepository.getTripById(tripId)
+            val passengersResponse = tripRepository.getTripPassengers(tripId)
+
+            if (tripResponse is ApiResponse.Error) {
+                _state.value = _state.value.copy(
+                    activeTripDetail = _state.value.activeTripDetail.copy(
+                        isLoading = false,
+                        error = tripResponse.message,
+                    )
+                )
+                return@launch
+            }
+
+            val trip = (tripResponse as ApiResponse.Success).data
+            val passengers = when (passengersResponse) {
+                is ApiResponse.Success -> passengersResponse.data
+                is ApiResponse.Error -> emptyList()
+            }
+            _state.value = _state.value.copy(
+                activeTripDetail = ActiveTripDetailUiState(
+                    isLoading = false,
+                    trip = trip.toUiModel(),
+                    passengers = passengers,
+                    error = null,
+                )
+            )
         }
     }
 

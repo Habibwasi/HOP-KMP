@@ -126,11 +126,15 @@ sealed interface HopRoutes {
 
     /** DR-11 */
     @Serializable
-    data class MarkTripComplete(val tripId: String) : HopRoutes
+    data class MarkTripComplete(val tripId: String, val driverNetOere: Int) : HopRoutes
 
     /** DR-12 */
     @Serializable
-    data class RatePassenger(val bookingId: String) : HopRoutes
+    data class RatePassenger(
+        val bookingId: String,
+        val passengerName: String,
+        val passengerInitials: String,
+    ) : HopRoutes
 
     /** DR-13 */
     @Serializable
