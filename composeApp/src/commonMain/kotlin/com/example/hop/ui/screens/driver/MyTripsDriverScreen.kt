@@ -171,8 +171,9 @@ fun MyTripsDriverScreen(
     onNavigateToChat: () -> Unit,
     onNavigateToProfile: () -> Unit,
     modifier: Modifier = Modifier,
+    initialSelectedTab: Int = 0,
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(initialSelectedTab) }
     val tabs = listOf("Upcoming", "Past")
 
     val upcomingTrips = remember(state.trips) { state.trips.filter { it.status.isUpcomingDriver() } }
@@ -821,6 +822,7 @@ private fun PreviewMyTripsDriverPast() {
             onNavigateToHome = {},
             onNavigateToChat = {},
             onNavigateToProfile = {},
+            initialSelectedTab = 1,
         )
     }
 }
