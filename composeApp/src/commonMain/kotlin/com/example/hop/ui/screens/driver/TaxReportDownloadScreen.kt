@@ -160,6 +160,7 @@ fun TaxReportDownloadScreen(
             }
 
             state.error != null -> {
+                val errorMessage = state.error
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -179,7 +180,7 @@ fun TaxReportDownloadScreen(
                     )
                     Spacer(modifier = Modifier.height(HopSpacing.sm))
                     Text(
-                        text = state.error,
+                        text = errorMessage,
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = HopColors.error,
                             textAlign = TextAlign.Center,

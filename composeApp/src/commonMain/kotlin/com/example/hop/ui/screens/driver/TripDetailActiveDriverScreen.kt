@@ -197,12 +197,13 @@ fun TripDetailActiveDriverScreen(
             }
 
             detailState.error != null -> {
+                val errorMessage = detailState.error
                 Box(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = detailState.error,
+                        text = errorMessage,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = HopColors.error,
                         ),
@@ -213,7 +214,7 @@ fun TripDetailActiveDriverScreen(
 
             detailState.trip != null -> {
                 val trip = detailState.trip
-                val domainTrip = trip.trip
+                val domainTrip = trip.trip  // safe: locally captured above
                 val isConfirmed = domainTrip.status == TripStatus.CONFIRMED || domainTrip.status == TripStatus.ACTIVE
 
                 LazyColumn(
