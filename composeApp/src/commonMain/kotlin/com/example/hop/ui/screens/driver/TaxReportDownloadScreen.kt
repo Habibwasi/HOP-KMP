@@ -160,7 +160,7 @@ fun TaxReportDownloadScreen(
             }
 
             state.error != null -> {
-                val errorMessage = state.error
+                val errorMessage: String = state.error!!
                 Column(
                     modifier = Modifier
                         .weight(1f)
