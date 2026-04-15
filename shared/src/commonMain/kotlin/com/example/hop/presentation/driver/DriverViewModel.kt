@@ -310,8 +310,11 @@ class DriverViewModel(
     }
 
     private fun selectTrip(tripId: String) {
+        if (isNavigating) return
+        isNavigating = true
         viewModelScope.launch {
             _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+            isNavigating = false
         }
     }
 

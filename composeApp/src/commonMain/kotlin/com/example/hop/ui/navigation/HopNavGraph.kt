@@ -25,6 +25,7 @@ import com.example.hop.ui.screens.passenger.SearchResultsRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
 import com.example.hop.ui.screens.passenger.RateDriverRoute
+import com.example.hop.ui.screens.driver.MyTripsDriverRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -304,8 +305,26 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.MyTripsDriver> {
-            // TODO: Replace with MyTripsDriverScreen composable (DR-09)
-            TodoScreen("My Trips (Driver)")
+            MyTripsDriverRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToTripDetailActiveDriver = { tripId ->
+                    navController.navigate(HopRoutes.TripDetailActiveDriver(tripId = tripId))
+                },
+                onNavigateToPostTrip = {
+                    navController.navigate(HopRoutes.PostTripModelSelect)
+                },
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.DriverHome) {
+                        popUpTo(HopRoutes.DriverHome) { inclusive = false }
+                    }
+                },
+                onNavigateToChat = {
+                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                },
+                onNavigateToProfile = {
+                    // TODO: Replace with ProfileScreen navigation
+                },
+            )
         }
 
         composable<HopRoutes.TripDetailActiveDriver> { backStackEntry ->
