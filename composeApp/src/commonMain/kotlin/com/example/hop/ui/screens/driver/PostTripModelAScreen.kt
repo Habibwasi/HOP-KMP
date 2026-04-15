@@ -124,6 +124,7 @@ fun PostTripModelARoute(
  * Single scrollable form — not a wizard.
  * All fields are collected here; form state is local until submitted.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostTripModelAScreen(
     state: DriverUiState,
@@ -330,7 +331,7 @@ private fun ModelFormTopBar(
 }
 
 @Composable
-private fun FormSection(
+internal fun FormSection(
     title: String,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
@@ -393,7 +394,7 @@ private fun DayChipsRow(
 }
 
 @Composable
-private fun TimePickerRow(
+internal fun TimePickerRow(
     time: String,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -504,6 +505,7 @@ internal fun SeatCounter(
  * Reusable Material3 time picker wrapped in a [Dialog].
  * Used by both DR-06 and DR-07.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TimePickerDialog(
     timePickerState: TimePickerState,
