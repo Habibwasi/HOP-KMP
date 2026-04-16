@@ -78,6 +78,13 @@ fun TaxReportDownloadRoute(
         viewModel.onEvent(TaxEvent.LoadTaxReport(currentYear))
     }
 
+    // DR-14 reads state.reportUrl directly; this collector drains any OpenReportUrl
+    // effects that DR-13 may have emitted into the shared Channel while this screen
+    // was in the back stack, preventing stale URL opens on back-navigation.
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { /* consumed and discarded — DR-14 does not act on OpenReportUrl */ }
+    }
+
     Scaffold(
         modifier = modifier,
         containerColor = HopColors.surface,
