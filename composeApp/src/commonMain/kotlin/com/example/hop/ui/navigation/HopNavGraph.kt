@@ -395,7 +395,7 @@ fun HopNavGraph(
                 passengerName = route.passengerName,
                 passengerInitials = route.passengerInitials,
                 onNavigateBack = { navController.navigateUp() },
-                onNavigateToHome = {
+                onNavigateToDriverHome = {
                     navController.navigate(HopRoutes.Home) {
                         popUpTo(HopRoutes.Home) { inclusive = true }
                     }
