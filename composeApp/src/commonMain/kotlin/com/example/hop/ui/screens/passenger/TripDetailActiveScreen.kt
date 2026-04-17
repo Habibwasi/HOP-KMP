@@ -20,7 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Call
-import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -467,7 +467,7 @@ private fun ActionButtonsSection(
             variant = HopButtonVariant.Ghost,
             leadingIcon = {
                 Icon(
-                    imageVector = Icons.Outlined.Chat,
+                    imageVector = Icons.AutoMirrored.Outlined.Chat,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                     tint = HopColors.primaryLime,

@@ -33,7 +33,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.CircularProgressIndicator
@@ -786,7 +786,7 @@ private fun PassengerBottomNavBar(
             onClick = onChat,
             icon = {
                 Icon(
-                    imageVector = Icons.Outlined.Chat,
+                    imageVector = Icons.AutoMirrored.Outlined.Chat,
                     contentDescription = "Chat",
                     modifier = Modifier.size(24.dp),
                 )

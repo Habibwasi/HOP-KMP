@@ -27,7 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
@@ -581,7 +581,7 @@ private fun DriverBottomNavBar(
             contentDescription = "My Trips",
         )
         DriverNavItem(
-            icon = Icons.Outlined.Chat,
+            icon = Icons.AutoMirrored.Outlined.Chat,
             label = "Chat",
             selected = false,
             onClick = onChat,

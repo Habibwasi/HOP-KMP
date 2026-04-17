@@ -25,7 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
@@ -41,9 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -188,13 +186,13 @@ fun MyTripsDriverScreen(
         MyTripsDriverTopBar(onNavigateBack = onNavigateBack)
 
         // ── Tab row ───────────────────────────────────────────────────────────
-        TabRow(
+        PrimaryTabRow(
             selectedTabIndex = selectedTab,
             containerColor = HopColors.surfaceElevated,
             contentColor = HopColors.textPrimary,
-            indicator = { tabPositions ->
-                SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+            indicator = {
+                androidx.compose.material3.TabRowDefaults.PrimaryIndicator(
+                    modifier = Modifier.tabIndicatorOffset(selectedTab, matchContentSize = false),
                     height = 2.dp,
                     color = HopColors.primaryLime,
                 )
@@ -667,7 +665,7 @@ private fun MyTripsDriverBottomNavBar(
             onClick = onChat,
             icon = {
                 Icon(
-                    imageVector = Icons.Outlined.Chat,
+                    imageVector = Icons.AutoMirrored.Outlined.Chat,
                     contentDescription = "Chat",
                     modifier = Modifier.size(24.dp),
                 )
