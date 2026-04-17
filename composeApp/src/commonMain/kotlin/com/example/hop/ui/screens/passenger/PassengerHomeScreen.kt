@@ -28,6 +28,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -611,6 +614,126 @@ private fun SeatRow(
                 )
             }
         }
+    }
+}
+
+// ── Bottom navigation bar ─────────────────────────────────────────────────────
+
+@Composable
+private fun PassengerBottomNavBar(
+    onMyTrips: () -> Unit,
+    onChat: () -> Unit,
+    onProfile: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    NavigationBar(
+        modifier = modifier.navigationBarsPadding(),
+        containerColor = HopColors.surfaceElevated,
+        tonalElevation = 0.dp,
+    ) {
+        // Home — always selected on this screen
+        NavigationBarItem(
+            selected = true,
+            onClick = { /* already on home */ },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Home,
+                    contentDescription = "Home",
+                    modifier = Modifier.size(24.dp),
+                )
+            },
+            label = {
+                Text(
+                    text = "Home",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = HopColors.primaryLime,
+                selectedTextColor = HopColors.primaryLime,
+                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                unselectedIconColor = HopColors.textSecondary,
+                unselectedTextColor = HopColors.textSecondary,
+            ),
+        )
+
+        // My Trips
+        NavigationBarItem(
+            selected = false,
+            onClick = onMyTrips,
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.DirectionsCar,
+                    contentDescription = "My Trips",
+                    modifier = Modifier.size(24.dp),
+                )
+            },
+            label = {
+                Text(
+                    text = "My Trips",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = HopColors.primaryLime,
+                selectedTextColor = HopColors.primaryLime,
+                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                unselectedIconColor = HopColors.textSecondary,
+                unselectedTextColor = HopColors.textSecondary,
+            ),
+        )
+
+        // Chat
+        NavigationBarItem(
+            selected = false,
+            onClick = onChat,
+            icon = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Chat,
+                    contentDescription = "Chat",
+                    modifier = Modifier.size(24.dp),
+                )
+            },
+            label = {
+                Text(
+                    text = "Chat",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = HopColors.primaryLime,
+                selectedTextColor = HopColors.primaryLime,
+                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                unselectedIconColor = HopColors.textSecondary,
+                unselectedTextColor = HopColors.textSecondary,
+            ),
+        )
+
+        // Profile
+        NavigationBarItem(
+            selected = false,
+            onClick = onProfile,
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = "Profile",
+                    modifier = Modifier.size(24.dp),
+                )
+            },
+            label = {
+                Text(
+                    text = "Profile",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = HopColors.primaryLime,
+                selectedTextColor = HopColors.primaryLime,
+                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                unselectedIconColor = HopColors.textSecondary,
+                unselectedTextColor = HopColors.textSecondary,
+            ),
+        )
     }
 }
 

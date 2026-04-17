@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -455,6 +457,87 @@ private fun DriverRouteColumn(
             )
         }
     }
+}
+
+// ── Bottom navigation bar ─────────────────────────────────────────────────────
+
+@Composable
+private fun DriverBottomNavBar(
+    onMyTrips: () -> Unit,
+    onChat: () -> Unit,
+    onProfile: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    NavigationBar(
+        modifier = modifier.navigationBarsPadding(),
+        containerColor = HopColors.surfaceElevated,
+        tonalElevation = 0.dp,
+    ) {
+        DriverNavItem(
+            icon = Icons.Outlined.Home,
+            label = "Home",
+            selected = true,
+            onClick = { /* already on home */ },
+            contentDescription = "Home",
+        )
+        DriverNavItem(
+            icon = Icons.Outlined.DirectionsCar,
+            label = "My Trips",
+            selected = false,
+            onClick = onMyTrips,
+            contentDescription = "My Trips",
+        )
+        DriverNavItem(
+            icon = Icons.AutoMirrored.Outlined.Chat,
+            label = "Chat",
+            selected = false,
+            onClick = onChat,
+            contentDescription = "Chat",
+        )
+        DriverNavItem(
+            icon = Icons.Outlined.Person,
+            label = "Profile",
+            selected = false,
+            onClick = onProfile,
+            contentDescription = "Profile",
+        )
+    }
+}
+
+@Composable
+private fun RowScope.DriverNavItem(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    NavigationBarItem(
+        selected = selected,
+        onClick = onClick,
+        icon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(24.dp),
+            )
+        },
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        },
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = HopColors.primaryLime,
+            selectedTextColor = HopColors.primaryLime,
+            indicatorColor = Color.Transparent,
+            unselectedIconColor = HopColors.textSecondary,
+            unselectedTextColor = HopColors.textSecondary,
+        ),
+        modifier = modifier,
+    )
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────
