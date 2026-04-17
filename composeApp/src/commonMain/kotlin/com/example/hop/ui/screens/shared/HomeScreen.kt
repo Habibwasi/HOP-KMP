@@ -50,10 +50,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.domain.model.UserRole
 import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.presentation.driver.DriverUiState
-import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.ui.components.RoleTogglePill
 import com.example.hop.ui.screens.driver.DriverHomeContent
+import com.example.hop.ui.screens.driver.DriverHomeScreen
 import com.example.hop.ui.screens.passenger.PassengerHomeContent
+import com.example.hop.ui.screens.passenger.PassengerHomeScreen
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
@@ -111,17 +112,29 @@ fun HomeRoute(
             selectedRole = selectedRole,
             hasDriverRole = hasDriverRole,
             onRoleChange = { selectedRole = it },
-            onNavigateToSearchResults = onNavigateToSearchResults,
-            onNavigateToMyTripsPassenger = onNavigateToMyTripsPassenger,
-            onNavigateToMyTripsDriver = onNavigateToMyTripsDriver,
-            onNavigateToChat = onNavigateToChat,
-            onNavigateToProfile = onNavigateToProfile,
-            onNavigateToTripDetail = onNavigateToTripDetail,
-            onNavigateToPostTripModelSelect = onNavigateToPostTripModelSelect,
-            onNavigateToTaxDashboard = onNavigateToTaxDashboard,
-            onNavigateToNotifications = onNavigateToNotifications,
-            snackbarHostState = snackbarHostState,
+            onMyTrips = {
+                if (selectedRole == UserRole.DRIVER) onNavigateToMyTripsDriver()
+                else onNavigateToMyTripsPassenger()
+            },
+            onChat = onNavigateToChat,
+            onProfile = onNavigateToProfile,
+            onNotifications = onNavigateToNotifications,
             modifier = Modifier.padding(innerPadding),
+            content = { role ->
+                when (role) {
+                    UserRole.DRIVER -> DriverHomeContent(
+                        onNavigateToPostTripModelSelect = onNavigateToPostTripModelSelect,
+                        onNavigateToTripDetail = onNavigateToTripDetail,
+                        onNavigateToTaxDashboard = onNavigateToTaxDashboard,
+                        snackbarHostState = snackbarHostState,
+                    )
+                    else -> PassengerHomeContent(
+                        onNavigateToSearchResults = onNavigateToSearchResults,
+                        onNavigateToTripDetail = onNavigateToTripDetail,
+                        snackbarHostState = snackbarHostState,
+                    )
+                }
+            },
         )
     }
 }
@@ -131,26 +144,22 @@ fun HomeRoute(
 /**
  * SH-01 — Home Screen.
  *
- * Stateless renderer. Owns the shared top bar, the animated content area that
- * switches between [PassengerHomeContent] and [DriverHomeContent], and the
- * shared bottom navigation bar.
+ * Stateless renderer. Owns the shared top bar, the animated content area, and
+ * the shared bottom navigation bar. The [content] slot is responsible for
+ * rendering the body for the current [selectedRole] — keeping this composable
+ * free of ViewModel / Koin dependencies so it can be previewed in isolation.
  */
 @Composable
 fun HomeScreen(
     selectedRole: UserRole,
     hasDriverRole: Boolean,
     onRoleChange: (UserRole) -> Unit,
-    onNavigateToSearchResults: () -> Unit,
-    onNavigateToMyTripsPassenger: () -> Unit,
-    onNavigateToMyTripsDriver: () -> Unit,
-    onNavigateToChat: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToTripDetail: (tripId: String) -> Unit,
-    onNavigateToPostTripModelSelect: () -> Unit,
-    onNavigateToTaxDashboard: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    snackbarHostState: SnackbarHostState,
+    onMyTrips: () -> Unit,
+    onChat: () -> Unit,
+    onProfile: () -> Unit,
+    onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    content: @Composable (role: UserRole) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -162,7 +171,7 @@ fun HomeScreen(
             selectedRole = selectedRole,
             hasDriverRole = hasDriverRole,
             onRoleChange = onRoleChange,
-            onNotifications = onNavigateToNotifications,
+            onNotifications = onNotifications,
         )
 
         // ── Animated content area ─────────────────────────────────────────────
@@ -177,29 +186,14 @@ fun HomeScreen(
                 .fillMaxWidth(),
             label = "homeContentSwitch",
         ) { role ->
-            when (role) {
-                UserRole.DRIVER -> DriverHomeContent(
-                    onNavigateToPostTripModelSelect = onNavigateToPostTripModelSelect,
-                    onNavigateToTripDetail = onNavigateToTripDetail,
-                    onNavigateToTaxDashboard = onNavigateToTaxDashboard,
-                    snackbarHostState = snackbarHostState,
-                )
-                else -> PassengerHomeContent(
-                    onNavigateToSearchResults = onNavigateToSearchResults,
-                    onNavigateToTripDetail = onNavigateToTripDetail,
-                    snackbarHostState = snackbarHostState,
-                )
-            }
+            content(role)
         }
 
         // ── Shared bottom nav bar ─────────────────────────────────────────────
         HomeBottomNavBar(
-            onMyTrips = {
-                if (selectedRole == UserRole.DRIVER) onNavigateToMyTripsDriver()
-                else onNavigateToMyTripsPassenger()
-            },
-            onChat = onNavigateToChat,
-            onProfile = onNavigateToProfile,
+            onMyTrips = onMyTrips,
+            onChat = onChat,
+            onProfile = onProfile,
         )
     }
 }
@@ -386,17 +380,18 @@ private fun HomeScreenPassengerOnlyPreview() {
             selectedRole = UserRole.PASSENGER,
             hasDriverRole = false,
             onRoleChange = {},
-            onNavigateToSearchResults = {},
-            onNavigateToMyTripsPassenger = {},
-            onNavigateToMyTripsDriver = {},
-            onNavigateToChat = {},
-            onNavigateToProfile = {},
-            onNavigateToTripDetail = {},
-            onNavigateToPostTripModelSelect = {},
-            onNavigateToTaxDashboard = {},
-            onNavigateToNotifications = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
+            onMyTrips = {},
+            onChat = {},
+            onProfile = {},
+            onNotifications = {},
+        ) {
+            PassengerHomeScreen(
+                trips = emptyList(),
+                isLoading = false,
+                onFindRides = { _, _, _, _ -> },
+                onTripClick = {},
+            )
+        }
     }
 }
 
@@ -408,17 +403,18 @@ private fun HomeScreenDriverRolePassengerPreview() {
             selectedRole = UserRole.PASSENGER,
             hasDriverRole = true,
             onRoleChange = {},
-            onNavigateToSearchResults = {},
-            onNavigateToMyTripsPassenger = {},
-            onNavigateToMyTripsDriver = {},
-            onNavigateToChat = {},
-            onNavigateToProfile = {},
-            onNavigateToTripDetail = {},
-            onNavigateToPostTripModelSelect = {},
-            onNavigateToTaxDashboard = {},
-            onNavigateToNotifications = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
+            onMyTrips = {},
+            onChat = {},
+            onProfile = {},
+            onNotifications = {},
+        ) {
+            PassengerHomeScreen(
+                trips = emptyList(),
+                isLoading = false,
+                onFindRides = { _, _, _, _ -> },
+                onTripClick = {},
+            )
+        }
     }
 }
 
@@ -430,16 +426,17 @@ private fun HomeScreenDriverRoleDriverPreview() {
             selectedRole = UserRole.DRIVER,
             hasDriverRole = true,
             onRoleChange = {},
-            onNavigateToSearchResults = {},
-            onNavigateToMyTripsPassenger = {},
-            onNavigateToMyTripsDriver = {},
-            onNavigateToChat = {},
-            onNavigateToProfile = {},
-            onNavigateToTripDetail = {},
-            onNavigateToPostTripModelSelect = {},
-            onNavigateToTaxDashboard = {},
-            onNavigateToNotifications = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
+            onMyTrips = {},
+            onChat = {},
+            onProfile = {},
+            onNotifications = {},
+        ) {
+            DriverHomeScreen(
+                state = DriverUiState(),
+                onPostTrip = {},
+                onTripClick = {},
+                onEarningsBannerClick = {},
+            )
+        }
     }
 }
