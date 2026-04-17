@@ -30,7 +30,7 @@ fun AuthEffectHandler(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is AuthEffect.NavigateToHome -> {
-                    navController.navigate(HopRoutes.PassengerHome) {
+                    navController.navigate(HopRoutes.Home) {
                         popUpTo(HopRoutes.Splash) { inclusive = true }
                     }
                 }

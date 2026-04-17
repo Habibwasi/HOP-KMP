@@ -10,45 +10,29 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -58,7 +42,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -68,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.model.TripStatus
-import com.example.hop.domain.model.UserRole
 import com.example.hop.presentation.driver.DriverEffect
 import com.example.hop.presentation.driver.DriverEvent
 import com.example.hop.presentation.driver.DriverUiState
@@ -77,7 +59,6 @@ import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.ui.components.BadgeType
 import com.example.hop.ui.components.EmptyState
 import com.example.hop.ui.components.HopButton
-import com.example.hop.ui.components.RoleTogglePill
 import com.example.hop.ui.components.StatusBadge
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
@@ -90,27 +71,22 @@ import org.koin.compose.viewmodel.koinViewModel
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 /**
- * DR-01 — Driver Home Route.
+ * DR-01 — Driver Home Content.
  *
- * Wires [DriverViewModel] from Koin, dispatches [DriverEvent.LoadDriverHome] on
- * entry, handles one-shot effects, and delegates all rendering to the stateless
- * [DriverHomeScreen].
+ * Content-only composable designed to be hosted inside [HomeScreen]'s
+ * [AnimatedContent] area. Manages its own [DriverViewModel] and effects but
+ * contains no Scaffold, top bar, or bottom nav — those are owned by [HomeRoute].
  */
 @Composable
-fun DriverHomeRoute(
-    onNavigateToPassengerHome: () -> Unit,
+fun DriverHomeContent(
     onNavigateToPostTripModelSelect: () -> Unit,
-    onNavigateToMyTrips: () -> Unit,
-    onNavigateToChat: () -> Unit,
-    onNavigateToProfile: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
     onNavigateToTaxDashboard: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -126,31 +102,30 @@ fun DriverHomeRoute(
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
-                // Onboarding effects are handled by their own routes; ignore here.
-                else -> Unit
+                // Post-trip flow effects are emitted on the PriceReview/MarkTripComplete
+                // route's own DriverViewModel instance (each nav destination gets its own
+                // VM via koinViewModel / LocalViewModelStoreOwner). They are consumed by
+                // those routes' effect collectors and never reach D1 (Home's VM).
+                is DriverEffect.NavigateToMyTrips -> Unit          // owned by PriceReviewRoute
+                is DriverEffect.NavigateToRatePassenger -> Unit    // owned by MarkTripCompleteRoute
+                is DriverEffect.NavigateToMarkTripComplete -> Unit // unused — never emitted
+                // Onboarding effects — handled by EnableDriverStep1–3 routes.
+                is DriverEffect.NavigateToModelAForm -> Unit
+                is DriverEffect.NavigateToModelBForm -> Unit
+                is DriverEffect.NavigateToPriceReview -> Unit
+                is DriverEffect.NavigateToLicenceUpload -> Unit
+                is DriverEffect.NavigateToReviewPending -> Unit
             }
         }
     }
 
-    Scaffold(
+    DriverHomeScreen(
+        state = state,
+        onPostTrip = { viewModel.onEvent(DriverEvent.RequestPostTrip) },
+        onTripClick = { tripId -> viewModel.onEvent(DriverEvent.SelectTrip(tripId)) },
+        onEarningsBannerClick = { viewModel.onEvent(DriverEvent.TapEarningsBanner) },
         modifier = modifier,
-        containerColor = HopColors.surface,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-    ) { innerPadding ->
-        DriverHomeScreen(
-            state = state,
-            onPostTrip = { viewModel.onEvent(DriverEvent.RequestPostTrip) },
-            onTripClick = { tripId -> viewModel.onEvent(DriverEvent.SelectTrip(tripId)) },
-            onEarningsBannerClick = { viewModel.onEvent(DriverEvent.TapEarningsBanner) },
-            onNavigateToPassengerHome = onNavigateToPassengerHome,
-            onMyTrips = onNavigateToMyTrips,
-            onChat = onNavigateToChat,
-            onProfile = onNavigateToProfile,
-            onNotifications = onNavigateToNotifications,
-            modifier = Modifier.padding(innerPadding),
-        )
-    }
+    )
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -158,8 +133,8 @@ fun DriverHomeRoute(
 /**
  * DR-01 — Driver Home Screen.
  *
- * Stateless renderer. Receives all state and callbacks from [DriverHomeRoute].
- * Role toggle is held locally — switching to PASSENGER fires [onNavigateToPassengerHome].
+ * Stateless content renderer. The top bar and bottom nav are owned by
+ * [HomeScreen] — this composable renders only the scrollable body.
  */
 @Composable
 fun DriverHomeScreen(
@@ -167,30 +142,13 @@ fun DriverHomeScreen(
     onPostTrip: () -> Unit,
     onTripClick: (tripId: String) -> Unit,
     onEarningsBannerClick: () -> Unit,
-    onNavigateToPassengerHome: () -> Unit,
-    onMyTrips: () -> Unit,
-    onChat: () -> Unit,
-    onProfile: () -> Unit,
-    onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var selectedRole by remember { mutableStateOf(UserRole.DRIVER) }
-
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(HopColors.surface),
     ) {
-        // ── Top bar ───────────────────────────────────────────────────────────
-        DriverTopBar(
-            selectedRole = selectedRole,
-            onRoleChange = { role ->
-                selectedRole = role
-                if (role == UserRole.PASSENGER) onNavigateToPassengerHome()
-            },
-            onNotifications = onNotifications,
-        )
-
         // ── Scrollable body ───────────────────────────────────────────────────
         LazyColumn(
             modifier = Modifier
@@ -276,61 +234,8 @@ fun DriverHomeScreen(
             item { Spacer(modifier = Modifier.height(HopSpacing.md)) }
         }
 
-        // ── Bottom navigation bar ─────────────────────────────────────────────
-        DriverBottomNavBar(
-            onMyTrips = onMyTrips,
-            onChat = onChat,
-            onProfile = onProfile,
-        )
-    }
-}
-
-// ── Top bar ───────────────────────────────────────────────────────────────────
-
-@Composable
-private fun DriverTopBar(
-    selectedRole: UserRole,
-    onRoleChange: (UserRole) -> Unit,
-    onNotifications: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Hop logotype
-        Text(
-            text = "HOP",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.ExtraBold,
-                color = HopColors.primaryLime,
-                letterSpacing = 3.sp,
-            ),
-            modifier = Modifier.weight(1f),
-        )
-
-        // Role toggle pill
-        RoleTogglePill(
-            selectedRole = selectedRole,
-            onRoleChange = onRoleChange,
-        )
-
-        Spacer(modifier = Modifier.width(HopSpacing.sm))
-
-        // Bell icon button
-        IconButton(
-            onClick = onNotifications,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Notifications,
-                contentDescription = "Notifications",
-                tint = HopColors.textSecondary,
-                modifier = Modifier.size(24.dp),
-            )
+            // Bottom padding so last card clears nav bar
+            item { Spacer(modifier = Modifier.height(HopSpacing.md)) }
         }
     }
 }
@@ -552,87 +457,6 @@ private fun DriverRouteColumn(
     }
 }
 
-// ── Bottom navigation bar ─────────────────────────────────────────────────────
-
-@Composable
-private fun DriverBottomNavBar(
-    onMyTrips: () -> Unit,
-    onChat: () -> Unit,
-    onProfile: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    NavigationBar(
-        modifier = modifier.navigationBarsPadding(),
-        containerColor = HopColors.surfaceElevated,
-        tonalElevation = 0.dp,
-    ) {
-        DriverNavItem(
-            icon = Icons.Outlined.Home,
-            label = "Home",
-            selected = true,
-            onClick = { /* already on home */ },
-            contentDescription = "Home",
-        )
-        DriverNavItem(
-            icon = Icons.Outlined.DirectionsCar,
-            label = "My Trips",
-            selected = false,
-            onClick = onMyTrips,
-            contentDescription = "My Trips",
-        )
-        DriverNavItem(
-            icon = Icons.Outlined.Chat,
-            label = "Chat",
-            selected = false,
-            onClick = onChat,
-            contentDescription = "Chat",
-        )
-        DriverNavItem(
-            icon = Icons.Outlined.Person,
-            label = "Profile",
-            selected = false,
-            onClick = onProfile,
-            contentDescription = "Profile",
-        )
-    }
-}
-
-@Composable
-private fun RowScope.DriverNavItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    contentDescription: String,
-    modifier: Modifier = Modifier,
-) {
-    NavigationBarItem(
-        selected = selected,
-        onClick = onClick,
-        icon = {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(24.dp),
-            )
-        },
-        label = {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-            )
-        },
-        colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = HopColors.primaryLime,
-            selectedTextColor = HopColors.primaryLime,
-            indicatorColor = Color.Transparent,
-            unselectedIconColor = HopColors.textSecondary,
-            unselectedTextColor = HopColors.textSecondary,
-        ),
-        modifier = modifier,
-    )
-}
-
 // ── Previews ──────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
@@ -649,11 +473,6 @@ private fun DriverHomeScreenEmptyPreview() {
             onPostTrip = {},
             onTripClick = {},
             onEarningsBannerClick = {},
-            onNavigateToPassengerHome = {},
-            onMyTrips = {},
-            onChat = {},
-            onProfile = {},
-            onNotifications = {},
         )
     }
 }
@@ -672,11 +491,6 @@ private fun DriverHomeScreenLoadingPreview() {
             onPostTrip = {},
             onTripClick = {},
             onEarningsBannerClick = {},
-            onNavigateToPassengerHome = {},
-            onMyTrips = {},
-            onChat = {},
-            onProfile = {},
-            onNotifications = {},
         )
     }
 }
@@ -696,11 +510,6 @@ private fun DriverHomeScreenWithTripsPreview() {
             onPostTrip = {},
             onTripClick = {},
             onEarningsBannerClick = {},
-            onNavigateToPassengerHome = {},
-            onMyTrips = {},
-            onChat = {},
-            onProfile = {},
-            onNotifications = {},
         )
     }
 }

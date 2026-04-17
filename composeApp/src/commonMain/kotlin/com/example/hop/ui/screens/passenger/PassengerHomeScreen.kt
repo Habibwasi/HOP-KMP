@@ -10,14 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,23 +26,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.outlined.Chat
-import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,7 +60,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.domain.model.TripModel
-import com.example.hop.domain.model.UserRole
 import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.presentation.search.SearchEvent
 import com.example.hop.presentation.search.SearchViewModel
@@ -84,7 +69,6 @@ import com.example.hop.presentation.trip.TripViewModel
 import com.example.hop.ui.components.BadgeType
 import com.example.hop.ui.components.EmptyState
 import com.example.hop.ui.components.HopButton
-import com.example.hop.ui.components.RoleTogglePill
 import com.example.hop.ui.components.TripCard
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
@@ -96,26 +80,22 @@ import org.koin.compose.viewmodel.koinViewModel
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 /**
- * PA-01 — Passenger Home Route.
+ * PA-01 — Passenger Home Content.
  *
- * Wires [SearchViewModel] and [TripViewModel] from Koin, dispatches
- * [TripEvent.LoadMyTripsPassenger] on entry, handles one-shot effects,
- * and delegates all rendering to the stateless [PassengerHomeScreen].
+ * Content-only composable designed to be hosted inside [HomeScreen]'s
+ * [AnimatedContent] area. Manages its own ViewModels and effects but contains
+ * no Scaffold, top bar, or bottom nav — those are owned by [HomeRoute].
  */
 @Composable
-fun PassengerHomeRoute(
+fun PassengerHomeContent(
     onNavigateToSearchResults: () -> Unit,
-    onNavigateToMyTrips: () -> Unit,
-    onNavigateToChat: () -> Unit,
-    onNavigateToProfile: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
-    onNavigateToDriverHome: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     searchViewModel: SearchViewModel = koinViewModel(),
     tripViewModel: TripViewModel = koinViewModel(),
 ) {
     val tripState by tripViewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -133,29 +113,18 @@ fun PassengerHomeRoute(
         }
     }
 
-    Scaffold(
+    PassengerHomeScreen(
+        trips = tripState.trips,
+        isLoading = tripState.isLoading,
+        onFindRides = { origin, dest, date, seats ->
+            searchViewModel.onEvent(SearchEvent.Search(origin, dest, date, seats))
+            onNavigateToSearchResults()
+        },
+        onTripClick = { tripId ->
+            tripViewModel.onEvent(TripEvent.SelectTrip(tripId))
+        },
         modifier = modifier,
-        containerColor = HopColors.surface,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-    ) { innerPadding ->
-        PassengerHomeScreen(
-            trips = tripState.trips,
-            isLoading = tripState.isLoading,
-            onFindRides = { origin, dest, date, seats ->
-                searchViewModel.onEvent(SearchEvent.Search(origin, dest, date, seats))
-                onNavigateToSearchResults()
-            },
-            onTripClick = { tripId ->
-                tripViewModel.onEvent(TripEvent.SelectTrip(tripId))
-            },
-            onMyTrips = onNavigateToMyTrips,
-            onChat = onNavigateToChat,
-            onProfile = onNavigateToProfile,
-            onNavigateToDriverHome = onNavigateToDriverHome,
-            modifier = Modifier.padding(innerPadding),
-        )
-    }
+    )
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -163,8 +132,9 @@ fun PassengerHomeRoute(
 /**
  * PA-01 — Passenger Home Screen.
  *
- * Stateless: form input (from/to/date/seats) and role toggle are held locally.
- * Trips and loading flag flow in from the ViewModel via the Route.
+ * Stateless content renderer. The top bar and bottom nav are owned by
+ * [HomeScreen] — this composable renders only the scrollable body.
+ * Form input (from/to/date/seats) is held as local ephemeral state.
  */
 @Composable
 fun PassengerHomeScreen(
@@ -172,10 +142,6 @@ fun PassengerHomeScreen(
     isLoading: Boolean,
     onFindRides: (origin: String, dest: String, date: String, seats: Int) -> Unit,
     onTripClick: (tripId: String) -> Unit,
-    onMyTrips: () -> Unit,
-    onChat: () -> Unit,
-    onProfile: () -> Unit,
-    onNavigateToDriverHome: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // ── Local ephemeral form state ────────────────────────────────────────────
@@ -183,22 +149,12 @@ fun PassengerHomeScreen(
     var toLocation by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("Today") }
     var seats by remember { mutableIntStateOf(1) }
-    var selectedRole by remember { mutableStateOf(UserRole.PASSENGER) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(HopColors.surface),
     ) {
-        // ── Top bar ──────────────────────────────────────────────────────────
-        PassengerTopBar(
-            selectedRole = selectedRole,
-            onRoleChange = { role ->
-                selectedRole = role
-                if (role == UserRole.DRIVER) onNavigateToDriverHome()
-            },
-        )
-
         // ── Scrollable body ──────────────────────────────────────────────────
         LazyColumn(
             modifier = Modifier
@@ -294,62 +250,6 @@ fun PassengerHomeScreen(
 
             // Bottom padding so last card clears nav bar
             item { Spacer(modifier = Modifier.height(HopSpacing.md)) }
-        }
-
-        // ── Bottom navigation bar ─────────────────────────────────────────────
-        PassengerBottomNavBar(
-            onMyTrips = onMyTrips,
-            onChat = onChat,
-            onProfile = onProfile,
-        )
-    }
-}
-
-// ── Top bar ───────────────────────────────────────────────────────────────────
-
-@Composable
-private fun PassengerTopBar(
-    selectedRole: UserRole,
-    onRoleChange: (UserRole) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Hop logotype
-        Text(
-            text = "HOP",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.ExtraBold,
-                color = HopColors.primaryLime,
-                letterSpacing = 3.sp,
-            ),
-            modifier = Modifier.weight(1f),
-        )
-
-        // Role toggle pill
-        RoleTogglePill(
-            selectedRole = selectedRole,
-            onRoleChange = onRoleChange,
-        )
-
-        Spacer(modifier = Modifier.width(HopSpacing.sm))
-
-        // Bell icon button
-        IconButton(
-            onClick = { /* navigate to notifications — post-MVP */ },
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Notifications,
-                contentDescription = "Notifications",
-                tint = HopColors.textSecondary,
-                modifier = Modifier.size(24.dp),
-            )
         }
     }
 }
@@ -714,126 +614,6 @@ private fun SeatRow(
     }
 }
 
-// ── Bottom navigation bar ─────────────────────────────────────────────────────
-
-@Composable
-private fun PassengerBottomNavBar(
-    onMyTrips: () -> Unit,
-    onChat: () -> Unit,
-    onProfile: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    NavigationBar(
-        modifier = modifier.navigationBarsPadding(),
-        containerColor = HopColors.surfaceElevated,
-        tonalElevation = 0.dp,
-    ) {
-        // Home — always selected on this screen
-        NavigationBarItem(
-            selected = true,
-            onClick = { /* already on home */ },
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Home,
-                    contentDescription = "Home",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "Home",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
-            ),
-        )
-
-        // My Trips
-        NavigationBarItem(
-            selected = false,
-            onClick = onMyTrips,
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.DirectionsCar,
-                    contentDescription = "My Trips",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "My Trips",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
-            ),
-        )
-
-        // Chat
-        NavigationBarItem(
-            selected = false,
-            onClick = onChat,
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Chat,
-                    contentDescription = "Chat",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "Chat",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
-            ),
-        )
-
-        // Profile
-        NavigationBarItem(
-            selected = false,
-            onClick = onProfile,
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.Person,
-                    contentDescription = "Profile",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "Profile",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
-            ),
-        )
-    }
-}
-
 // ── Previews ──────────────────────────────────────────────────────────────────
 
 @Preview(name = "Passenger Home — empty state", showBackground = true, backgroundColor = 0xFF1A1A1A)
@@ -845,10 +625,6 @@ private fun PassengerHomeEmptyPreview() {
             isLoading = false,
             onFindRides = { _, _, _, _ -> },
             onTripClick = {},
-            onMyTrips = {},
-            onChat = {},
-            onProfile = {},
-            onNavigateToDriverHome = {},
         )
     }
 }
@@ -862,10 +638,6 @@ private fun PassengerHomeLoadingPreview() {
             isLoading = true,
             onFindRides = { _, _, _, _ -> },
             onTripClick = {},
-            onMyTrips = {},
-            onChat = {},
-            onProfile = {},
-            onNavigateToDriverHome = {},
         )
     }
 }

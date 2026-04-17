@@ -20,7 +20,7 @@ import com.example.hop.ui.screens.passenger.BookingSuccessRoute
 import com.example.hop.ui.screens.passenger.CancellationConfirmationRoute
 import com.example.hop.ui.screens.passenger.MobilePayHandoffRoute
 import com.example.hop.ui.screens.passenger.MyTripsPassengerRoute
-import com.example.hop.ui.screens.passenger.PassengerHomeRoute
+import com.example.hop.ui.screens.shared.HomeRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
@@ -74,7 +74,7 @@ fun HopNavGraph(
         composable<HopRoutes.Login> {
             LoginRoute(
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.PassengerHome) {
+                    navController.navigate(HopRoutes.Home) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
@@ -97,22 +97,25 @@ fun HopNavGraph(
             OtpVerificationRoute(
                 phone = route.phone,
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.PassengerHome) {
+                    navController.navigate(HopRoutes.Home) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
             )
         }
 
-        // ── Passenger ─────────────────────────────────────────────────────
+        // ── Home (Passenger + Driver via role toggle) ──────────────────────────────
 
-        composable<HopRoutes.PassengerHome> {
-            PassengerHomeRoute(
+        composable<HopRoutes.Home> {
+            HomeRoute(
                 onNavigateToSearchResults = {
                     navController.navigate(HopRoutes.SearchResults)
                 },
-                onNavigateToMyTrips = {
+                onNavigateToMyTripsPassenger = {
                     navController.navigate(HopRoutes.MyTripsPassenger)
+                },
+                onNavigateToMyTripsDriver = {
+                    navController.navigate(HopRoutes.MyTripsDriver)
                 },
                 onNavigateToChat = {
                     // TODO: Replace with ChatScreen navigation (post-MVP)
@@ -123,11 +126,19 @@ fun HopNavGraph(
                 onNavigateToTripDetail = { tripId ->
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
                 },
-                onNavigateToDriverHome = {
-                    navController.navigate(HopRoutes.DriverHome)
+                onNavigateToPostTripModelSelect = {
+                    navController.navigate(HopRoutes.PostTripModelSelect)
+                },
+                onNavigateToTaxDashboard = {
+                    navController.navigate(HopRoutes.TaxDashboard)
+                },
+                onNavigateToNotifications = {
+                    navController.navigate(HopRoutes.Notifications)
                 },
             )
         }
+
+        // ── Passenger ─────────────────────────────────────────────────────
 
         composable<HopRoutes.SearchResults> {
             SearchResultsRoute(
@@ -184,12 +195,12 @@ fun HopNavGraph(
                 bookingId = route.bookingId,
                 onNavigateToMyTrips = {
                     navController.navigate(HopRoutes.MyTripsPassenger) {
-                        popUpTo(HopRoutes.PassengerHome) { inclusive = false }
+                        popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.PassengerHome) {
-                        popUpTo(HopRoutes.PassengerHome) { inclusive = true }
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(HopRoutes.Home) { inclusive = true }
                     }
                 },
             )
@@ -205,8 +216,8 @@ fun HopNavGraph(
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
                 },
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.PassengerHome) {
-                        popUpTo(HopRoutes.PassengerHome) { inclusive = false }
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
                 onNavigateToChat = {
@@ -216,8 +227,8 @@ fun HopNavGraph(
                     // TODO: Replace with ProfileScreen navigation
                 },
                 onNavigateToFindRide = {
-                    navController.navigate(HopRoutes.PassengerHome) {
-                        popUpTo(HopRoutes.PassengerHome) { inclusive = false }
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
             )
@@ -268,10 +279,6 @@ fun HopNavGraph(
 
         // ── Driver ────────────────────────────────────────────────────────
 
-        composable<HopRoutes.DriverHome> {
-            // TODO: Replace with DriverHomeScreen composable (DR-01)
-            TodoScreen("Driver Home")
-        }
 
         composable<HopRoutes.EnableDriverStep1> {
             // TODO: Replace with CarDetailsScreen composable (DR-02)
@@ -318,8 +325,8 @@ fun HopNavGraph(
                     navController.navigate(HopRoutes.PostTripModelSelect)
                 },
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.DriverHome) {
-                        popUpTo(HopRoutes.DriverHome) { inclusive = false }
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
                 onNavigateToChat = {
@@ -388,9 +395,9 @@ fun HopNavGraph(
                 passengerName = route.passengerName,
                 passengerInitials = route.passengerInitials,
                 onNavigateBack = { navController.navigateUp() },
-                onNavigateToDriverHome = {
-                    navController.navigate(HopRoutes.DriverHome) {
-                        popUpTo(HopRoutes.DriverHome) { inclusive = true }
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(HopRoutes.Home) { inclusive = true }
                     }
                 },
             )

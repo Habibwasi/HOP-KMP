@@ -36,11 +36,13 @@ sealed interface HopRoutes {
     @Serializable
     data object ForgotPassword : HopRoutes
 
-    // ── Passenger ──────────────────────────────────────────────────────────
+    // ── Shared Home ────────────────────────────────────────────────────────
 
-    /** PA-01 */
+    /** SH-01 — Unified home screen (passenger + driver via role toggle) */
     @Serializable
-    data object PassengerHome : HopRoutes
+    data object Home : HopRoutes
+
+    // ── Passenger ──────────────────────────────────────────────────────────
 
     /** PA-02 */
     @Serializable
@@ -83,10 +85,6 @@ sealed interface HopRoutes {
     data class CancellationConfirmation(val bookingId: String) : HopRoutes
 
     // ── Driver ─────────────────────────────────────────────────────────────
-
-    /** DR-01 */
-    @Serializable
-    data object DriverHome : HopRoutes
 
     /** DR-02 Car Details */
     @Serializable
