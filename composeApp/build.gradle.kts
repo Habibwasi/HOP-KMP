@@ -22,9 +22,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
             implementation(libs.androidx.security.crypto)
-            implementation(compose.materialIconsExtended)
+            implementation(libs.material.icons.extended)
             // Firebase (Android only — no KMP artifact)
-            implementation(platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
         }
         commonMain.dependencies {
@@ -39,7 +38,7 @@ kotlin {
             implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.koin.compose.viewmodel)
-            implementation(compose.materialIconsExtended)
+            implementation(libs.material.icons.extended)
             implementation(projects.shared)
         }
         commonTest.dependencies {
@@ -77,5 +76,7 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    // Firebase BOM — platform() not allowed inside KMP source sets (KT-58759)
+    implementation(platform(libs.firebase.bom))
 }
 
