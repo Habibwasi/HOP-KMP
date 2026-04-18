@@ -18,5 +18,8 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 
+# Firebase — contains API keys, never commit
+google-services.json
+
 # Exclude local embedded skill repo from source control
 kmp-compose-multiplatform-skill/

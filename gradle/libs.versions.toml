@@ -19,8 +19,8 @@ kotlinx-coroutines = "1.10.1"
 koin = "4.1.1"
 androidx-navigation = "2.8.9" # Verify latest stable; type-safe nav requires 2.8.0+
 socket-io-client = "2.1.0" # Android only — no official KMP version exists
-firebase-bom = "33.8.0" # Verify latest version
-google-services = "4.4.2" # Verify latest version
+firebase-bom = "34.12.0" # Latest
+google-services = "4.4.4" # Latest
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

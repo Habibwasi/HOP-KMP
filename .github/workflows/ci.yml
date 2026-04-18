@@ -36,6 +36,9 @@ jobs:
       - name: Run shared unit tests
         run: ./gradlew :shared:testDebugUnitTest
 
+      - name: Write google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > composeApp/google-services.json
+
       - name: Build Android debug APK
         run: ./gradlew :composeApp:assembleDebug
 
