@@ -118,10 +118,13 @@ fun HopNavGraph(
                 onNavigateToMyTripsDriver = {
                     navController.navigate(HopRoutes.MyTripsDriver)
                 },
-                onNavigateToChat = { bookingId ->
-                    navController.navigate(HopRoutes.Chat(bookingId = bookingId))
+                onNavigateToChat = {
+                    // TODO: no bookingId in scope at Home level
                 },
                 onNavigateToProfile = {
+                    // TODO: navigate to own profile
+                },
+                onNavigateToTripDetail = { tripId ->
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
                 },
                 onNavigateToPostTripModelSelect = {
@@ -218,13 +221,16 @@ fun HopNavGraph(
                         popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
-                onNavigateToChat = { bookingId ->
-                    navController.navigate(HopRoutes.Chat(bookingId = bookingId))
+                onNavigateToChat = {
+                    // TODO: no bookingId in scope at MyTripsPassenger level
                 },
                 onNavigateToProfile = {
                     navController.navigate(HopRoutes.Home) {
                         popUpTo(HopRoutes.Home) { inclusive = false }
                     }
+                },
+                onNavigateToFindRide = {
+                    navController.navigate(HopRoutes.SearchResults)
                 },
             )
         }
