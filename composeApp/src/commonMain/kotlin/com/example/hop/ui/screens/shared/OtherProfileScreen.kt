@@ -190,7 +190,9 @@ fun OtherProfileScreen(
                     },
                     label = state.user?.email.orEmpty(),
                 )
-                if (state.user?.phone != null) {
+                val userPhone = state.user?.phone
+                val userPhoneVerified = state.user?.phoneVerified == true
+                if (userPhone != null) {
                     Spacer(modifier = Modifier.height(HopSpacing.xs))
                     ReadOnlyInfoRow(
                         icon = {
@@ -201,8 +203,8 @@ fun OtherProfileScreen(
                                 modifier = Modifier.size(18.dp),
                             )
                         },
-                        label = state.user.phone,
-                        trailing = if (state.user.phoneVerified) {
+                        label = userPhone,
+                        trailing = if (userPhoneVerified) {
                             {
                                 Icon(
                                     Icons.Filled.CheckCircle,
@@ -256,14 +258,15 @@ fun OtherProfileScreen(
 
             // ── Car details (read-only, drivers only) ──────────────────────────
             val isDriver = state.user?.roles?.contains(UserRole.DRIVER) == true
-            if (isDriver && state.carDetails != null) {
+            val carDetails = state.carDetails
+            if (isDriver && carDetails != null) {
                 item {
                     Spacer(modifier = Modifier.height(HopSpacing.lg))
                     SectionDivider()
                     Spacer(modifier = Modifier.height(HopSpacing.lg))
                     SectionTitle("Car details")
                     Spacer(modifier = Modifier.height(HopSpacing.md))
-                    ReadOnlyCarDetails(carDetails = state.carDetails)
+                    ReadOnlyCarDetails(carDetails = carDetails)
                 }
             }
 

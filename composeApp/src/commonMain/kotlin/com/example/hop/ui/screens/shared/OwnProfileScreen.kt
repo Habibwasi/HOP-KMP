@@ -564,10 +564,11 @@ internal fun ReviewCard(
                     starSize = 12.dp,
                 )
             }
-            if (!review.comment.isNullOrBlank()) {
+            val comment = review.comment
+            if (!comment.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(HopSpacing.xs))
                 Text(
-                    text = review.comment,
+                    text = comment,
                     style = MaterialTheme.typography.bodySmall,
                     color = HopColors.textSecondary,
                 )
