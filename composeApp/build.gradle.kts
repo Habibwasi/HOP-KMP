@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.googleServices)
+    alias(libs.plugins.sentryAndroid)
 }
 
 kotlin {
@@ -86,5 +87,17 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+}
+
+sentry {
+    org = "habib-ahmed-wasi"
+    projectName = "android"
+
+    // Automatically upload ProGuard/R8 mapping file on release builds so that
+    // Sentry crash reports show de-obfuscated class and method names.
+    autoUploadProguardMapping = true
+
+    // Include source context lines around each stack frame in Sentry events.
+    includeSourceContext = true
 }
 
