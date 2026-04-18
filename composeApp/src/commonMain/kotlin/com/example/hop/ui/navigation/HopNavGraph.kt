@@ -5,12 +5,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.example.hop.network.ConnectivityObserver
+import com.example.hop.ui.components.NoInternetBanner
 import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.OtpVerificationRoute
@@ -34,6 +38,7 @@ import com.example.hop.ui.screens.shared.ChatRoute
 import com.example.hop.ui.screens.shared.OtherProfileRoute
 import com.example.hop.ui.screens.shared.OwnProfileRoute
 import com.example.hop.ui.screens.shared.SettingsRoute
+import org.koin.compose.koinInject
 
 /**
  * Root NavHost for the Hop app.
@@ -50,11 +55,14 @@ fun HopNavGraph(
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = HopRoutes.Splash,
-        modifier = modifier,
-    ) {
+    val connectivityObserver: ConnectivityObserver = koinInject()
+    val isConnected by connectivityObserver.isConnected.collectAsStateWithLifecycle()
+
+    Box(modifier = modifier.fillMaxSize()) {
+        NavHost(
+            navController = navController,
+            startDestination = HopRoutes.Splash,
+        ) {
 
         // ── Onboarding ────────────────────────────────────────────────────
 
@@ -470,6 +478,11 @@ fun HopNavGraph(
             )
         }
     }
+
+    NoInternetBanner(
+        isVisible = !isConnected,
+        modifier = Modifier.align(Alignment.TopCenter),
+    )
 }
 
 /** Temporary stub shown until a real screen composable is implemented. */
