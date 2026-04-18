@@ -18,6 +18,7 @@ kotlinx-serialization = "1.8.1"
 kotlinx-coroutines = "1.10.1"
 koin = "4.1.1"
 androidx-navigation = "2.8.9" # Verify latest stable; type-safe nav requires 2.8.0+
+socket-io-client = "2.1.0" # Android only — no official KMP version exists
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -42,6 +43,8 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 
 # For EncryptedSharedPreferences
 androidx-security-crypto = { module = "androidx.security:security-crypto", version = "1.1.0-alpha06" }
+# Android only — socket.io has no KMP artifact
+socket-io-client = { module = "io.socket:socket.io-client", version.ref = "socket-io-client" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
