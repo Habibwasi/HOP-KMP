@@ -1,6 +1,7 @@
 package com.example.hop.domain.repository
 
 import com.example.hop.domain.model.CarDetails
+import com.example.hop.domain.model.HopNotification
 import com.example.hop.domain.model.User
 import com.example.hop.domain.model.UserReview
 import com.example.hop.network.ApiResponse
@@ -18,4 +19,10 @@ interface UserRepository {
     suspend fun updateFullName(name: String): ApiResponse<User>
     /** POST /users/:id/report — files a report against another user. */
     suspend fun reportUser(userId: String, reason: String): ApiResponse<Unit>
+    /** POST /users/push-token — registers or refreshes an FCM push token. */
+    suspend fun savePushToken(token: String): ApiResponse<Unit>
+    /** GET /notifications — returns the notification inbox for the current user. */
+    suspend fun getNotifications(): ApiResponse<List<HopNotification>>
+    /** POST /notifications/:id/read — marks a single notification as read. */
+    suspend fun markNotificationRead(notificationId: String): ApiResponse<Unit>
 }

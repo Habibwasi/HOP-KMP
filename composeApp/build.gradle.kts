@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -22,6 +23,9 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.androidx.security.crypto)
             implementation(compose.materialIconsExtended)
+            // Firebase (Android only — no KMP artifact)
+            implementation(platform(libs.firebase.bom))
+            implementation(libs.firebase.messaging)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

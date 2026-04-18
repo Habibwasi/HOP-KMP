@@ -2,13 +2,15 @@ package com.example.hop.data.repository
 
 import com.example.hop.data.dto.ApiEnvelope
 import com.example.hop.data.dto.CarDetailsDto
+import com.example.hop.data.dto.HopNotificationDto
+import com.example.hop.data.dto.PushTokenRequest
 import com.example.hop.data.dto.ReportUserRequest
 import com.example.hop.data.dto.UpdateNameRequest
 import com.example.hop.data.dto.UserDto
 import com.example.hop.data.dto.UserReviewDto
 import com.example.hop.data.dto.toDomain
-import com.example.hop.data.dto.toDomain
 import com.example.hop.domain.model.CarDetails
+import com.example.hop.domain.model.HopNotification
 import com.example.hop.domain.model.User
 import com.example.hop.domain.model.UserReview
 import com.example.hop.domain.repository.UserRepository
@@ -91,6 +93,30 @@ class UserRepositoryImpl(
             httpClient.post("users/$userId/report") {
                 setBody(ReportUserRequest(reason = reason))
             }
+            Unit
+        }
+
+    override suspend fun savePushToken(token: String): ApiResponse<Unit> =
+        safeApiCall {
+            httpClient.post("users/push-token") {
+                setBody(PushTokenRequest(token = token))
+            }
+            Unit
+        }
+
+    override suspend fun getNotifications(): ApiResponse<List<HopNotification>> {
+        val response = safeEnvelopeCall<List<HopNotificationDto>> {
+            httpClient.get("notifications").body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.map { it.toDomain() })
+            is ApiResponse.Error -> response
+        }
+    }
+
+    override suspend fun markNotificationRead(notificationId: String): ApiResponse<Unit> =
+        safeApiCall {
+            httpClient.post("notifications/$notificationId/read")
             Unit
         }
 
