@@ -33,6 +33,7 @@ import com.example.hop.ui.screens.driver.TaxReportDownloadRoute
 import com.example.hop.ui.screens.shared.ChatRoute
 import com.example.hop.ui.screens.shared.OtherProfileRoute
 import com.example.hop.ui.screens.shared.OwnProfileRoute
+import com.example.hop.ui.screens.shared.SettingsRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -46,6 +47,7 @@ import com.example.hop.ui.screens.shared.OwnProfileRoute
 @Composable
 fun HopNavGraph(
     navController: NavHostController,
+    onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -456,8 +458,16 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.Settings> {
-            // TODO: Replace with SettingsScreen composable (SH-06)
-            TodoScreen("Settings")
+            SettingsRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToEditProfile = { navController.navigate(HopRoutes.Profile(userId = "")) },
+                onNavigateToChangePassword = { /* TODO: wire to ForgotPassword or dedicated ChangePassword screen */ },
+                onNavigateToHelpCentre = { /* TODO: stub — open web URL */ },
+                onNavigateToContactUs = { /* TODO: stub — open email intent */ },
+                onNavigateToTermsOfService = { /* TODO: stub — open web URL */ },
+                onNavigateToPrivacyPolicy = { /* TODO: stub — open web URL */ },
+                onLogout = onLogout,
+            )
         }
     }
 }
