@@ -483,6 +483,7 @@ fun HopNavGraph(
         isVisible = !isConnected,
         modifier = Modifier.align(Alignment.TopCenter),
     )
+    }
 }
 
 /** Temporary stub shown until a real screen composable is implemented. */
