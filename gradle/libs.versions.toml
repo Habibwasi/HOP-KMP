@@ -22,6 +22,7 @@ socket-io-client = "2.1.0" # Android only — no official KMP version exists
 firebase-bom = "34.12.0" # Latest
 firebase-messaging = "24.1.0" # Pinned to match firebase-bom 34.12.0
 google-services = "4.4.4" # Latest
+sentry-android = "7.14.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -48,6 +49,8 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version = "1.1.0-alpha06" }
 # Android only — socket.io has no KMP artifact
 socket-io-client = { module = "io.socket:socket.io-client", version.ref = "socket-io-client" }
+# Sentry — Android only
+sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry-android" }
 # Firebase — Android only, managed via BOM
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging-ktx", version.ref = "firebase-messaging" }

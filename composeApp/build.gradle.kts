@@ -25,6 +25,7 @@ kotlin {
             implementation(libs.material.icons.extended)
             // Firebase (Android only — no KMP artifact)
             implementation(libs.firebase.messaging)
+            implementation(libs.sentry.android)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -57,6 +58,11 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "SENTRY_DSN",
+            "\"${project.findProperty("SENTRY_DSN") ?: ""}\"")
+    }
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {
