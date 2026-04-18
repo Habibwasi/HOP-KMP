@@ -31,7 +31,7 @@ class TokenRefreshManager(
     private val tokenStorage: TokenStorage,
     private val sessionExpiryNotifier: SessionExpiryNotifier,
     private val baseUrl: String,
-) : kotlin.io.Closeable {
+) {
 
     private val mutex = Mutex()
 
@@ -102,7 +102,7 @@ class TokenRefreshManager(
         }
     }
 
-    override fun close() {
+    fun close() {
         refreshClient.close()
     }
 }
