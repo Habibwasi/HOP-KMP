@@ -30,6 +30,7 @@ import com.example.hop.ui.screens.driver.TripDetailActiveDriverRoute
 import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
 import com.example.hop.ui.screens.driver.RatePassengerRoute
 import com.example.hop.ui.screens.driver.TaxReportDownloadRoute
+import com.example.hop.ui.screens.shared.ChatRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -117,13 +118,10 @@ fun HopNavGraph(
                 onNavigateToMyTripsDriver = {
                     navController.navigate(HopRoutes.MyTripsDriver)
                 },
-                onNavigateToChat = {
-                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                onNavigateToChat = { bookingId ->
+                    navController.navigate(HopRoutes.Chat(bookingId = bookingId))
                 },
                 onNavigateToProfile = {
-                    // TODO: Replace with ProfileScreen navigation
-                },
-                onNavigateToTripDetail = { tripId ->
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
                 },
                 onNavigateToPostTripModelSelect = {
@@ -220,13 +218,10 @@ fun HopNavGraph(
                         popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
-                onNavigateToChat = {
-                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                onNavigateToChat = { bookingId ->
+                    navController.navigate(HopRoutes.Chat(bookingId = bookingId))
                 },
                 onNavigateToProfile = {
-                    // TODO: Replace with ProfileScreen navigation
-                },
-                onNavigateToFindRide = {
                     navController.navigate(HopRoutes.Home) {
                         popUpTo(HopRoutes.Home) { inclusive = false }
                     }
@@ -239,8 +234,8 @@ fun HopNavGraph(
             TripDetailActiveRoute(
                 bookingId = route.bookingId,
                 onNavigateBack = { navController.navigateUp() },
-                onNavigateToChat = {
-                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                onNavigateToChat = { bookingId ->
+                    navController.navigate(HopRoutes.Chat(bookingId = bookingId))
                 },
                 onNavigateToCancellationConfirmation = { bookingId ->
                     navController.navigate(HopRoutes.CancellationConfirmation(bookingId = bookingId)) {
@@ -432,8 +427,10 @@ fun HopNavGraph(
 
         composable<HopRoutes.Chat> { backStackEntry ->
             val route: HopRoutes.Chat = backStackEntry.toRoute()
-            // TODO: Replace with ChatScreen composable (SH-04)
-            TodoScreen("Chat — ${route.bookingId}")
+            ChatRoute(
+                bookingId      = route.bookingId,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.Notifications> {

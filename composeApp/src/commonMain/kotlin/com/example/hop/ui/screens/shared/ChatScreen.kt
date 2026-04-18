@@ -56,6 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.chat.ConnectionState
 import com.example.hop.chat.Message
+import com.example.hop.network.TokenStorage
+import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.presentation.chat.ChatEffect
 import com.example.hop.presentation.chat.ChatEvent
 import com.example.hop.presentation.chat.ChatUiState
@@ -66,6 +68,8 @@ import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+import org.koin.compose.koinInject
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -77,25 +81,30 @@ import org.koin.compose.viewmodel.koinViewModel
  * [ChatScreen].
  *
  * @param bookingId  ID of the booking whose chat thread to open.
- * @param token      JWT access token for socket authentication.
- * @param currentUserId  Authenticated user's ID — used to distinguish own messages.
  * @param onNavigateBack  Called when the user presses Back.
  */
 @Composable
 fun ChatRoute(
     bookingId: String,
-    token: String,
-    currentUserId: String,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ChatViewModel = koinViewModel(),
+    authViewModel: AuthViewModel = koinViewModel(),
+    tokenStorage: TokenStorage = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val authState by authViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Connect once when the Route enters composition
-    LaunchedEffect(bookingId, token) {
+    // currentUserId falls back to empty string before the user object loads —
+    // own-message alignment will be wrong only during that brief window.
+    val currentUserId = authState.currentUser?.id.orEmpty()
+
+    // Connect once when bookingId is available and we have a valid token.
+    // LaunchedEffect re-runs if bookingId changes (unlikely but correct).
+    LaunchedEffect(bookingId) {
+        val token = tokenStorage.getAccessToken() ?: return@LaunchedEffect
         viewModel.onEvent(ChatEvent.Connect(bookingId = bookingId, token = token))
     }
 
