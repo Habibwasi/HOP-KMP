@@ -17,7 +17,7 @@ val networkModule = module {
             sessionExpiryNotifier = get(),
             baseUrl = NetworkConstants.PRODUCTION_BASE_URL,
         )
-    } onClose { it?.close() }
+    }
 
     single<HttpClient> {
         HttpClientFactory.create(
@@ -25,5 +25,5 @@ val networkModule = module {
             tokenRefreshManager = get(),
             baseUrl = NetworkConstants.PRODUCTION_BASE_URL,
         )
-    } onClose { it?.close() }
+    }
 }

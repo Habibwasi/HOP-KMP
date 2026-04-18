@@ -31,7 +31,7 @@ class TokenRefreshManager(
     private val tokenStorage: TokenStorage,
     private val sessionExpiryNotifier: SessionExpiryNotifier,
     private val baseUrl: String,
-) : java.io.Closeable {
+) : kotlin.io.Closeable {
 
     private val mutex = Mutex()
 
