@@ -31,6 +31,8 @@ import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
 import com.example.hop.ui.screens.driver.RatePassengerRoute
 import com.example.hop.ui.screens.driver.TaxReportDownloadRoute
 import com.example.hop.ui.screens.shared.ChatRoute
+import com.example.hop.ui.screens.shared.OtherProfileRoute
+import com.example.hop.ui.screens.shared.OwnProfileRoute
 
 /**
  * Root NavHost for the Hop app.
@@ -122,7 +124,9 @@ fun HopNavGraph(
                     // TODO: no bookingId in scope at Home level
                 },
                 onNavigateToProfile = {
-                    // TODO: navigate to own profile
+                    val userId = "" // currentUserId from AuthViewModel is not in scope here;
+                    // navigate with empty string — OwnProfileRoute calls /users/me, not /users/:id
+                    navController.navigate(HopRoutes.Profile(userId = userId))
                 },
                 onNavigateToTripDetail = { tripId ->
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
@@ -419,16 +423,23 @@ fun HopNavGraph(
 
         composable<HopRoutes.Profile> { backStackEntry ->
             val route: HopRoutes.Profile = backStackEntry.toRoute()
-            // TODO: Replace with ProfileScreen composable (SH-02)
-            TodoScreen("Profile — ${route.userId}")
+            OwnProfileRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToPhoneVerification = {
+                    navController.navigate(HopRoutes.OtpVerification(phone = ""))
+                },
+                onNavigateToEditCar = {
+                    navController.navigate(HopRoutes.EnableDriverStep1)
+                },
+            )
         }
 
         composable<HopRoutes.OtherProfile> { backStackEntry ->
             val route: HopRoutes.OtherProfile = backStackEntry.toRoute()
-            // TODO: Replace with OtherProfileScreen composable (SH-03).
-            // Demo-safe: avatar tap from TripDetailScreen navigates here; stub renders a
-            // labelled placeholder screen rather than crashing.
-            TodoScreen("Other Profile — ${route.userId}")
+            OtherProfileRoute(
+                userId = route.userId,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.Chat> { backStackEntry ->

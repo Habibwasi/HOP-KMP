@@ -2,6 +2,8 @@ package com.example.hop.di
 
 import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.presentation.booking.BookingViewModel
+import com.example.hop.presentation.profile.OtherProfileViewModel
+import com.example.hop.presentation.profile.OwnProfileViewModel
 import com.example.hop.presentation.driver.DriverViewModel
 import com.example.hop.presentation.bookingsuccess.BookingSuccessViewModel
 import com.example.hop.presentation.cancellationconfirmation.CancellationConfirmationViewModel
@@ -30,4 +32,6 @@ val presentationModule = module {
     viewModelOf(::TripDetailActiveViewModel)
     viewModelOf(::TaxViewModel)
     viewModelOf(::ChatViewModel)
+    viewModelOf(::OwnProfileViewModel)
+    viewModelOf(::OtherProfileViewModel)
 }

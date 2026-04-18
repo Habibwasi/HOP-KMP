@@ -8,8 +8,10 @@ import com.example.hop.data.repository.TripRepositoryImpl
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.domain.repository.BookingRepository
 import com.example.hop.domain.repository.DriverRepository
+import com.example.hop.data.repository.UserRepositoryImpl
 import com.example.hop.domain.repository.TaxRepository
 import com.example.hop.domain.repository.TripRepository
+import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.TokenStorage
 import io.ktor.client.HttpClient
 import org.koin.dsl.module
@@ -38,6 +40,11 @@ val repositoryModule = module {
     }
     single<TaxRepository> {
         TaxRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<UserRepository> {
+        UserRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
     }
