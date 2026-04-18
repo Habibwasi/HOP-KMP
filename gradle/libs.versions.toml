@@ -24,6 +24,7 @@ firebase-messaging = "24.1.0" # Pinned to match firebase-bom 34.12.0
 google-services = "4.4.4" # Latest
 sentry-android = "7.14.0"
 sentry-plugin = "4.14.1"
+skie = "0.9.4"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -77,3 +78,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "google-services" }
 sentryAndroid = { id = "io.sentry.android.gradle", version.ref = "sentry-plugin" }
+skie = { id = "co.touchlab.skie", version.ref = "skie" }
