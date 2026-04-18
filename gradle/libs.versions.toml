@@ -20,6 +20,7 @@ koin = "4.1.1"
 androidx-navigation = "2.8.9" # Verify latest stable; type-safe nav requires 2.8.0+
 socket-io-client = "2.1.0" # Android only — no official KMP version exists
 firebase-bom = "34.12.0" # Latest
+firebase-messaging = "24.1.0" # Pinned to match firebase-bom 34.12.0
 google-services = "4.4.4" # Latest
 
 [libraries]
@@ -49,7 +50,7 @@ androidx-security-crypto = { module = "androidx.security:security-crypto", versi
 socket-io-client = { module = "io.socket:socket.io-client", version.ref = "socket-io-client" }
 # Firebase — Android only, managed via BOM
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
-firebase-messaging = { module = "com.google.firebase:firebase-messaging-ktx" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging-ktx", version.ref = "firebase-messaging" }
 # Pinned at 1.7.3 — will not receive updates; migrate to Material Symbols when ready
 material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version = "1.7.3" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }

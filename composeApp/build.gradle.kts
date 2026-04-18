@@ -76,7 +76,5 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
-    // Firebase BOM — platform() not allowed inside KMP source sets (KT-58759)
-    implementation(platform(libs.firebase.bom))
 }
 
