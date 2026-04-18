@@ -45,4 +45,11 @@ class TokenStorageImpl(context: Context) : TokenStorage {
     override suspend fun saveRefreshToken(token: String) = withContext(Dispatchers.IO) {
         sharedPreferences.edit().putString(KEY_REFRESH_TOKEN, token).apply()
     }
+
+    override suspend fun clearTokens() = withContext(Dispatchers.IO) {
+        sharedPreferences.edit()
+            .remove(KEY_ACCESS_TOKEN)
+            .remove(KEY_REFRESH_TOKEN)
+            .apply()
+    }
 }

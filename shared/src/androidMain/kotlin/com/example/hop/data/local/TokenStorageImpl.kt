@@ -37,6 +37,10 @@ class TokenStorageImpl : TokenStorage {
         TODO("Write key REFRESH_TOKEN to EncryptedSharedPreferences")
     }
 
+    override suspend fun clearTokens() {
+        TODO("Remove both ACCESS_TOKEN and REFRESH_TOKEN from EncryptedSharedPreferences")
+    }
+
     private companion object {
         const val ACCESS_TOKEN = "access_token"
         const val REFRESH_TOKEN = "refresh_token"

@@ -30,6 +30,11 @@ data class OtpVerifyRequest(
     val code: String,
 )
 
+@Serializable
+data class RefreshTokenRequest(
+    val refreshToken: String,
+)
+
 // ── Response bodies ───────────────────────────────────────────────────────────
 
 @Serializable

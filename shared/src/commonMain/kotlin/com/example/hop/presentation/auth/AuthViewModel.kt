@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
+import com.example.hop.network.SessionExpiryNotifier
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,10 +37,12 @@ sealed interface AuthEffect {
     data class NavigateToOtpVerification(val phone: String) : AuthEffect
     data object NavigateToLogin : AuthEffect
     data class ShowSnackbar(val message: String) : AuthEffect
+    data object SessionExpired : AuthEffect
 }
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
+    private val sessionExpiryNotifier: SessionExpiryNotifier,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
@@ -47,6 +50,14 @@ class AuthViewModel(
 
     private val _effect = Channel<AuthEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
+
+    init {
+        viewModelScope.launch {
+            sessionExpiryNotifier.events.collect {
+                _effect.send(AuthEffect.SessionExpired)
+            }
+        }
+    }
 
     fun onEvent(event: AuthEvent) {
         when (event) {

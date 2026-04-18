@@ -45,6 +45,12 @@ fun AuthEffectHandler(
                     }
                 }
 
+                is AuthEffect.SessionExpired -> {
+                    navController.navigate(HopRoutes.Login) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+
                 is AuthEffect.ShowSnackbar -> {
                     // Handled by the root SnackbarHost; no navigation needed.
                 }
