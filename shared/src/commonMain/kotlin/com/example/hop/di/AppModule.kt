@@ -18,4 +18,5 @@ val appModules: List<Module> = listOf(
     chatRepositoryModule,
     presentationModule,
     connectivityModule,
+    tokenStorageModule,
 )
