@@ -42,18 +42,19 @@ struct OnboardingView: View {
     @State private var currentPage = 0
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // ── Slide pager ────────────────────────────────────────────────────
-            TabView(selection: $currentPage) {
-                ForEach(Array(onboardingSlides.enumerated()), id: \.offset) { index, slide in
-                    OnboardingSlideView(slide: slide)
-                        .tag(index)
-                }
+        // ── Slide pager ────────────────────────────────────────────────────────
+        TabView(selection: $currentPage) {
+            ForEach(Array(onboardingSlides.enumerated()), id: \.offset) { index, slide in
+                OnboardingSlideView(slide: slide)
+                    .tag(index)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .ignoresSafeArea()
-
-            // ── Bottom chrome: dots + CTAs ─────────────────────────────────────
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .ignoresSafeArea(.all, edges: .top)   // extend under status bar only; bottom safe area stays intact
+        .background(Color.hopSurface.ignoresSafeArea())
+        // ── Bottom chrome inset: dots + CTAs ──────────────────────────────────
+        // safeAreaInset pushes slide content up automatically — no magic numbers.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: HopSpacing.md) {
                 OnboardingSlideDots(
                     pageCount: onboardingSlides.count,
@@ -71,6 +72,7 @@ struct OnboardingView: View {
                 }
             }
             .padding(.horizontal, HopSpacing.lg)
+            .padding(.top, HopSpacing.lg)
             .padding(.bottom, HopSpacing.xl)
             .background(
                 // Fade from transparent to surface so slide content flows into CTA chrome
@@ -82,7 +84,6 @@ struct OnboardingView: View {
                 .ignoresSafeArea(edges: .bottom)
             )
         }
-        .background(Color.hopSurface.ignoresSafeArea())
     }
 }
 
@@ -126,9 +127,7 @@ private struct OnboardingSlideView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, HopSpacing.lg)
 
-            // Reserve bottom space so content doesn't underlap the CTA chrome.
-            // Approx: dots(20) + spacing(16) + button×2(52+52) + gaps + padding
-            Spacer().frame(height: 240)
+            Spacer()
         }
         .padding(.horizontal, HopSpacing.lg)
     }
