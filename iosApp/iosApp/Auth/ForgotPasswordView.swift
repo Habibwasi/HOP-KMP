@@ -23,7 +23,7 @@ struct ForgotPasswordView: View {
 
     var body: some View {
         ZStack {
-            Color.hopSurface.ignoresSafeArea(.all, edges: .top)
+            Color.hopSurface.ignoresSafeArea()
 
             if submitted {
                 // ── Success state ─────────────────────────────────────────────

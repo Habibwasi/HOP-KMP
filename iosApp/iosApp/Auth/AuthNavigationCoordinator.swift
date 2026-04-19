@@ -39,7 +39,6 @@ struct AuthNavigationCoordinator: View {
             )
             .navigationDestination(for: AuthDestination.self) { destination in
                 destinationView(for: destination)
-                    .navigationBarBackButtonHidden(false)
                     .toolbarBackground(Color.hopSurface, for: .navigationBar)
                     .toolbarColorScheme(.dark, for: .navigationBar)
             }
