@@ -23,7 +23,7 @@ struct ForgotPasswordView: View {
 
     var body: some View {
         ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopSurface.ignoresSafeArea(.all, edges: .all)
 
             if submitted {
                 // ── Success state ─────────────────────────────────────────────
@@ -188,11 +188,12 @@ struct ForgotPasswordView: View {
     private func sendResetLink() {
         guard canSubmit else { return }
         // MVP stub — no network call yet.  Simulate brief loading then success.
-        withAnimation { isLoading = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        Task { @MainActor in
+            withAnimation { isLoading = true }
+            try? await Task.sleep(nanoseconds: 800_000_000)
             withAnimation(.easeInOut) {
-                isLoading  = false
-                submitted  = true
+                isLoading = false
+                submitted = true
             }
         }
     }
@@ -226,7 +227,7 @@ private struct _ForgotPasswordSuccessPreview: View {
         // using the "Didn't receive it?" path to reach the success screen.
         // For a direct preview we mirror the success layout inline.
         ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopSurface.ignoresSafeArea(.all, edges: .all)
             VStack(spacing: 0) {
                 Spacer()
                 ZStack {
