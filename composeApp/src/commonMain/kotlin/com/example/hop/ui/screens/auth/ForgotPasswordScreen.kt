@@ -179,7 +179,6 @@ private fun FormContent(
             .fillMaxSize()
             .background(HopColors.surface)
             .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = HopSpacing.lg),
     ) {
@@ -284,7 +283,6 @@ private fun SuccessContent(
         modifier = modifier
             .fillMaxSize()
             .background(HopColors.surface)
-            .navigationBarsPadding()
             .padding(horizontal = HopSpacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
