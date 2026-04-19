@@ -10,6 +10,11 @@ import Shared
 //  • StateFlow<AuthUiState>  → AsyncSequence  (for await in viewModel.state)
 //  • Channel<AuthEffect>     → AsyncSequence  (for await in viewModel.effect)
 //
+// AuthEvent is a Kotlin sealed interface. SKIE exposes it as `any AuthEvent`
+// (a Swift protocol); each subtype is a separate flattened Swift class:
+//   AuthEventRegister, AuthEventLogin, AuthEventSendOtp, AuthEventVerifyOtp …
+// Kotlin data objects (ClearError, Logout) are Swift singletons: .shared
+//
 
 @MainActor
 final class AuthViewModelWrapper: ObservableObject {
@@ -19,10 +24,10 @@ final class AuthViewModelWrapper: ObservableObject {
     @Published var state: AuthUiState
 
     init() {
-        // Resolve AuthViewModel from the Koin container.
-        // KoinKt.get() is the SKIE-generated Swift entry point for koin-core's `get<T>()`.
-        // Do NOT use objCClass: variant — it is not part of the public koin-core iOS API.
-        let vm = KoinKt.get() as AuthViewModel
+        // Resolved via the typed helper in KoinIOS.kt — KoinIOSKt.getAuthViewModel().
+        // This avoids the need for a generic get<T>() call, which is not expressible
+        // from Swift without a concrete overload.
+        let vm = KoinIOSKt.getAuthViewModel()
         self.viewModel = vm
         self.state = vm.state.value
     }
@@ -36,10 +41,11 @@ final class AuthViewModelWrapper: ObservableObject {
         }
     }
 
-    // ── Convenience event dispatcher ──────────────────────────────────────────
+    // ── Convenience event dispatchers ─────────────────────────────────────────
+    // AuthEvent is a sealed interface → SKIE exposes each case as its own class.
 
     func register(fullName: String, email: String, phone: String, password: String) {
-        viewModel.onEvent(event: AuthEvent.Register(
+        viewModel.onEvent(event: AuthEventRegister(
             fullName: fullName,
             email: email,
             phone: phone,
@@ -48,18 +54,25 @@ final class AuthViewModelWrapper: ObservableObject {
     }
 
     func login(email: String, password: String) {
-        viewModel.onEvent(event: AuthEvent.Login(email: email, password: password))
+        viewModel.onEvent(event: AuthEventLogin(email: email, password: password))
     }
 
     func sendOtp(phone: String) {
-        viewModel.onEvent(event: AuthEvent.SendOtp(phone: phone))
+        viewModel.onEvent(event: AuthEventSendOtp(phone: phone))
     }
 
     func verifyOtp(phone: String, code: String) {
-        viewModel.onEvent(event: AuthEvent.VerifyOtp(phone: phone, code: code))
+        viewModel.onEvent(event: AuthEventVerifyOtp(phone: phone, code: code))
     }
 
     func clearError() {
-        viewModel.onEvent(event: AuthEvent.ClearError())
+        // data object ClearError → Kotlin singleton → Swift .shared
+        viewModel.onEvent(event: AuthEventClearError.shared)
+    }
+
+    func logout() {
+        // data object Logout → Kotlin singleton → Swift .shared
+        viewModel.onEvent(event: AuthEventLogout.shared)
     }
 }
+

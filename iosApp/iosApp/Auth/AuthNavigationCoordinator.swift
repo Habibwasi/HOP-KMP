@@ -4,6 +4,7 @@ import Shared
 // ── Auth navigation destination ───────────────────────────────────────────────
 
 enum AuthDestination: Hashable {
+    case onboarding
     case splash
     case signUp
     case login
@@ -27,11 +28,11 @@ struct AuthNavigationCoordinator: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            SplashView(
+            OnboardingView(
                 onNavigateToSignUp: {
                     path.append(AuthDestination.signUp)
                 },
-                onNavigateToHome: {
+                onNavigateToLogin: {
                     path.append(AuthDestination.login)
                 }
             )
@@ -47,6 +48,12 @@ struct AuthNavigationCoordinator: View {
     @ViewBuilder
     private func destinationView(for destination: AuthDestination) -> some View {
         switch destination {
+        case .onboarding:
+            OnboardingView(
+                onNavigateToSignUp: { path.append(AuthDestination.signUp) },
+                onNavigateToLogin:  { path.append(AuthDestination.login) }
+            )
+
         case .signUp:
             SignUpView(
                 onNavigateToOtpVerification: { phone in
@@ -82,9 +89,10 @@ struct AuthNavigationCoordinator: View {
             )
 
         case .splash:
-            SplashView(
+            // Legacy — kept for backwards compat; root now uses OnboardingView.
+            OnboardingView(
                 onNavigateToSignUp: { path.append(AuthDestination.signUp) },
-                onNavigateToHome:   { path.append(AuthDestination.login) }
+                onNavigateToLogin:  { path.append(AuthDestination.login) }
             )
         }
     }
