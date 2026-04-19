@@ -89,8 +89,8 @@ struct SignUpView: View {
                         text: $password,
                         isSecure: !showPassword,
                         isEnabled: !wrapper.state.isLoading,
-                        trailingAction: { showPassword.toggle() },
                         trailingLabel: showPassword ? "Hide" : "Show",
+                        trailingAction: { showPassword.toggle() },
                         submitLabel: .done
                     )
 
