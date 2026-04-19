@@ -179,6 +179,33 @@ SKIE automatically converts KMP types to Swift-native equivalents:
 - `suspend fun` → Swift `async` function
 - Sealed classes → Swift enums with exhaustive switch
 
+**SKIE sealed interface/class naming rule (critical):**
+SKIE flattens Kotlin nested sealed interface subtypes into **top-level Swift classes** — it does NOT preserve dot-notation nesting. The Swift name is formed by concatenating the parent and subtype names in PascalCase.
+
+| Kotlin | Swift (SKIE) |
+|---|---|
+| `AuthEffect.NavigateToHome` | `AuthEffectNavigateToHome` |
+| `AuthEffect.ShowSnackbar` | `AuthEffectShowSnackbar` |
+| `AuthEffect.SessionExpired` | `AuthEffectSessionExpired` |
+| `AuthEffect.NavigateToOtpVerification` | `AuthEffectNavigateToOtpVerification` |
+| `AuthEvent.Register` | `AuthEventRegister` |
+| `AuthEvent.Login` | `AuthEventLogin` |
+| `AuthEvent.ClearError` (data object) | `AuthEventClearError.shared` |
+| `AuthEvent.Logout` (data object) | `AuthEventLogout.shared` |
+
+Always use the flattened top-level names in Swift `switch` pattern matching:
+```swift
+// ✅ Correct
+case is AuthEffectNavigateToHome:
+case let snack as AuthEffectShowSnackbar:
+
+// ❌ Wrong — will not compile
+case is AuthEffect.NavigateToHome:
+case let snack as AuthEffect.ShowSnackbar:
+```
+
+Kotlin `data object` subtypes are exposed as Swift singletons — always access via `.shared`.
+
 **Canonical iOS ViewModel wrapper pattern:**
 ```swift
 // Use @StateObject — NEVER @ObservedObject
@@ -466,6 +493,8 @@ AD-04 Apply Ban · AD-05 Trip & Revenue Export
 - MitID button on ON-02 is visible but disabled — shows "Coming soon" snackbar on tap
 - WCAG AA contrast on all text (4.5:1 minimum)
 - Bottom safe areas: `navigationBarsPadding()` on Android, `ignoresSafeArea` on iOS
+- **iOS TabView page-style layout rule:** Never use `.safeAreaInset(edge: .bottom)` to float chrome over a `TabView` with `.tabViewStyle(.page(...))`. The TabView renders each page as a full-screen view and ignores the inset's safe area, causing text/content to underlap the chrome. **Correct pattern:** place the `TabView` and bottom chrome in a `VStack` flow so they are structurally separated and can never overlap. Apply `.ignoresSafeArea(.all, edges: .top)` (top only) to extend slides under the status bar while keeping the bottom boundary in the natural layout flow. Use a thin `.overlay(alignment: .bottom)` gradient on the `TabView` for visual blending only (`.allowsHitTesting(false)`).
+- **iOS `.ignoresSafeArea()` scope rule:** Always specify edges explicitly — `.ignoresSafeArea(.all, edges: .top)` not `.ignoresSafeArea()`. The unscoped form ignores every safe area including ones created by `.safeAreaInset`, `.toolbar`, and system chrome, which causes content to underlap interactive elements.
 - All spacing multiples of 4dp
 - Error clearing: always call `AuthEvent.ClearError` after showing an error snackbar
 - Back stack: use `popUpTo(0) { inclusive = true }` when navigating to home after login
@@ -543,6 +572,9 @@ Do not suggest microservices.
 - Do not implement MitID in MVP
 - Do not use `androidx.lifecycle.ViewModel` — use `org.jetbrains.androidx.lifecycle.ViewModel`
 - Do not use `@ObservedObject` for ViewModel wrappers in SwiftUI — use `@StateObject`
+- Do not use dot-notation for SKIE sealed subtypes in Swift (e.g. `AuthEffect.NavigateToHome`) — use the flattened top-level name (`AuthEffectNavigateToHome`); dot-notation will not compile
+- Do not use unscoped `.ignoresSafeArea()` in iOS — always specify edges (e.g. `.ignoresSafeArea(.all, edges: .top)`); the unscoped form ignores all safe areas including `.safeAreaInset` chrome
+- Do not float bottom chrome over a `TabView(.page)` using `.safeAreaInset` — use a `VStack` flow instead (see Key UI Rules)
 - Do not store monetary amounts as Float or String — always Int in øre
 - Do not use `phone.orEmpty()` — phone is nullable, pass it through as-is
 - Do not hard-delete User, Trip, or Booking records — soft delete only (deleted_at)
