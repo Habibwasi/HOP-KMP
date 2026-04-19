@@ -139,6 +139,7 @@ class AuthViewModel(
     }
 
     private fun verifyOtp(phone: String, code: String) {
+        if (_state.value.isLoading) return  // idempotency guard — blocks double-fire from auto-submit + button tap
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.verifyOtp(phone, code)) {

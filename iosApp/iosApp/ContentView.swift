@@ -1,38 +1,36 @@
 import SwiftUI
 import Shared
 
-struct ContentView: View {
-    @State private var showContent = false
-    
-    private func greet() -> String {
-        "Hello, SwiftUI!"
-    }
-    
-    var body: some View {
-        VStack {
-            Button("Click me!") {
-                withAnimation {
-                    showContent = !showContent
-                }
-            }
+// ── App root ──────────────────────────────────────────────────────────────────
+//
+// Drives the top-level auth vs. main-app split.
+// Once `isAuthenticated` becomes true the auth coordinator is swapped out for
+// the main navigation stack (to be built in subsequent screens).
 
-            if showContent {
-                VStack(spacing: 16) {
-                    Image(systemName: "swift")
-                        .font(.system(size: 200))
-                        .foregroundColor(.accentColor)
-                    Text("SwiftUI: \(greet())")
+struct ContentView: View {
+
+    @State private var isAuthenticated = false
+
+    var body: some View {
+        Group {
+            if isAuthenticated {
+                // Placeholder: replace with MainNavigationCoordinator when built
+                Text("Home — coming soon")
+                    .foregroundColor(Color.hopTextPrimary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.hopSurface.ignoresSafeArea())
+            } else {
+                AuthNavigationCoordinator {
+                    withAnimation(.easeInOut) {
+                        isAuthenticated = true
+                    }
                 }
-                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding()
+        .preferredColorScheme(.dark)
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+#Preview {
+    ContentView()
 }
