@@ -49,6 +49,7 @@ struct HopButton: View {
             .opacity((!isEnabled && !isLoading) ? 0.5 : 1.0)
         }
         .disabled(!isEnabled || isLoading)
+        .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: isEnabled)
         .animation(.easeInOut(duration: 0.15), value: isLoading)
     }
