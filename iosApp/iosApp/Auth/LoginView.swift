@@ -148,12 +148,12 @@ struct LoginView: View {
     @MainActor
     private func handleEffect(_ effect: AuthEffect) async {
         switch effect {
-        case is AuthEffect.NavigateToHome:
+        case is AuthEffectNavigateToHome:
             onNavigateToHome()
-        case let snack as AuthEffect.ShowSnackbar:
+        case let snack as AuthEffectShowSnackbar:
             withAnimation { toastMessage = snack.message }
             wrapper.clearError()
-        case is AuthEffect.SessionExpired:
+        case is AuthEffectSessionExpired:
             // Token refresh failed while on login screen — surface to user.
             withAnimation { toastMessage = "Session expired. Please log in again." }
             wrapper.clearError()

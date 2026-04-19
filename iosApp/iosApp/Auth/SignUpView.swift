@@ -182,12 +182,12 @@ struct SignUpView: View {
     @MainActor
     private func handleEffect(_ effect: AuthEffect) async {
         switch effect {
-        case let nav as AuthEffect.NavigateToOtpVerification:
+        case let nav as AuthEffectNavigateToOtpVerification:
             onNavigateToOtpVerification(nav.phone)
-        case let snack as AuthEffect.ShowSnackbar:
+        case let snack as AuthEffectShowSnackbar:
             withAnimation { toastMessage = snack.message }
             wrapper.clearError()
-        case is AuthEffect.SessionExpired:
+        case is AuthEffectSessionExpired:
             // Should not occur during fresh sign-up, but guard anyway.
             withAnimation { toastMessage = "Session expired. Please try again." }
             wrapper.clearError()
