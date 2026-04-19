@@ -23,7 +23,7 @@ struct HopNavigationStack: View {
     // Search params forwarded from PassengerHomeView.onSearch into SearchResultsView
     @State private var lastSearchOrigin: String = ""
     @State private var lastSearchDest:   String = ""
-    @State private var lastSearchDate:   Date   = .now
+    @State private var lastSearchDate:   String = ""
     @State private var lastSearchSeats:  Int    = 1
 
     private func navigate(_ route: HopRoute) { path.append(route) }
@@ -37,7 +37,7 @@ struct HopNavigationStack: View {
             } onSearch: { origin, dest, date, seats in
                 lastSearchOrigin = origin
                 lastSearchDest   = dest
-                lastSearchDate   = date
+                lastSearchDate   = date   // String ISO date from PassengerHomeView
                 lastSearchSeats  = seats
                 path.append(.searchResults)
             }
@@ -83,14 +83,14 @@ struct HopNavigationStack: View {
                 destination: lastSearchDest,
                 date: lastSearchDate,
                 seats: lastSearchSeats,
-                onTripSelected: { id in navigate(.tripDetail(id: id)) },
+                onTripTapped: { id in navigate(.tripDetail(id: id)) },
                 onBack: popBack
             )
 
         case .tripDetail(let id):
             TripDetailView(
                 tripId: id,
-                onBook: { navigate(.bookingConfirmation(tripId: id)) },
+                onBook: { tripId in navigate(.bookingConfirmation(tripId: tripId)) },
                 onBack: popBack
             )
 

@@ -22,6 +22,7 @@ struct PassengerHomeView: View {
     @State private var destination = ""
     @State private var date        = Date()
     @State private var seats       = 1
+    @State private var selectedRole: HopRole = .passenger
 
     private var canSearch: Bool {
         !origin.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -50,10 +51,10 @@ struct PassengerHomeView: View {
 
                         Spacer()
 
-                        RoleTogglePill(
-                            activeRole: .passenger,
-                            onSwitch: onSwitchToDriver
-                        )
+                        RoleTogglePill(selectedRole: $selectedRole)
+                        .onChange(of: selectedRole) { _, newRole in
+                            if newRole == .driver { onSwitchToDriver() }
+                        }
                     }
                     .padding(.horizontal, HopSpacing.md)
                     .padding(.top, HopSpacing.md)

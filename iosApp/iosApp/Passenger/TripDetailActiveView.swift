@@ -78,7 +78,7 @@ struct TripDetailActiveView: View {
             // Load the trip associated with this booking from the passenger trip list
             tripWrapper.loadMyTripsPassenger()
         }
-        .onChange(of: tripWrapper.state.trips) { trips in
+        .onChange(of: tripWrapper.state.trips) { _, trips in
             // Once loaded, find the trip whose bookingId matches
             if let match = trips.first(where: { $0.bookingId == bookingId }) {
                 tripWrapper.selectTrip(id: match.id)
@@ -126,7 +126,7 @@ struct TripDetailActiveView: View {
                 // ── Model B info ──────────────────────────────────────────────
                 if trip.model == .b, let threshold = trip.minThreshold {
                     sectionLabel("Confirmation")
-                    modelBInfo(booked: trip.seatsBooked, threshold: threshold)
+                    modelBInfo(booked: Int(trip.seatsBooked), threshold: Int(truncating: threshold))
                 }
 
                 Spacer().frame(height: HopSpacing.xxl + 52)

@@ -46,7 +46,7 @@ struct HopTabView: View {
 
     /// Called when the passenger submits a search so HopNavigationStack can
     /// capture params before pushing .searchResults.
-    var onSearch: (String, String, Date, Int) -> Void
+    var onSearch: (String, String, String, Int) -> Void
 
     @State private var selectedTab: HopTab = .home
 
@@ -56,7 +56,8 @@ struct HopTabView: View {
             // ── Home ──────────────────────────────────────────────────────────
             PassengerHomeView(
                 onSearch: onSearch,
-                onSwitchToDriver: { navigate(.postTripModelSelect) }
+                onSwitchToDriver: { navigate(.postTripModelSelect) },
+                navigate: navigate
             )
             .tabItem { Label(HopTab.home.label, systemImage: HopTab.home.icon) }
             .tag(HopTab.home)
@@ -148,11 +149,11 @@ private struct HopTabPlaceholder: View {
 // MARK: — Previews ─────────────────────────────────────────────────────────────
 
 #Preview("Default – Home selected") {
-    HopTabView(navigate: { _ in })
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in })
 }
 
 #Preview("My Trips selected") {
     // SwiftUI previews cannot drive @State from outside; the tab bar itself
     // controls selection.  Use the live preview to switch tabs interactively.
-    HopTabView(navigate: { _ in })
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in })
 }

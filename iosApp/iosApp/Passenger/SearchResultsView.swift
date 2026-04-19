@@ -119,7 +119,7 @@ struct SearchResultsView: View {
             wrapper.startObserving()
             wrapper.search(origin: origin, dest: destination, date: date, seats: seats)
         }
-        .onChange(of: wrapper.state.error) { error in
+        .onChange(of: wrapper.state.error) { _, error in
             if let error {
                 withAnimation { toastMessage = error }
                 wrapper.clearError()
@@ -282,7 +282,7 @@ private extension TripUiModel {
             destName:         trip.destName,
             departsAt:        HopDateFormatter.shortDisplay(iso: trip.departsAt),
             badgeStatus:      trip.model == .b ? .modelB : .modelA,
-            priceOerePerSeat: trip.priceOerePerSeat
+            priceOerePerSeat: Int(trip.priceOerePerSeat)
         )
     }
 }

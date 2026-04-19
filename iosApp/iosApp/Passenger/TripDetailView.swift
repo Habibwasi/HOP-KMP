@@ -65,7 +65,7 @@ struct TripDetailView: View {
             wrapper.startObserving { _ in /* effects for detail: handled below */ }
             wrapper.selectTrip(id: tripId)
         }
-        .onChange(of: wrapper.state.error) { error in
+        .onChange(of: wrapper.state.error) { _, error in
             if let error {
                 withAnimation { toastMessage = error }
             }
@@ -77,7 +77,7 @@ struct TripDetailView: View {
     @ViewBuilder
     private func tripContent(_ tripUi: TripUiModel) -> some View {
         let trip = tripUi.trip
-        let availableSeats = trip.seatsTotal - trip.seatsBooked
+        let availableSeats = Int(trip.seatsTotal) - Int(trip.seatsBooked)
 
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
@@ -95,7 +95,7 @@ struct TripDetailView: View {
 
                 // ── Model B threshold (if applicable) ─────────────────────────
                 if trip.model == .b, let threshold = trip.minThreshold {
-                    modelBThreshold(booked: trip.seatsBooked, threshold: threshold)
+                    modelBThreshold(booked: Int(trip.seatsBooked), threshold: Int(truncating: threshold))
                 }
 
                 // ── Price breakdown ───────────────────────────────────────────
@@ -114,7 +114,7 @@ struct TripDetailView: View {
         VStack(spacing: 0) {
             Divider().background(Color.hopSurfaceElevated)
             HopPrimaryButton(
-                title: "Book for DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat * selectedSeats) / 100.0))",
+                title: "Book for DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat) * selectedSeats) / 100.0))",
                 isEnabled: availableSeats > 0 && !tripUi.isBroken
             ) {
                 onBook(tripId)
@@ -251,10 +251,10 @@ struct TripDetailView: View {
         VStack(spacing: HopSpacing.sm) {
             PriceRow(label: "Per seat",      value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat) / 100.0))", isHighlighted: false)
             if selectedSeats > 1 {
-                PriceRow(label: "× \(selectedSeats) seats", value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat * selectedSeats) / 100.0))", isHighlighted: false)
+                PriceRow(label: "× \(selectedSeats) seats", value: "DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat) * selectedSeats) / 100.0))", isHighlighted: false)
             }
             Divider().background(Color.hopSurface)
-            PriceRow(label: "Total", value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat * selectedSeats) / 100.0))", isHighlighted: true)
+            PriceRow(label: "Total", value: "DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat) * selectedSeats) / 100.0))", isHighlighted: true)
         }
         .padding(HopSpacing.md)
         .background(Color.hopSurfaceElevated)
@@ -278,14 +278,14 @@ struct TripDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
-        .onChange(of: availableSeats(of: wrapper.state.selectedTrip)) { max in
+        .onChange(of: availableSeats(of: wrapper.state.selectedTrip)) { _, max in
             if selectedSeats > max { selectedSeats = max }
         }
     }
 
     private func availableSeats(of ui: TripUiModel?) -> Int {
         guard let ui else { return 1 }
-        return max(1, ui.trip.seatsTotal - ui.trip.seatsBooked)
+        return max(1, Int(ui.trip.seatsTotal) - Int(ui.trip.seatsBooked))
     }
 
     // MARK: — Helpers
