@@ -67,6 +67,17 @@ struct SearchResultsView: View {
     @StateObject private var wrapper = SearchTripsViewModelWrapper()
 
     @State private var toastMessage: String? = nil
+    @State private var activeFilters: Set<TripSortFilter> = []
+
+    // Client-side filtered trips
+    private var filteredTrips: [TripUiModel] {
+        var result = wrapper.state.trips
+        if activeFilters.contains(.modelA)    { result = result.filter { $0.trip.model == .a } }
+        if activeFilters.contains(.modelB)    { result = result.filter { $0.trip.model == .b } }
+        if activeFilters.contains(.earliest)  { result = result.sorted { $0.trip.departsAt < $1.trip.departsAt } }
+        if activeFilters.contains(.cheapest)  { result = result.sorted { $0.trip.priceOerePerSeat < $1.trip.priceOerePerSeat } }
+        return result
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -77,14 +88,17 @@ struct SearchResultsView: View {
                 // ── Search summary header ─────────────────────────────────────
                 searchSummaryHeader
 
+                // ── Filter chips ──────────────────────────────────────────────
+                filterBar
+
                 // ── Content ───────────────────────────────────────────────────
                 ZStack {
                     if wrapper.state.isLoading {
                         skeletonList
-                    } else if wrapper.state.trips.isEmpty {
+                    } else if filteredTrips.isEmpty {
                         emptyState
                     } else {
-                        resultsList
+                        filteredResultsList
                     }
                 }
                 .animation(.easeInOut(duration: 0.25), value: wrapper.state.isLoading)
@@ -129,6 +143,46 @@ struct SearchResultsView: View {
 
     // MARK: — Sub-views
 
+    private var filterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HopSpacing.sm) {
+                ForEach(TripSortFilter.allCases, id: \.self) { filter in
+                    FilterChip(
+                        label: filter.label,
+                        isActive: activeFilters.contains(filter)
+                    ) {
+                        if activeFilters.contains(filter) {
+                            activeFilters.remove(filter)
+                        } else {
+                            activeFilters.insert(filter)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.vertical, HopSpacing.sm)
+        }
+    }
+
+    private var filteredResultsList: some View {
+        ScrollView(showsIndicators: false) {
+            LazyVStack(spacing: HopSpacing.sm) {
+                ForEach(filteredTrips, id: \.id) { tripUi in
+                    TripCard(data: tripUi.toCardData()) {
+                        guard !tripUi.isBroken else { return }
+                        onTripTapped(tripUi.id)
+                    }
+                    .opacity(tripUi.isBroken ? 0.6 : 1.0)
+                    .disabled(tripUi.isBroken)
+                    .accessibilityHint(tripUi.isBroken ? "This trip is unavailable" : "Double-tap to view details")
+                }
+            }
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.top, HopSpacing.md)
+            .padding(.bottom, HopSpacing.xxl)
+        }
+    }
+
     private var searchSummaryHeader: some View {
         VStack(alignment: .leading, spacing: HopSpacing.xs) {
             HStack(spacing: HopSpacing.xs) {
@@ -155,25 +209,6 @@ struct SearchResultsView: View {
         .padding(.horizontal, HopSpacing.md)
         .padding(.vertical, HopSpacing.md)
         .background(Color.hopSurfaceElevated)
-    }
-
-    private var resultsList: some View {
-        ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: HopSpacing.sm) {
-                ForEach(wrapper.state.trips, id: \.id) { tripUi in
-                    TripCard(data: tripUi.toCardData()) {
-                        guard !tripUi.isBroken else { return }
-                        onTripTapped(tripUi.id)
-                    }
-                    .opacity(tripUi.isBroken ? 0.6 : 1.0)
-                    .disabled(tripUi.isBroken)
-                    .accessibilityHint(tripUi.isBroken ? "This trip is unavailable" : "Double-tap to view details")
-                }
-            }
-            .padding(.horizontal, HopSpacing.md)
-            .padding(.top, HopSpacing.md)
-            .padding(.bottom, HopSpacing.xxl)
-        }
     }
 
     private var emptyState: some View {
@@ -266,6 +301,44 @@ private extension View {
                 .clipped()
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+// MARK: — TripSortFilter
+
+private enum TripSortFilter: CaseIterable, Hashable {
+    case earliest, cheapest, modelA, modelB
+
+    var label: String {
+        switch self {
+        case .earliest: return "Earliest"
+        case .cheapest: return "Cheapest"
+        case .modelA:   return "Model A"
+        case .modelB:   return "Model B"
+        }
+    }
+}
+
+// MARK: — FilterChip
+
+private struct FilterChip: View {
+    let label: String
+    let isActive: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(label)
+                .font(HopFont.labelSmall())
+                .fontWeight(isActive ? .semibold : .regular)
+                .foregroundColor(isActive ? Color(hex: 0x1A1A1A) : Color.hopTextSecondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(isActive ? Color.hopPrimaryLime : Color.clear)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(isActive ? Color.hopPrimaryLime : Color.hopTextSecondary, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }
 
