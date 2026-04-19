@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ requires explicit POST_NOTIFICATIONS permission -->
@@ -31,6 +32,14 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- Disable Sentry's auto-init ContentProvider so we can guard init
+             in HopApplication.onCreate() and avoid a crash when SENTRY_DSN
+             is not configured (e.g. local dev builds). -->
+        <provider
+            android:name="io.sentry.android.core.SentryInitProvider"
+            android:authorities="${applicationId}.SentryInitProvider"
+            tools:node="remove" />
     </application>
 
 </manifest>

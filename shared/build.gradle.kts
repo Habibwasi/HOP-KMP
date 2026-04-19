@@ -42,6 +42,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.android)
             implementation(libs.socket.io.client)
+            implementation(libs.androidx.security.crypto)
+            implementation(libs.koin.android)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
