@@ -59,68 +59,6 @@ struct HopGhostButton: View {
     }
 }
 
-// MARK: - HopTextField
-
-struct HopTextField: View {
-    let label: String
-    let placeholder: String
-    @Binding var text: String
-    var keyboardType: UIKeyboardType = .default
-    var isSecure: Bool = false
-    var isEnabled: Bool = true
-    var trailingAction: (() -> Void)? = nil
-    var trailingLabel: String? = nil
-    var submitLabel: SubmitLabel = .next
-
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: HopSpacing.xxs) {
-            Text(label)
-                .font(HopFont.labelSmall())
-                .foregroundColor(Color.hopTextSecondary)
-
-            HStack(spacing: 0) {
-                Group {
-                    if isSecure {
-                        SecureField(placeholder, text: $text)
-                    } else {
-                        TextField(placeholder, text: $text)
-                            .keyboardType(keyboardType)
-                    }
-                }
-                .font(HopFont.bodyMedium())
-                .foregroundColor(Color.hopTextPrimary)
-                .tint(Color.hopPrimaryLime)
-                .focused($isFocused)
-                .disabled(!isEnabled)
-                .submitLabel(submitLabel)
-                .accentColor(Color.hopPrimaryLime)
-
-                if let trailingLabel = trailingLabel, let trailingAction = trailingAction {
-                    Button(action: trailingAction) {
-                        Text(trailingLabel)
-                            .font(HopFont.labelSmall())
-                            .foregroundColor(Color.hopPrimaryLime)
-                            .padding(.leading, HopSpacing.xs)
-                    }
-                }
-            }
-            .padding(.horizontal, HopSpacing.md)
-            .frame(height: 52)
-            .background(Color.hopSurfaceElevated)
-            .cornerRadius(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(
-                        isFocused ? Color.hopPrimaryLime : Color.clear,
-                        lineWidth: 1.5
-                    )
-            )
-        }
-    }
-}
-
 // MARK: - HopSnackbar
 
 struct HopToast: View {
