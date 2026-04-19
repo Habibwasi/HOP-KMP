@@ -1,0 +1,191 @@
+import SwiftUI
+import Shared
+
+// MARK: — HopNavigationStack ──────────────────────────────────────────────────
+
+/// Authenticated app root.
+///
+/// `HopTabView` sits at the base of the stack.  Detail screens are pushed on
+/// top via `navigationDestination(for: HopRoute.self)`, hiding the tab bar for
+/// focused flows (trip detail, booking, rating, etc.).
+///
+/// The tab bar re-appears automatically when the user pops back to the root.
+///
+/// **How to navigate from a screen:**
+/// ```swift
+/// // Inside any view that received `navigate`:
+/// navigate(.tripDetail(id: trip.id))
+/// ```
+struct HopNavigationStack: View {
+
+    @State private var path: [HopRoute] = []
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            HopTabView { route in
+                path.append(route)
+            }
+            .navigationDestination(for: HopRoute.self) { route in
+                destinationView(for: route)
+                    .toolbarBackground(Color.hopSurface, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+            }
+        }
+    }
+
+    // MARK: — Destination routing ─────────────────────────────────────────────
+
+    /// Returns the SwiftUI view for each `HopRoute`.
+    ///
+    /// Screens not yet implemented render `HopUnbuiltScreen` so the nav graph
+    /// compiles end-to-end today.  Replace each `HopUnbuiltScreen` call with
+    /// the real screen view as screens are built.
+    @ViewBuilder
+    private func destinationView(for route: HopRoute) -> some View {
+        switch route {
+
+        // ── Onboarding (post-auth pushes are unexpected; guard for safety) ──
+        case .onboarding:
+            HopUnbuiltScreen(route: "ON-01 Onboarding")
+        case .signUp:
+            HopUnbuiltScreen(route: "ON-02 Sign Up")
+        case .login:
+            HopUnbuiltScreen(route: "ON-03 Log In")
+        case .otpVerification(let phone):
+            HopUnbuiltScreen(route: "ON-04 OTP Verification (\(phone))")
+        case .forgotPassword:
+            HopUnbuiltScreen(route: "ON-03b Forgot Password")
+
+        // ── Shared Home (tab root — should not be pushed directly) ──────────
+        case .home:
+            HopUnbuiltScreen(route: "SH-01 Home")
+
+        // ── Passenger ────────────────────────────────────────────────────────
+        case .searchResults:
+            HopUnbuiltScreen(route: "PA-02 Search Results")
+
+        case .tripDetail(let id):
+            HopUnbuiltScreen(route: "PA-03 Trip Detail — \(id)")
+
+        case .bookingConfirmation(let tripId):
+            HopUnbuiltScreen(route: "PA-04 Booking Confirmation — \(tripId)")
+
+        case .mobilePayHandoff(let bookingId):
+            HopUnbuiltScreen(route: "PA-05 MobilePay Handoff — \(bookingId)")
+
+        case .bookingSuccess(let bookingId):
+            HopUnbuiltScreen(route: "PA-06 Booking Success — \(bookingId)")
+
+        case .myTripsPassenger:
+            HopUnbuiltScreen(route: "PA-07 My Trips (Passenger)")
+
+        case .tripDetailActive(let bookingId):
+            HopUnbuiltScreen(route: "PA-08 Trip Detail Active — \(bookingId)")
+
+        case .rateDriver(let bookingId, let driverName, _):
+            HopUnbuiltScreen(route: "PA-09 Rate Driver — \(driverName) / \(bookingId)")
+
+        case .cancellationConfirmation(let bookingId):
+            HopUnbuiltScreen(route: "PA-10 Cancellation Confirmation — \(bookingId)")
+
+        // ── Driver ────────────────────────────────────────────────────────────
+        case .enableDriverStep1:
+            HopUnbuiltScreen(route: "DR-02 Car Details (Step 1)")
+
+        case .enableDriverStep2:
+            HopUnbuiltScreen(route: "DR-03 Licence Upload (Step 2)")
+
+        case .enableDriverStep3:
+            HopUnbuiltScreen(route: "DR-04 Review Pending (Step 3)")
+
+        case .postTripModelSelect:
+            HopUnbuiltScreen(route: "DR-05 Post Trip – Model Select")
+
+        case .postTripModelA:
+            HopUnbuiltScreen(route: "DR-06 Post Trip – Model A (Daily Commute)")
+
+        case .postTripModelB:
+            HopUnbuiltScreen(route: "DR-07 Post Trip – Model B (Long Distance)")
+
+        case .priceReview:
+            HopUnbuiltScreen(route: "DR-08 Price Review & Confirm")
+
+        case .myTripsDriver:
+            HopUnbuiltScreen(route: "DR-09 My Trips (Driver)")
+
+        case .tripDetailActiveDriver(let tripId):
+            HopUnbuiltScreen(route: "DR-10 Trip Detail Active (Driver) — \(tripId)")
+
+        case .markTripComplete(let tripId, let driverNetOere):
+            HopUnbuiltScreen(route: "DR-11 Mark Trip Complete — \(tripId), DKK \(driverNetOere / 100)")
+
+        case .ratePassenger(let bookingId, let passengerName, _):
+            HopUnbuiltScreen(route: "DR-12 Rate Passenger — \(passengerName) / \(bookingId)")
+
+        case .taxDashboard:
+            HopUnbuiltScreen(route: "DR-13 Tax Dashboard")
+
+        case .taxReportDownload:
+            HopUnbuiltScreen(route: "DR-14 Annual Tax Report Download")
+
+        // ── Shared ────────────────────────────────────────────────────────────
+        case .profile(let userId):
+            HopUnbuiltScreen(route: "SH-02 Profile — \(userId)")
+
+        case .otherProfile(let userId):
+            HopUnbuiltScreen(route: "SH-03 Other Profile — \(userId)")
+
+        case .chat(let bookingId):
+            HopUnbuiltScreen(route: "SH-04 Chat — \(bookingId)")
+
+        case .notifications:
+            HopUnbuiltScreen(route: "SH-05 Notifications")
+
+        case .settings:
+            HopUnbuiltScreen(route: "SH-06 Settings")
+        }
+    }
+}
+
+// MARK: — Unbuilt screen placeholder ─────────────────────────────────────────
+
+/// Full-screen placeholder for routes whose real views are not yet implemented.
+/// Replace each usage with the real `View` as screens are built.
+private struct HopUnbuiltScreen: View {
+    let route: String
+
+    var body: some View {
+        ZStack {
+            Color.hopSurface.ignoresSafeArea(.all, edges: .top)
+
+            VStack(spacing: HopSpacing.md) {
+                Image(systemName: "square.dashed")
+                    .font(.system(size: 48, weight: .light))
+                    .foregroundColor(Color.hopTextSecondary)
+
+                Text(route)
+                    .font(HopFont.bodyMedium())
+                    .foregroundColor(Color.hopTextSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, HopSpacing.lg)
+            }
+        }
+        .navigationTitle(route)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: — Previews ────────────────────────────────────────────────────────────
+
+#Preview("Authenticated – tab root") {
+    HopNavigationStack()
+}
+
+#Preview("Pushed detail screen") {
+    // Simulate a pushed route so we can preview the unbuilt placeholder.
+    NavigationStack {
+        HopUnbuiltScreen(route: "PA-03 Trip Detail — abc123")
+            .toolbarBackground(Color.hopSurface, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+    }
+}

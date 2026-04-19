@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.example.hop.network.ConnectivityObserver
 import com.example.hop.ui.components.NoInternetBanner
+import com.example.hop.ui.screens.auth.ForgotPasswordRoute
 import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.OtpVerificationRoute
@@ -101,8 +102,9 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.ForgotPassword> {
-            // TODO: Replace with ForgotPasswordScreen composable (ON-03b)
-            TodoScreen("Forgot Password")
+            ForgotPasswordRoute(
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.OtpVerification> { backStackEntry ->

@@ -459,7 +459,7 @@ Every screen must have `@Preview` composables (Android) or `#Preview` (iOS).
 Minimum 2 previews per screen: empty/default state + loading or filled state.
 
 ### Onboarding
-ON-01 Splash · ON-02 Sign Up · ON-03 Log In · ON-04 Phone OTP Verification
+ON-01 Onboarding · ON-02 Sign Up · ON-03 Log In · ON-04 Phone OTP Verification
 
 ### Passenger
 PA-01 Home · PA-02 Search Results · PA-03 Trip Detail · PA-04 Booking Confirmation ·

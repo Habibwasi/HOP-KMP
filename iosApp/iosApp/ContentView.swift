@@ -4,8 +4,9 @@ import Shared
 // ── App root ──────────────────────────────────────────────────────────────────
 //
 // Drives the top-level auth vs. main-app split.
-// Once `isAuthenticated` becomes true the auth coordinator is swapped out for
-// the main navigation stack (to be built in subsequent screens).
+// Start destination: OnboardingView (inside AuthNavigationCoordinator).
+// On NavigateToHome effect: `isAuthenticated` flips to true and the root is
+// replaced with HopNavigationStack (HopTabView + all screen destinations).
 
 struct ContentView: View {
 
@@ -14,11 +15,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if isAuthenticated {
-                // Placeholder: replace with MainNavigationCoordinator when built
-                Text("Home — coming soon")
-                    .foregroundColor(Color.hopTextPrimary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.hopSurface.ignoresSafeArea())
+                HopNavigationStack()
             } else {
                 AuthNavigationCoordinator {
                     withAnimation(.easeInOut) {
