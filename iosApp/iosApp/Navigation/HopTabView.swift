@@ -44,25 +44,27 @@ struct HopTabView: View {
     /// Push a `HopRoute` onto the enclosing `HopNavigationStack` path.
     var navigate: (HopRoute) -> Void
 
+    /// Called when the passenger submits a search so HopNavigationStack can
+    /// capture params before pushing .searchResults.
+    var onSearch: (String, String, Date, Int) -> Void
+
     @State private var selectedTab: HopTab = .home
 
     var body: some View {
         TabView(selection: $selectedTab) {
 
             // ── Home ──────────────────────────────────────────────────────────
-            HopTabPlaceholder(
-                title: "Home",
-                subtitle: "PA-01 / DR-01 / SH-01",
-                navigate: navigate
+            PassengerHomeView(
+                onSearch: onSearch,
+                onSwitchToDriver: { navigate(.postTripModelSelect) }
             )
             .tabItem { Label(HopTab.home.label, systemImage: HopTab.home.icon) }
             .tag(HopTab.home)
 
             // ── My Trips ─────────────────────────────────────────────────────
-            HopTabPlaceholder(
-                title: "My Trips",
-                subtitle: "PA-07 / DR-09",
-                navigate: navigate
+            MyTripsPassengerView(
+                onTripTapped: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
+                navigate:     navigate
             )
             .tabItem { Label(HopTab.myTrips.label, systemImage: HopTab.myTrips.icon) }
             .tag(HopTab.myTrips)

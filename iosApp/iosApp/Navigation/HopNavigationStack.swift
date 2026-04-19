@@ -20,10 +20,26 @@ struct HopNavigationStack: View {
 
     @State private var path: [HopRoute] = []
 
+    // Search params forwarded from PassengerHomeView.onSearch into SearchResultsView
+    @State private var lastSearchOrigin: String = ""
+    @State private var lastSearchDest:   String = ""
+    @State private var lastSearchDate:   Date   = .now
+    @State private var lastSearchSeats:  Int    = 1
+
+    private func navigate(_ route: HopRoute) { path.append(route) }
+    private func popBack() { if !path.isEmpty { path.removeLast() } }
+    private func goHome() { path.removeAll() }
+
     var body: some View {
         NavigationStack(path: $path) {
             HopTabView { route in
                 path.append(route)
+            } onSearch: { origin, dest, date, seats in
+                lastSearchOrigin = origin
+                lastSearchDest   = dest
+                lastSearchDate   = date
+                lastSearchSeats  = seats
+                path.append(.searchResults)
             }
             .navigationDestination(for: HopRoute.self) { route in
                 destinationView(for: route)
@@ -62,31 +78,77 @@ struct HopNavigationStack: View {
 
         // ── Passenger ────────────────────────────────────────────────────────
         case .searchResults:
-            HopUnbuiltScreen(route: "PA-02 Search Results")
+            SearchResultsView(
+                origin: lastSearchOrigin,
+                destination: lastSearchDest,
+                date: lastSearchDate,
+                seats: lastSearchSeats,
+                onTripSelected: { id in navigate(.tripDetail(id: id)) },
+                onBack: popBack
+            )
 
         case .tripDetail(let id):
-            HopUnbuiltScreen(route: "PA-03 Trip Detail — \(id)")
+            TripDetailView(
+                tripId: id,
+                onBook: { navigate(.bookingConfirmation(tripId: id)) },
+                onBack: popBack
+            )
 
         case .bookingConfirmation(let tripId):
-            HopUnbuiltScreen(route: "PA-04 Booking Confirmation — \(tripId)")
+            BookingConfirmationView(
+                tripId: tripId,
+                tripUi: nil,
+                seats: lastSearchSeats,
+                onPayWithMobilePay: { bookingId in
+                    navigate(.mobilePayHandoff(bookingId: bookingId))
+                },
+                onBack: popBack
+            )
 
         case .mobilePayHandoff(let bookingId):
-            HopUnbuiltScreen(route: "PA-05 MobilePay Handoff — \(bookingId)")
+            MobilePayHandoffView(
+                bookingId: bookingId,
+                redirectURL: "",
+                onSuccess: { bid in navigate(.bookingSuccess(bookingId: bid)) },
+                onBack: popBack
+            )
 
         case .bookingSuccess(let bookingId):
-            HopUnbuiltScreen(route: "PA-06 Booking Success — \(bookingId)")
+            BookingSuccessView(
+                bookingId: bookingId,
+                onViewMyTrips: { navigate(.myTripsPassenger) },
+                onGoHome: goHome
+            )
 
         case .myTripsPassenger:
-            HopUnbuiltScreen(route: "PA-07 My Trips (Passenger)")
+            MyTripsPassengerView(
+                onTripTapped: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
+                navigate: navigate
+            )
 
         case .tripDetailActive(let bookingId):
-            HopUnbuiltScreen(route: "PA-08 Trip Detail Active — \(bookingId)")
+            TripDetailActiveView(
+                bookingId: bookingId,
+                onMessageDriver: { bid in navigate(.chat(bookingId: bid)) },
+                onCancelBooking: { bid in navigate(.cancellationConfirmation(bookingId: bid)) },
+                onRateDriver:    { bid, name, initials in navigate(.rateDriver(bookingId: bid, driverName: name, driverInitials: initials)) },
+                onBack: popBack
+            )
 
-        case .rateDriver(let bookingId, let driverName, _):
-            HopUnbuiltScreen(route: "PA-09 Rate Driver — \(driverName) / \(bookingId)")
+        case .rateDriver(let bookingId, let driverName, let driverInitials):
+            RateDriverView(
+                bookingId:      bookingId,
+                driverName:     driverName,
+                driverInitials: driverInitials,
+                onSubmitted: { navigate(.myTripsPassenger) },
+                onBack: popBack
+            )
 
         case .cancellationConfirmation(let bookingId):
-            HopUnbuiltScreen(route: "PA-10 Cancellation Confirmation — \(bookingId)")
+            CancellationConfirmationView(
+                bookingId: bookingId,
+                onGoHome: goHome
+            )
 
         // ── Driver ────────────────────────────────────────────────────────────
         case .enableDriverStep1:
