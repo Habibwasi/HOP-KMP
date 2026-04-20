@@ -117,7 +117,7 @@ fun OtherProfileScreen(
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         topBar = {
             ProfileTopBar(
                 title = state.user?.fullName ?: "Profile",
@@ -170,7 +170,7 @@ fun OtherProfileScreen(
                     Text(
                         text = state.user?.fullName.orEmpty(),
                         style = MaterialTheme.typography.headlineSmall,
-                        color = HopColors.textPrimary,
+                        color = HopColors.authTextPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -184,7 +184,7 @@ fun OtherProfileScreen(
                         Icon(
                             Icons.Outlined.Email,
                             contentDescription = null,
-                            tint = HopColors.textSecondary,
+                            tint = HopColors.authTextSecondary,
                             modifier = Modifier.size(18.dp),
                         )
                     },
@@ -199,7 +199,7 @@ fun OtherProfileScreen(
                             Icon(
                                 Icons.Outlined.Phone,
                                 contentDescription = null,
-                                tint = HopColors.textSecondary,
+                                tint = HopColors.authTextSecondary,
                                 modifier = Modifier.size(18.dp),
                             )
                         },
@@ -245,7 +245,7 @@ fun OtherProfileScreen(
                     Text(
                         text = "No reviews yet",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = HopColors.textSecondary,
+                        color = HopColors.authTextSecondary,
                         modifier = Modifier.padding(horizontal = HopSpacing.md),
                     )
                 }
@@ -319,7 +319,7 @@ private fun ReadOnlyInfoRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             modifier = Modifier.weight(1f),
         )
         if (trailing != null) trailing()
@@ -362,7 +362,7 @@ private fun OtherRatingRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             modifier = Modifier.width(100.dp),
         )
         StarRating(
@@ -373,7 +373,7 @@ private fun OtherRatingRow(
         Text(
             text = "%.1f".format(rating),
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -391,7 +391,7 @@ private fun ReadOnlyCarDetails(
             .fillMaxWidth()
             .padding(horizontal = HopSpacing.md)
             .clip(RoundedCornerShape(12.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
     ) {
@@ -399,14 +399,14 @@ private fun ReadOnlyCarDetails(
             Icon(
                 Icons.Outlined.DirectionsCar,
                 contentDescription = null,
-                tint = HopColors.textSecondary,
+                tint = HopColors.authTextSecondary,
                 modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
                 text = "${carDetails.make} ${carDetails.model} (${carDetails.year})",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 fontWeight = FontWeight.Medium,
             )
         }
@@ -426,13 +426,13 @@ private fun ReadOnlyCarDetailRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             modifier = Modifier.width(80.dp),
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
     }
 }
@@ -449,11 +449,11 @@ private fun ReportUserDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.authInputSurface,
         title = {
             Text(
                 text = "Report user",
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 style = MaterialTheme.typography.titleMedium,
             )
         },
@@ -461,7 +461,7 @@ private fun ReportUserDialog(
             Column {
                 Text(
                     text = "Describe the issue. Our team will review your report within 24 hours.",
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
                 Spacer(modifier = Modifier.height(HopSpacing.md))
@@ -475,21 +475,21 @@ private fun ReportUserDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = HopColors.primaryLime,
-                        unfocusedBorderColor = HopColors.textSecondary,
+                        unfocusedBorderColor = HopColors.authTextSecondary,
                         focusedLabelColor = HopColors.primaryLime,
-                        unfocusedLabelColor = HopColors.textSecondary,
-                        focusedTextColor = HopColors.textPrimary,
-                        unfocusedTextColor = HopColors.textPrimary,
+                        unfocusedLabelColor = HopColors.authTextSecondary,
+                        focusedTextColor = HopColors.authTextPrimary,
+                        unfocusedTextColor = HopColors.authTextPrimary,
                         cursorColor = HopColors.primaryLime,
-                        focusedContainerColor = HopColors.surface,
-                        unfocusedContainerColor = HopColors.surface,
+                        focusedcontainerColor = HopColors.background,
+                        unfocusedcontainerColor = HopColors.background,
                     ),
                 )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isSubmitting) {
-                Text("Cancel", color = HopColors.textSecondary)
+                Text("Cancel", color = HopColors.authTextSecondary)
             }
         },
         confirmButton = {
@@ -513,7 +513,7 @@ private fun ReportUserDialog(
 
 // ── Previews ─────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun OtherProfileScreenPreview() {
     HopTheme {
@@ -550,7 +550,7 @@ private fun OtherProfileScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun OtherProfileReportDialogPreview() {
     HopTheme {

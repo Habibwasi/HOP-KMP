@@ -123,14 +123,14 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier.background(HopColors.surface),
-        containerColor = HopColors.surface,
+        modifier = modifier.background(HopColors.background),
+        containerColor = HopColors.background,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = "Settings",
-                        color = HopColors.textPrimary,
+                        color = HopColors.authTextPrimary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 18.sp,
                     )
@@ -145,12 +145,12 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = null,
-                            tint = HopColors.textPrimary,
+                            tint = HopColors.authTextPrimary,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = HopColors.surface,
+                    containerColor = HopColors.background,
                 ),
             )
         },
@@ -261,7 +261,7 @@ fun SettingsScreen(
             item {
                 Text(
                     text = "Version $appVersion",
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     fontSize = 12.sp,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -291,7 +291,7 @@ private fun SettingsSection(
     Column {
         Text(
             text = title.uppercase(),
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             letterSpacing = 0.8.sp,
@@ -301,7 +301,7 @@ private fun SettingsSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(HopColors.surfaceElevated),
+                .background(HopColors.authInputSurface),
         ) {
             content()
         }
@@ -327,19 +327,19 @@ private fun SettingsLinkRow(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = HopColors.textSecondary,
+            tint = HopColors.authTextSecondary,
             modifier = Modifier.size(20.dp),
         )
         Text(
             text = label,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontSize = 15.sp,
             modifier = Modifier.weight(1f),
         )
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
             contentDescription = null,
-            tint = HopColors.textSecondary,
+            tint = HopColors.authTextSecondary,
             modifier = Modifier.size(20.dp),
         )
     }
@@ -364,12 +364,12 @@ private fun SettingsToggleRow(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = HopColors.textSecondary,
+            tint = HopColors.authTextSecondary,
             modifier = Modifier.size(20.dp),
         )
         Text(
             text = label,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontSize = 15.sp,
             modifier = Modifier
                 .weight(1f)
@@ -379,11 +379,11 @@ private fun SettingsToggleRow(
             checked = checked,
             onCheckedChange = { onCheckedChange() },
             colors = SwitchDefaults.colors(
-                checkedThumbColor = HopColors.surface,
+                checkedThumbColor = HopColors.background,
                 checkedTrackColor = HopColors.primaryLime,
-                uncheckedThumbColor = HopColors.textSecondary,
-                uncheckedTrackColor = HopColors.surfaceElevated,
-                uncheckedBorderColor = HopColors.textSecondary,
+                uncheckedThumbColor = HopColors.authTextSecondary,
+                uncheckedTrackColor = HopColors.authInputSurface,
+                uncheckedBorderColor = HopColors.authTextSecondary,
             ),
         )
     }
@@ -393,7 +393,7 @@ private fun SettingsToggleRow(
 private fun SettingsDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = 52.dp),
-        color = HopColors.surface.copy(alpha = 0.6f),
+        color = HopColors.authInputBorder,
         thickness = 0.5.dp,
     )
 }
@@ -405,11 +405,11 @@ private fun LogoutConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.authInputSurface,
         title = {
             Text(
                 text = "Log out?",
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
             )
@@ -417,7 +417,7 @@ private fun LogoutConfirmDialog(
         text = {
             Text(
                 text = "You'll need to sign in again to use Hop.",
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 fontSize = 14.sp,
             )
         },
@@ -435,7 +435,7 @@ private fun LogoutConfirmDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = HopColors.textSecondary),
+                colors = ButtonDefaults.textButtonColors(contentColor = HopColors.authTextSecondary),
             ) {
                 Text(text = "Cancel")
             }
@@ -445,7 +445,7 @@ private fun LogoutConfirmDialog(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(name = "Settings — Default", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Settings — Default", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun SettingsScreenPreview() {
     HopTheme {
@@ -458,7 +458,7 @@ private fun SettingsScreenPreview() {
     }
 }
 
-@Preview(name = "Settings — Notifications off", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Settings — Notifications off", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun SettingsScreenNotificationsOffPreview() {
     HopTheme {
@@ -471,7 +471,7 @@ private fun SettingsScreenNotificationsOffPreview() {
     }
 }
 
-@Preview(name = "Settings — Logout dialog", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Settings — Logout dialog", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun SettingsScreenLogoutDialogPreview() {
     HopTheme {

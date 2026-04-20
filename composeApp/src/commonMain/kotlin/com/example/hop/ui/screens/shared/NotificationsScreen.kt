@@ -125,7 +125,7 @@ fun NotificationsScreen(
                 title = {
                     Text(
                         text = "Notifications",
-                        color = HopColors.textPrimary,
+                        color = HopColors.authTextPrimary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 18.sp,
                     )
@@ -140,7 +140,7 @@ fun NotificationsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = null,
-                            tint = HopColors.textPrimary,
+                            tint = HopColors.authTextPrimary,
                         )
                     }
                 },
@@ -210,7 +210,7 @@ private fun NotificationRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val rowBackground = if (notification.isRead) HopColors.background else HopColors.surfaceElevated
+    val rowBackground = if (notification.isRead) HopColors.background else HopColors.authInputSurface
 
     Row(
         modifier = modifier
@@ -235,7 +235,7 @@ private fun NotificationRow(
             ) {
                 Text(
                     text = notification.title,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                     fontSize = 14.sp,
                     fontWeight = if (notification.isRead) FontWeight.Normal else FontWeight.SemiBold,
                     maxLines = 1,
@@ -250,7 +250,7 @@ private fun NotificationRow(
 
             Text(
                 text = notification.body,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Normal,
                 maxLines = 2,
@@ -282,7 +282,7 @@ private fun NotificationIconChip(
         modifier = modifier
             .size(40.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(HopColors.surface),
+            .background(HopColors.background),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -301,8 +301,8 @@ private fun iconForType(type: NotificationType): Pair<ImageVector, Color> = when
     NotificationType.TRIP_REMINDER     -> Icons.Outlined.Timer to HopColors.warning
     NotificationType.NEW_RATING        -> Icons.Outlined.Star to HopColors.primaryLime
     NotificationType.THRESHOLD_MET     -> Icons.Outlined.TaskAlt to HopColors.primaryGreen
-    NotificationType.CHAT_MESSAGE      -> Icons.Outlined.Chat to HopColors.textSecondary
-    NotificationType.GENERAL           -> Icons.Outlined.NotificationImportant to HopColors.textSecondary
+    NotificationType.CHAT_MESSAGE      -> Icons.Outlined.Chat to HopColors.authTextSecondary
+    NotificationType.GENERAL           -> Icons.Outlined.NotificationImportant to HopColors.authTextSecondary
 }
 
 /**
@@ -323,7 +323,7 @@ private fun NotificationTimestamp(
 
     Text(
         text = display,
-        color = HopColors.textSecondary,
+        color = HopColors.authTextSecondary,
         fontSize = 11.sp,
         fontWeight = FontWeight.Normal,
         modifier = modifier,
@@ -346,7 +346,7 @@ private fun NotificationsEmptyState(
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .background(HopColors.surface),
+                .background(HopColors.background),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -361,7 +361,7 @@ private fun NotificationsEmptyState(
 
         Text(
             text = "You're all caught up",
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold,
         )
@@ -370,7 +370,7 @@ private fun NotificationsEmptyState(
 
         Text(
             text = "No new notifications right now. Explore upcoming rides and book your next trip.",
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -423,7 +423,7 @@ private fun NotificationsLoadingState(modifier: Modifier = Modifier) {
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun NotificationsScreenWithItemsPreview() {
     HopTheme {
@@ -486,7 +486,7 @@ private fun NotificationsScreenWithItemsPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun NotificationsEmptyStatePreview() {
     HopTheme {
@@ -498,7 +498,7 @@ private fun NotificationsEmptyStatePreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun NotificationsLoadingPreview() {
     HopTheme {

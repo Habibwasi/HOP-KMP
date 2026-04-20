@@ -104,7 +104,7 @@ fun HomeRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
@@ -164,7 +164,7 @@ fun HomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface),
+            .background(HopColors.background),
     ) {
         // ── Shared top bar ────────────────────────────────────────────────────
         HomeTopBar(
@@ -243,7 +243,7 @@ private fun HomeTopBar(
             Icon(
                 imageVector = Icons.Filled.Notifications,
                 contentDescription = "Notifications",
-                tint = HopColors.textSecondary,
+                tint = HopColors.authTextSecondary,
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -261,7 +261,7 @@ private fun HomeBottomNavBar(
 ) {
     NavigationBar(
         modifier = modifier,
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.authInputSurface,
         tonalElevation = 0.dp,
     ) {
         // Home — always selected on this screen
@@ -285,8 +285,8 @@ private fun HomeBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
 
@@ -311,8 +311,8 @@ private fun HomeBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
 
@@ -337,8 +337,8 @@ private fun HomeBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
 
@@ -363,8 +363,8 @@ private fun HomeBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
     }
@@ -372,7 +372,7 @@ private fun HomeBottomNavBar(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(name = "Home — Passenger only (no driver role)", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Home — Passenger only (no driver role)", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun HomeScreenPassengerOnlyPreview() {
     HopTheme {
@@ -395,7 +395,7 @@ private fun HomeScreenPassengerOnlyPreview() {
     }
 }
 
-@Preview(name = "Home — Driver role, passenger selected", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Home — Driver role, passenger selected", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun HomeScreenDriverRolePassengerPreview() {
     HopTheme {
@@ -418,7 +418,7 @@ private fun HomeScreenDriverRolePassengerPreview() {
     }
 }
 
-@Preview(name = "Home — Driver role, driver selected", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Home — Driver role, driver selected", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun HomeScreenDriverRoleDriverPreview() {
     HopTheme {

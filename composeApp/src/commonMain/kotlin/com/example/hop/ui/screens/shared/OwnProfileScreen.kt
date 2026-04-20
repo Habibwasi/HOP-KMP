@@ -132,7 +132,7 @@ fun OwnProfileScreen(
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         topBar = {
             ProfileTopBar(
                 title = "Profile",
@@ -190,7 +190,7 @@ fun OwnProfileScreen(
             item {
                 Spacer(modifier = Modifier.height(HopSpacing.sm))
                 InfoRow(
-                    icon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = HopColors.textSecondary, modifier = Modifier.size(18.dp)) },
+                    icon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = HopColors.authTextSecondary, modifier = Modifier.size(18.dp)) },
                     label = state.user?.email.orEmpty(),
                 )
                 Spacer(modifier = Modifier.height(HopSpacing.xs))
@@ -283,7 +283,7 @@ private fun AvatarEditSection(
                 Icon(
                     imageVector = Icons.Filled.CameraAlt,
                     contentDescription = null,
-                    tint = Color(0xFF1A1A1A),
+                    tint = HopColors.authTextPrimary,
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -309,7 +309,7 @@ private fun NameRow(
         Text(
             text = name,
             style = MaterialTheme.typography.headlineSmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.width(HopSpacing.sm))
@@ -357,14 +357,14 @@ private fun InlineNameEditor(
             keyboardActions = KeyboardActions(onDone = { onSave() }),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = HopColors.primaryLime,
-                unfocusedBorderColor = HopColors.textSecondary,
+                unfocusedBorderColor = HopColors.authTextSecondary,
                 focusedLabelColor = HopColors.primaryLime,
-                unfocusedLabelColor = HopColors.textSecondary,
-                focusedTextColor = HopColors.textPrimary,
-                unfocusedTextColor = HopColors.textPrimary,
+                unfocusedLabelColor = HopColors.authTextSecondary,
+                focusedTextColor = HopColors.authTextPrimary,
+                unfocusedTextColor = HopColors.authTextPrimary,
                 cursorColor = HopColors.primaryLime,
-                focusedContainerColor = HopColors.surfaceElevated,
-                unfocusedContainerColor = HopColors.surfaceElevated,
+                focusedContainerColor = HopColors.authInputSurface,
+                unfocusedContainerColor = HopColors.authInputSurface,
             ),
         )
         Spacer(modifier = Modifier.height(HopSpacing.sm))
@@ -373,7 +373,7 @@ private fun InlineNameEditor(
             horizontalArrangement = Arrangement.End,
         ) {
             TextButton(onClick = onCancel, enabled = !isSaving) {
-                Text("Cancel", color = HopColors.textSecondary)
+                Text("Cancel", color = HopColors.authTextSecondary)
             }
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             TextButton(onClick = onSave, enabled = !isSaving && draft.isNotBlank()) {
@@ -411,7 +411,7 @@ private fun InfoRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             modifier = Modifier.weight(1f),
         )
         if (trailing != null) trailing()
@@ -437,7 +437,7 @@ private fun PhoneRow(
             Icon(
                 Icons.Outlined.Phone,
                 contentDescription = null,
-                tint = HopColors.textSecondary,
+                tint = HopColors.authTextSecondary,
                 modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
@@ -454,7 +454,7 @@ private fun PhoneRow(
                 Icon(
                     Icons.Outlined.Phone,
                     contentDescription = null,
-                    tint = HopColors.textSecondary,
+                    tint = HopColors.authTextSecondary,
                     modifier = Modifier.size(18.dp),
                 )
             },
@@ -512,7 +512,7 @@ private fun RatingRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             modifier = Modifier.width(100.dp),
         )
         StarRating(
@@ -523,7 +523,7 @@ private fun RatingRow(
         Text(
             text = "%.1f".format(rating),
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -541,7 +541,7 @@ internal fun ReviewCard(
             .fillMaxWidth()
             .padding(horizontal = HopSpacing.md)
             .clip(RoundedCornerShape(12.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .padding(HopSpacing.md),
         verticalAlignment = Alignment.Top,
     ) {
@@ -555,7 +555,7 @@ internal fun ReviewCard(
                 Text(
                     text = review.raterName,
                     style = MaterialTheme.typography.labelMedium,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                 )
@@ -570,7 +570,7 @@ internal fun ReviewCard(
                 Text(
                     text = comment,
                     style = MaterialTheme.typography.bodySmall,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                 )
             }
         }
@@ -607,20 +607,20 @@ private fun CarDetailsSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(HopColors.surfaceElevated)
+                    .background(HopColors.authInputSurface)
                     .padding(HopSpacing.md),
             ) {
                 Icon(
                     Icons.Outlined.DirectionsCar,
                     contentDescription = null,
-                    tint = HopColors.textSecondary,
+                    tint = HopColors.authTextSecondary,
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(HopSpacing.sm))
                 Text(
                     text = "No car added yet",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                 )
             }
         } else {
@@ -628,7 +628,7 @@ private fun CarDetailsSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(HopColors.surfaceElevated)
+                    .background(HopColors.authInputSurface)
                     .padding(HopSpacing.md),
                 verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
             ) {
@@ -652,13 +652,13 @@ private fun CarDetailRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             modifier = Modifier.width(100.dp),
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontWeight = FontWeight.Medium,
         )
     }
@@ -676,7 +676,7 @@ internal fun ProfileTopBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .padding(horizontal = HopSpacing.xs, vertical = HopSpacing.sm),
     ) {
@@ -684,13 +684,13 @@ internal fun ProfileTopBar(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
             )
         }
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -704,7 +704,7 @@ internal fun SectionTitle(
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
-        color = HopColors.textPrimary,
+        color = HopColors.authTextPrimary,
         fontWeight = FontWeight.SemiBold,
         modifier = modifier.padding(horizontal = HopSpacing.md),
     )
@@ -714,7 +714,7 @@ internal fun SectionTitle(
 internal fun SectionDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         modifier = modifier.padding(horizontal = HopSpacing.md),
-        color = HopColors.surfaceElevated,
+        color = HopColors.authInputSurface,
         thickness = 1.dp,
     )
 }
@@ -724,7 +724,7 @@ private fun EmptyReviews(modifier: Modifier = Modifier) {
     Text(
         text = "No reviews yet",
         style = MaterialTheme.typography.bodyMedium,
-        color = HopColors.textSecondary,
+        color = HopColors.authTextSecondary,
         modifier = modifier.padding(horizontal = HopSpacing.md),
     )
 }
@@ -742,7 +742,7 @@ internal fun String.toInitials(): String {
 
 // ── Previews ─────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun OwnProfileScreenPreview() {
     HopTheme {
@@ -779,7 +779,7 @@ private fun OwnProfileScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun OwnProfileEditingNamePreview() {
     HopTheme {

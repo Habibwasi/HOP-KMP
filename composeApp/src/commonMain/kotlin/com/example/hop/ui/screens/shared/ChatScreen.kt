@@ -155,9 +155,9 @@ fun ChatScreen(
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface),
+            .background(HopColors.background),
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         topBar = {
             ChatTopBar(
                 connectionState = state.connectionState,
@@ -212,7 +212,7 @@ private fun ChatTopBar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .statusBarsPadding(),
     ) {
         Row(
@@ -228,7 +228,7 @@ private fun ChatTopBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                 )
             }
 
@@ -237,7 +237,7 @@ private fun ChatTopBar(
             Text(
                 text = "Chat",
                 style = MaterialTheme.typography.titleMedium,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 modifier = Modifier.weight(1f),
             )
 
@@ -247,7 +247,7 @@ private fun ChatTopBar(
         }
 
         HorizontalDivider(
-            color = HopColors.surfaceElevated,
+            color = HopColors.authInputSurface,
             thickness = 1.dp,
         )
     }
@@ -263,7 +263,7 @@ private fun ConnectionIndicator(
     val (dotColor, label) = when (connectionState) {
         is ConnectionState.Connected    -> HopColors.success to "Connected"
         is ConnectionState.Connecting   -> HopColors.warning to "Reconnecting…"
-        is ConnectionState.Disconnected -> HopColors.textSecondary to "Disconnected"
+        is ConnectionState.Disconnected -> HopColors.authTextSecondary to "Disconnected"
         is ConnectionState.Error        -> HopColors.error to "Error"
     }
 
@@ -316,9 +316,9 @@ private fun MessageBubble(
         )
     }
 
-    val bubbleColor = if (isOwn) HopColors.primaryLime else HopColors.surfaceElevated
-    val textColor   = if (isOwn) Color(0xFF1A1A1A) else HopColors.textPrimary
-    val metaColor   = if (isOwn) Color(0x991A1A1A) else HopColors.textSecondary
+    val bubbleColor = if (isOwn) HopColors.primaryLime else HopColors.authInputSurface
+    val textColor   = if (isOwn) HopColors.authTextPrimary else HopColors.authTextPrimary
+    val metaColor   = if (isOwn) Color(0x991A1A1A) else HopColors.authTextSecondary
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -332,7 +332,7 @@ private fun MessageBubble(
                 Text(
                     text = message.senderName,
                     style = MaterialTheme.typography.labelSmall,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     modifier = Modifier.padding(
                         start = HopSpacing.xs,
                         bottom = 2.dp,
@@ -396,11 +396,11 @@ private fun ChatInputRow(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .navigationBarsPadding()
             .imePadding(),
     ) {
-        HorizontalDivider(color = Color(0xFF2E2E2E), thickness = 1.dp)
+        HorizontalDivider(color = HopColors.authInputBorder, thickness = 1.dp)
 
         Row(
             modifier = Modifier
@@ -418,28 +418,28 @@ private fun ChatInputRow(
                 placeholder = {
                     Text(
                         text = if (isConnected) "Type a message…" else "Connecting…",
-                        color = HopColors.textSecondary,
+                        color = HopColors.authTextSecondary,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 },
                 maxLines = 4,
                 enabled = isConnected,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = HopColors.textPrimary),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = HopColors.authTextPrimary),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Send,
                 ),
                 keyboardActions = KeyboardActions(onSend = { onSend() }),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor   = Color(0xFF2E2E2E),
-                    unfocusedContainerColor = Color(0xFF2E2E2E),
+                    focusedContainerColor   = HopColors.authInputBorder,
+                    unfocusedContainerColor = HopColors.authInputBorder,
                     disabledContainerColor  = Color(0xFF252525),
                     focusedIndicatorColor   = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor  = Color.Transparent,
                     cursorColor             = HopColors.primaryLime,
-                    focusedTextColor        = HopColors.textPrimary,
-                    unfocusedTextColor      = HopColors.textPrimary,
+                    focusedTextColor        = HopColors.authTextPrimary,
+                    unfocusedTextColor      = HopColors.authTextPrimary,
                 ),
             )
 
@@ -451,14 +451,14 @@ private fun ChatInputRow(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(
-                        if (sendEnabled) HopColors.primaryLime else Color(0xFF2E2E2E),
+                        if (sendEnabled) HopColors.primaryLime else HopColors.authInputBorder,
                     )
                     .semantics { contentDescription = "Send message" },
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = null,
-                    tint = if (sendEnabled) Color(0xFF1A1A1A) else HopColors.textSecondary,
+                    tint = if (sendEnabled) HopColors.authTextPrimary else HopColors.authTextSecondary,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -477,7 +477,7 @@ private fun ChatEmptyHint(modifier: Modifier = Modifier) {
         Text(
             text = "No messages yet.\nSay hello! 👋",
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
     }
 }
@@ -511,7 +511,7 @@ private val previewMessages = listOf(
     ),
 )
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun ChatScreenPreview() {
     HopTheme {
@@ -529,7 +529,7 @@ private fun ChatScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun ChatScreenReconnectingPreview() {
     HopTheme {
@@ -547,7 +547,7 @@ private fun ChatScreenReconnectingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun ChatScreenEmptyPreview() {
     HopTheme {
