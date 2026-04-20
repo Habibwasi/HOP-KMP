@@ -92,7 +92,7 @@ fun LoginRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         },
@@ -146,7 +146,7 @@ fun LoginScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
@@ -158,13 +158,13 @@ fun LoginScreen(
         Text(
             text = "Welcome back",
             style = MaterialTheme.typography.headlineSmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
         Spacer(modifier = Modifier.height(HopSpacing.xs))
         Text(
             text = "Log in to your Hop account",
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
@@ -180,6 +180,7 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next,
             ),
+            lightSurface = true,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -198,6 +199,7 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
             ),
+            lightSurface = true,
             trailingIcon = {
                 TextButton(
                     onClick = { passwordVisible = !passwordVisible },
@@ -206,7 +208,7 @@ fun LoginScreen(
                     Text(
                         text = if (passwordVisible) "Hide" else "Show",
                         style = MaterialTheme.typography.labelMedium,
-                        color = HopColors.primaryLime,
+                        color = HopColors.authAccent,
                     )
                 }
             },
@@ -225,7 +227,7 @@ fun LoginScreen(
                 Text(
                     text = "Forgot password?",
                     style = MaterialTheme.typography.labelMedium,
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                     textDecoration = TextDecoration.Underline,
                 )
             }
@@ -282,7 +284,7 @@ fun LoginScreen(
             Text(
                 text = "Don't have an account? ",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
             TextButton(onClick = onNavigateToSignUp) {
                 Text(
@@ -290,7 +292,7 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                     textDecoration = TextDecoration.Underline,
                 )
             }

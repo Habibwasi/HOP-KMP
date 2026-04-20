@@ -106,7 +106,7 @@ fun ForgotPasswordScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         topBar = {
             TopAppBar(
                 title = {},
@@ -115,13 +115,13 @@ fun ForgotPasswordScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Back",
-                            tint = HopColors.textPrimary,
+                            tint = HopColors.authTextPrimary,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor      = HopColors.surface,
-                    scrolledContainerColor = HopColors.surface,
+                    containerColor            = HopColors.background,
+                    scrolledContainerColor    = HopColors.background,
                 ),
             )
         },
@@ -177,7 +177,7 @@ private fun FormContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
             .padding(horizontal = HopSpacing.lg),
@@ -190,14 +190,14 @@ private fun FormContent(
             modifier = Modifier
                 .size(64.dp)
                 .background(
-                    color = HopColors.surfaceElevated,
+                    color = HopColors.authInputSurface,
                     shape = RoundedCornerShape(16.dp),
                 ),
         ) {
             Icon(
                 imageVector = Icons.Outlined.LockReset,
                 contentDescription = null,
-                tint = HopColors.primaryLime,
+                tint = HopColors.authAccent,
                 modifier = Modifier.size(32.dp),
             )
         }
@@ -209,7 +209,7 @@ private fun FormContent(
             text = "Reset password",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
 
         Spacer(modifier = Modifier.height(HopSpacing.xs))
@@ -217,7 +217,7 @@ private fun FormContent(
         Text(
             text = "Enter the email address linked to your account and we'll send you a reset link.",
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
         )
 
@@ -234,6 +234,7 @@ private fun FormContent(
                 imeAction = ImeAction.Done,
             ),
             enabled = !isLoading,
+            lightSurface = true,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -260,7 +261,7 @@ private fun FormContent(
                 Text(
                     text = "Back to Log In",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     textDecoration = TextDecoration.Underline,
                 )
             }
@@ -282,7 +283,7 @@ private fun SuccessContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .padding(horizontal = HopSpacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -294,14 +295,14 @@ private fun SuccessContent(
             modifier = Modifier
                 .size(96.dp)
                 .background(
-                    color = HopColors.primaryLime.copy(alpha = 0.12f),
+                    color = HopColors.authAccent.copy(alpha = 0.10f),
                     shape = RoundedCornerShape(48.dp),
                 ),
         ) {
             Icon(
                 imageVector = Icons.Outlined.MarkEmailRead,
                 contentDescription = null,
-                tint = HopColors.primaryLime,
+                tint = HopColors.authAccent,
                 modifier = Modifier.size(48.dp),
             )
         }
@@ -312,7 +313,7 @@ private fun SuccessContent(
             text = "Check your email",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             textAlign = TextAlign.Center,
         )
 
@@ -321,7 +322,7 @@ private fun SuccessContent(
         Text(
             text = "We've sent a reset link to $email.\nCheck your inbox and follow the instructions.",
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             textAlign = TextAlign.Center,
             lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
         )
@@ -343,7 +344,7 @@ private fun SuccessContent(
             Text(
                 text = "Didn't receive it? Try again",
                 style = MaterialTheme.typography.bodySmall,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 textDecoration = TextDecoration.Underline,
             )
         }
@@ -379,7 +380,7 @@ private fun ForgotPasswordScreenSuccessPreview() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(HopColors.surface),
+                .background(HopColors.background),
         ) {
             SuccessContent(
                 email = "jane@example.com",

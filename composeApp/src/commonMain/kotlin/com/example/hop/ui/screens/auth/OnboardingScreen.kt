@@ -88,7 +88,7 @@ fun OnboardingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface),
+            .background(HopColors.background),
     ) {
 
         // ── Slides ───────────────────────────────────────────────────────
@@ -161,13 +161,13 @@ private fun OnboardingSlide(
             modifier = Modifier
                 .size(width = 280.dp, height = 200.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(HopColors.surfaceElevated),
+                .background(HopColors.authInputSurface),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = slide.illustrationDescription,
                 style = MaterialTheme.typography.bodySmall,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(HopSpacing.md),
             )
@@ -180,18 +180,18 @@ private fun OnboardingSlide(
         Text(
             text = slide.headline,
             style = MaterialTheme.typography.headlineLarge,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             textAlign = TextAlign.Center,
         )
 
         Spacer(modifier = Modifier.height(HopSpacing.sm))
 
-        // ── Sub-headline ─────────────────────────────────────────────────
+        // ── Sub-headline ──────────────────────────────────────────────
 
         Text(
             text = slide.subheadline,
             style = MaterialTheme.typography.bodyLarge,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             textAlign = TextAlign.Center,
         )
     }
@@ -225,7 +225,7 @@ private fun SlideDots(
                     .width(dotWidth)
                     .clip(CircleShape)
                     .background(
-                        color = if (isActive) HopColors.primaryLime else HopColors.textSecondary,
+                        color = if (isActive) HopColors.authAccent else HopColors.authTextSecondary.copy(alpha = 0.35f),
                     ),
             )
         }

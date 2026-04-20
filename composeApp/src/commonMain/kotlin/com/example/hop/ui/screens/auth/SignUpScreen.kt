@@ -99,7 +99,7 @@ fun SignUpRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         },
@@ -158,7 +158,7 @@ fun SignUpScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
@@ -170,13 +170,13 @@ fun SignUpScreen(
         Text(
             text = "Create your account",
             style = MaterialTheme.typography.headlineSmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
         Spacer(modifier = Modifier.height(HopSpacing.xs))
         Text(
             text = "Start your Hop journey",
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
@@ -192,6 +192,7 @@ fun SignUpScreen(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next,
             ),
+            lightSurface = true,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -208,6 +209,7 @@ fun SignUpScreen(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next,
             ),
+            lightSurface = true,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -224,6 +226,7 @@ fun SignUpScreen(
                 keyboardType = KeyboardType.Phone,
                 imeAction = ImeAction.Next,
             ),
+            lightSurface = true,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -242,6 +245,7 @@ fun SignUpScreen(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
             ),
+            lightSurface = true,
             trailingIcon = {
                 TextButton(
                     onClick = { passwordVisible = !passwordVisible },
@@ -250,7 +254,7 @@ fun SignUpScreen(
                     Text(
                         text = if (passwordVisible) "Hide" else "Show",
                         style = MaterialTheme.typography.labelMedium,
-                        color = HopColors.primaryLime,
+                        color = HopColors.authAccent,
                     )
                 }
             },
@@ -264,7 +268,7 @@ fun SignUpScreen(
             color = if (password.isNotEmpty() && !passwordValid)
                         HopColors.error
                     else
-                        HopColors.textSecondary,
+                        HopColors.authTextSecondary,
             modifier = Modifier.padding(top = HopSpacing.xs, start = HopSpacing.xs),
         )
 
@@ -330,7 +334,7 @@ fun SignUpScreen(
             Text(
                 text = "Already have an account? ",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
             TextButton(onClick = onNavigateToLogin) {
                 Text(
@@ -338,7 +342,7 @@ fun SignUpScreen(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                     textDecoration = TextDecoration.Underline,
                 )
             }
@@ -361,7 +365,7 @@ private fun TermsCheckboxRow(
         append("I agree to the ")
         withStyle(
             SpanStyle(
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 textDecoration = TextDecoration.Underline,
                 fontWeight = FontWeight.Medium,
             )
@@ -371,7 +375,7 @@ private fun TermsCheckboxRow(
         append(" and ")
         withStyle(
             SpanStyle(
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 textDecoration = TextDecoration.Underline,
                 fontWeight = FontWeight.Medium,
             )
@@ -389,17 +393,17 @@ private fun TermsCheckboxRow(
             onCheckedChange = onCheckedChange,
             enabled = enabled,
             colors = CheckboxDefaults.colors(
-                checkedColor = HopColors.primaryLime,
-                uncheckedColor = HopColors.textSecondary,
-                checkmarkColor = Color(0xFF1A1A1A),
-                disabledCheckedColor = HopColors.primaryLime.copy(alpha = 0.38f),
-                disabledUncheckedColor = HopColors.textSecondary.copy(alpha = 0.38f),
+                checkedColor = HopColors.authAccent,
+                uncheckedColor = HopColors.authTextSecondary,
+                checkmarkColor = HopColors.background,
+                disabledCheckedColor = HopColors.authAccent.copy(alpha = 0.38f),
+                disabledUncheckedColor = HopColors.authTextSecondary.copy(alpha = 0.38f),
             ),
         )
         Text(
             text = termsText,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (enabled) HopColors.textSecondary else HopColors.textSecondary.copy(alpha = 0.38f),
+            color = if (enabled) HopColors.authTextSecondary else HopColors.authTextSecondary.copy(alpha = 0.38f),
             modifier = Modifier
                 .padding(start = HopSpacing.xs)
                 .clickable(enabled = enabled, role = Role.Checkbox) {

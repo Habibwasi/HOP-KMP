@@ -51,6 +51,7 @@ fun HopTextField(
     errorMessage: String? = null,
     enabled: Boolean = true,
     singleLine: Boolean = true,
+    lightSurface: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -61,12 +62,22 @@ fun HopTextField(
 
     val hasError = errorMessage != null
 
+    // ── Colours vary by surface mode ─────────────────────────────────────────
+    val restingBorder  = if (lightSurface) HopColors.authInputBorder    else Color(0xFF3A3A3A)
+    val focusedBorder  = if (lightSurface) HopColors.authAccent          else HopColors.primaryLime
+    val disabledBorder = if (lightSurface) HopColors.authInputBorder.copy(alpha = 0.5f) else Color(0xFF3A3A3A)
+    val inputBg        = if (lightSurface) HopColors.authInputSurface    else HopColors.surfaceElevated
+    val labelColor     = if (lightSurface) HopColors.authTextSecondary   else HopColors.textSecondary
+    val inputTextColor = if (lightSurface) HopColors.authTextPrimary     else HopColors.textPrimary
+    val placeholderClr = if (lightSurface) HopColors.authTextSecondary   else HopColors.textSecondary
+    val cursorColor    = if (lightSurface) HopColors.authAccent          else HopColors.primaryLime
+
     val borderColor by animateColorAsState(
         targetValue = when {
-            !enabled   -> Color(0xFF3A3A3A)
+            !enabled   -> disabledBorder
             hasError   -> HopColors.error
-            isFocused  -> HopColors.primaryLime
-            else       -> Color(0xFF3A3A3A)   // subtle resting border
+            isFocused  -> focusedBorder
+            else       -> restingBorder
         },
         animationSpec = tween(durationMillis = 150),
         label = "borderColor",
@@ -81,7 +92,7 @@ fun HopTextField(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = if (enabled) HopColors.textSecondary else HopColors.textSecondary.copy(alpha = 0.38f),
+            color = if (enabled) labelColor else labelColor.copy(alpha = 0.38f),
             modifier = Modifier.padding(bottom = HopSpacing.xs),
         )
 
@@ -93,7 +104,7 @@ fun HopTextField(
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(shape)
-                .background(HopColors.surfaceElevated.copy(alpha = contentAlpha))
+                .background(inputBg.copy(alpha = contentAlpha))
                 .border(borderWidth, borderColor, shape),
             enabled = enabled,
             singleLine = singleLine,
@@ -101,9 +112,9 @@ fun HopTextField(
             keyboardActions = keyboardActions,
             visualTransformation = visualTransformation,
             interactionSource = interactionSource,
-            cursorBrush = SolidColor(HopColors.primaryLime),
+            cursorBrush = SolidColor(cursorColor),
             textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = HopColors.textPrimary.copy(alpha = contentAlpha),
+                color = inputTextColor.copy(alpha = contentAlpha),
             ),
             decorationBox = { innerTextField ->
                 Row(
@@ -119,7 +130,7 @@ fun HopTextField(
                             Text(
                                 text = placeholder,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = HopColors.textSecondary.copy(alpha = if (enabled) 0.6f else 0.38f),
+                                color = placeholderClr.copy(alpha = if (enabled) 0.6f else 0.38f),
                             )
                         }
                         innerTextField()

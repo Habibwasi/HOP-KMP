@@ -102,7 +102,7 @@ fun OtpVerificationRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         OtpVerificationScreen(
@@ -170,7 +170,7 @@ fun OtpVerificationScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = HopSpacing.md),
@@ -181,13 +181,13 @@ fun OtpVerificationScreen(
         Text(
             text = "Verify your number",
             style = MaterialTheme.typography.headlineSmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
         Spacer(modifier = Modifier.height(HopSpacing.xs))
         Text(
             text = "We sent a 6-digit code to $phone",
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
@@ -256,7 +256,7 @@ fun OtpVerificationScreen(
             Text(
                 text = "Resend code in 0:${countdown.toString().padStart(2, '0')}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
         } else {
             TextButton(
@@ -275,7 +275,7 @@ fun OtpVerificationScreen(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                 )
             }
         }
@@ -319,8 +319,8 @@ private fun OtpDigitBox(
     val borderColor = when {
         isError && value.isNotEmpty() -> HopColors.error
         isError                       -> HopColors.error.copy(alpha = 0.5f)
-        value.isNotEmpty()            -> HopColors.primaryLime
-        else                          -> HopColors.textSecondary.copy(alpha = 0.3f)
+        value.isNotEmpty()            -> HopColors.authAccent
+        else                          -> HopColors.authInputBorder
     }
 
     Box(
@@ -328,7 +328,7 @@ private fun OtpDigitBox(
         modifier = modifier
             .size(width = 44.dp, height = 56.dp)
             .background(
-                color = HopColors.surfaceElevated,
+                color = HopColors.authInputSurface,
                 shape = RoundedCornerShape(12.dp),
             )
             .border(
@@ -343,12 +343,12 @@ private fun OtpDigitBox(
             enabled = enabled,
             singleLine = true,
             textStyle = TextStyle(
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             ),
-            cursorBrush = SolidColor(HopColors.primaryLime),
+            cursorBrush = SolidColor(HopColors.authAccent),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             modifier = Modifier
                 .focusRequester(focusRequester)
