@@ -14,11 +14,9 @@ export declare class BookingsService {
             };
         } & {
             id: string;
-            seats: number;
-            status: import("@prisma/client").$Enums.TripStatus;
             createdAt: Date;
             updatedAt: Date;
-            driverId: string;
+            model: import("@prisma/client").$Enums.TripModel;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -26,14 +24,16 @@ export declare class BookingsService {
             destLng: number;
             destAddress: string;
             departureAt: Date;
-            pricePerSeat: number;
-            model: import("@prisma/client").$Enums.TripModel;
+            seats: number;
+            recurringDays: number[];
             minPassengers: number | null;
             thresholdDeadline: Date | null;
+            pricePerSeat: number;
+            status: import("@prisma/client").$Enums.TripStatus;
             distanceKm: number | null;
-            recurringDays: number[];
             isRecurring: boolean;
             isActive: boolean;
+            driverId: string;
         };
         passenger: {
             id: string;
@@ -42,42 +42,40 @@ export declare class BookingsService {
         };
     } & {
         id: string;
-        seats: number;
-        totalOere: number;
-        status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        seats: number;
+        status: import("@prisma/client").$Enums.BookingStatus;
         tripId: string;
         passengerId: string;
+        totalOere: number;
     }>;
     confirm(bookingId: string): Promise<{
         id: string;
-        seats: number;
-        totalOere: number;
-        status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        seats: number;
+        status: import("@prisma/client").$Enums.BookingStatus;
         tripId: string;
         passengerId: string;
+        totalOere: number;
     }>;
     cancel(bookingId: string, userId: string): Promise<{
         id: string;
-        seats: number;
-        totalOere: number;
-        status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        seats: number;
+        status: import("@prisma/client").$Enums.BookingStatus;
         tripId: string;
         passengerId: string;
+        totalOere: number;
     }>;
     findById(id: string): Promise<{
         trip: {
             id: string;
-            seats: number;
-            status: import("@prisma/client").$Enums.TripStatus;
             createdAt: Date;
             updatedAt: Date;
-            driverId: string;
+            model: import("@prisma/client").$Enums.TripModel;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -85,20 +83,22 @@ export declare class BookingsService {
             destLng: number;
             destAddress: string;
             departureAt: Date;
-            pricePerSeat: number;
-            model: import("@prisma/client").$Enums.TripModel;
+            seats: number;
+            recurringDays: number[];
             minPassengers: number | null;
             thresholdDeadline: Date | null;
+            pricePerSeat: number;
+            status: import("@prisma/client").$Enums.TripStatus;
             distanceKm: number | null;
-            recurringDays: number[];
             isRecurring: boolean;
             isActive: boolean;
+            driverId: string;
         };
         payment: {
             id: string;
-            status: import("@prisma/client").$Enums.PaymentStatus;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.PaymentStatus;
             bookingId: string;
             amountOere: number;
             provider: import("@prisma/client").$Enums.PaymentProvider;
@@ -113,13 +113,13 @@ export declare class BookingsService {
         };
     } & {
         id: string;
-        seats: number;
-        totalOere: number;
-        status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        seats: number;
+        status: import("@prisma/client").$Enums.BookingStatus;
         tripId: string;
         passengerId: string;
+        totalOere: number;
     }>;
     findByPassenger(passengerId: string): Promise<({
         trip: {
@@ -131,11 +131,9 @@ export declare class BookingsService {
             };
         } & {
             id: string;
-            seats: number;
-            status: import("@prisma/client").$Enums.TripStatus;
             createdAt: Date;
             updatedAt: Date;
-            driverId: string;
+            model: import("@prisma/client").$Enums.TripModel;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -143,20 +141,22 @@ export declare class BookingsService {
             destLng: number;
             destAddress: string;
             departureAt: Date;
-            pricePerSeat: number;
-            model: import("@prisma/client").$Enums.TripModel;
+            seats: number;
+            recurringDays: number[];
             minPassengers: number | null;
             thresholdDeadline: Date | null;
+            pricePerSeat: number;
+            status: import("@prisma/client").$Enums.TripStatus;
             distanceKm: number | null;
-            recurringDays: number[];
             isRecurring: boolean;
             isActive: boolean;
+            driverId: string;
         };
         payment: {
             id: string;
-            status: import("@prisma/client").$Enums.PaymentStatus;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.PaymentStatus;
             bookingId: string;
             amountOere: number;
             provider: import("@prisma/client").$Enums.PaymentProvider;
@@ -165,13 +165,13 @@ export declare class BookingsService {
         } | null;
     } & {
         id: string;
-        seats: number;
-        totalOere: number;
-        status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        seats: number;
+        status: import("@prisma/client").$Enums.BookingStatus;
         tripId: string;
         passengerId: string;
+        totalOere: number;
     })[]>;
     checkModelBThreshold(tripId: string): Promise<void>;
 }

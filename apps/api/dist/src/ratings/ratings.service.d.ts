@@ -5,11 +5,11 @@ export declare class RatingsService {
     constructor(prisma: PrismaService);
     create(raterId: string, dto: CreateRatingDto): Promise<{
         id: string;
+        createdAt: Date;
+        rateeId: string;
         score: number;
         comment: string | null;
-        createdAt: Date;
         raterId: string;
-        rateeId: string;
     }>;
     getUserRatings(userId: string): Promise<{
         userId: string;
@@ -24,11 +24,11 @@ export declare class RatingsService {
             };
         } & {
             id: string;
+            createdAt: Date;
+            rateeId: string;
             score: number;
             comment: string | null;
-            createdAt: Date;
             raterId: string;
-            rateeId: string;
         })[];
     }>;
 }

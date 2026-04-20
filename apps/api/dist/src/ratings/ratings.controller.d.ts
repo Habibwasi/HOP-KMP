@@ -5,11 +5,11 @@ export declare class RatingsController {
     constructor(ratings: RatingsService);
     create(req: any, dto: CreateRatingDto): Promise<{
         id: string;
+        createdAt: Date;
+        rateeId: string;
         score: number;
         comment: string | null;
-        createdAt: Date;
         raterId: string;
-        rateeId: string;
     }>;
     getUserRatings(userId: string): Promise<{
         userId: string;
@@ -24,11 +24,11 @@ export declare class RatingsController {
             };
         } & {
             id: string;
+            createdAt: Date;
+            rateeId: string;
             score: number;
             comment: string | null;
-            createdAt: Date;
             raterId: string;
-            rateeId: string;
         })[];
     }>;
 }
