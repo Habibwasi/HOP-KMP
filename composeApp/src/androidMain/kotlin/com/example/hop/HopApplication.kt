@@ -5,6 +5,7 @@ import io.sentry.android.core.SentryAndroid
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import com.example.hop.di.appModules
+import com.example.hop.di.devAppModules
 
 class HopApplication : Application() {
     override fun onCreate() {
@@ -18,7 +19,7 @@ class HopApplication : Application() {
         }
         startKoin {
             androidContext(this@HopApplication)
-            modules(appModules)
+            modules(if (BuildConfig.DEV_MODE) devAppModules else appModules)
         }
     }
 }

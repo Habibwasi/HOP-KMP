@@ -20,3 +20,16 @@ val appModules: List<Module> = listOf(
     connectivityModule,
     tokenStorageModule,
 )
+
+/**
+ * Dev-mode modules: replaces real repositories with in-memory fakes so the app
+ * can be tested without a running backend. Network, presentation, and connectivity
+ * modules are still loaded (network module is harmless — no calls are made).
+ */
+val devAppModules: List<Module> = listOf(
+    networkModule,
+    devRepositoryModule,
+    presentationModule,
+    connectivityModule,
+    tokenStorageModule,
+)
