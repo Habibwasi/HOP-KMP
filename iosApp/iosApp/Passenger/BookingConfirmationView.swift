@@ -11,7 +11,7 @@ struct BookingConfirmationView: View {
 
     let tripId:    String
     let tripUi:    TripUiModel?   // passed from PA-03 (may be nil on deep-link)
-    let seats:     Int
+    private let seats = 1
 
     var onPayWithMobilePay: (String) -> Void   // bookingId → PA-05
     var onBack:             () -> Void
@@ -192,19 +192,63 @@ struct BookingConfirmationView: View {
         .padding(.bottom, HopSpacing.xs)
     }
 
-    // MARK: — Payment method row
+    // MARK: — Model B notice card
 
-    private var paymentMethodRow: some View {
-        HStack(spacing: HopSpacing.sm) {
-            Image(systemName: "creditcard.fill")
-                .font(.system(size: 20))
-                .foregroundColor(Color.hopPrimaryGreen)
-            Text("Vipps MobilePay")
-                .font(HopFont.labelMedium()).fontWeight(.medium)
-                .foregroundColor(Color.hopTextPrimary)
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14))
+    private func modelBNoticeCard(booked: Int, threshold: Int) -> some View {
+        let progress = threshold > 0 ? min(1.0, Double(booked) / Double(threshold)) : 0.0
+        let met = booked >= threshold
+        return VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            HStack(spacing: HopSpacing.xs) {
+                Image(systemName: met ? "checkmark.circle.fill" : "clock.badge.exclamationmark")
+                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
+                Text(met ? "Trip confirmed" : "Pending confirmation")
+                    .font(HopFont.labelMedium()).fontWeight(.semibold)
+                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.hopSurface).frame(height: 6)
+                    Capsule()
+                        .fill(met ? Color.hopSuccess : Color.hopWarning)
+                        .frame(width: geo.size.width * progress, height: 6)
+                }
+            }
+            .frame(height: 6)
+            Text("\(booked)/\(threshold) seats booked. Trip auto-cancels 6h before departure if threshold not met.")
+                .font(HopFont.bodySmall())
+                .foregroundColor(Color.hopTextSecondary)
+        }
+        .padding(HopSpacing.md)
+        .background(Color.hopSurfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, HopSpacing.md)
+        .padding(.bottom, HopSpacing.xs)
+    }
+
+    // MARK: — Model B notice card
+
+    private func modelBNoticeCard(booked: Int, threshold: Int) -> some View {
+        let progress = threshold > 0 ? min(1.0, Double(booked) / Double(threshold)) : 0.0
+        let met = booked >= threshold
+        return VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            HStack(spacing: HopSpacing.xs) {
+                Image(systemName: met ? "checkmark.circle.fill" : "clock.badge.exclamationmark")
+                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
+                Text(met ? "Trip confirmed" : "Pending confirmation")
+                    .font(HopFont.labelMedium()).fontWeight(.semibold)
+                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.hopSurface).frame(height: 6)
+                    Capsule()
+                        .fill(met ? Color.hopSuccess : Color.hopWarning)
+                        .frame(width: geo.size.width * progress, height: 6)
+                }
+            }
+            .frame(height: 6)
+            Text("\(booked)/\(threshold) seats booked. Trip auto-cancels 6h before departure if threshold not met.")
+                .font(HopFont.bodySmall())
                 .foregroundColor(Color.hopTextSecondary)
         }
         .padding(HopSpacing.md)
@@ -246,7 +290,6 @@ struct BookingConfirmationView: View {
         BookingConfirmationView(
             tripId:          "trip-001",
             tripUi:          nil,
-            seats:           1,
             onPayWithMobilePay: { _ in },
             onBack:           {}
         )
@@ -259,7 +302,6 @@ struct BookingConfirmationView: View {
         BookingConfirmationView(
             tripId:          "trip-001",
             tripUi:          nil,
-            seats:           2,
             onPayWithMobilePay: { _ in },
             onBack:           {}
         )

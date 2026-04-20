@@ -97,8 +97,8 @@ struct TripDetailActiveView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
 
-                // ── Status banner ─────────────────────────────────────────────
-                statusBanner(trip: trip)
+                // ── Status badge (inline) ──────────────────────────────────────────
+                bookingStatusBadge(trip: trip)
 
                 // ── Booking ID ────────────────────────────────────────────────
                 HStack {
@@ -116,15 +116,20 @@ struct TripDetailActiveView: View {
                 // ── Driver card ───────────────────────────────────────────────
                 driverCard(driverId: trip.driverId, isCompleted: isCompleted)
 
+                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
+
                 // ── Route & info ──────────────────────────────────────────────
                 sectionLabel("Trip")
                 routeBlock(trip: trip)
+
+                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
 
                 sectionLabel("Details")
                 detailGrid(trip: trip)
 
                 // ── Model B info ──────────────────────────────────────────────
                 if trip.model == .b, let threshold = trip.minThreshold {
+                    Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
                     sectionLabel("Confirmation")
                     modelBInfo(booked: Int(trip.seatsBooked), threshold: Int(truncating: threshold))
                 }
@@ -165,9 +170,9 @@ struct TripDetailActiveView: View {
         }
     }
 
-    // MARK: — Status banner
+    // MARK: — Booking status badge (inline pill)
 
-    private func statusBanner(trip: Trip) -> some View {
+    private func bookingStatusBadge(trip: Trip) -> some View {
         let (color, icon, text): (Color, String, String) = {
             switch trip.status {
             case .active:    return (.hopPrimaryGreen, "checkmark.circle.fill", "Booking Confirmed")
@@ -178,19 +183,21 @@ struct TripDetailActiveView: View {
             }
         }()
 
-        return HStack(spacing: HopSpacing.sm) {
+        return HStack(spacing: HopSpacing.xs) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.system(size: 14))
                 .foregroundColor(color)
             Text(text)
-                .font(HopFont.labelMedium()).fontWeight(.semibold)
+                .font(HopFont.labelSmall()).fontWeight(.medium)
                 .foregroundColor(color)
-            Spacer()
         }
+        .padding(.horizontal, HopSpacing.sm)
+        .padding(.vertical, HopSpacing.xxs)
+        .background(color.opacity(0.12))
+        .clipShape(Capsule())
         .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.sm)
-        .background(color.opacity(0.1))
-        .padding(.bottom, HopSpacing.sm)
+        .padding(.top, HopSpacing.md)
+        .padding(.bottom, HopSpacing.xs)
     }
 
     // MARK: — Driver card
@@ -211,6 +218,21 @@ struct TripDetailActiveView: View {
             }
             Spacer()
             if !isCompleted {
+                // Phone call button
+                Button {
+                    // Phone number not yet available via shared ViewModel — falls back to chat
+                    onMessageDriver(bookingId)
+                } label: {
+                    Image(systemName: "phone")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(Color.hopPrimaryLime)
+                        .frame(width: 44, height: 44)
+                        .background(Color.hopPrimaryLime.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Call driver")
+
                 Button {
                     onMessageDriver(bookingId)
                 } label: {
@@ -261,9 +283,6 @@ struct TripDetailActiveView: View {
                 Spacer()
             }
         }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
     }
@@ -277,9 +296,6 @@ struct TripDetailActiveView: View {
             InfoTile(icon: "road.lanes", label: "Distance", value: "\(trip.distanceMetres / 1000) km")
             InfoTile(icon: "creditcard", label: "Paid",  value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat) / 100.0))")
         }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
     }
@@ -294,9 +310,6 @@ struct TripDetailActiveView: View {
             Text(met ? "Threshold reached — trip is on!" : "Awaiting \(threshold - booked) more booking(s) to confirm.")
                 .font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary)
         }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
     }

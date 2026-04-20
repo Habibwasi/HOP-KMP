@@ -16,7 +16,6 @@ struct TripDetailView: View {
     @StateObject private var wrapper = TripViewModelWrapper()
 
     @State private var toastMessage: String? = nil
-    @State private var selectedSeats = 1
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -83,11 +82,15 @@ struct TripDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
 
                 // ── Driver card ───────────────────────────────────────────────
-                driverCard(driverId: trip.driverId)
+                driverCard(trip: trip)
+
+                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
 
                 // ── Route section ─────────────────────────────────────────────
                 sectionLabel("Route")
                 routeBlock(trip: trip)
+
+                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
 
                 // ── Trip info section ─────────────────────────────────────────
                 sectionLabel("Details")
@@ -95,16 +98,15 @@ struct TripDetailView: View {
 
                 // ── Model B threshold (if applicable) ─────────────────────────
                 if trip.model == .b, let threshold = trip.minThreshold {
+                    Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
                     modelBThreshold(booked: Int(trip.seatsBooked), threshold: Int(truncating: threshold))
                 }
+
+                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
 
                 // ── Price breakdown ───────────────────────────────────────────
                 sectionLabel("Price")
                 priceSection(trip: trip)
-
-                // ── Seats selector ────────────────────────────────────────────
-                sectionLabel("Seats")
-                seatSelector(available: availableSeats)
 
                 Spacer().frame(height: HopSpacing.xxl + 56) // clear CTA button
             }
@@ -114,7 +116,7 @@ struct TripDetailView: View {
         VStack(spacing: 0) {
             Divider().background(Color.hopSurfaceElevated)
             HopPrimaryButton(
-                title: "Book for DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat) * selectedSeats) / 100.0))",
+                title: "Book for DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat)) / 100.0))",
                 isEnabled: availableSeats > 0 && !tripUi.isBroken
             ) {
                 onBook(tripId)
@@ -128,11 +130,11 @@ struct TripDetailView: View {
 
     // MARK: — Driver card
 
-    private func driverCard(driverId: String) -> some View {
+    private func driverCard(trip: Trip) -> some View {
         HStack(spacing: HopSpacing.md) {
-            HopAvatar(name: driverId, imageURL: nil, size: .large)
+            HopAvatar(name: trip.driverId, imageURL: nil, size: .large)
             VStack(alignment: .leading, spacing: HopSpacing.xxs) {
-                Text(driverId)
+                Text(trip.driverId)
                     .font(HopFont.labelMedium())
                     .fontWeight(.semibold)
                     .foregroundColor(Color.hopTextPrimary)
@@ -149,9 +151,7 @@ struct TripDetailView: View {
                 }
             }
             Spacer()
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 22))
-                .foregroundColor(Color.hopPrimaryGreen)
+            StatusBadge(status: trip.model == .b ? .modelB : .modelA)
         }
         .padding(HopSpacing.md)
         .background(Color.hopSurfaceElevated)
@@ -199,8 +199,6 @@ struct TripDetailView: View {
             .padding(.top, HopSpacing.xs)
         }
         .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
     }
@@ -214,9 +212,6 @@ struct TripDetailView: View {
             InfoCell(icon: "person.2",      label: "Seats left", value: "\(trip.seatsTotal - trip.seatsBooked) of \(trip.seatsTotal)")
             InfoCell(icon: "tag",           label: "Type",       value: trip.model == .b ? "Long Trip" : "Commute")
         }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
     }
@@ -238,9 +233,6 @@ struct TripDetailView: View {
                     .foregroundColor(Color.hopTextSecondary)
             }
         }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
     }
@@ -249,43 +241,12 @@ struct TripDetailView: View {
 
     private func priceSection(trip: Trip) -> some View {
         VStack(spacing: HopSpacing.sm) {
-            PriceRow(label: "Per seat",      value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat) / 100.0))", isHighlighted: false)
-            if selectedSeats > 1 {
-                PriceRow(label: "× \(selectedSeats) seats", value: "DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat) * selectedSeats) / 100.0))", isHighlighted: false)
-            }
+            PriceRow(label: "Per seat", value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat) / 100.0))", isHighlighted: false)
             Divider().background(Color.hopSurface)
-            PriceRow(label: "Total", value: "DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat) * selectedSeats) / 100.0))", isHighlighted: true)
+            PriceRow(label: "Total", value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat) / 100.0))", isHighlighted: true)
         }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
         .padding(.bottom, HopSpacing.xs)
-    }
-
-    // MARK: — Seat selector
-
-    private func seatSelector(available: Int) -> some View {
-        HStack {
-            Text("Number of seats")
-                .font(HopFont.bodyMedium())
-                .foregroundColor(Color.hopTextPrimary)
-            Spacer()
-            SeatStepperInline(seats: $selectedSeats, maxSeats: min(available, 4))
-        }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
-        .onChange(of: availableSeats(of: wrapper.state.selectedTrip)) { _, max in
-            if selectedSeats > max { selectedSeats = max }
-        }
-    }
-
-    private func availableSeats(of ui: TripUiModel?) -> Int {
-        guard let ui else { return 1 }
-        return max(1, Int(ui.trip.seatsTotal) - Int(ui.trip.seatsBooked))
     }
 
     // MARK: — Helpers

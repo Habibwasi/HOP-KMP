@@ -24,6 +24,7 @@ struct RateDriverView: View {
     @State private var submitted:  Bool   = false
 
     private var canSubmit: Bool { starRating > 0 && !wrapper.state.isLoading }
+    private let commentMaxChars = 280
 
     var body: some View {
         ZStack {
@@ -35,22 +36,16 @@ struct RateDriverView: View {
                 VStack(spacing: HopSpacing.sm) {
                     HopAvatar(name: driverInitials, imageURL: nil, size: .xlarge)
                         .padding(.top, HopSpacing.xxl)
-                    Text("Rate your trip with")
-                        .font(HopFont.bodyMedium()).foregroundColor(Color.hopTextSecondary)
-                    Text(driverName)
+                    Text("How was your trip with \(driverName)?")
                         .font(HopFont.headlineMedium()).fontWeight(.bold)
                         .foregroundColor(Color.hopTextPrimary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, HopSpacing.md)
                 }
 
                 // ── Star picker ───────────────────────────────────────────────
-                VStack(spacing: HopSpacing.xs) {
-                    HopStarRating(rating: $starRating)
-                        .padding(.top, HopSpacing.xl)
-                    Text(ratingLabel)
-                        .font(HopFont.bodyMedium()).foregroundColor(Color.hopPrimaryLime)
-                        .opacity(starRating > 0 ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.2), value: starRating)
-                }
+                HopStarRating(rating: $starRating)
+                    .padding(.top, HopSpacing.xl)
 
                 // ── Optional comment ──────────────────────────────────────────
                 VStack(alignment: .leading, spacing: HopSpacing.xs) {
@@ -70,12 +65,24 @@ struct RateDriverView: View {
                             .foregroundColor(Color.hopTextPrimary)
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 96)
+                            .onChange(of: comment) { _, newValue in
+                                if newValue.count > commentMaxChars {
+                                    comment = String(newValue.prefix(commentMaxChars))
+                                }
+                            }
                     }
                     .padding(.horizontal, HopSpacing.sm)
                     .padding(.vertical, HopSpacing.xs)
                     .background(Color.hopSurfaceElevated)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.hopPrimaryLime.opacity(comment.isEmpty ? 0 : 0.5), lineWidth: 1))
+
+                    HStack {
+                        Spacer()
+                        Text("\(comment.count)/\(commentMaxChars)")
+                            .font(HopFont.bodySmall())
+                            .foregroundColor(comment.count >= commentMaxChars ? Color.hopError : Color.hopTextSecondary)
+                    }
                 }
                 .padding(.horizontal, HopSpacing.md)
                 .padding(.top, HopSpacing.xl)
@@ -109,6 +116,11 @@ struct RateDriverView: View {
                 }
                 .accessibilityLabel("Back")
             }
+            ToolbarItem(placement: .principal) {
+                Text("Rate your trip")
+                    .font(HopFont.bodyLarge()).fontWeight(.semibold)
+                    .foregroundColor(Color.hopTextPrimary)
+            }
         }
         .toolbarBackground(Color.hopSurface, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -122,16 +134,6 @@ struct RateDriverView: View {
         }
     }
 
-    private var ratingLabel: String {
-        switch starRating {
-        case 1: return "Could be better"
-        case 2: return "Not great"
-        case 3: return "It was okay"
-        case 4: return "Pretty good!"
-        case 5: return "Excellent! 🎉"
-        default: return ""
-        }
-    }
 }
 
 // MARK: — Star rating component

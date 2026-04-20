@@ -9,6 +9,7 @@ import Shared
 struct BookingSuccessView: View {
 
     let bookingId: String
+    var tripModel: TripModel = .a   // .b → "Booking Pending" amber state
 
     var onViewMyTrips: () -> Void   // → PA-07 My Trips
     var onGoHome:      () -> Void   // → PA-01 Home
@@ -16,6 +17,15 @@ struct BookingSuccessView: View {
     @State private var circleScale:   CGFloat = 0.0
     @State private var checkScale:    CGFloat = 0.0
     @State private var contentOffset: CGFloat = 30
+
+    private var isModelB: Bool { tripModel == .b }
+    private var accentColor: Color { isModelB ? Color.hopWarning : Color.hopSuccess }
+    private var headline: String { isModelB ? "Booking Pending" : "Booking Confirmed!" }
+    private var subtitle: String {
+        isModelB
+            ? "Your seat is reserved. Payment will be charged when the trip is confirmed."
+            : "Your seat is reserved. Have a great trip!"
+    }
 
     var body: some View {
         ZStack {
@@ -27,30 +37,30 @@ struct BookingSuccessView: View {
                 // ── Success animation ─────────────────────────────────────────
                 ZStack {
                     Circle()
-                        .fill(Color.hopPrimaryLime.opacity(0.12))
+                        .fill(accentColor.opacity(0.12))
                         .frame(width: 140, height: 140)
                         .scaleEffect(circleScale)
 
                     Circle()
-                        .fill(Color.hopPrimaryLime.opacity(0.2))
+                        .fill(accentColor.opacity(0.2))
                         .frame(width: 110, height: 110)
                         .scaleEffect(circleScale)
 
-                    Image(systemName: "checkmark.circle.fill")
+                    Image(systemName: isModelB ? "clock.circle.fill" : "checkmark.circle.fill")
                         .font(.system(size: 68, weight: .regular))
-                        .foregroundColor(Color.hopPrimaryLime)
+                        .foregroundColor(accentColor)
                         .scaleEffect(checkScale)
                 }
 
                 // ── Text block ────────────────────────────────────────────────
                 VStack(spacing: HopSpacing.sm) {
-                    Text("Booking Confirmed!")
+                    Text(headline)
                         .font(HopFont.headlineLarge())
                         .fontWeight(.bold)
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(accentColor)
                         .multilineTextAlignment(.center)
 
-                    Text("Your seat is reserved. Have a great trip!")
+                    Text(subtitle)
                         .font(HopFont.bodyMedium())
                         .foregroundColor(Color.hopTextSecondary)
                         .multilineTextAlignment(.center)

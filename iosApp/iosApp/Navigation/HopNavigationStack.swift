@@ -98,7 +98,6 @@ struct HopNavigationStack: View {
             BookingConfirmationView(
                 tripId: tripId,
                 tripUi: nil,
-                seats: lastSearchSeats,
                 onPayWithMobilePay: { bookingId in
                     navigate(.mobilePayHandoff(bookingId: bookingId))
                 },
