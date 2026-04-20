@@ -173,7 +173,7 @@ fun TripDetailActiveScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         // Top bar
@@ -275,14 +275,14 @@ private fun ActiveTripTopBar(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
             )
         }
         Spacer(modifier = Modifier.width(HopSpacing.sm))
         Text(
             text = "My Trip",
             style = MaterialTheme.typography.titleMedium,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontWeight = FontWeight.Bold,
         )
     }
@@ -320,7 +320,7 @@ private fun DriverInfoSection(
         Text(
             text = driverName,
             style = MaterialTheme.typography.titleMedium,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontWeight = FontWeight.SemiBold,
         )
         if (driverPhone.isNotBlank()) {
@@ -359,7 +359,7 @@ private fun ActiveRouteSection(
         Text(
             text = "Route",
             style = MaterialTheme.typography.labelMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -368,19 +368,19 @@ private fun ActiveRouteSection(
             Text(
                 text = originName,
                 style = MaterialTheme.typography.bodyLarge,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = "→",
                 style = MaterialTheme.typography.bodyLarge,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
             Text(
                 text = destName,
                 style = MaterialTheme.typography.bodyLarge,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f),
             )
@@ -388,7 +388,7 @@ private fun ActiveRouteSection(
         Text(
             text = departsAt,
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
     }
 }
@@ -434,7 +434,7 @@ private fun ThresholdSection(
         Text(
             text = "$seatsBooked of $minThreshold seats confirmed",
             style = MaterialTheme.typography.bodyMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
         LinearProgressIndicator(
             progress = { progress },
@@ -490,12 +490,12 @@ private fun CancelBookingDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.background,
         title = {
             Text(
                 text = "Cancel Booking?",
                 style = MaterialTheme.typography.titleMedium,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 fontWeight = FontWeight.Bold,
             )
         },
@@ -503,7 +503,7 @@ private fun CancelBookingDialog(
             Text(
                 text = "Are you sure you want to cancel this booking? Your refund will be processed automatically.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
         },
         confirmButton = {
@@ -519,7 +519,7 @@ private fun CancelBookingDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     text = "Keep Booking",
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                 )
             }
         },
@@ -528,7 +528,7 @@ private fun CancelBookingDialog(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailActiveScreenConfirmedPreview() {
     HopTheme {
@@ -553,7 +553,7 @@ private fun TripDetailActiveScreenConfirmedPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailActiveScreenModelBPendingPreview() {
     HopTheme {
@@ -580,7 +580,7 @@ private fun TripDetailActiveScreenModelBPendingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailActiveScreenLoadingPreview() {
     HopTheme {

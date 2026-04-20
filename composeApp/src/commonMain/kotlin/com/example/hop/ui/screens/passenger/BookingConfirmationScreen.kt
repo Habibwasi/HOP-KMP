@@ -148,7 +148,7 @@ fun BookingConfirmationScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         ConfirmationTopBar(onBack = onBack)
@@ -205,7 +205,7 @@ fun BookingConfirmationScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(HopColors.surface)
+                        .background(HopColors.background)
                         .navigationBarsPadding()
                         .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                 ) {
@@ -241,13 +241,13 @@ private fun ConfirmationTopBar(onBack: () -> Unit) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null,
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
             )
         }
         Text(
             text = "Confirm Booking",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
     }
 }
@@ -267,14 +267,14 @@ private fun TripSummaryCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
     ) {
         Text(
             text = "Trip Summary",
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -309,19 +309,19 @@ private fun TripSummaryCard(
                 Text(
                     text = originName,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 )
                 Text(
                     text = destName,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 )
             }
         }
 
         HorizontalDivider(
             thickness = 1.dp,
-            color = HopColors.textSecondary.copy(alpha = 0.15f),
+            color = HopColors.authTextSecondary.copy(alpha = 0.15f),
         )
 
         // Meta row: departure · driver · seats
@@ -345,12 +345,12 @@ private fun SummaryMetaItem(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
     }
 }
@@ -371,14 +371,14 @@ private fun PriceSummaryCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
     ) {
         Text(
             text = "Price Summary",
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -392,7 +392,7 @@ private fun PriceSummaryCard(
             Text(
                 text = "Total",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
             Text(
                 text = "DKK ${totalOere / 100}",
@@ -406,7 +406,7 @@ private fun PriceSummaryCard(
 
         HorizontalDivider(
             thickness = 1.dp,
-            color = HopColors.textSecondary.copy(alpha = 0.15f),
+            color = HopColors.authTextSecondary.copy(alpha = 0.15f),
         )
 
         // Breakdown
@@ -430,7 +430,7 @@ private fun PriceBreakdownRow(label: String, valueOere: Int) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
         Text(
             text = "DKK ${valueOere / 100}",
@@ -438,7 +438,7 @@ private fun PriceBreakdownRow(label: String, valueOere: Int) {
                 fontFamily = HopMonoFontFamily,
                 fontWeight = FontWeight.Medium,
             ),
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
     }
 }
@@ -495,13 +495,13 @@ private fun ModelBNoticeCard(
         Text(
             text = noticeText,
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
 
         Text(
             text = "Payment is held until the trip is confirmed. You'll be refunded if the trip is cancelled.",
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -510,7 +510,7 @@ private fun ModelBNoticeCard(
         Text(
             text = "$seatsAfterBooking of $minThreshold seats after your booking",
             style = MaterialTheme.typography.labelSmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
         Spacer(modifier = Modifier.height(4.dp))
         LinearProgressIndicator(
@@ -592,7 +592,7 @@ private fun previewTripState(
     platformFeeOere = 3_058,
 )
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun BookingConfirmationModelAPreview() {
     HopTheme {
@@ -605,7 +605,7 @@ private fun BookingConfirmationModelAPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun BookingConfirmationModelBPreview() {
     HopTheme {
@@ -622,7 +622,7 @@ private fun BookingConfirmationModelBPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun BookingConfirmationModelBThresholdMetPreview() {
     HopTheme {
@@ -639,7 +639,7 @@ private fun BookingConfirmationModelBThresholdMetPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun BookingConfirmationProcessingPreview() {
     HopTheme {
@@ -652,7 +652,7 @@ private fun BookingConfirmationProcessingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun BookingConfirmationLoadingPreview() {
     HopTheme {

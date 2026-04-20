@@ -144,7 +144,7 @@ fun TripDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         // Top bar
@@ -202,7 +202,7 @@ fun TripDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(HopColors.surface)
+                        .background(HopColors.background)
                         .navigationBarsPadding()
                         .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                 ) {
@@ -234,13 +234,13 @@ private fun TripDetailTopBar(onBack: () -> Unit) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null,
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
             )
         }
         Text(
             text = "Trip Details",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
     }
 }
@@ -280,7 +280,7 @@ private fun DriverHeader(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                 ),
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -293,7 +293,7 @@ private fun DriverHeader(
                 Text(
                     text = "%.1f".format(driverRating),
                     style = MaterialTheme.typography.labelMedium,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                 )
             }
         }
@@ -357,12 +357,12 @@ private fun RouteSection(
                 Text(
                     text = "From",
                     style = MaterialTheme.typography.labelSmall,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                 )
                 Text(
                     text = originName,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 )
             }
         }
@@ -377,18 +377,18 @@ private fun RouteSection(
 
         // Destination
         Row(verticalAlignment = Alignment.CenterVertically) {
-            RouteDot(color = HopColors.textSecondary)
+            RouteDot(color = HopColors.authTextSecondary)
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Column {
                 Text(
                     text = "To",
                     style = MaterialTheme.typography.labelSmall,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                 )
                 Text(
                     text = destName,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 )
             }
         }
@@ -398,7 +398,7 @@ private fun RouteSection(
         Text(
             text = "Departs at $departsAt",
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
     }
 }
@@ -449,7 +449,7 @@ private fun MetaChip(label: String) {
     Text(
         text = label,
         style = MaterialTheme.typography.bodySmall,
-        color = HopColors.textSecondary,
+        color = HopColors.authTextSecondary,
     )
 }
 
@@ -458,7 +458,7 @@ private fun MetaSeparator() {
     Text(
         text = "·",
         style = MaterialTheme.typography.bodySmall,
-        color = HopColors.textSecondary,
+        color = HopColors.authTextSecondary,
     )
 }
 
@@ -502,14 +502,14 @@ private fun PriceBreakdownCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(cardShape)
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
     ) {
         Text(
             text = "Price per seat",
             style = MaterialTheme.typography.labelMedium,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         Text(
@@ -518,13 +518,13 @@ private fun PriceBreakdownCard(
                 fontFamily = HopMonoFontFamily,
                 fontWeight = FontWeight.Bold,
             ),
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
 
         Text(
             text = "Includes DKK ${platformFeeOere / 100} platform fee",
             style = MaterialTheme.typography.bodySmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
 
         // Model B — threshold progress bar.
@@ -539,7 +539,7 @@ private fun PriceBreakdownCard(
             Spacer(modifier = Modifier.height(HopSpacing.xs))
             HorizontalDivider(
                 thickness = 1.dp,
-                color = HopColors.textSecondary.copy(alpha = 0.15f),
+                color = HopColors.authTextSecondary.copy(alpha = 0.15f),
             )
             Spacer(modifier = Modifier.height(HopSpacing.xs))
 
@@ -549,7 +549,7 @@ private fun PriceBreakdownCard(
             Text(
                 text = thresholdLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
             Spacer(modifier = Modifier.height(6.dp))
             LinearProgressIndicator(
@@ -574,7 +574,7 @@ private fun SectionDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(horizontal = HopSpacing.md),
         thickness = 1.dp,
-        color = HopColors.textSecondary.copy(alpha = 0.15f),
+        color = HopColors.authTextSecondary.copy(alpha = 0.15f),
     )
 }
 
@@ -616,7 +616,7 @@ private fun previewState(
     platformFeeOere = 3_058,
 )
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailModelAPreview() {
     HopTheme {
@@ -629,7 +629,7 @@ private fun TripDetailModelAPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailModelBPreview() {
     HopTheme {
@@ -646,7 +646,7 @@ private fun TripDetailModelBPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailLoadingPreview() {
     HopTheme {
@@ -659,7 +659,7 @@ private fun TripDetailLoadingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailOneSeatLeftPreview() {
     HopTheme {

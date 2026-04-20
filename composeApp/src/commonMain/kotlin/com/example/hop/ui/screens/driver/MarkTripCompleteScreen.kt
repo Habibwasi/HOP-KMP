@@ -105,7 +105,7 @@ fun MarkTripCompleteRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         MarkTripCompleteScreen(
@@ -197,7 +197,7 @@ fun MarkTripCompleteScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = HopColors.surfaceElevated,
+                        color = HopColors.authInputBorder,
                         shape = RoundedCornerShape(16.dp),
                     )
                     .padding(HopSpacing.lg),

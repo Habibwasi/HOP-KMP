@@ -100,7 +100,7 @@ fun TaxDashboardRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
     ) { innerPadding ->
         TaxDashboardScreen(
             state = state,
@@ -342,7 +342,7 @@ private fun SummaryCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = HopColors.surfaceElevated,
+        color = HopColors.authInputBorder,
     ) {
         Column(modifier = Modifier.padding(HopSpacing.md)) {
             if (summary == null) {
@@ -386,7 +386,7 @@ private fun SummaryCard(
                 amountOere = summary.grossOere,
             )
             HorizontalDivider(
-                color = HopColors.surface,
+                color = HopColors.authInputBorder,
                 thickness = 1.dp,
                 modifier = Modifier.padding(vertical = HopSpacing.sm),
             )
@@ -396,7 +396,7 @@ private fun SummaryCard(
                 amountColor = HopColors.primaryGreen,
             )
             HorizontalDivider(
-                color = HopColors.surface,
+                color = HopColors.authInputBorder,
                 thickness = 1.dp,
                 modifier = Modifier.padding(vertical = HopSpacing.sm),
             )
@@ -457,7 +457,7 @@ private fun BefordringsfradragBanner(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .background(
-                color = HopColors.surfaceElevated,
+                color = HopColors.authInputBorder,
                 shape = RoundedCornerShape(12.dp),
             )
             .padding(HopSpacing.md),

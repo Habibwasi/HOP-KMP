@@ -102,7 +102,7 @@ fun CancellationConfirmationScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -145,7 +145,7 @@ fun CancellationConfirmationScreen(
             Text(
                 text = refundText,
                 style = MaterialTheme.typography.bodyLarge,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 textAlign = TextAlign.Center,
             )
 
@@ -156,13 +156,13 @@ fun CancellationConfirmationScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(HopColors.surfaceElevated)
+                        .background(HopColors.authInputSurface)
                         .padding(HopSpacing.md),
                 ) {
                     Text(
                         text = "Payment hold will be released within 1-2 business days.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = HopColors.textSecondary,
+                        color = HopColors.authTextSecondary,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -269,7 +269,7 @@ private fun DrawScope.drawCancellationIcon(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun CancellationConfirmationScreenModelAPreview() {
     HopTheme {
@@ -283,7 +283,7 @@ private fun CancellationConfirmationScreenModelAPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun CancellationConfirmationScreenModelBPreview() {
     HopTheme {
@@ -297,7 +297,7 @@ private fun CancellationConfirmationScreenModelBPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun CancellationConfirmationScreenLoadingPreview() {
     HopTheme {

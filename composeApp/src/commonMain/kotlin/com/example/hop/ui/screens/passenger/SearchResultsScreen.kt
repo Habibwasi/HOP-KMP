@@ -142,7 +142,7 @@ fun SearchResultsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         SearchResultsTopBar(
@@ -206,7 +206,7 @@ private fun SearchResultsTopBar(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null,
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
             )
         }
 
@@ -218,7 +218,7 @@ private fun SearchResultsTopBar(
             Text(
                 text = routeSummary,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 maxLines = 1,
             )
         }
@@ -241,7 +241,7 @@ private fun DateChip(date: String) {
         Text(
             text = date,
             style = MaterialTheme.typography.labelSmall,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
     }
 }
@@ -286,8 +286,8 @@ private fun HopFilterChip(
     onClick: () -> Unit,
 ) {
     val backgroundColor = if (isActive) HopColors.primaryLime else Color.Transparent
-    val borderColor     = if (isActive) HopColors.primaryLime else HopColors.textSecondary
-    val textColor       = if (isActive) Color(0xFF1A1A1A) else HopColors.textSecondary
+    val borderColor     = if (isActive) HopColors.primaryLime else HopColors.authTextSecondary
+    val textColor       = if (isActive) Color(0xFF1A1A1A) else HopColors.authTextSecondary
 
     Box(
         modifier = Modifier
@@ -341,7 +341,7 @@ private fun TripResultsList(
             Text(
                 text = "${results.size} rides available",
                 style = MaterialTheme.typography.bodySmall,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 modifier = Modifier.padding(vertical = HopSpacing.xs),
             )
         }
@@ -360,7 +360,7 @@ private fun TripResultsList(
                     TripModel.UNKNOWN -> BadgeType.Custom(
                         label = "UNKNOWN",
                         background = HopColors.surfaceElevated,
-                        contentColor = HopColors.textSecondary,
+                        contentcolor = HopColors.authTextSecondary,
                     )
                 },
                 pricePerSeatOere = tripUiModel.priceOerePerSeat,
@@ -406,7 +406,7 @@ private fun previewTrip(
     ),
 )
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun SearchResultsScreenWithResultsPreview() {
     HopTheme {
@@ -430,7 +430,7 @@ private fun SearchResultsScreenWithResultsPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun SearchResultsScreenEmptyPreview() {
     HopTheme {
@@ -449,7 +449,7 @@ private fun SearchResultsScreenEmptyPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun SearchResultsScreenLoadingPreview() {
     HopTheme {

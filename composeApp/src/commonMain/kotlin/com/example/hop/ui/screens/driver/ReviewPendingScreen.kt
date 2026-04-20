@@ -54,7 +54,7 @@ fun ReviewPendingRoute(
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
     ) { innerPadding ->
         ReviewPendingScreen(
             onBackToHome = onNavigateToHome,
@@ -123,7 +123,7 @@ fun ReviewPendingScreen(
                 modifier = Modifier
                     .size(96.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF1E2A14)),
+                    .background(HopColors.primaryLime.copy(alpha = 0.15f)),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.CheckCircle,

@@ -105,7 +105,7 @@ fun PostTripModelARoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         PostTripModelAScreen(
@@ -371,7 +371,7 @@ private fun DayChipsRow(
                     .clip(RoundedCornerShape(10.dp))
                     .background(
                         if (isSelected) HopColors.primaryLime
-                        else HopColors.surfaceElevated,
+                        else HopColors.authInputSurface,
                     )
                     .border(
                         width = 1.dp,
@@ -387,7 +387,7 @@ private fun DayChipsRow(
                     text = day.take(2), // "Mo", "Tu", etc.
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) Color(0xFF1A1A1A) else HopColors.authTextSecondary,
+                    color = if (isSelected) HopColors.authTextPrimary else HopColors.authTextSecondary,
                 )
             }
         }
@@ -407,7 +407,7 @@ internal fun TimePickerRow(
             .background(HopColors.authInputSurface)
             .border(
                 1.dp,
-                HopColors.textSecondary.copy(alpha = 0.15f),
+                HopColors.authTextSecondary.copy(alpha = 0.15f),
                 RoundedCornerShape(12.dp),
             )
             .clickable(onClickLabel = "Change departure time") { onEditClick() }
@@ -447,7 +447,7 @@ internal fun SeatCounter(
             .background(HopColors.authInputSurface)
             .border(
                 1.dp,
-                HopColors.textSecondary.copy(alpha = 0.15f),
+                HopColors.authTextSecondary.copy(alpha = 0.15f),
                 RoundedCornerShape(12.dp),
             )
             .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
@@ -534,8 +534,8 @@ internal fun TimePickerDialog(
             TimePicker(
                 state = timePickerState,
                 colors = TimePickerDefaults.colors(
-                    clockDialColor = HopColors.surface,
-                    clockDialSelectedContentColor = Color(0xFF1A1A1A),
+                    clockDialColor = HopColors.authInputSurface,
+                    clockDialSelectedContentColor = HopColors.authTextPrimary,
                     clockDialUnselectedContentColor = HopColors.authTextSecondary,
                     selectorColor = HopColors.primaryLime,
                     containerColor = HopColors.background,
@@ -545,7 +545,7 @@ internal fun TimePickerDialog(
                     periodSelectorSelectedContentColor = HopColors.primaryLime,
                     periodSelectorUnselectedContentColor = HopColors.authTextSecondary,
                     timeSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.15f),
-                    timeSelectorUnselectedContainerColor = HopColors.surface,
+                    timeSelectorUnselectedcontainerColor = HopColors.background,
                     timeSelectorSelectedContentColor = HopColors.primaryLime,
                     timeSelectorUnselectedContentColor = HopColors.authTextSecondary,
                 ),

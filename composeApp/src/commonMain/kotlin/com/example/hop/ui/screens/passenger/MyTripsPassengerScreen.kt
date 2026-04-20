@@ -158,7 +158,7 @@ fun MyTripsPassengerScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface),
+            .background(HopColors.background),
     ) {
         // ── Top bar ──────────────────────────────────────────────────────────
         MyTripsTopBar(onNavigateBack = onNavigateBack)
@@ -166,8 +166,8 @@ fun MyTripsPassengerScreen(
         // ── Tab row ──────────────────────────────────────────────────────────
         PrimaryTabRow(
             selectedTabIndex = selectedTab,
-            containerColor = HopColors.surfaceElevated,
-            contentColor = HopColors.textPrimary,
+            containerColor = HopColors.background,
+            contentcolor = HopColors.authTextPrimary,
             indicator = {
                 androidx.compose.material3.TabRowDefaults.PrimaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(selectedTab, matchContentSize = false),
@@ -190,7 +190,7 @@ fun MyTripsPassengerScreen(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Normal,
                         ),
-                        color = if (selectedTab == index) HopColors.primaryLime else HopColors.textSecondary,
+                        color = if (selectedTab == index) HopColors.primaryLime else HopColors.authTextSecondary,
                         modifier = Modifier.padding(vertical = HopSpacing.sm),
                     )
                 }
@@ -234,7 +234,7 @@ private fun MyTripsTopBar(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .padding(horizontal = HopSpacing.xs, vertical = HopSpacing.xs),
     ) {
         IconButton(
@@ -246,7 +246,7 @@ private fun MyTripsTopBar(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -254,7 +254,7 @@ private fun MyTripsTopBar(
         Text(
             text = "My Trips",
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             modifier = Modifier.align(Alignment.Center),
         )
     }
@@ -370,15 +370,15 @@ private fun MyTripsBottomNavBar(
 ) {
     NavigationBar(
         modifier = modifier.navigationBarsPadding(),
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.background,
         tonalElevation = 0.dp,
     ) {
         val chipColors = NavigationBarItemDefaults.colors(
             selectedIconColor = HopColors.primaryLime,
             selectedTextColor = HopColors.primaryLime,
             indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-            unselectedIconColor = HopColors.textSecondary,
-            unselectedTextColor = HopColors.textSecondary,
+            unselectedIconcolor = HopColors.authTextSecondary,
+            unselectedTextcolor = HopColors.authTextSecondary,
         )
 
         NavigationBarItem(
@@ -487,7 +487,7 @@ private fun previewTrip(
     ),
 )
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "PA-07 — Upcoming trips")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "PA-07 — Upcoming trips")
 @Composable
 private fun PreviewMyTripsUpcoming() {
     HopTheme {
@@ -516,7 +516,7 @@ private fun PreviewMyTripsUpcoming() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "PA-07 — Past trips")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "PA-07 — Past trips")
 @Composable
 private fun PreviewMyTripsPast() {
     HopTheme {
@@ -544,7 +544,7 @@ private fun PreviewMyTripsPast() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "PA-07 — Empty upcoming")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "PA-07 — Empty upcoming")
 @Composable
 private fun PreviewMyTripsEmpty() {
     HopTheme {
@@ -560,7 +560,7 @@ private fun PreviewMyTripsEmpty() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "PA-07 — Loading")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "PA-07 — Loading")
 @Composable
 private fun PreviewMyTripsLoading() {
     HopTheme {

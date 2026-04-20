@@ -114,7 +114,7 @@ fun BookingSuccessScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -172,7 +172,7 @@ fun BookingSuccessScreen(
                     Text(
                         text = "Your seat is reserved. Payment will be charged when the trip is confirmed.",
                         fontSize = 15.sp,
-                        color = HopColors.textSecondary,
+                        color = HopColors.authTextSecondary,
                         textAlign = TextAlign.Center,
                         lineHeight = 22.sp,
                     )
@@ -197,7 +197,7 @@ fun BookingSuccessScreen(
                 Text(
                     text = "Could not load trip details.",
                     fontSize = 14.sp,
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -356,7 +356,7 @@ private fun TripSummaryCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
     ) {
@@ -371,7 +371,7 @@ private fun TripSummaryCard(
             }
             Text(
                 text = "→",
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 fontSize = 18.sp,
             )
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
@@ -409,7 +409,7 @@ private fun SummaryLabel(label: String) {
     Text(
         text = label,
         fontSize = 13.sp,
-        color = HopColors.textSecondary,
+        color = HopColors.authTextSecondary,
     )
 }
 
@@ -419,13 +419,13 @@ private fun SummaryValue(value: String) {
         text = value,
         fontSize = 15.sp,
         fontWeight = FontWeight.SemiBold,
-        color = HopColors.textPrimary,
+        color = HopColors.authTextPrimary,
     )
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Model A — Confirmed")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Model A — Confirmed")
 @Composable
 private fun PreviewBookingSuccessModelA() {
     HopTheme {
@@ -444,7 +444,7 @@ private fun PreviewBookingSuccessModelA() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Model B — Pending")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Model B — Pending")
 @Composable
 private fun PreviewBookingSuccessModelB() {
     HopTheme {
@@ -463,7 +463,7 @@ private fun PreviewBookingSuccessModelB() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Loading")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Loading")
 @Composable
 private fun PreviewBookingSuccessLoading() {
     HopTheme {

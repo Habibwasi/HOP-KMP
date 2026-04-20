@@ -176,7 +176,7 @@ private fun MobilePayHandoffScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
         contentAlignment = Alignment.Center,
@@ -210,7 +210,7 @@ private fun LaunchingContent(modifier: Modifier = Modifier) {
 
         Text(
             text = "Opening MobilePay...",
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -218,7 +218,7 @@ private fun LaunchingContent(modifier: Modifier = Modifier) {
 
         Text(
             text = "You're being redirected to MobilePay\nto complete your payment.",
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             fontSize = 15.sp,
             lineHeight = 22.sp,
             textAlign = TextAlign.Center,
@@ -245,7 +245,7 @@ private fun WaitingContent(modifier: Modifier = Modifier) {
 
         Text(
             text = "Waiting for payment confirmation...",
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -253,7 +253,7 @@ private fun WaitingContent(modifier: Modifier = Modifier) {
 
         Text(
             text = "Please complete the payment in MobilePay\nand return to this screen.",
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             fontSize = 15.sp,
             lineHeight = 22.sp,
             textAlign = TextAlign.Center,
@@ -290,7 +290,7 @@ private fun FailedContent(
 
         Text(
             text = "Payment failed",
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -298,7 +298,7 @@ private fun FailedContent(
 
         Text(
             text = "Your payment could not be completed.\nNo money has been taken from your account.",
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             fontSize = 15.sp,
             lineHeight = 22.sp,
             textAlign = TextAlign.Center,
@@ -345,7 +345,7 @@ private fun MobilePayLogoBadge(modifier: Modifier = Modifier) {
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Launching App")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Launching App")
 @Composable
 private fun PreviewLaunching() {
     HopTheme {
@@ -357,7 +357,7 @@ private fun PreviewLaunching() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Waiting Confirmation")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Waiting Confirmation")
 @Composable
 private fun PreviewWaiting() {
     HopTheme {
@@ -369,7 +369,7 @@ private fun PreviewWaiting() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Payment Failed")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Payment Failed")
 @Composable
 private fun PreviewFailed() {
     HopTheme {

@@ -91,7 +91,7 @@ fun PostTripModelSelectRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         PostTripModelSelectScreen(

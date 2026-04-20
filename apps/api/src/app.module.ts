@@ -11,8 +11,10 @@ import { RatingsModule } from './ratings/ratings.module'
 import { NotificationsModule } from './notifications/notifications.module'
 import { TaxModule } from './tax/tax.module'
 import { AdminModule } from './admin/admin.module'
+import { HealthController } from './health.controller'
 
 @Module({
+  controllers: [HealthController],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     BullModule.forRoot({

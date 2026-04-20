@@ -145,7 +145,7 @@ fun RateDriverScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -164,14 +164,14 @@ fun RateDriverScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                 )
             }
             Text(
                 text = "Rate your trip",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 ),
                 modifier = Modifier.align(Alignment.Center),
             )
@@ -200,7 +200,7 @@ fun RateDriverScreen(
                 text = driverName,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                     fontSize = 18.sp,
                 ),
             )
@@ -211,7 +211,7 @@ fun RateDriverScreen(
             Text(
                 text = "How was your trip with $driverName?",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
                     lineHeight = 26.sp,
@@ -243,23 +243,23 @@ fun RateDriverScreen(
                     placeholder = {
                         Text(
                             text = "Add a comment (optional)",
-                            color = HopColors.textSecondary,
+                            color = HopColors.authTextSecondary,
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = HopColors.textPrimary,
-                        unfocusedTextColor = HopColors.textPrimary,
+                        focusedTextcolor = HopColors.authTextPrimary,
+                        unfocusedTextcolor = HopColors.authTextPrimary,
                         focusedBorderColor = HopColors.primaryLime,
                         unfocusedBorderColor = HopColors.surfaceElevated,
-                        focusedContainerColor = HopColors.surfaceElevated,
-                        unfocusedContainerColor = HopColors.surfaceElevated,
+                        focusedcontainerColor = HopColors.background,
+                        unfocusedcontainerColor = HopColors.background,
                         cursorColor = HopColors.primaryLime,
                     ),
                     maxLines = 5,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = HopColors.textPrimary,
+                        color = HopColors.authTextPrimary,
                     ),
                 )
             }
@@ -268,7 +268,7 @@ fun RateDriverScreen(
             Text(
                 text = "${comment.length} / $COMMENT_MAX_CHARS",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     fontSize = 12.sp,
                 ),
                 modifier = Modifier
@@ -302,7 +302,7 @@ fun RateDriverScreen(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun RateDriverScreenPreview() {
     HopTheme {
@@ -316,7 +316,7 @@ private fun RateDriverScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Stars selected + comment")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Stars selected + comment")
 @Composable
 private fun RateDriverScreenFilledPreview() {
     HopTheme {

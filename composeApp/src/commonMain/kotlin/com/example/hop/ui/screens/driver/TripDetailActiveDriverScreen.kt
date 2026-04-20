@@ -119,7 +119,7 @@ fun TripDetailActiveDriverRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         TripDetailActiveDriverScreen(
@@ -231,7 +231,7 @@ fun TripDetailActiveDriverScreen(
                             status = domainTrip.status,
                             modifier = Modifier.padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                         )
-                        HorizontalDivider(color = HopColors.surfaceElevated, thickness = 1.dp)
+                        HorizontalDivider(color = HopColors.authInputBorder, thickness = 1.dp)
                     }
 
                     // ── Seats summary ─────────────────────────────────────────
@@ -243,7 +243,7 @@ fun TripDetailActiveDriverScreen(
                             model = domainTrip.model,
                             modifier = Modifier.padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                         )
-                        HorizontalDivider(color = HopColors.surfaceElevated, thickness = 1.dp)
+                        HorizontalDivider(color = HopColors.authInputBorder, thickness = 1.dp)
                     }
 
                     // ── Passengers header ─────────────────────────────────────
@@ -288,7 +288,7 @@ fun TripDetailActiveDriverScreen(
                                 ),
                             )
                             HorizontalDivider(
-                                color = HopColors.surfaceElevated,
+                                color = HopColors.authInputBorder,
                                 thickness = 1.dp,
                                 modifier = Modifier.padding(horizontal = HopSpacing.md),
                             )
@@ -348,7 +348,7 @@ private fun TripHeaderSection(
                 TripStatus.ACTIVE -> BadgeType.Custom(
                     label = "ACTIVE",
                     background = HopColors.primaryLime,
-                    contentColor = HopColors.surface,
+                    contentColor = HopColors.authTextPrimary,
                 )
                 TripStatus.COMPLETED -> BadgeType.Completed
                 TripStatus.CANCELLED -> BadgeType.Cancelled
@@ -394,7 +394,7 @@ private fun SeatsSummarySection(
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = HopColors.primaryLime,
-                trackColor = HopColors.surfaceElevated,
+                trackcolor = HopColors.authInputBorder,
             )
             Spacer(modifier = Modifier.height(HopSpacing.xs))
             Text(

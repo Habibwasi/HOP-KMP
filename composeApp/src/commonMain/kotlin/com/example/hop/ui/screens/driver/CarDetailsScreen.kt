@@ -92,7 +92,7 @@ fun CarDetailsRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         CarDetailsScreen(
@@ -326,8 +326,8 @@ internal fun OnboardingStepIndicator(
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = when {
-                        isCompleted || isCurrent -> Color(0xFF1A1A1A)
-                        else                     -> HopColors.textSecondary
+                        isCompleted || isCurrent -> HopColors.authTextPrimary
+                        else                     -> HopColors.authTextSecondary
                     },
                 )
             }

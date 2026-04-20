@@ -102,7 +102,7 @@ fun LicenceUploadRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         LicenceUploadScreen(
@@ -299,10 +299,10 @@ private fun LicencePhotoPlaceholder(modifier: Modifier = Modifier) {
         modifier = modifier
             .aspectRatio(16f / 9f)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF242424))
+            .background(HopColors.authInputSurface)
             .border(
                 width = 1.dp,
-                color = Color(0xFF3A3A3A),
+                color = HopColors.authInputBorder,
                 shape = RoundedCornerShape(12.dp),
             ),
     ) {
@@ -338,7 +338,7 @@ private fun LicencePhotoPreview(
         modifier = modifier
             .aspectRatio(16f / 9f)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1E2A14))
+            .background(HopColors.primaryLime.copy(alpha = 0.15f))
             .border(
                 width = 2.dp,
                 color = HopColors.primaryLime,

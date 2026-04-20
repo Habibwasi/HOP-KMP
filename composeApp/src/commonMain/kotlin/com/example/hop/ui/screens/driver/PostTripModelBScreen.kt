@@ -103,7 +103,7 @@ fun PostTripModelBRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         PostTripModelBScreen(
@@ -200,12 +200,12 @@ fun PostTripModelBScreen(
                 yearContentColor = HopColors.authTextPrimary,
                 disabledYearContentColor = HopColors.authTextSecondary.copy(alpha = 0.38f),
                 currentYearContentColor = HopColors.primaryLime,
-                selectedYearContentColor = Color(0xFF1A1A1A),
+                selectedYearContentColor = HopColors.authTextPrimary,
                 selectedYearContainerColor = HopColors.primaryLime,
                 dayContentColor = HopColors.authTextPrimary,
                 disabledDayContentColor = HopColors.authTextSecondary.copy(alpha = 0.38f),
-                selectedDayContentColor = Color(0xFF1A1A1A),
-                disabledSelectedDayContentColor = Color(0xFF1A1A1A).copy(alpha = 0.38f),
+                selectedDayContentColor = HopColors.authTextPrimary,
+                disabledSelectedDayContentColor = HopColors.authTextPrimary.copy(alpha = 0.38f),
                 selectedDayContainerColor = HopColors.primaryLime,
                 todayContentColor = HopColors.primaryLime,
                 todayDateBorderColor = HopColors.primaryLime,
@@ -432,7 +432,7 @@ private fun DatePickerRow(
                 text = if (date.isBlank()) "Pick a date" else date,
                 fontSize = if (date.isBlank()) 15.sp else 18.sp,
                 fontWeight = if (date.isBlank()) FontWeight.Normal else FontWeight.Bold,
-                color = if (date.isBlank()) HopColors.textSecondary else HopColors.textPrimary,
+                color = if (date.isBlank()) HopColors.authTextSecondary else HopColors.authTextPrimary,
                 modifier = Modifier.weight(1f),
             )
             Text(

@@ -189,7 +189,7 @@ fun DriverHomeScreen(
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = null,
-                            tint = Color(0xFF1A1A1A),
+                            tint = HopColors.authTextPrimary,
                             modifier = Modifier.size(20.dp),
                         )
                     },
@@ -286,7 +286,7 @@ private fun EarningsBanner(
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontFamily = HopMonoFontFamily,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1A1A),
+                    color = HopColors.authTextPrimary,
                     letterSpacing = 0.sp,
                 ),
             )
@@ -297,7 +297,7 @@ private fun EarningsBanner(
             Text(
                 text = "Est. tax this month: DKK ${estimatedTaxOere / 100}",
                 style = MaterialTheme.typography.bodySmall.copy(
-                    color = Color(0xFF1A1A1A).copy(alpha = 0.65f),
+                    color = HopColors.authTextPrimary.copy(alpha = 0.65f),
                     fontWeight = FontWeight.Medium,
                 ),
             )
@@ -307,7 +307,7 @@ private fun EarningsBanner(
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
             contentDescription = null,
-            tint = Color(0xFF1A1A1A).copy(alpha = 0.35f),
+            tint = HopColors.authTextPrimary.copy(alpha = 0.35f),
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(20.dp),
@@ -347,7 +347,7 @@ private fun DriverTripCard(
                         TripModel.B -> BadgeType.ModelB
                         TripModel.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
-                            background = HopColors.surfaceElevated,
+                            background = HopColors.authInputSurface,
                             contentColor = HopColors.authTextSecondary,
                         )
                     },
@@ -361,7 +361,7 @@ private fun DriverTripCard(
                         TripStatus.COMPLETED -> BadgeType.Completed
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
-                            background = HopColors.surfaceElevated,
+                            background = HopColors.authInputSurface,
                             contentColor = HopColors.authTextSecondary,
                         )
                     },
@@ -407,7 +407,7 @@ private fun DriverTripCard(
                     text = "DKK ${tripUiModel.trip.driverNetOere / 100}/seat",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1A1A1A),
+                        color = HopColors.authTextPrimary,
                         fontSize = 16.sp,
                     ),
                 )
@@ -434,7 +434,7 @@ private fun DriverRouteColumn(
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
                 text = origin,
-                style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF1A1A1A)),
+                style = MaterialTheme.typography.bodyMedium.copy(color = HopColors.authTextPrimary),
                 maxLines = 1,
             )
         }
@@ -449,13 +449,13 @@ private fun DriverRouteColumn(
                 modifier = Modifier
                     .size(12.dp)
                     .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(Color(0xFF1A1A1A)),
+                    .background(HopColors.authTextPrimary),
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
                 text = destination,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF1A1A1A),
+                    color = HopColors.authTextPrimary,
                     fontWeight = FontWeight.Medium,
                 ),
                 maxLines = 1,

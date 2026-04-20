@@ -20,11 +20,13 @@ const ratings_module_1 = require("./ratings/ratings.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const tax_module_1 = require("./tax/tax.module");
 const admin_module_1 = require("./admin/admin.module");
+const health_controller_1 = require("./health.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
+        controllers: [health_controller_1.HealthController],
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             bullmq_1.BullModule.forRoot({

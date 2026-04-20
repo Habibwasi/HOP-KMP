@@ -94,7 +94,7 @@ fun PriceReviewRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         PriceReviewScreen(
@@ -241,7 +241,7 @@ private fun TripSummaryCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(HopColors.authInputSurface)
-            .border(1.dp, HopColors.textSecondary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
+            .border(1.dp, HopColors.authTextSecondary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
     ) {
@@ -338,7 +338,7 @@ private fun PriceBreakdownCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(HopColors.authInputSurface)
-            .border(1.dp, HopColors.textSecondary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
+            .border(1.dp, HopColors.authTextSecondary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
     ) {
@@ -439,7 +439,7 @@ private fun PriceRow(
             text = label,
             fontSize = 14.sp,
             fontWeight = labelWeight,
-            color = if (highlight) HopColors.textPrimary else HopColors.authTextSecondary,
+            color = if (highlight) HopColors.authTextPrimary else HopColors.authTextSecondary,
         )
         Text(
             text = value,

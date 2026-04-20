@@ -104,7 +104,7 @@ fun RatePassengerRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         RatePassengerScreen(
@@ -254,7 +254,7 @@ fun RatePassengerScreen(
                         focusedTextColor = HopColors.authTextPrimary,
                         unfocusedTextColor = HopColors.authTextPrimary,
                         focusedBorderColor = HopColors.primaryLime,
-                        unfocusedBorderColor = HopColors.surfaceElevated,
+                        unfocusedBordercolor = HopColors.authInputBorder,
                         focusedContainerColor = HopColors.background,
                         unfocusedContainerColor = HopColors.background,
                         cursorColor = HopColors.primaryLime,

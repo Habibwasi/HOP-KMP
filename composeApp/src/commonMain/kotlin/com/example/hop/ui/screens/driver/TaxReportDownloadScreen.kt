@@ -87,7 +87,7 @@ fun TaxReportDownloadRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
     ) { innerPadding ->
         TaxReportDownloadScreen(
             state = state,
@@ -239,7 +239,7 @@ fun TaxReportDownloadScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                color = HopColors.surfaceElevated,
+                                color = HopColors.authInputBorder,
                                 shape = RoundedCornerShape(16.dp),
                             )
                             .padding(HopSpacing.md),
@@ -249,7 +249,7 @@ fun TaxReportDownloadScreen(
                             amountOere = state.totalEarningsOere,
                         )
                         HorizontalDivider(
-                            color = HopColors.surface,
+                            color = HopColors.authInputBorder,
                             thickness = 1.dp,
                             modifier = Modifier.padding(vertical = HopSpacing.sm),
                         )
@@ -258,7 +258,7 @@ fun TaxReportDownloadScreen(
                             amountOere = state.totalDeductionOere,
                         )
                         HorizontalDivider(
-                            color = HopColors.surface,
+                            color = HopColors.authInputBorder,
                             thickness = 1.dp,
                             modifier = Modifier.padding(vertical = HopSpacing.sm),
                         )

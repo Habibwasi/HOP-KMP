@@ -164,7 +164,7 @@ fun PassengerHomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface),
+            .background(HopColors.background),
     ) {
         // ── Scrollable body ──────────────────────────────────────────────────
         LazyColumn(
@@ -203,7 +203,7 @@ fun PassengerHomeScreen(
                 Text(
                     text = "Upcoming trips",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                     modifier = Modifier.padding(top = HopSpacing.xs),
                 )
             }
@@ -249,7 +249,7 @@ fun PassengerHomeScreen(
                             TripModel.UNKNOWN -> BadgeType.Custom(
                                 label = "UNKNOWN",
                                 background = HopColors.surfaceElevated,
-                                contentColor = HopColors.textSecondary,
+                                contentcolor = HopColors.authTextSecondary,
                             )
                         },
                         pricePerSeatOere = tripUiModel.priceOerePerSeat,
@@ -636,7 +636,7 @@ private fun PassengerBottomNavBar(
 ) {
     NavigationBar(
         modifier = modifier.navigationBarsPadding(),
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.background,
         tonalElevation = 0.dp,
     ) {
         // Home — always selected on this screen
@@ -660,8 +660,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconcolor = HopColors.authTextSecondary,
+                unselectedTextcolor = HopColors.authTextSecondary,
             ),
         )
 
@@ -686,8 +686,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconcolor = HopColors.authTextSecondary,
+                unselectedTextcolor = HopColors.authTextSecondary,
             ),
         )
 
@@ -712,8 +712,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconcolor = HopColors.authTextSecondary,
+                unselectedTextcolor = HopColors.authTextSecondary,
             ),
         )
 
@@ -738,8 +738,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.textSecondary,
-                unselectedTextColor = HopColors.textSecondary,
+                unselectedIconcolor = HopColors.authTextSecondary,
+                unselectedTextcolor = HopColors.authTextSecondary,
             ),
         )
     }
@@ -747,7 +747,7 @@ private fun PassengerBottomNavBar(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(name = "Passenger Home — empty state", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Passenger Home — empty state", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PassengerHomeEmptyPreview() {
     HopTheme {
@@ -760,7 +760,7 @@ private fun PassengerHomeEmptyPreview() {
     }
 }
 
-@Preview(name = "Passenger Home — loading", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "Passenger Home — loading", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PassengerHomeLoadingPreview() {
     HopTheme {

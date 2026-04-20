@@ -130,7 +130,7 @@ fun MyTripsDriverRoute(
 
     Scaffold(
         modifier = modifier,
-        containerColor = HopColors.surface,
+        containerColor = HopColors.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
@@ -404,7 +404,7 @@ private fun DriverTripCard(
                         TripModel.B -> BadgeType.ModelB
                         TripModel.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
-                            background = HopColors.surfaceElevated,
+                            background = HopColors.authInputSurface,
                             contentColor = HopColors.authTextSecondary,
                         )
                     },
@@ -418,7 +418,7 @@ private fun DriverTripCard(
                         TripStatus.COMPLETED -> BadgeType.Completed
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
-                            background = HopColors.surfaceElevated,
+                            background = HopColors.authInputSurface,
                             contentColor = HopColors.authTextSecondary,
                         )
                     },
@@ -494,7 +494,7 @@ private fun DriverTripCard(
                     text = "DKK ${tripUiModel.trip.driverNetOere / 100}/seat",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1A1A1A),
+                        color = HopColors.authTextPrimary,
                         fontSize = 16.sp,
                     ),
                 )
@@ -550,7 +550,7 @@ private fun ThresholdProgressBar(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val tickX = thresholdFraction * size.width
             drawLine(
-                color = Color(0xFF1A1A1A),
+                color = HopColors.authTextPrimary,
                 start = Offset(tickX, 0f),
                 end = Offset(tickX, size.height),
                 strokeWidth = 2.dp.toPx(),
@@ -579,7 +579,7 @@ private fun CardRouteColumn(
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
                 text = origin,
-                style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF1A1A1A)),
+                style = MaterialTheme.typography.bodyMedium.copy(color = HopColors.authTextPrimary),
                 maxLines = 1,
             )
         }
@@ -594,13 +594,13 @@ private fun CardRouteColumn(
                 modifier = Modifier
                     .size(12.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF1A1A1A)),
+                    .background(HopColors.authTextPrimary),
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
                 text = destination,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF1A1A1A),
+                    color = HopColors.authTextPrimary,
                     fontWeight = FontWeight.Medium,
                 ),
                 maxLines = 1,
