@@ -10,6 +10,7 @@ export declare class AuthService {
     private jwt;
     private config;
     constructor(prisma: PrismaService, users: UsersService, jwt: JwtService, config: ConfigService);
+    private getTwilioClient;
     sendOtp(phone: string, purpose: OtpPurpose): Promise<{
         message: string;
     }>;

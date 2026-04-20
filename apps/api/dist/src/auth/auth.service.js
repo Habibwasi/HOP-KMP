@@ -41,6 +41,9 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -51,6 +54,7 @@ const users_service_1 = require("../users/users.service");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcrypt"));
 const crypto = __importStar(require("crypto"));
+const twilio_1 = __importDefault(require("twilio"));
 let AuthService = class AuthService {
     prisma;
     users;
@@ -62,9 +66,10 @@ let AuthService = class AuthService {
         this.jwt = jwt;
         this.config = config;
     }
+    getTwilioClient() {
+        return (0, twilio_1.default)(this.config.getOrThrow('TWILIO_ACCOUNT_SID'), this.config.getOrThrow('TWILIO_AUTH_TOKEN'));
+    }
     async sendOtp(phone, purpose) {
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         let user = await this.users.findByPhone(phone);
         if (!user) {
             if (purpose === client_1.OtpPurpose.LOGIN) {
@@ -72,32 +77,21 @@ let AuthService = class AuthService {
             }
             user = await this.users.create({ phone, firstName: '', lastName: '' });
         }
-        await this.prisma.otpCode.updateMany({
-            where: { userId: user.id, purpose, used: false },
-            data: { used: true },
-        });
-        await this.prisma.otpCode.create({
-            data: { userId: user.id, code, purpose, expiresAt },
-        });
-        console.log(`OTP for ${phone}: ${code}`);
+        await this.getTwilioClient()
+            .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+            .verifications.create({ to: phone, channel: 'sms' });
         return { message: 'OTP sent successfully' };
     }
     async verifyOtp(phone, code, purpose) {
         const user = await this.users.findByPhone(phone);
         if (!user)
             throw new common_1.BadRequestException('User not found');
-        const otp = await this.prisma.otpCode.findFirst({
-            where: {
-                userId: user.id,
-                code,
-                purpose,
-                used: false,
-                expiresAt: { gt: new Date() },
-            },
-        });
-        if (!otp)
+        const check = await this.getTwilioClient()
+            .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+            .verificationChecks.create({ to: phone, code });
+        if (check.status !== 'approved') {
             throw new common_1.BadRequestException('Invalid or expired OTP');
-        await this.prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } });
+        }
         if (purpose === client_1.OtpPurpose.PHONE_VERIFY) {
             await this.users.markVerified(user.id);
         }
@@ -134,18 +128,12 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('User not found');
         if (user.isBanned)
             throw new common_1.UnauthorizedException('Account banned');
-        const otp = await this.prisma.otpCode.findFirst({
-            where: {
-                userId: user.id,
-                code,
-                purpose: client_1.OtpPurpose.LOGIN,
-                used: false,
-                expiresAt: { gt: new Date() },
-            },
-        });
-        if (!otp)
+        const check = await this.getTwilioClient()
+            .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+            .verificationChecks.create({ to: phone, code });
+        if (check.status !== 'approved') {
             throw new common_1.UnauthorizedException('Invalid or expired OTP');
-        await this.prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } });
+        }
         const tokens = await this.generateTokens(user.id, user.phone);
         return { user: this.sanitize(user), ...tokens };
     }

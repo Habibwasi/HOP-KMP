@@ -12,6 +12,7 @@ import { RegisterDto } from './dto/register.dto'
 import { OtpPurpose } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
+import twilio from 'twilio'
 
 @Injectable()
 export class AuthService {
@@ -22,34 +23,28 @@ export class AuthService {
     private config: ConfigService,
   ) {}
 
+  private getTwilioClient() {
+    return twilio(
+      this.config.getOrThrow('TWILIO_ACCOUNT_SID'),
+      this.config.getOrThrow('TWILIO_AUTH_TOKEN'),
+    )
+  }
+
   // ─── OTP ────────────────────────────────────────────────────────────────────
 
   async sendOtp(phone: string, purpose: OtpPurpose): Promise<{ message: string }> {
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-
     let user = await this.users.findByPhone(phone)
 
     if (!user) {
       if (purpose === OtpPurpose.LOGIN) {
         throw new BadRequestException('User not found. Please register first.')
       }
-      // For PHONE_VERIFY during registration we create a placeholder
       user = await this.users.create({ phone, firstName: '', lastName: '' })
     }
 
-    // Invalidate previous OTPs for same purpose
-    await this.prisma.otpCode.updateMany({
-      where: { userId: user.id, purpose, used: false },
-      data: { used: true },
-    })
-
-    await this.prisma.otpCode.create({
-      data: { userId: user.id, code, purpose, expiresAt },
-    })
-
-    // TODO: send via Twilio Verify in production
-    console.log(`OTP for ${phone}: ${code}`)
+    await this.getTwilioClient()
+      .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+      .verifications.create({ to: phone, channel: 'sms' })
 
     return { message: 'OTP sent successfully' }
   }
@@ -58,19 +53,13 @@ export class AuthService {
     const user = await this.users.findByPhone(phone)
     if (!user) throw new BadRequestException('User not found')
 
-    const otp = await this.prisma.otpCode.findFirst({
-      where: {
-        userId: user.id,
-        code,
-        purpose,
-        used: false,
-        expiresAt: { gt: new Date() },
-      },
-    })
+    const check = await this.getTwilioClient()
+      .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+      .verificationChecks.create({ to: phone, code })
 
-    if (!otp) throw new BadRequestException('Invalid or expired OTP')
-
-    await this.prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } })
+    if (check.status !== 'approved') {
+      throw new BadRequestException('Invalid or expired OTP')
+    }
 
     if (purpose === OtpPurpose.PHONE_VERIFY) {
       await this.users.markVerified(user.id)
@@ -118,19 +107,13 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User not found')
     if (user.isBanned) throw new UnauthorizedException('Account banned')
 
-    const otp = await this.prisma.otpCode.findFirst({
-      where: {
-        userId: user.id,
-        code,
-        purpose: OtpPurpose.LOGIN,
-        used: false,
-        expiresAt: { gt: new Date() },
-      },
-    })
+    const check = await this.getTwilioClient()
+      .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+      .verificationChecks.create({ to: phone, code })
 
-    if (!otp) throw new UnauthorizedException('Invalid or expired OTP')
-
-    await this.prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } })
+    if (check.status !== 'approved') {
+      throw new UnauthorizedException('Invalid or expired OTP')
+    }
 
     const tokens = await this.generateTokens(user.id, user.phone)
     return { user: this.sanitize(user), ...tokens }
@@ -147,7 +130,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token')
     }
 
-    // Rotate — revoke old, issue new
     await this.prisma.refreshToken.update({ where: { id: stored.id }, data: { isRevoked: true } })
 
     const user = await this.users.findById(userId)
@@ -178,7 +160,7 @@ export class AuthService {
     )
 
     const refreshToken = crypto.randomBytes(64).toString('hex')
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     await this.prisma.refreshToken.create({
       data: { token: refreshToken, userId, expiresAt },
