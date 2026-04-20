@@ -25,6 +25,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        isAdmin: boolean;
     }>;
 }
 export {};
