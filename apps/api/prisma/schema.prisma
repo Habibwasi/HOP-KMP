@@ -1,0 +1,137 @@
+generator client {
+  provider        = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+enum Role {
+  PASSENGER
+  DRIVER
+  BOTH
+}
+
+enum TripModel {
+  A
+  B
+}
+
+enum TripStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  THRESHOLD_NOT_MET
+}
+
+enum OtpPurpose {
+  PHONE_VERIFY
+  LOGIN
+}
+
+model User {
+  id            String    @id @default(uuid())
+  phone         String    @unique
+  email         String?   @unique
+  passwordHash  String?
+  firstName     String
+  lastName      String
+  avatarUrl     String?
+  role          Role      @default(PASSENGER)
+  isVerified    Boolean   @default(false)
+  isBanned      Boolean   @default(false)
+  banExpiresAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  refreshTokens   RefreshToken[]
+  otpCodes        OtpCode[]
+  pushTokens      PushToken[]
+  tripsAsDriver   Trip[]    @relation("DriverTrips")
+  bookings        Booking[]
+  ratingsGiven    Rating[]  @relation("RaterRatings")
+  ratingsReceived Rating[]  @relation("RateeRatings")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  isRevoked Boolean  @default(false)
+}
+
+model OtpCode {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  purpose   OtpPurpose
+  expiresAt DateTime
+  used      Boolean    @default(false)
+  createdAt DateTime   @default(now())
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String
+  createdAt DateTime @default(now())
+}
+
+model Trip {
+  id            String   @id @default(uuid())
+  driverId      String
+  driver        User     @relation("DriverTrips", fields: [driverId], references: [id])
+  originLat     Float
+  originLng     Float
+  originAddress String
+  destLat       Float
+  destLng       Float
+  destAddress   String
+  departureAt   DateTime
+  seats         Int
+  pricePerSeat  Int
+  model             TripModel @default(A)
+  status            TripStatus @default(ACTIVE)
+  minPassengers     Int?
+  thresholdDeadline DateTime?
+  distanceKm        Float?
+  recurringDays     Int[]
+  isRecurring       Boolean   @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings Booking[]
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id])
+  passengerId String
+  passenger   User     @relation(fields: [passengerId], references: [id])
+  seats       Int      @default(1)
+  totalOere   Int
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Rating {
+  id        String   @id @default(uuid())
+  raterId   String
+  rater     User     @relation("RaterRatings", fields: [raterId], references: [id])
+  rateeId   String
+  ratee     User     @relation("RateeRatings", fields: [rateeId], references: [id])
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
