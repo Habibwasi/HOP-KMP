@@ -403,8 +403,8 @@ private fun SummaryCard(
             TaxBreakdownRow(
                 label = "Taxable amount",
                 amountOere = summary.taxableOere,
-                labelcolor = HopColors.authTextPrimary,
-                amountcolor = HopColors.authTextPrimary,
+                labelColor = HopColors.authTextPrimary,
+                amountColor = HopColors.authTextPrimary,
                 isBold = true,
             )
         }
@@ -418,8 +418,8 @@ private fun TaxBreakdownRow(
     label: String,
     amountOere: Int,
     modifier: Modifier = Modifier,
-    labelColor: androidx.compose.ui.graphics.color = HopColors.authTextSecondary,
-    amountColor: androidx.compose.ui.graphics.color = HopColors.authTextPrimary,
+    labelColor: androidx.compose.ui.graphics.Color = HopColors.authTextSecondary,
+    amountColor: androidx.compose.ui.graphics.Color = HopColors.authTextPrimary,
     isBold: Boolean = false,
 ) {
     Row(

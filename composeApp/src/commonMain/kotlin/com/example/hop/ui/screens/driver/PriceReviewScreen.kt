@@ -396,7 +396,7 @@ private fun PriceBreakdownCard(
                 label = "Platform fee",
                 value = "– ${formatDkk(priceResult.platformFeeOere)}",
                 isAmount = true,
-                valuecolor = HopColors.authTextSecondary,
+                valueColor = HopColors.authTextSecondary,
             )
             HorizontalDivider(color = HopColors.primaryLime.copy(alpha = 0.2f))
             PriceRow(
@@ -428,7 +428,7 @@ private fun PriceRow(
     highlight: Boolean = false,
     labelWeight: FontWeight = FontWeight.Normal,
     valueSize: androidx.compose.ui.unit.TextUnit = 14.sp,
-    valueColor: color = HopColors.authTextPrimary,
+    valueColor: Color = HopColors.authTextPrimary,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),

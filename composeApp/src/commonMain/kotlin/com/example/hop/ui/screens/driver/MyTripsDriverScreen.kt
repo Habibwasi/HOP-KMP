@@ -189,7 +189,7 @@ fun MyTripsDriverScreen(
         PrimaryTabRow(
             selectedTabIndex = selectedTab,
             containerColor = HopColors.background,
-            contentcolor = HopColors.authTextPrimary,
+            contentColor = HopColors.authTextPrimary,
             indicator = {
                 androidx.compose.material3.TabRowDefaults.PrimaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(selectedTab, matchContentSize = false),
@@ -405,7 +405,7 @@ private fun DriverTripCard(
                         TripModel.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentcolor = HopColors.authTextSecondary,
+                            contentColor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -419,7 +419,7 @@ private fun DriverTripCard(
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentcolor = HopColors.authTextSecondary,
+                            contentColor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -627,8 +627,8 @@ private fun MyTripsDriverBottomNavBar(
             selectedIconColor = HopColors.primaryLime,
             selectedTextColor = HopColors.primaryLime,
             indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-            unselectedIconcolor = HopColors.authTextSecondary,
-            unselectedTextcolor = HopColors.authTextSecondary,
+            unselectedIconColor = HopColors.authTextSecondary,
+            unselectedTextColor = HopColors.authTextSecondary,
         )
 
         NavigationBarItem(

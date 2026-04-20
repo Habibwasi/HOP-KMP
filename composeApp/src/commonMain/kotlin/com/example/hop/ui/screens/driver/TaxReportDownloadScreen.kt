@@ -265,7 +265,7 @@ fun TaxReportDownloadScreen(
                         TaxSummaryRow(
                             label = "Total Taxable",
                             amountOere = state.totalTaxableOere,
-                            labelcolor = HopColors.authTextPrimary,
+                            labelColor = HopColors.authTextPrimary,
                             amountColor = HopColors.primaryLime,
                         )
                     }
@@ -307,8 +307,8 @@ private fun TaxSummaryRow(
     label: String,
     amountOere: Int,
     modifier: Modifier = Modifier,
-    labelColor: androidx.compose.ui.graphics.color = HopColors.authTextSecondary,
-    amountColor: androidx.compose.ui.graphics.color = HopColors.authTextPrimary,
+    labelColor: androidx.compose.ui.graphics.Color = HopColors.authTextSecondary,
+    amountColor: androidx.compose.ui.graphics.Color = HopColors.authTextPrimary,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),

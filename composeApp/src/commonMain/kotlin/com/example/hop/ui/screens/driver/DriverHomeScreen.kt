@@ -348,7 +348,7 @@ private fun DriverTripCard(
                         TripModel.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentcolor = HopColors.authTextSecondary,
+                            contentColor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -362,7 +362,7 @@ private fun DriverTripCard(
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentcolor = HopColors.authTextSecondary,
+                            contentColor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -538,8 +538,8 @@ private fun RowScope.DriverNavItem(
             selectedIconColor = HopColors.primaryLime,
             selectedTextColor = HopColors.primaryLime,
             indicatorColor = Color.Transparent,
-            unselectedIconcolor = HopColors.authTextSecondary,
-            unselectedTextcolor = HopColors.authTextSecondary,
+            unselectedIconColor = HopColors.authTextSecondary,
+            unselectedTextColor = HopColors.authTextSecondary,
         ),
         modifier = modifier,
     )

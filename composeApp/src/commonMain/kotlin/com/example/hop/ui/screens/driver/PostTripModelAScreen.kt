@@ -536,18 +536,18 @@ internal fun TimePickerDialog(
                 colors = TimePickerDefaults.colors(
                     clockDialColor = HopColors.surface,
                     clockDialSelectedContentColor = Color(0xFF1A1A1A),
-                    clockDialUnselectedContentcolor = HopColors.authTextSecondary,
+                    clockDialUnselectedContentColor = HopColors.authTextSecondary,
                     selectorColor = HopColors.primaryLime,
                     containerColor = HopColors.background,
                     periodSelectorBorderColor = HopColors.primaryLime.copy(alpha = 0.3f),
                     periodSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.2f),
                     periodSelectorUnselectedContainerColor = Color.Transparent,
                     periodSelectorSelectedContentColor = HopColors.primaryLime,
-                    periodSelectorUnselectedContentcolor = HopColors.authTextSecondary,
+                    periodSelectorUnselectedContentColor = HopColors.authTextSecondary,
                     timeSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.15f),
                     timeSelectorUnselectedContainerColor = HopColors.surface,
                     timeSelectorSelectedContentColor = HopColors.primaryLime,
-                    timeSelectorUnselectedContentcolor = HopColors.authTextSecondary,
+                    timeSelectorUnselectedContentColor = HopColors.authTextSecondary,
                 ),
             )
             Spacer(modifier = Modifier.height(HopSpacing.md))

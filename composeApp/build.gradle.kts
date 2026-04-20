@@ -72,7 +72,7 @@ android {
     }
     buildTypes {
         getByName("debug") {
-            buildConfigField("boolean", "DEV_MODE", "true")
+            buildConfigField("boolean", "DEV_MODE", "false")
         }
         getByName("release") {
             buildConfigField("boolean", "DEV_MODE", "false")
