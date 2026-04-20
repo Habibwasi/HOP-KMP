@@ -25,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.DirectionsCar
@@ -89,6 +90,7 @@ fun OwnProfileRoute(
     onNavigateBack: () -> Unit,
     onNavigateToPhoneVerification: () -> Unit,
     onNavigateToEditCar: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: OwnProfileViewModel = koinViewModel(),
 ) {
@@ -115,6 +117,7 @@ fun OwnProfileRoute(
         snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack,
+        onNavigateToSettings = onNavigateToSettings,
         modifier = modifier,
     )
 }
@@ -127,6 +130,7 @@ fun OwnProfileScreen(
     snackbarHostState: SnackbarHostState,
     onEvent: (OwnProfileEvent) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -137,6 +141,7 @@ fun OwnProfileScreen(
             ProfileTopBar(
                 title = "Profile",
                 onNavigateBack = onNavigateBack,
+                onNavigateToSettings = onNavigateToSettings,
             )
         },
     ) { innerPadding ->
@@ -670,6 +675,7 @@ private fun CarDetailRow(
 internal fun ProfileTopBar(
     title: String,
     onNavigateBack: () -> Unit,
+    onNavigateToSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -692,7 +698,17 @@ internal fun ProfileTopBar(
             style = MaterialTheme.typography.titleLarge,
             color = HopColors.authTextPrimary,
             fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f),
         )
+        if (onNavigateToSettings != null) {
+            IconButton(onClick = onNavigateToSettings) {
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = "Settings",
+                    tint = HopColors.authTextPrimary,
+                )
+            }
+        }
     }
 }
 
@@ -775,6 +791,7 @@ private fun OwnProfileScreenPreview() {
             snackbarHostState = remember { SnackbarHostState() },
             onEvent = {},
             onNavigateBack = {},
+            onNavigateToSettings = {},
         )
     }
 }
@@ -803,6 +820,7 @@ private fun OwnProfileEditingNamePreview() {
             snackbarHostState = remember { SnackbarHostState() },
             onEvent = {},
             onNavigateBack = {},
+            onNavigateToSettings = {},
         )
     }
 }

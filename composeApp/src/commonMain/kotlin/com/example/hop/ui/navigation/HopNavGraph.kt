@@ -250,9 +250,7 @@ fun HopNavGraph(
                     // TODO: no bookingId in scope at MyTripsPassenger level
                 },
                 onNavigateToProfile = {
-                    navController.navigate(HopRoutes.Home) {
-                        popUpTo(HopRoutes.Home) { inclusive = false }
-                    }
+                    navController.navigate(HopRoutes.Profile(userId = ""))
                 },
                 onNavigateToFindRide = {
                     navController.navigate(HopRoutes.SearchResults)
@@ -381,7 +379,7 @@ fun HopNavGraph(
                     // TODO: Replace with ChatScreen navigation (post-MVP)
                 },
                 onNavigateToProfile = {
-                    // TODO: Replace with ProfileScreen navigation
+                    navController.navigate(HopRoutes.Profile(userId = ""))
                 },
             )
         }
@@ -474,6 +472,9 @@ fun HopNavGraph(
                 },
                 onNavigateToEditCar = {
                     navController.navigate(HopRoutes.EnableDriverStep1)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(HopRoutes.Settings)
                 },
             )
         }

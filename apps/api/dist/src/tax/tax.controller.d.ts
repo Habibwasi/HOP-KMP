@@ -10,11 +10,11 @@ export declare class TaxController {
         };
     } & {
         id: string;
+        distanceKm: number;
         driverId: string;
         tripId: string;
         bookingId: string;
         amountOere: number;
-        distanceKm: number;
         ratePerKm: number;
         recordedAt: Date;
     })[]>;
@@ -28,18 +28,18 @@ export declare class TaxController {
         taxableAmountDkk: number;
         records: ({
             trip: {
-                distanceKm: number | null;
                 originAddress: string;
                 destAddress: string;
                 departureAt: Date;
+                distanceKm: number | null;
             };
         } & {
             id: string;
+            distanceKm: number;
             driverId: string;
             tripId: string;
             bookingId: string;
             amountOere: number;
-            distanceKm: number;
             ratePerKm: number;
             recordedAt: Date;
         })[];
@@ -62,18 +62,18 @@ export declare class TaxController {
             taxableAmountDkk: number;
             records: ({
                 trip: {
-                    distanceKm: number | null;
                     originAddress: string;
                     destAddress: string;
                     departureAt: Date;
+                    distanceKm: number | null;
                 };
             } & {
                 id: string;
+                distanceKm: number;
                 driverId: string;
                 tripId: string;
                 bookingId: string;
                 amountOere: number;
-                distanceKm: number;
                 ratePerKm: number;
                 recordedAt: Date;
             })[];

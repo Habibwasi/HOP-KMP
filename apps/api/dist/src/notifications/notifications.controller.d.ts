@@ -8,10 +8,10 @@ export declare class NotificationsController {
     constructor(notifications: NotificationsService);
     register(req: any, dto: RegisterTokenDto): Promise<{
         id: string;
+        createdAt: Date;
         token: string;
         userId: string;
         platform: string;
-        createdAt: Date;
     }>;
     remove(token: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
 }

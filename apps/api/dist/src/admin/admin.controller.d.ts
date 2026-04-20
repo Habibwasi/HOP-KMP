@@ -24,14 +24,14 @@ export declare class AdminController {
     }>;
     users(page?: number, limit?: number): Promise<{
         users: {
-            isVerified: boolean;
-            isBanned: boolean;
             id: string;
             phone: string;
             email: string | null;
             firstName: string;
             lastName: string;
             role: import("@prisma/client").$Enums.Role;
+            isVerified: boolean;
+            isBanned: boolean;
             banExpiresAt: Date | null;
             createdAt: Date;
             isAdmin: boolean;
@@ -41,8 +41,6 @@ export declare class AdminController {
         pages: number;
     }>;
     ban(id: string, dto: BanUserDto): Promise<{
-        isVerified: boolean;
-        isBanned: boolean;
         id: string;
         phone: string;
         email: string | null;
@@ -51,14 +49,14 @@ export declare class AdminController {
         lastName: string;
         avatarUrl: string | null;
         role: import("@prisma/client").$Enums.Role;
+        isVerified: boolean;
+        isBanned: boolean;
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
         isAdmin: boolean;
     }>;
     unban(id: string): Promise<{
-        isVerified: boolean;
-        isBanned: boolean;
         id: string;
         phone: string;
         email: string | null;
@@ -67,14 +65,14 @@ export declare class AdminController {
         lastName: string;
         avatarUrl: string | null;
         role: import("@prisma/client").$Enums.Role;
+        isVerified: boolean;
+        isBanned: boolean;
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
         isAdmin: boolean;
     }>;
     makeAdmin(id: string): Promise<{
-        isVerified: boolean;
-        isBanned: boolean;
         id: string;
         phone: string;
         email: string | null;
@@ -83,6 +81,8 @@ export declare class AdminController {
         lastName: string;
         avatarUrl: string | null;
         role: import("@prisma/client").$Enums.Role;
+        isVerified: boolean;
+        isBanned: boolean;
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
@@ -96,10 +96,10 @@ export declare class AdminController {
             lastName: string;
         };
     } & {
-        status: import("@prisma/client").$Enums.BookingStatus;
         id: string;
         createdAt: Date;
         userId: string;
+        status: import("@prisma/client").$Enums.BookingStatus;
         frontUrl: string;
         backUrl: string;
         reviewedAt: Date | null;
@@ -120,11 +120,10 @@ export declare class AdminController {
                 lastName: string;
             };
         } & {
-            status: import("@prisma/client").$Enums.TripStatus;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            driverId: string;
+            model: import("@prisma/client").$Enums.TripModel;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -133,14 +132,15 @@ export declare class AdminController {
             destAddress: string;
             departureAt: Date;
             seats: number;
-            pricePerSeat: number;
-            model: import("@prisma/client").$Enums.TripModel;
+            recurringDays: number[];
             minPassengers: number | null;
             thresholdDeadline: Date | null;
+            pricePerSeat: number;
+            status: import("@prisma/client").$Enums.TripStatus;
             distanceKm: number | null;
-            recurringDays: number[];
             isRecurring: boolean;
             isActive: boolean;
+            driverId: string;
         })[];
         total: number;
         page: number;
