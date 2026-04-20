@@ -180,7 +180,7 @@ fun MyTripsDriverScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface),
+            .background(HopColors.background),
     ) {
         // ── Top bar ───────────────────────────────────────────────────────────
         MyTripsDriverTopBar(onNavigateBack = onNavigateBack)
@@ -188,8 +188,8 @@ fun MyTripsDriverScreen(
         // ── Tab row ───────────────────────────────────────────────────────────
         PrimaryTabRow(
             selectedTabIndex = selectedTab,
-            containerColor = HopColors.surfaceElevated,
-            contentColor = HopColors.textPrimary,
+            containerColor = HopColors.background,
+            contentcolor = HopColors.authTextPrimary,
             indicator = {
                 androidx.compose.material3.TabRowDefaults.PrimaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(selectedTab, matchContentSize = false),
@@ -212,7 +212,7 @@ fun MyTripsDriverScreen(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Normal,
                         ),
-                        color = if (selectedTab == index) HopColors.primaryLime else HopColors.textSecondary,
+                        color = if (selectedTab == index) HopColors.primaryLime else HopColors.authTextSecondary,
                         modifier = Modifier.padding(vertical = HopSpacing.sm),
                     )
                 }
@@ -255,7 +255,7 @@ private fun MyTripsDriverTopBar(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .padding(horizontal = HopSpacing.xs, vertical = HopSpacing.xs),
     ) {
         IconButton(
@@ -267,7 +267,7 @@ private fun MyTripsDriverTopBar(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -275,7 +275,7 @@ private fun MyTripsDriverTopBar(
         Text(
             text = "My Trips",
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             modifier = Modifier.align(Alignment.Center),
         )
     }
@@ -405,7 +405,7 @@ private fun DriverTripCard(
                         TripModel.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentColor = HopColors.textSecondary,
+                            contentcolor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -419,7 +419,7 @@ private fun DriverTripCard(
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentColor = HopColors.textSecondary,
+                            contentcolor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -620,15 +620,15 @@ private fun MyTripsDriverBottomNavBar(
 ) {
     NavigationBar(
         modifier = modifier.navigationBarsPadding(),
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.background,
         tonalElevation = 0.dp,
     ) {
         val chipColors = NavigationBarItemDefaults.colors(
             selectedIconColor = HopColors.primaryLime,
             selectedTextColor = HopColors.primaryLime,
             indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-            unselectedIconColor = HopColors.textSecondary,
-            unselectedTextColor = HopColors.textSecondary,
+            unselectedIconcolor = HopColors.authTextSecondary,
+            unselectedTextcolor = HopColors.authTextSecondary,
         )
 
         NavigationBarItem(
@@ -736,7 +736,7 @@ private fun previewDriverTrip(
 
 // ── Previews ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "DR-09 — Upcoming trips (Model A + B)")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "DR-09 — Upcoming trips (Model A + B)")
 @Composable
 private fun PreviewMyTripsDriverUpcoming() {
     HopTheme {
@@ -767,7 +767,7 @@ private fun PreviewMyTripsDriverUpcoming() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "DR-09 — Model B threshold met")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "DR-09 — Model B threshold met")
 @Composable
 private fun PreviewMyTripsDriverModelBThresholdMet() {
     HopTheme {
@@ -797,7 +797,7 @@ private fun PreviewMyTripsDriverModelBThresholdMet() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "DR-09 — Past trips")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "DR-09 — Past trips")
 @Composable
 private fun PreviewMyTripsDriverPast() {
     HopTheme {
@@ -825,7 +825,7 @@ private fun PreviewMyTripsDriverPast() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "DR-09 — Empty upcoming")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "DR-09 — Empty upcoming")
 @Composable
 private fun PreviewMyTripsDriverEmpty() {
     HopTheme {
@@ -840,7 +840,7 @@ private fun PreviewMyTripsDriverEmpty() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "DR-09 — Loading")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "DR-09 — Loading")
 @Composable
 private fun PreviewMyTripsDriverLoading() {
     HopTheme {

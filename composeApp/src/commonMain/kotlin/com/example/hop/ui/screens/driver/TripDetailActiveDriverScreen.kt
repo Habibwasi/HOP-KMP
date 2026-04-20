@@ -155,7 +155,7 @@ fun TripDetailActiveDriverScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -173,14 +173,14 @@ fun TripDetailActiveDriverScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                 )
             }
             Text(
                 text = "Active Trip",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 ),
                 modifier = Modifier.align(Alignment.Center),
             )
@@ -252,7 +252,7 @@ fun TripDetailActiveDriverScreen(
                             text = "Passengers",
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                color = HopColors.textPrimary,
+                                color = HopColors.authTextPrimary,
                             ),
                             modifier = Modifier.padding(
                                 horizontal = HopSpacing.md,
@@ -266,7 +266,7 @@ fun TripDetailActiveDriverScreen(
                             Text(
                                 text = "No passengers booked yet.",
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = HopColors.textSecondary,
+                                    color = HopColors.authTextSecondary,
                                 ),
                                 modifier = Modifier.padding(
                                     horizontal = HopSpacing.md,
@@ -339,7 +339,7 @@ private fun TripHeaderSection(
                 text = "$originName → $destName",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 ),
                 modifier = Modifier.weight(1f),
             )
@@ -360,7 +360,7 @@ private fun TripHeaderSection(
         Text(
             text = "Departs: $departsAt",
             style = MaterialTheme.typography.bodySmall.copy(
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             ),
         )
     }
@@ -379,7 +379,7 @@ private fun SeatsSummarySection(
             text = "$seatsBooked of $seatsTotal seats booked",
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.Medium,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             ),
         )
 
@@ -400,7 +400,7 @@ private fun SeatsSummarySection(
             Text(
                 text = "Threshold: $minThreshold seats needed",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     fontSize = 11.sp,
                 ),
             )
@@ -428,7 +428,7 @@ private fun PassengerRow(
                 text = passenger.fullName,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Medium,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 ),
             )
             if (passenger.rating > 0f) {
@@ -443,7 +443,7 @@ private fun PassengerRow(
                     Text(
                         text = String.format("%.1f", passenger.rating),
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = HopColors.textSecondary,
+                            color = HopColors.authTextSecondary,
                             fontSize = 11.sp,
                         ),
                     )
@@ -452,7 +452,7 @@ private fun PassengerRow(
                 Text(
                     text = "No ratings yet",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = HopColors.textSecondary,
+                        color = HopColors.authTextSecondary,
                         fontSize = 11.sp,
                     ),
                 )
@@ -474,7 +474,7 @@ private fun PassengerRow(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TripDetailActiveDriverScreenPreview() {
     HopTheme {
@@ -529,7 +529,7 @@ private fun TripDetailActiveDriverScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Loading")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Loading")
 @Composable
 private fun TripDetailActiveDriverLoadingPreview() {
     HopTheme {

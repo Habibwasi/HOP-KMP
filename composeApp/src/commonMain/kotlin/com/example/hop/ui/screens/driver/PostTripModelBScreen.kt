@@ -187,29 +187,29 @@ fun PostTripModelBScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel", color = HopColors.textSecondary)
+                    Text("Cancel", color = HopColors.authTextSecondary)
                 }
             },
             colors = DatePickerDefaults.colors(
-                containerColor = HopColors.surfaceElevated,
-                titleContentColor = HopColors.textSecondary,
-                headlineContentColor = HopColors.textPrimary,
-                weekdayContentColor = HopColors.textSecondary,
-                subheadContentColor = HopColors.textSecondary,
-                navigationContentColor = HopColors.textPrimary,
-                yearContentColor = HopColors.textPrimary,
-                disabledYearContentColor = HopColors.textSecondary.copy(alpha = 0.38f),
+                containerColor = HopColors.background,
+                titleContentcolor = HopColors.authTextSecondary,
+                headlineContentcolor = HopColors.authTextPrimary,
+                weekdayContentcolor = HopColors.authTextSecondary,
+                subheadContentcolor = HopColors.authTextSecondary,
+                navigationContentcolor = HopColors.authTextPrimary,
+                yearContentcolor = HopColors.authTextPrimary,
+                disabledYearContentcolor = HopColors.authTextSecondary.copy(alpha = 0.38f),
                 currentYearContentColor = HopColors.primaryLime,
                 selectedYearContentColor = Color(0xFF1A1A1A),
                 selectedYearContainerColor = HopColors.primaryLime,
-                dayContentColor = HopColors.textPrimary,
-                disabledDayContentColor = HopColors.textSecondary.copy(alpha = 0.38f),
+                dayContentcolor = HopColors.authTextPrimary,
+                disabledDayContentcolor = HopColors.authTextSecondary.copy(alpha = 0.38f),
                 selectedDayContentColor = Color(0xFF1A1A1A),
                 disabledSelectedDayContentColor = Color(0xFF1A1A1A).copy(alpha = 0.38f),
                 selectedDayContainerColor = HopColors.primaryLime,
                 todayContentColor = HopColors.primaryLime,
                 todayDateBorderColor = HopColors.primaryLime,
-                dayInSelectionRangeContentColor = HopColors.textPrimary,
+                dayInSelectionRangeContentcolor = HopColors.authTextPrimary,
                 dayInSelectionRangeContainerColor = HopColors.primaryLime.copy(alpha = 0.2f),
             ),
         ) {
@@ -243,7 +243,7 @@ fun PostTripModelBScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         // ── Top bar ───────────────────────────────────────────────────────────
@@ -332,11 +332,11 @@ fun PostTripModelBScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(HopColors.surface)
+                .background(HopColors.background)
                 .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md)
                 .navigationBarsPadding(),
         ) {
-            HorizontalDivider(color = HopColors.textSecondary.copy(alpha = 0.12f))
+            HorizontalDivider(color = HopColors.authTextSecondary.copy(alpha = 0.12f))
             Spacer(modifier = Modifier.height(HopSpacing.md))
             HopButton(
                 text = "Next: Review Price",
@@ -375,7 +375,7 @@ private fun ModelBTopBar(onNavigateBack: () -> Unit) {
             Icon(
                 imageVector = Icons.Outlined.ArrowBackIosNew,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -385,7 +385,7 @@ private fun ModelBTopBar(onNavigateBack: () -> Unit) {
                 text = "One-Off Trip",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
             Text(
                 text = "Model B",
@@ -410,11 +410,11 @@ private fun DatePickerRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(HopColors.surfaceElevated)
+                .background(HopColors.authInputSurface)
                 .border(
                     1.dp,
                     if (errorMessage != null) HopColors.error
-                    else HopColors.textSecondary.copy(alpha = 0.15f),
+                    else HopColors.authTextSecondary.copy(alpha = 0.15f),
                     RoundedCornerShape(12.dp),
                 )
                 .clickable(onClickLabel = "Pick trip date") { onEditClick() }
@@ -424,7 +424,7 @@ private fun DatePickerRow(
             Icon(
                 imageVector = Icons.Outlined.CalendarToday,
                 contentDescription = null,
-                tint = HopColors.textSecondary,
+                tint = HopColors.authTextSecondary,
                 modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
@@ -499,7 +499,7 @@ private fun ThresholdExplainer(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PostTripModelBScreenPreview() {
     HopTheme {

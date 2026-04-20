@@ -139,7 +139,7 @@ fun PriceReviewScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         // ── Top bar ───────────────────────────────────────────────────────────
@@ -182,11 +182,11 @@ fun PriceReviewScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(HopColors.surface)
+                .background(HopColors.background)
                 .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md)
                 .navigationBarsPadding(),
         ) {
-            HorizontalDivider(color = HopColors.textSecondary.copy(alpha = 0.12f))
+            HorizontalDivider(color = HopColors.authTextSecondary.copy(alpha = 0.12f))
             Spacer(modifier = Modifier.height(HopSpacing.md))
             HopButton(
                 text = "Confirm & Post",
@@ -212,7 +212,7 @@ private fun PriceReviewTopBar(onNavigateBack: () -> Unit) {
             Icon(
                 imageVector = Icons.Outlined.ArrowBackIosNew,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -221,7 +221,7 @@ private fun PriceReviewTopBar(onNavigateBack: () -> Unit) {
             text = "Review Price",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
     }
 }
@@ -240,7 +240,7 @@ private fun TripSummaryCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .border(1.dp, HopColors.textSecondary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
@@ -254,7 +254,7 @@ private fun TripSummaryCard(
                 text = "Trip Summary",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 letterSpacing = 0.5.sp,
             )
             // Model badge
@@ -274,7 +274,7 @@ private fun TripSummaryCard(
             }
         }
 
-        HorizontalDivider(color = HopColors.textSecondary.copy(alpha = 0.1f))
+        HorizontalDivider(color = HopColors.authTextSecondary.copy(alpha = 0.1f))
 
         // Route
         SummaryRow(label = "From", value = originName.ifBlank { "—" })
@@ -315,13 +315,13 @@ private fun SummaryRow(
         Text(
             text = label,
             fontSize = 14.sp,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
         )
         Text(
             text = value,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
     }
 }
@@ -337,7 +337,7 @@ private fun PriceBreakdownCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .border(1.dp, HopColors.textSecondary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
             .padding(HopSpacing.md),
         verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
@@ -350,7 +350,7 @@ private fun PriceBreakdownCard(
             Icon(
                 imageVector = Icons.Outlined.Lock,
                 contentDescription = null,
-                tint = HopColors.textSecondary,
+                tint = HopColors.authTextSecondary,
                 modifier = Modifier.size(16.dp),
             )
             Spacer(modifier = Modifier.width(HopSpacing.xs))
@@ -358,7 +358,7 @@ private fun PriceBreakdownCard(
                 text = "Price Breakdown",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 letterSpacing = 0.5.sp,
                 modifier = Modifier.weight(1f),
             )
@@ -369,7 +369,7 @@ private fun PriceBreakdownCard(
             )
         }
 
-        HorizontalDivider(color = HopColors.textSecondary.copy(alpha = 0.1f))
+        HorizontalDivider(color = HopColors.authTextSecondary.copy(alpha = 0.1f))
 
         if (priceResult == null) {
             // Distance not yet resolved — placeholder state
@@ -377,7 +377,7 @@ private fun PriceBreakdownCard(
                 text = "Price will be calculated once the route is confirmed.",
                 fontSize = 13.sp,
                 lineHeight = 19.sp,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
         } else {
             val distanceKm = distanceMetres / 1000.0
@@ -396,7 +396,7 @@ private fun PriceBreakdownCard(
                 label = "Platform fee",
                 value = "– ${formatDkk(priceResult.platformFeeOere)}",
                 isAmount = true,
-                valueColor = HopColors.textSecondary,
+                valuecolor = HopColors.authTextSecondary,
             )
             HorizontalDivider(color = HopColors.primaryLime.copy(alpha = 0.2f))
             PriceRow(
@@ -428,7 +428,7 @@ private fun PriceRow(
     highlight: Boolean = false,
     labelWeight: FontWeight = FontWeight.Normal,
     valueSize: androidx.compose.ui.unit.TextUnit = 14.sp,
-    valueColor: Color = HopColors.textPrimary,
+    valueColor: color = HopColors.authTextPrimary,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -439,7 +439,7 @@ private fun PriceRow(
             text = label,
             fontSize = 14.sp,
             fontWeight = labelWeight,
-            color = if (highlight) HopColors.textPrimary else HopColors.textSecondary,
+            color = if (highlight) HopColors.textPrimary else HopColors.authTextSecondary,
         )
         Text(
             text = value,
@@ -495,7 +495,7 @@ private fun formatDkk(oere: Int): String {
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PriceReviewScreenModelAPreview() {
     HopTheme {
@@ -516,7 +516,7 @@ private fun PriceReviewScreenModelAPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PriceReviewScreenModelBPreview() {
     HopTheme {
@@ -538,7 +538,7 @@ private fun PriceReviewScreenModelBPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Price not yet resolved")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Price not yet resolved")
 @Composable
 private fun PriceReviewScreenNoPricePreview() {
     HopTheme {

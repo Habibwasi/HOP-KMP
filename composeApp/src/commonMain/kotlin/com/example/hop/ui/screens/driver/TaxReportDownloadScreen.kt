@@ -123,7 +123,7 @@ fun TaxReportDownloadScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -141,14 +141,14 @@ fun TaxReportDownloadScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                 )
             }
             Text(
                 text = "Annual Tax Report",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 ),
                 modifier = Modifier.align(Alignment.Center),
             )
@@ -179,7 +179,7 @@ fun TaxReportDownloadScreen(
                     Text(
                         text = "Could not load your tax report.",
                         style = MaterialTheme.typography.bodyLarge.copy(
-                            color = HopColors.textPrimary,
+                            color = HopColors.authTextPrimary,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center,
                         ),
@@ -228,7 +228,7 @@ fun TaxReportDownloadScreen(
                     Text(
                         text = "Your report is ready",
                         style = MaterialTheme.typography.bodyLarge.copy(
-                            color = HopColors.textSecondary,
+                            color = HopColors.authTextSecondary,
                         ),
                     )
 
@@ -265,7 +265,7 @@ fun TaxReportDownloadScreen(
                         TaxSummaryRow(
                             label = "Total Taxable",
                             amountOere = state.totalTaxableOere,
-                            labelColor = HopColors.textPrimary,
+                            labelcolor = HopColors.authTextPrimary,
                             amountColor = HopColors.primaryLime,
                         )
                     }
@@ -307,8 +307,8 @@ private fun TaxSummaryRow(
     label: String,
     amountOere: Int,
     modifier: Modifier = Modifier,
-    labelColor: androidx.compose.ui.graphics.Color = HopColors.textSecondary,
-    amountColor: androidx.compose.ui.graphics.Color = HopColors.textPrimary,
+    labelColor: androidx.compose.ui.graphics.color = HopColors.authTextSecondary,
+    amountColor: androidx.compose.ui.graphics.color = HopColors.authTextPrimary,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -338,7 +338,7 @@ private fun TaxSummaryRow(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TaxReportDownloadScreenReadyPreview() {
     HopTheme {
@@ -360,7 +360,7 @@ private fun TaxReportDownloadScreenReadyPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Loading")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Loading")
 @Composable
 private fun TaxReportDownloadScreenLoadingPreview() {
     HopTheme {
@@ -374,7 +374,7 @@ private fun TaxReportDownloadScreenLoadingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Error")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Error")
 @Composable
 private fun TaxReportDownloadScreenErrorPreview() {
     HopTheme {

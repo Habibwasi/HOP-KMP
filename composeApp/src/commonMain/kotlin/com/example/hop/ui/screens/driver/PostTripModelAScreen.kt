@@ -174,7 +174,7 @@ fun PostTripModelAScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         // ── Top bar ───────────────────────────────────────────────────────────
@@ -263,11 +263,11 @@ fun PostTripModelAScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(HopColors.surface)
+                .background(HopColors.background)
                 .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md)
                 .navigationBarsPadding(),
         ) {
-            HorizontalDivider(color = HopColors.textSecondary.copy(alpha = 0.12f))
+            HorizontalDivider(color = HopColors.authTextSecondary.copy(alpha = 0.12f))
             Spacer(modifier = Modifier.height(HopSpacing.md))
             HopButton(
                 text = "Next: Review Price",
@@ -308,7 +308,7 @@ private fun ModelFormTopBar(
             Icon(
                 imageVector = Icons.Outlined.ArrowBackIosNew,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -318,7 +318,7 @@ private fun ModelFormTopBar(
                 text = title,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
             Text(
                 text = "Model A",
@@ -342,7 +342,7 @@ internal fun FormSection(
             text = title,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color = HopColors.textSecondary,
+            color = HopColors.authTextSecondary,
             letterSpacing = 0.5.sp,
             modifier = Modifier.padding(bottom = HopSpacing.sm),
         )
@@ -376,7 +376,7 @@ private fun DayChipsRow(
                     .border(
                         width = 1.dp,
                         color = if (isSelected) Color.Transparent
-                        else HopColors.textSecondary.copy(alpha = 0.2f),
+                        else HopColors.authTextSecondary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(10.dp),
                     )
                     .clickable { onToggleDay(day) }
@@ -387,7 +387,7 @@ private fun DayChipsRow(
                     text = day.take(2), // "Mo", "Tu", etc.
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) Color(0xFF1A1A1A) else HopColors.textSecondary,
+                    color = if (isSelected) Color(0xFF1A1A1A) else HopColors.authTextSecondary,
                 )
             }
         }
@@ -404,7 +404,7 @@ internal fun TimePickerRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .border(
                 1.dp,
                 HopColors.textSecondary.copy(alpha = 0.15f),
@@ -418,7 +418,7 @@ internal fun TimePickerRow(
             text = time,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             modifier = Modifier.weight(1f),
         )
         Text(
@@ -444,7 +444,7 @@ internal fun SeatCounter(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .border(
                 1.dp,
                 HopColors.textSecondary.copy(alpha = 0.15f),
@@ -457,7 +457,7 @@ internal fun SeatCounter(
             text = "$seats $label",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
             modifier = Modifier.weight(1f),
         )
         // Decrement
@@ -467,7 +467,7 @@ internal fun SeatCounter(
                 .clip(RoundedCornerShape(8.dp))
                 .background(
                     if (seats > min) HopColors.primaryLime.copy(alpha = 0.15f)
-                    else HopColors.textSecondary.copy(alpha = 0.08f),
+                    else HopColors.authTextSecondary.copy(alpha = 0.08f),
                 )
                 .clickable(enabled = seats > min, onClickLabel = "Decrease $label") { onDecrement() },
             contentAlignment = Alignment.Center,
@@ -475,7 +475,7 @@ internal fun SeatCounter(
             Icon(
                 imageVector = Icons.Outlined.Remove,
                 contentDescription = "Decrease $label",
-                tint = if (seats > min) HopColors.primaryLime else HopColors.textSecondary.copy(alpha = 0.4f),
+                tint = if (seats > min) HopColors.primaryLime else HopColors.authTextSecondary.copy(alpha = 0.4f),
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -487,7 +487,7 @@ internal fun SeatCounter(
                 .clip(RoundedCornerShape(8.dp))
                 .background(
                     if (seats < max) HopColors.primaryLime.copy(alpha = 0.15f)
-                    else HopColors.textSecondary.copy(alpha = 0.08f),
+                    else HopColors.authTextSecondary.copy(alpha = 0.08f),
                 )
                 .clickable(enabled = seats < max, onClickLabel = "Increase $label") { onIncrement() },
             contentAlignment = Alignment.Center,
@@ -495,7 +495,7 @@ internal fun SeatCounter(
             Icon(
                 imageVector = Icons.Outlined.Add,
                 contentDescription = "Increase $label",
-                tint = if (seats < max) HopColors.primaryLime else HopColors.textSecondary.copy(alpha = 0.4f),
+                tint = if (seats < max) HopColors.primaryLime else HopColors.authTextSecondary.copy(alpha = 0.4f),
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -518,7 +518,7 @@ internal fun TimePickerDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(HopColors.surfaceElevated)
+                .background(HopColors.authInputSurface)
                 .padding(HopSpacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -526,7 +526,7 @@ internal fun TimePickerDialog(
                 text = "Select Departure Time",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = HopSpacing.md),
@@ -536,18 +536,18 @@ internal fun TimePickerDialog(
                 colors = TimePickerDefaults.colors(
                     clockDialColor = HopColors.surface,
                     clockDialSelectedContentColor = Color(0xFF1A1A1A),
-                    clockDialUnselectedContentColor = HopColors.textSecondary,
+                    clockDialUnselectedContentcolor = HopColors.authTextSecondary,
                     selectorColor = HopColors.primaryLime,
-                    containerColor = HopColors.surfaceElevated,
+                    containerColor = HopColors.background,
                     periodSelectorBorderColor = HopColors.primaryLime.copy(alpha = 0.3f),
                     periodSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.2f),
                     periodSelectorUnselectedContainerColor = Color.Transparent,
                     periodSelectorSelectedContentColor = HopColors.primaryLime,
-                    periodSelectorUnselectedContentColor = HopColors.textSecondary,
+                    periodSelectorUnselectedContentcolor = HopColors.authTextSecondary,
                     timeSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.15f),
                     timeSelectorUnselectedContainerColor = HopColors.surface,
                     timeSelectorSelectedContentColor = HopColors.primaryLime,
-                    timeSelectorUnselectedContentColor = HopColors.textSecondary,
+                    timeSelectorUnselectedContentcolor = HopColors.authTextSecondary,
                 ),
             )
             Spacer(modifier = Modifier.height(HopSpacing.md))
@@ -556,7 +556,7 @@ internal fun TimePickerDialog(
                 horizontalArrangement = Arrangement.End,
             ) {
                 androidx.compose.material3.TextButton(onClick = onDismiss) {
-                    Text("Cancel", color = HopColors.textSecondary)
+                    Text("Cancel", color = HopColors.authTextSecondary)
                 }
                 Spacer(modifier = Modifier.width(HopSpacing.sm))
                 androidx.compose.material3.TextButton(onClick = onConfirm) {
@@ -569,7 +569,7 @@ internal fun TimePickerDialog(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PostTripModelAScreenPreview() {
     HopTheme {

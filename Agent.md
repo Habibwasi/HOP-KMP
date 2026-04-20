@@ -266,14 +266,17 @@ struct MyScreen: View {
 - No NativeWind. No Tailwind. No CSS.
 - Tokens defined as Kotlin `object` in commonMain, consumed natively on each platform
 - iOS: `extension Color` in `HopColors.swift`, `struct HopSpacing` in `HopSpacing.swift`
-- Colour palette:
-  - Primary Lime:     `#C8F135`
+- **All screens use a white background theme** — no dark surfaces anywhere in the app.
+- Colour palette (global — white theme):
+  - Primary Lime:     `#C8F135` (use as fills/badges only — NOT as text/icon colour on white, contrast ~1.4:1)
   - Primary Green:    `#1DB954`
-  - Background:       `#FFFFFF`
-  - Surface:          `#1A1A1A`
-  - Surface Elevated: `#242424`
-  - Text Primary:     `#FFFFFF`
-  - Text Secondary:   `#B3B3B3`
+  - Background:       `#FFFFFF` (pure white scaffold on every screen)
+  - Surface:          `#F1F3F4` (off-white card / input background)
+  - Surface Elevated: `#E8EAED` (slightly darker card elevation)
+  - Text Primary:     `#0D0D0D` (~18:1 on white, WCAG AAA)
+  - Text Secondary:   `#5F6368` (~7.1:1 on white, WCAG AA)
+  - Accent:           `#167A30` (dark green, ~5.3:1 on white, WCAG AA — use for CTAs, links, active states)
+  - Input Border:     `#D1D5DB` (subtle cool-gray border)
   - Success:          `#22C55E`
   - Warning:          `#FBBF24`
   - Error:            `#EF4444`

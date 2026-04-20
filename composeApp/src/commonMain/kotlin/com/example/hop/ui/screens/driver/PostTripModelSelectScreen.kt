@@ -121,7 +121,7 @@ fun PostTripModelSelectScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding(),
     ) {
         // ── Top bar ───────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ fun PostTripModelSelectScreen(
             Text(
                 text = "How do you want to post this trip?",
                 fontSize = 15.sp,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 modifier = Modifier.padding(horizontal = HopSpacing.xs),
             )
 
@@ -203,7 +203,7 @@ private fun PostTripSelectTopBar(
             Icon(
                 imageVector = Icons.Outlined.ArrowBackIosNew,
                 contentDescription = "Back",
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -212,7 +212,7 @@ private fun PostTripSelectTopBar(
             text = "Post a Trip",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = HopColors.textPrimary,
+            color = HopColors.authTextPrimary,
         )
     }
 }
@@ -231,10 +231,10 @@ private fun TripModelCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.surfaceElevated)
+            .background(HopColors.authInputSurface)
             .border(
                 width = 1.dp,
-                color = HopColors.textSecondary.copy(alpha = 0.15f),
+                color = HopColors.authTextSecondary.copy(alpha = 0.15f),
                 shape = RoundedCornerShape(16.dp),
             )
             .clickable(
@@ -270,7 +270,7 @@ private fun TripModelCard(
                         text = title,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = HopColors.textPrimary,
+                        color = HopColors.authTextPrimary,
                     )
                     Text(
                         text = modelLabel,
@@ -283,7 +283,7 @@ private fun TripModelCard(
                 Icon(
                     imageVector = Icons.Outlined.ChevronRight,
                     contentDescription = null,
-                    tint = HopColors.textSecondary,
+                    tint = HopColors.authTextSecondary,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -295,7 +295,7 @@ private fun TripModelCard(
                 text = description,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
 
             if (bulletPoints.isNotEmpty()) {
@@ -317,7 +317,7 @@ private fun TripModelCard(
                             text = point,
                             fontSize = 13.sp,
                             lineHeight = 19.sp,
-                            color = HopColors.textSecondary,
+                            color = HopColors.authTextSecondary,
                         )
                     }
                 }
@@ -328,7 +328,7 @@ private fun TripModelCard(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PostTripModelSelectScreenPreview() {
     HopTheme {

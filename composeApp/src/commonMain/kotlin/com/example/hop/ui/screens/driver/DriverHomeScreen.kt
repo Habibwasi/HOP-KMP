@@ -158,7 +158,7 @@ fun DriverHomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface),
+            .background(HopColors.background),
     ) {
         // ── Scrollable body ───────────────────────────────────────────────────
         LazyColumn(
@@ -202,7 +202,7 @@ fun DriverHomeScreen(
                 Text(
                     text = "My Trips",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                     modifier = Modifier.padding(top = HopSpacing.xs),
                 )
             }
@@ -348,7 +348,7 @@ private fun DriverTripCard(
                         TripModel.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentColor = HopColors.textSecondary,
+                            contentcolor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -362,7 +362,7 @@ private fun DriverTripCard(
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.surfaceElevated,
-                            contentColor = HopColors.textSecondary,
+                            contentcolor = HopColors.authTextSecondary,
                         )
                     },
                 )
@@ -475,7 +475,7 @@ private fun DriverBottomNavBar(
 ) {
     NavigationBar(
         modifier = modifier.navigationBarsPadding(),
-        containerColor = HopColors.surfaceElevated,
+        containerColor = HopColors.background,
         tonalElevation = 0.dp,
     ) {
         DriverNavItem(
@@ -538,8 +538,8 @@ private fun RowScope.DriverNavItem(
             selectedIconColor = HopColors.primaryLime,
             selectedTextColor = HopColors.primaryLime,
             indicatorColor = Color.Transparent,
-            unselectedIconColor = HopColors.textSecondary,
-            unselectedTextColor = HopColors.textSecondary,
+            unselectedIconcolor = HopColors.authTextSecondary,
+            unselectedTextcolor = HopColors.authTextSecondary,
         ),
         modifier = modifier,
     )
@@ -547,7 +547,7 @@ private fun RowScope.DriverNavItem(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun DriverHomeScreenEmptyPreview() {
     HopTheme {
@@ -565,7 +565,7 @@ private fun DriverHomeScreenEmptyPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun DriverHomeScreenLoadingPreview() {
     HopTheme {
@@ -583,7 +583,7 @@ private fun DriverHomeScreenLoadingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun DriverHomeScreenWithTripsPreview() {
     HopTheme {

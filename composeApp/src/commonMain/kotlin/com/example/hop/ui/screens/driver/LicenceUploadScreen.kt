@@ -141,7 +141,7 @@ fun LicenceUploadScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -156,7 +156,7 @@ fun LicenceUploadScreen(
                 Icon(
                     imageVector = Icons.Outlined.ArrowBackIosNew,
                     contentDescription = "Back",
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -165,7 +165,7 @@ fun LicenceUploadScreen(
                 text = "Become a Driver",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
         }
 
@@ -178,7 +178,7 @@ fun LicenceUploadScreen(
                 .padding(horizontal = HopSpacing.xl, vertical = HopSpacing.md),
         )
 
-        HorizontalDivider(color = Color(0xFF2E2E2E))
+        HorizontalDivider(color = HopColors.authInputBorder)
 
         Column(
             modifier = Modifier
@@ -191,12 +191,12 @@ fun LicenceUploadScreen(
                 text = "Upload Driving Licence",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
             Text(
                 text = "Take a clear photo of the front of your driving licence. Make sure all details are legible.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
 
             Spacer(Modifier.height(HopSpacing.sm))
@@ -273,7 +273,7 @@ fun LicenceUploadScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(HopColors.surface)
+                .background(HopColors.background)
                 .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
         ) {
             HopButton(
@@ -313,13 +313,13 @@ private fun LicencePhotoPlaceholder(modifier: Modifier = Modifier) {
             Icon(
                 imageVector = Icons.Outlined.DocumentScanner,
                 contentDescription = null,
-                tint = HopColors.textSecondary,
+                tint = HopColors.authTextSecondary,
                 modifier = Modifier.size(40.dp),
             )
             Text(
                 text = "No photo selected",
                 style = MaterialTheme.typography.bodySmall,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
         }
     }
@@ -367,7 +367,7 @@ private fun LicencePhotoPreview(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun LicenceUploadScreenEmptyPreview() {
     HopTheme {
@@ -382,7 +382,7 @@ private fun LicenceUploadScreenEmptyPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun LicenceUploadScreenWithPhotoPreview() {
     HopTheme {

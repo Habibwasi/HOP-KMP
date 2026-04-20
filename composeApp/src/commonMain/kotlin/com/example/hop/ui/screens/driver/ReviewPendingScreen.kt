@@ -79,7 +79,7 @@ fun ReviewPendingScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -94,7 +94,7 @@ fun ReviewPendingScreen(
                 text = "Become a Driver",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
         }
 
@@ -107,7 +107,7 @@ fun ReviewPendingScreen(
                 .padding(horizontal = HopSpacing.xl, vertical = HopSpacing.md),
         )
 
-        HorizontalDivider(color = Color(0xFF2E2E2E))
+        HorizontalDivider(color = HopColors.authInputBorder)
 
         // ── Content ───────────────────────────────────────────────────────────
         Column(
@@ -139,7 +139,7 @@ fun ReviewPendingScreen(
                 text = "Submitted!",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
                 textAlign = TextAlign.Center,
             )
 
@@ -153,7 +153,7 @@ fun ReviewPendingScreen(
             Text(
                 text = "We'll review your details within 24 hours.",
                 style = MaterialTheme.typography.bodyLarge,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 textAlign = TextAlign.Center,
             )
 
@@ -162,7 +162,7 @@ fun ReviewPendingScreen(
             Text(
                 text = "You'll receive a notification once your driver account is approved. In the meantime, you can continue using Hop as a passenger.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
                 textAlign = TextAlign.Center,
             )
         }
@@ -171,7 +171,7 @@ fun ReviewPendingScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(HopColors.surface)
+                .background(HopColors.background)
                 .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
         ) {
             HopButton(
@@ -213,7 +213,7 @@ private fun UnderReviewBadge(modifier: Modifier = Modifier) {
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun ReviewPendingScreenPreview() {
     HopTheme {

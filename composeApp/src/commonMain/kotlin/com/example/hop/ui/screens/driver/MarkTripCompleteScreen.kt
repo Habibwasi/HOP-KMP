@@ -136,7 +136,7 @@ fun MarkTripCompleteScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -155,7 +155,7 @@ fun MarkTripCompleteScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                 )
             }
         }
@@ -173,7 +173,7 @@ fun MarkTripCompleteScreen(
                 text = "Are you sure?",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 ),
                 textAlign = TextAlign.Center,
             )
@@ -183,7 +183,7 @@ fun MarkTripCompleteScreen(
             Text(
                 text = "Marking this trip complete will release payments to your account.",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                     textAlign = TextAlign.Center,
                     lineHeight = 26.sp,
                 ),
@@ -207,7 +207,7 @@ fun MarkTripCompleteScreen(
                     Text(
                         text = "Payout amount",
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = HopColors.textSecondary,
+                            color = HopColors.authTextSecondary,
                         ),
                     )
                     Spacer(modifier = Modifier.height(HopSpacing.xs))
@@ -256,7 +256,7 @@ fun MarkTripCompleteScreen(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun MarkTripCompleteScreenPreview() {
     HopTheme {
@@ -269,7 +269,7 @@ private fun MarkTripCompleteScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Loading")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Loading")
 @Composable
 private fun MarkTripCompleteScreenLoadingPreview() {
     HopTheme {

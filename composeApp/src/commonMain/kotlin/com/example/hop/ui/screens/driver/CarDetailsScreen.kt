@@ -139,7 +139,7 @@ fun CarDetailsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -154,7 +154,7 @@ fun CarDetailsScreen(
                 Icon(
                     imageVector = Icons.Outlined.ArrowBackIosNew,
                     contentDescription = "Back",
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -163,7 +163,7 @@ fun CarDetailsScreen(
                 text = "Become a Driver",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
         }
 
@@ -176,7 +176,7 @@ fun CarDetailsScreen(
                 .padding(horizontal = HopSpacing.xl, vertical = HopSpacing.md),
         )
 
-        HorizontalDivider(color = Color(0xFF2E2E2E))
+        HorizontalDivider(color = HopColors.authInputBorder)
 
         Column(
             modifier = Modifier
@@ -189,12 +189,12 @@ fun CarDetailsScreen(
                 text = "Your Car Details",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             )
             Text(
                 text = "We need a few details about your car to set up your driver profile.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             )
 
             Spacer(Modifier.height(HopSpacing.sm))
@@ -256,7 +256,7 @@ fun CarDetailsScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(HopColors.surface)
+                .background(HopColors.background)
                 .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
         ) {
             HopButton(
@@ -317,7 +317,7 @@ internal fun OnboardingStepIndicator(
                     .background(
                         when {
                             isCompleted || isCurrent -> HopColors.primaryLime
-                            else                     -> Color(0xFF2E2E2E)
+                            else                     -> HopColors.authInputBorder
                         },
                     ),
             ) {
@@ -337,7 +337,7 @@ internal fun OnboardingStepIndicator(
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = HopSpacing.xs),
-                    color = if (isCompleted) HopColors.primaryLime else Color(0xFF2E2E2E),
+                    color = if (isCompleted) HopColors.primaryLime else HopColors.authInputBorder,
                     thickness = 2.dp,
                 )
             }
@@ -347,7 +347,7 @@ internal fun OnboardingStepIndicator(
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun CarDetailsScreenPreview() {
     HopTheme {

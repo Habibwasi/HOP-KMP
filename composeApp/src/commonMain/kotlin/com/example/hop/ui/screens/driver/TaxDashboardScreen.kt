@@ -139,7 +139,7 @@ fun TaxDashboardScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.surface)
+            .background(HopColors.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -157,14 +157,14 @@ fun TaxDashboardScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
-                    tint = HopColors.textPrimary,
+                    tint = HopColors.authTextPrimary,
                 )
             }
             Text(
                 text = "Tax Dashboard",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
-                    color = HopColors.textPrimary,
+                    color = HopColors.authTextPrimary,
                 ),
                 modifier = Modifier.align(Alignment.Center),
             )
@@ -195,7 +195,7 @@ fun TaxDashboardScreen(
                     Text(
                         text = "Could not load your tax data.",
                         style = MaterialTheme.typography.bodyLarge.copy(
-                            color = HopColors.textPrimary,
+                            color = HopColors.authTextPrimary,
                             fontWeight = FontWeight.Medium,
                         ),
                         textAlign = TextAlign.Center,
@@ -305,7 +305,7 @@ private fun MonthYearSelector(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = null,
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(28.dp),
             )
         }
@@ -314,7 +314,7 @@ private fun MonthYearSelector(
             text = "$monthLabel $year",
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.textPrimary,
+                color = HopColors.authTextPrimary,
             ),
         )
 
@@ -325,7 +325,7 @@ private fun MonthYearSelector(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = HopColors.textPrimary,
+                tint = HopColors.authTextPrimary,
                 modifier = Modifier.size(28.dp),
             )
         }
@@ -350,7 +350,7 @@ private fun SummaryCard(
                 Text(
                     text = "No data for this period",
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = HopColors.textSecondary,
+                        color = HopColors.authTextSecondary,
                     ),
                 )
                 return@Column
@@ -360,7 +360,7 @@ private fun SummaryCard(
             Text(
                 text = "Your estimated tax this month is",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = HopColors.textSecondary,
+                    color = HopColors.authTextSecondary,
                 ),
             )
             Spacer(modifier = Modifier.height(HopSpacing.xs))
@@ -403,8 +403,8 @@ private fun SummaryCard(
             TaxBreakdownRow(
                 label = "Taxable amount",
                 amountOere = summary.taxableOere,
-                labelColor = HopColors.textPrimary,
-                amountColor = HopColors.textPrimary,
+                labelcolor = HopColors.authTextPrimary,
+                amountcolor = HopColors.authTextPrimary,
                 isBold = true,
             )
         }
@@ -418,8 +418,8 @@ private fun TaxBreakdownRow(
     label: String,
     amountOere: Int,
     modifier: Modifier = Modifier,
-    labelColor: androidx.compose.ui.graphics.Color = HopColors.textSecondary,
-    amountColor: androidx.compose.ui.graphics.Color = HopColors.textPrimary,
+    labelColor: androidx.compose.ui.graphics.color = HopColors.authTextSecondary,
+    amountColor: androidx.compose.ui.graphics.color = HopColors.authTextPrimary,
     isBold: Boolean = false,
 ) {
     Row(
@@ -466,7 +466,7 @@ private fun BefordringsfradragBanner(modifier: Modifier = Modifier) {
         Text(
             text = "Based on DKK 2.28/km — the SKAT 2026 rate",
             style = MaterialTheme.typography.bodySmall.copy(
-                color = HopColors.textSecondary,
+                color = HopColors.authTextSecondary,
             ),
         )
     }
@@ -474,7 +474,7 @@ private fun BefordringsfradragBanner(modifier: Modifier = Modifier) {
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun TaxDashboardScreenPreview() {
     HopTheme {
@@ -500,7 +500,7 @@ private fun TaxDashboardScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Loading")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Loading")
 @Composable
 private fun TaxDashboardScreenLoadingPreview() {
     HopTheme {
@@ -514,7 +514,7 @@ private fun TaxDashboardScreenLoadingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A, name = "Error")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Error")
 @Composable
 private fun TaxDashboardScreenErrorPreview() {
     HopTheme {
