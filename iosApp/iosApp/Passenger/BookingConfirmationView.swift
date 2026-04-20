@@ -196,31 +196,18 @@ struct BookingConfirmationView: View {
         .padding(.horizontal, HopSpacing.md)
     }
 
-    // MARK: — Model B notice card
+    // MARK: — Payment method row
 
-    private func modelBNoticeCard(booked: Int, threshold: Int) -> some View {
-        let progress = threshold > 0 ? min(1.0, Double(booked) / Double(threshold)) : 0.0
-        let met = booked >= threshold
-        return VStack(alignment: .leading, spacing: HopSpacing.sm) {
-            HStack(spacing: HopSpacing.xs) {
-                Image(systemName: met ? "checkmark.circle.fill" : "clock.badge.exclamationmark")
-                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
-                Text(met ? "Trip confirmed" : "Pending confirmation")
-                    .font(HopFont.labelMedium()).fontWeight(.semibold)
-                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.hopSurface).frame(height: 6)
-                    Capsule()
-                        .fill(met ? Color.hopSuccess : Color.hopWarning)
-                        .frame(width: geo.size.width * progress, height: 6)
-                }
-            }
-            .frame(height: 6)
-            Text("\(booked)/\(threshold) seats booked. Trip auto-cancels 6h before departure if threshold not met.")
-                .font(HopFont.bodySmall())
-                .foregroundColor(Color.hopTextSecondary)
+    private var paymentMethodRow: some View {
+        HStack(spacing: HopSpacing.sm) {
+            Image(systemName: "creditcard.fill")
+                .foregroundColor(Color.hopPrimaryLime)
+            Text("MobilePay")
+                .font(HopFont.bodyMedium()).fontWeight(.medium)
+                .foregroundColor(Color.hopTextPrimary)
+            Spacer()
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(Color.hopSuccess)
         }
         .padding(HopSpacing.md)
         .background(Color.hopSurfaceElevated)

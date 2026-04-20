@@ -34,7 +34,16 @@ import com.example.hop.ui.screens.driver.MyTripsDriverRoute
 import com.example.hop.ui.screens.driver.TripDetailActiveDriverRoute
 import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
 import com.example.hop.ui.screens.driver.RatePassengerRoute
+import com.example.hop.ui.screens.driver.CarDetailsRoute
+import com.example.hop.ui.screens.driver.LicenceUploadRoute
+import com.example.hop.ui.screens.driver.ReviewPendingRoute
+import com.example.hop.ui.screens.driver.PostTripModelSelectRoute
+import com.example.hop.ui.screens.driver.PostTripModelARoute
+import com.example.hop.ui.screens.driver.PostTripModelBRoute
+import com.example.hop.ui.screens.driver.PriceReviewRoute
+import com.example.hop.ui.screens.driver.TaxDashboardRoute
 import com.example.hop.ui.screens.driver.TaxReportDownloadRoute
+import com.example.hop.ui.screens.shared.NotificationsRoute
 import com.example.hop.ui.screens.shared.ChatRoute
 import com.example.hop.ui.screens.shared.OtherProfileRoute
 import com.example.hop.ui.screens.shared.OwnProfileRoute
@@ -298,38 +307,60 @@ fun HopNavGraph(
 
 
         composable<HopRoutes.EnableDriverStep1> {
-            // TODO: Replace with CarDetailsScreen composable (DR-02)
-            TodoScreen("Enable Driver — Step 1: Car Details")
+            CarDetailsRoute(
+                onNavigateToLicenceUpload = { navController.navigate(HopRoutes.EnableDriverStep2) },
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.EnableDriverStep2> {
-            // TODO: Replace with LicenceUploadScreen composable (DR-03)
-            TodoScreen("Enable Driver — Step 2: Licence Upload")
+            LicenceUploadRoute(
+                onNavigateToReviewPending = { navController.navigate(HopRoutes.EnableDriverStep3) },
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.EnableDriverStep3> {
-            // TODO: Replace with ReviewPendingScreen composable (DR-04)
-            TodoScreen("Enable Driver — Step 3: Review Pending")
+            ReviewPendingRoute(
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    }
+                },
+            )
         }
 
         composable<HopRoutes.PostTripModelSelect> {
-            // TODO: Replace with PostTripModelSelectScreen composable (DR-05)
-            TodoScreen("Post Trip — Select Model")
+            PostTripModelSelectRoute(
+                onNavigateToModelA = { navController.navigate(HopRoutes.PostTripModelA) },
+                onNavigateToModelB = { navController.navigate(HopRoutes.PostTripModelB) },
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.PostTripModelA> {
-            // TODO: Replace with PostTripModelAScreen composable (DR-06)
-            TodoScreen("Post Trip — Model A (Daily Commute)")
+            PostTripModelARoute(
+                onNavigateToPriceReview = { navController.navigate(HopRoutes.PriceReview) },
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.PostTripModelB> {
-            // TODO: Replace with PostTripModelBScreen composable (DR-07)
-            TodoScreen("Post Trip — Model B (One-Off)")
+            PostTripModelBRoute(
+                onNavigateToPriceReview = { navController.navigate(HopRoutes.PriceReview) },
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.PriceReview> {
-            // TODO: Replace with PriceReviewScreen composable (DR-08)
-            TodoScreen("Price Review & Confirm")
+            PriceReviewRoute(
+                onNavigateToMyTrips = {
+                    navController.navigate(HopRoutes.MyTripsDriver) {
+                        popUpTo(HopRoutes.PostTripModelSelect) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.MyTripsDriver> {
@@ -421,8 +452,9 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.TaxDashboard> {
-            // TODO: Replace with TaxDashboardScreen composable (DR-13)
-            TodoScreen("Tax Dashboard")
+            TaxDashboardRoute(
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable<HopRoutes.TaxReportDownload> {
@@ -463,8 +495,10 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.Notifications> {
-            // TODO: Replace with NotificationsScreen composable (SH-05)
-            TodoScreen("Notifications")
+            NotificationsRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToSearch = { navController.navigate(HopRoutes.SearchResults) },
+            )
         }
 
         composable<HopRoutes.Settings> {
