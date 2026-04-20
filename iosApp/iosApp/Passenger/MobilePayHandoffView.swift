@@ -42,8 +42,7 @@ struct MobilePayHandoffView: View {
                 // ── Status text ───────────────────────────────────────────────
                 VStack(spacing: HopSpacing.xs) {
                     Text(didAttemptOpen ? "Complete payment in MobilePay" : "Opening MobilePay…")
-                        .font(HopFont.headlineSmall())
-                        .fontWeight(.semibold)
+                        .font(HopFont.headlineSmall(weight: .semibold))
                         .foregroundColor(Color.hopTextPrimary)
                         .multilineTextAlignment(.center)
 

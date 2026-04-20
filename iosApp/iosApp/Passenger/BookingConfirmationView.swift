@@ -84,7 +84,7 @@ struct BookingConfirmationView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("Confirm Booking")
-                    .font(HopFont.bodyLarge()).fontWeight(.semibold)
+                    .font(HopFont.bodyLarge(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
             }
         }
@@ -117,7 +117,7 @@ struct BookingConfirmationView: View {
     private func tripSummaryCard(trip: Trip) -> some View {
         VStack(alignment: .leading, spacing: HopSpacing.sm) {
             Text("Trip Summary")
-                .font(HopFont.labelMedium()).fontWeight(.semibold)
+                .font(HopFont.labelMedium(weight: .semibold))
                 .foregroundColor(Color.hopTextSecondary)
 
             Spacer().frame(height: 2)
@@ -125,13 +125,13 @@ struct BookingConfirmationView: View {
             HStack(spacing: HopSpacing.xs) {
                 routeDot(color: .hopPrimaryLime)
                 Text(trip.originName)
-                    .font(HopFont.bodyMedium()).fontWeight(.medium)
+                    .font(HopFont.bodyMedium(weight: .medium))
                     .foregroundColor(Color.hopTextPrimary).lineLimit(1)
             }
             HStack(spacing: HopSpacing.xs) {
                 routeDot(color: .hopTextSecondary)
                 Text(trip.destName)
-                    .font(HopFont.bodyMedium()).fontWeight(.medium)
+                    .font(HopFont.bodyMedium(weight: .medium))
                     .foregroundColor(Color.hopTextPrimary).lineLimit(1)
             }
             Divider().background(Color.hopSurface)
@@ -150,13 +150,15 @@ struct BookingConfirmationView: View {
     // MARK: — Price summary card
 
     private func priceSummaryCard(trip: Trip) -> some View {
-        let totalOere       = trip.priceOerePerSeat * seats
-        let platformFeeOere = max(0, trip.priceOerePerSeat - trip.driverNetOere)
-        let seatCostOere    = trip.priceOerePerSeat - platformFeeOere
+        let priceOere       = Int(trip.priceOerePerSeat)
+        let driverNetOere   = Int(trip.driverNetOere)
+        let totalOere       = priceOere * seats
+        let platformFeeOere = max(0, priceOere - driverNetOere)
+        let seatCostOere    = priceOere - platformFeeOere
 
         return VStack(alignment: .leading, spacing: HopSpacing.sm) {
             Text("Price Summary")
-                .font(HopFont.labelMedium()).fontWeight(.semibold)
+                .font(HopFont.labelMedium(weight: .semibold))
                 .foregroundColor(Color.hopTextSecondary)
 
             Spacer().frame(height: 2)
@@ -164,11 +166,11 @@ struct BookingConfirmationView: View {
             // Total (prominent)
             HStack {
                 Text("Total")
-                    .font(HopFont.labelLarge()).fontWeight(.semibold)
+                    .font(HopFont.labelLarge(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
                 Spacer()
                 Text("DKK \(totalOere / 100)")
-                    .font(HopFont.headlineSmall()).fontWeight(.bold)
+                    .font(HopFont.headlineSmall(weight: .bold))
                     .foregroundColor(Color.hopPrimaryLime)
             }
 
@@ -196,6 +198,29 @@ struct BookingConfirmationView: View {
         .padding(.horizontal, HopSpacing.md)
     }
 
+    // MARK: — Model B notice card
+
+    private func modelBNoticeCard(booked: Int, threshold: Int) -> some View {
+        HStack(alignment: .top, spacing: HopSpacing.sm) {
+            Image(systemName: "clock.badge.exclamationmark")
+                .foregroundColor(Color.hopPrimaryLime)
+                .font(.system(size: 20))
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Trip confirmed when full")
+                    .font(HopFont.labelMedium(weight: .semibold))
+                    .foregroundColor(Color.hopTextPrimary)
+                Text("\(booked) of \(threshold) seats booked. The driver departs once the minimum is reached.")
+                    .font(HopFont.bodySmall())
+                    .foregroundColor(Color.hopTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(HopSpacing.md)
+        .background(Color.hopSurfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, HopSpacing.md)
+    }
+
     // MARK: — Payment method row
 
     private var paymentMethodRow: some View {
@@ -203,7 +228,7 @@ struct BookingConfirmationView: View {
             Image(systemName: "creditcard.fill")
                 .foregroundColor(Color.hopPrimaryLime)
             Text("MobilePay")
-                .font(HopFont.bodyMedium()).fontWeight(.medium)
+                .font(HopFont.bodyMedium(weight: .medium))
                 .foregroundColor(Color.hopTextPrimary)
             Spacer()
             Image(systemName: "checkmark.circle.fill")
@@ -223,7 +248,7 @@ struct BookingConfirmationView: View {
                 .font(HopFont.bodySmall())
                 .foregroundColor(Color.hopTextSecondary)
             Text(value)
-                .font(HopFont.bodySmall()).fontWeight(.medium)
+                .font(HopFont.bodySmall(weight: .medium))
                 .foregroundColor(Color.hopTextPrimary)
                 .lineLimit(1)
         }

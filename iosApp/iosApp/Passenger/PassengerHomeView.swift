@@ -43,8 +43,7 @@ struct PassengerHomeView: View {
                     // ── Top bar: Hop logo + Role toggle ───────────────────────
                     HStack {
                         Text("HOP")
-                            .font(.custom("Syne-Bold", size: 24))
-                            .fontWeight(.black)
+                            .font(HopFont.headlineMedium(weight: .bold))
                             .tracking(3)
                             .foregroundColor(Color.hopPrimaryLime)
 
@@ -84,8 +83,7 @@ struct PassengerHomeView: View {
 
                     // ── Upcoming trips heading ────────────────────────────────
                     Text("Upcoming trips")
-                        .font(HopFont.labelMedium())
-                        .fontWeight(.semibold)
+                        .font(HopFont.labelMedium(weight: .semibold))
                         .foregroundColor(Color.hopTextPrimary)
                         .padding(.horizontal, HopSpacing.md)
                         .padding(.top, HopSpacing.xl)
@@ -305,8 +303,7 @@ private struct DateChip: View {
     var body: some View {
         Button(action: onTap) {
             Text(label)
-                .font(HopFont.labelSmall())
-                .fontWeight(isSelected ? .semibold : .regular)
+                .font(isSelected ? HopFont.labelSmall(weight: .semibold) : HopFont.labelSmall(weight: .regular))
                 .foregroundColor(isSelected ? Color(hex: 0x1A1A1A) : Color(hex: 0x444444))
                 .padding(.horizontal, HopSpacing.sm)
                 .padding(.vertical, 4)
@@ -327,8 +324,7 @@ private struct SeatsRow: View {
     var body: some View {
         HStack {
             Text("Seats")
-                .font(HopFont.bodyMedium())
-                .fontWeight(.medium)
+                .font(HopFont.bodyMedium(weight: .medium))
                 .foregroundColor(Color(hex: 0x444444))
 
             Spacer()
@@ -357,8 +353,7 @@ private struct SeatsRow: View {
                 .disabled(seats <= range.lowerBound)
 
                 Text("\(seats)")
-                    .font(HopFont.bodyLarge())
-                    .fontWeight(.bold)
+                    .font(HopFont.bodyLarge(weight: .bold))
                     .foregroundColor(Color(hex: 0x1A1A1A))
                     .frame(width: 20, alignment: .center)
 

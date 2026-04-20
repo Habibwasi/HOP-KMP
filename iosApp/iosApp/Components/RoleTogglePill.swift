@@ -46,8 +46,7 @@ struct RoleTogglePill: View {
             HStack(spacing: 0) {
                 ForEach(HopRole.allCases, id: \.label) { role in
                     Text(role.label)
-                        .font(HopFont.labelSmall())
-                        .fontWeight(.semibold)
+                        .font(HopFont.labelSmall(weight: .semibold))
                         .foregroundColor(selectedRole == role ? Color.hopSurface : Color.hopTextSecondary)
                         .frame(width: segmentWidth, height: totalHeight)
                         .contentShape(Rectangle())

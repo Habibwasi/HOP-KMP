@@ -43,8 +43,7 @@ struct EmptyState: View {
             // ── Text block ────────────────────────────────────────────────────
             VStack(spacing: HopSpacing.xs) {
                 Text(headline)
-                    .font(HopFont.headlineSmall())
-                    .fontWeight(.semibold)
+                    .font(HopFont.headlineSmall(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
                     .multilineTextAlignment(.center)
 

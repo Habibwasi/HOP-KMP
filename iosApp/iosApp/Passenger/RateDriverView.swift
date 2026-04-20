@@ -37,7 +37,7 @@ struct RateDriverView: View {
                     HopAvatar(name: driverInitials, imageURL: nil, size: .xlarge)
                         .padding(.top, HopSpacing.xxl)
                     Text("How was your trip with \(driverName)?")
-                        .font(HopFont.headlineMedium()).fontWeight(.bold)
+                        .font(HopFont.headlineMedium(weight: .bold))
                         .foregroundColor(Color.hopTextPrimary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, HopSpacing.md)
@@ -50,7 +50,7 @@ struct RateDriverView: View {
                 // ── Optional comment ──────────────────────────────────────────
                 VStack(alignment: .leading, spacing: HopSpacing.xs) {
                     Text("Leave a comment (optional)")
-                        .font(HopFont.labelMedium()).fontWeight(.medium)
+                        .font(HopFont.labelMedium(weight: .medium))
                         .foregroundColor(Color.hopTextSecondary)
 
                     ZStack(alignment: .topLeading) {
@@ -115,7 +115,7 @@ struct RateDriverView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("Rate your trip")
-                    .font(HopFont.bodyLarge()).fontWeight(.semibold)
+                    .font(HopFont.bodyLarge(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
             }
         }

@@ -30,8 +30,7 @@ struct MyTripsPassengerView: View {
                 // ── Title bar ─────────────────────────────────────────────────
                 HStack {
                     Text("My Trips")
-                        .font(HopFont.headlineMedium())
-                        .fontWeight(.bold)
+                        .font(HopFont.headlineMedium(weight: .bold))
                         .foregroundColor(Color.hopTextPrimary)
                     Spacer()
                 }
@@ -82,8 +81,7 @@ struct MyTripsPassengerView: View {
                 } label: {
                     VStack(spacing: HopSpacing.xxs) {
                         Text(tab.rawValue)
-                            .font(HopFont.labelMedium())
-                            .fontWeight(selectedTab == tab ? .semibold : .regular)
+                            .font(selectedTab == tab ? HopFont.labelMedium(weight: .semibold) : HopFont.labelMedium(weight: .regular))
                             .foregroundColor(selectedTab == tab ? Color.hopTextPrimary : Color.hopTextSecondary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, HopSpacing.sm)
@@ -207,13 +205,13 @@ private struct PassengerTripRow: View {
                         HStack(spacing: HopSpacing.xs) {
                             Circle().fill(Color.hopPrimaryGreen).frame(width: 8, height: 8)
                             Text(tripUi.trip.originName)
-                                .font(HopFont.bodyMedium()).fontWeight(.medium)
+                                .font(HopFont.bodyMedium(weight: .medium))
                                 .foregroundColor(Color.hopTextPrimary).lineLimit(1)
                         }
                         HStack(spacing: HopSpacing.xs) {
                             Circle().fill(Color.hopPrimaryLime).frame(width: 8, height: 8)
                             Text(tripUi.trip.destName)
-                                .font(HopFont.bodyMedium()).fontWeight(.medium)
+                                .font(HopFont.bodyMedium(weight: .medium))
                                 .foregroundColor(Color.hopTextPrimary).lineLimit(1)
                         }
                     }
@@ -228,7 +226,7 @@ private struct PassengerTripRow: View {
                     Label(HopDateFormatter.dayDate(iso: tripUi.trip.departsAt), systemImage: "calendar")
                     Spacer()
                     Text("DKK \(String(format: "%.0f", Double(tripUi.trip.priceOerePerSeat) / 100.0))")
-                        .font(HopFont.labelMedium()).fontWeight(.semibold)
+                        .font(HopFont.labelMedium(weight: .semibold))
                         .foregroundColor(Color.hopPrimaryLime)
                 }
                 .font(HopFont.bodySmall())

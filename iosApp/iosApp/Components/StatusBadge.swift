@@ -45,8 +45,7 @@ struct StatusBadge: View {
 
     var body: some View {
         Text(status.label)
-            .font(HopFont.labelSmall())
-            .fontWeight(.medium)
+            .font(HopFont.labelSmall(weight: .medium))
             .foregroundColor(status.foregroundColor)
             .padding(.horizontal, HopSpacing.sm)
             .padding(.vertical, 4)

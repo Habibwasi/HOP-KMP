@@ -33,8 +33,7 @@ struct HopButton: View {
                         .scaleEffect(0.9)
                 } else {
                     Text(text)
-                        .font(HopFont.labelMedium())
-                        .fontWeight(.semibold)
+                        .font(HopFont.labelMedium(weight: .semibold))
                         .foregroundColor(foregroundColor)
                 }
             }

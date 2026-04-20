@@ -189,8 +189,7 @@ struct SearchResultsView: View {
                 ? "\(origin) → \(destination)"
                 : "Search Results"
             Text(routeSummary)
-                .font(HopFont.labelMedium())
-                .fontWeight(.semibold)
+                .font(HopFont.labelMedium(weight: .semibold))
                 .foregroundColor(Color.hopTextPrimary)
                 .lineLimit(1)
             Spacer()
@@ -328,8 +327,7 @@ private struct FilterChip: View {
     var body: some View {
         Button(action: onTap) {
             Text(label)
-                .font(HopFont.labelSmall())
-                .fontWeight(isActive ? .semibold : .regular)
+                .font(isActive ? HopFont.labelSmall(weight: .semibold) : HopFont.labelSmall(weight: .regular))
                 .foregroundColor(isActive ? Color(hex: 0x1A1A1A) : Color.hopTextSecondary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)

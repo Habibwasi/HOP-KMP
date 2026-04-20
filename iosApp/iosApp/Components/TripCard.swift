@@ -68,8 +68,7 @@ struct TripCard: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(data.driverName)
-                    .font(HopFont.labelMedium())
-                    .fontWeight(.semibold)
+                    .font(HopFont.labelMedium(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
                     .lineLimit(1)
 
@@ -105,8 +104,7 @@ struct TripCard: View {
                     .foregroundColor(Color.hopTextSecondary)
 
                 Text(priceFormatted)
-                    .font(HopFont.headlineSmall())
-                    .fontWeight(.bold)
+                    .font(HopFont.headlineSmall(weight: .bold))
                     .foregroundColor(Color.hopPrimaryLime)
             }
         }

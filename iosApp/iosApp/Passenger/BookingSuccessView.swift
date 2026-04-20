@@ -55,8 +55,7 @@ struct BookingSuccessView: View {
                 // ── Text block ────────────────────────────────────────────────
                 VStack(spacing: HopSpacing.sm) {
                     Text(headline)
-                        .font(HopFont.headlineLarge())
-                        .fontWeight(.bold)
+                        .font(HopFont.headlineLarge(weight: .bold))
                         .foregroundColor(accentColor)
                         .multilineTextAlignment(.center)
 

@@ -53,8 +53,7 @@ struct TripDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("Trip Details")
-                    .font(HopFont.bodyLarge())
-                    .fontWeight(.semibold)
+                    .font(HopFont.bodyLarge(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
             }
         }
@@ -132,8 +131,7 @@ struct TripDetailView: View {
             HopAvatar(name: trip.driverId, imageURL: nil, size: .large)
             VStack(alignment: .leading, spacing: HopSpacing.xxs) {
                 Text(trip.driverId)
-                    .font(HopFont.labelMedium())
-                    .fontWeight(.semibold)
+                    .font(HopFont.labelMedium(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
@@ -218,8 +216,7 @@ struct TripDetailView: View {
                 .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
             VStack(alignment: .leading, spacing: 2) {
                 Text(met ? "Trip confirmed" : "Awaiting confirmation")
-                    .font(HopFont.labelMedium())
-                    .fontWeight(.medium)
+                    .font(HopFont.labelMedium(weight: .medium))
                     .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
                 Text("\(booked)/\(threshold) seats needed to confirm · Auto-cancels 6h before departure if threshold not met")
                     .font(HopFont.bodySmall())
@@ -281,8 +278,7 @@ private struct RouteStopRow: View {
                 .foregroundColor(color)
                 .frame(width: 16)
             Text(label)
-                .font(HopFont.bodyMedium())
-                .fontWeight(.medium)
+                .font(HopFont.bodyMedium(weight: .medium))
                 .foregroundColor(Color.hopTextPrimary)
                 .lineLimit(1)
             Spacer()
@@ -313,8 +309,7 @@ private struct InfoCell: View {
                     .foregroundColor(Color.hopTextSecondary)
             }
             Text(value)
-                .font(HopFont.labelMedium())
-                .fontWeight(.medium)
+                .font(HopFont.labelMedium(weight: .medium))
                 .foregroundColor(Color.hopTextPrimary)
         }
     }
@@ -330,13 +325,11 @@ private struct PriceRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(isHighlighted ? HopFont.labelMedium() : HopFont.bodyMedium())
-                .fontWeight(isHighlighted ? .semibold : .regular)
+                .font(isHighlighted ? HopFont.labelMedium(weight: .semibold) : HopFont.bodyMedium(weight: .regular))
                 .foregroundColor(isHighlighted ? Color.hopTextPrimary : Color.hopTextSecondary)
             Spacer()
             Text(value)
-                .font(isHighlighted ? HopFont.headlineSmall() : HopFont.bodyMedium())
-                .fontWeight(isHighlighted ? .bold : .regular)
+                .font(isHighlighted ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .regular))
                 .foregroundColor(isHighlighted ? Color.hopPrimaryLime : Color.hopTextPrimary)
         }
     }
@@ -360,7 +353,7 @@ private struct SeatStepperInline: View {
             .buttonStyle(.plain).disabled(seats <= 1)
 
             Text("\(seats)")
-                .font(HopFont.bodyLarge()).fontWeight(.semibold)
+                .font(HopFont.bodyLarge(weight: .semibold))
                 .foregroundColor(Color.hopTextPrimary)
                 .frame(minWidth: 24, alignment: .center)
 

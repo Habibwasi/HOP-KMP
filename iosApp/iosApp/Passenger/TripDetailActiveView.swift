@@ -58,7 +58,7 @@ struct TripDetailActiveView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("My Trip")
-                    .font(HopFont.bodyLarge()).fontWeight(.semibold)
+                    .font(HopFont.bodyLarge(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
             }
         }
@@ -188,7 +188,7 @@ struct TripDetailActiveView: View {
                 .font(.system(size: 14))
                 .foregroundColor(color)
             Text(text)
-                .font(HopFont.labelSmall()).fontWeight(.medium)
+                .font(HopFont.labelSmall(weight: .medium))
                 .foregroundColor(color)
         }
         .padding(.horizontal, HopSpacing.sm)
@@ -207,7 +207,7 @@ struct TripDetailActiveView: View {
             HopAvatar(name: driverId, imageURL: nil, size: .large)
             VStack(alignment: .leading, spacing: HopSpacing.xxs) {
                 Text(driverId)
-                    .font(HopFont.labelMedium()).fontWeight(.semibold)
+                    .font(HopFont.labelMedium(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
@@ -262,7 +262,7 @@ struct TripDetailActiveView: View {
                 Image(systemName: "circle.fill")
                     .font(.system(size: 12)).foregroundColor(Color.hopPrimaryGreen)
                 Text(trip.originName)
-                    .font(HopFont.bodyMedium()).fontWeight(.medium)
+                    .font(HopFont.bodyMedium(weight: .medium))
                     .foregroundColor(Color.hopTextPrimary).lineLimit(1)
                 Spacer()
                 Text(HopDateFormatter.timeOnly(iso: trip.departsAt))
@@ -278,7 +278,7 @@ struct TripDetailActiveView: View {
                 Image(systemName: "mappin.circle.fill")
                     .font(.system(size: 12)).foregroundColor(Color.hopPrimaryLime)
                 Text(trip.destName)
-                    .font(HopFont.bodyMedium()).fontWeight(.medium)
+                    .font(HopFont.bodyMedium(weight: .medium))
                     .foregroundColor(Color.hopTextPrimary).lineLimit(1)
                 Spacer()
             }
@@ -318,7 +318,7 @@ struct TripDetailActiveView: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(HopFont.labelMedium()).fontWeight(.semibold)
+            .font(HopFont.labelMedium(weight: .semibold))
             .foregroundColor(Color.hopTextSecondary)
             .padding(.horizontal, HopSpacing.md)
             .padding(.top, HopSpacing.md).padding(.bottom, HopSpacing.xs)
@@ -358,7 +358,7 @@ private struct InfoTile: View {
                 Image(systemName: icon).font(.system(size: 12)).foregroundColor(Color.hopTextSecondary)
                 Text(label).font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary)
             }
-            Text(value).font(HopFont.labelMedium()).fontWeight(.medium).foregroundColor(Color.hopTextPrimary)
+            Text(value).font(HopFont.labelMedium(weight: .medium)).foregroundColor(Color.hopTextPrimary)
         }
     }
 }

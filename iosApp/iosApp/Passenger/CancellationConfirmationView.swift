@@ -43,7 +43,7 @@ struct CancellationConfirmationView: View {
                 // ── Text ──────────────────────────────────────────────────────
                 VStack(spacing: HopSpacing.sm) {
                     Text("Booking Cancelled")
-                        .font(HopFont.headlineMedium()).fontWeight(.bold)
+                        .font(HopFont.headlineMedium(weight: .bold))
                         .foregroundColor(Color.hopTextPrimary)
 
                     Text("Your booking has been successfully cancelled.")
@@ -52,7 +52,7 @@ struct CancellationConfirmationView: View {
 
                     // Booking reference pill
                     Label("#\(bookingId.prefix(8).uppercased())", systemImage: "ticket")
-                        .font(HopFont.bodySmall()).fontWeight(.medium)
+                        .font(HopFont.bodySmall(weight: .medium))
                         .foregroundColor(Color.hopTextSecondary)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 12)
