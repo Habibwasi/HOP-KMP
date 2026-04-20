@@ -184,31 +184,30 @@ struct SearchResultsView: View {
     }
 
     private var searchSummaryHeader: some View {
-        VStack(alignment: .leading, spacing: HopSpacing.xs) {
-            HStack(spacing: HopSpacing.xs) {
-                Text(origin)
-                    .font(HopFont.headlineSmall())
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color.hopTextPrimary)
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color.hopPrimaryLime)
-                Text(destination)
-                    .font(HopFont.headlineSmall())
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color.hopTextPrimary)
+        HStack(spacing: HopSpacing.sm) {
+            let routeSummary = (!origin.isEmpty && !destination.isEmpty)
+                ? "\(origin) → \(destination)"
+                : "Search Results"
+            Text(routeSummary)
+                .font(HopFont.labelMedium())
+                .fontWeight(.semibold)
+                .foregroundColor(Color.hopTextPrimary)
+                .lineLimit(1)
+            Spacer()
+            if !date.isEmpty {
+                Text(formattedDate)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.hopTextSecondary)
+                    .padding(.horizontal, HopSpacing.sm)
+                    .padding(.vertical, 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.hopTextSecondary.opacity(0.6), lineWidth: 1)
+                    )
             }
-            HStack(spacing: HopSpacing.md) {
-                Label(formattedDate, systemImage: "calendar")
-                Label("\(seats) seat\(seats == 1 ? "" : "s")", systemImage: "person.2")
-            }
-            .font(HopFont.bodySmall())
-            .foregroundColor(Color.hopTextSecondary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
+        .padding(.vertical, HopSpacing.sm)
     }
 
     private var emptyState: some View {

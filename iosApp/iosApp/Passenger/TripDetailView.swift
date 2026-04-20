@@ -81,19 +81,17 @@ struct TripDetailView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
 
-                // ── Driver card ───────────────────────────────────────────────
-                driverCard(trip: trip)
+                // ── Driver row ───────────────────────────────────────────────
+                driverRow(trip: trip)
 
                 Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
 
                 // ── Route section ─────────────────────────────────────────────
-                sectionLabel("Route")
                 routeBlock(trip: trip)
 
                 Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
 
                 // ── Trip info section ─────────────────────────────────────────
-                sectionLabel("Details")
                 tripInfoGrid(trip: trip)
 
                 // ── Model B threshold (if applicable) ─────────────────────────
@@ -105,7 +103,6 @@ struct TripDetailView: View {
                 Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
 
                 // ── Price breakdown ───────────────────────────────────────────
-                sectionLabel("Price")
                 priceSection(trip: trip)
 
                 Spacer().frame(height: HopSpacing.xxl + 56) // clear CTA button
@@ -128,9 +125,9 @@ struct TripDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: — Driver card
+    // MARK: — Driver row
 
-    private func driverCard(trip: Trip) -> some View {
+    private func driverRow(trip: Trip) -> some View {
         HStack(spacing: HopSpacing.md) {
             HopAvatar(name: trip.driverId, imageURL: nil, size: .large)
             VStack(alignment: .leading, spacing: HopSpacing.xxs) {
@@ -153,12 +150,8 @@ struct TripDetailView: View {
             Spacer()
             StatusBadge(status: trip.model == .b ? .modelB : .modelA)
         }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
-        .padding(.top, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
+        .padding(.vertical, HopSpacing.md)
     }
 
     // MARK: — Route block
@@ -250,16 +243,6 @@ struct TripDetailView: View {
     }
 
     // MARK: — Helpers
-
-    private func sectionLabel(_ text: String) -> some View {
-        Text(text)
-            .font(HopFont.labelMedium())
-            .fontWeight(.semibold)
-            .foregroundColor(Color.hopTextSecondary)
-            .padding(.horizontal, HopSpacing.md)
-            .padding(.top, HopSpacing.md)
-            .padding(.bottom, HopSpacing.xs)
-    }
 
     private var loadingView: some View {
         VStack {

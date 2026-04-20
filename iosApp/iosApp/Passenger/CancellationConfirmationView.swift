@@ -64,30 +64,10 @@ struct CancellationConfirmationView: View {
                 .offset(y: contentOffset)
                 .opacity(contentOpacity)
 
-                // ── Refund policy ─────────────────────────────────────────────
-                VStack(alignment: .leading, spacing: HopSpacing.xs) {
-                    Label("Refund Information", systemImage: "info.circle")
-                        .font(HopFont.labelMedium()).fontWeight(.semibold)
-                        .foregroundColor(Color.hopPrimaryLime)
-
-                    Group {
-                        bulletRow("Cancellation ≥ 24 h before departure: full refund.")
-                        bulletRow("Cancellation < 24 h before departure: 50% refund.")
-                        bulletRow("Refunds are processed within 3-5 business days.")
-                    }
-                }
-                .padding(HopSpacing.md)
-                .background(Color.hopSurfaceElevated)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal, HopSpacing.md)
-                .padding(.top, HopSpacing.xl)
-                .offset(y: contentOffset)
-                .opacity(contentOpacity)
-
                 Spacer()
 
                 // ── CTA ───────────────────────────────────────────────────────
-                HopPrimaryButton(title: "Back to Home") {
+                HopPrimaryButton(title: "Back to My Trips") {
                     onGoHome()
                 }
                 .padding(.horizontal, HopSpacing.md)
@@ -115,14 +95,6 @@ struct CancellationConfirmationView: View {
         }
     }
 
-    // MARK: — Helpers
-
-    private func bulletRow(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 6) {
-            Text("•").foregroundColor(Color.hopTextSecondary).font(HopFont.bodySmall())
-            Text(text).font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary).fixedSize(horizontal: false, vertical: true)
-        }
-    }
 }
 
 // MARK: — Preview

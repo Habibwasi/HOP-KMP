@@ -27,31 +27,20 @@ struct BookingConfirmationView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
 
-                    sectionLabel("Your booking")
-
-                    // ── Trip summary card ─────────────────────────────────────
                     if let trip = tripUi?.trip {
+                        Spacer().frame(height: HopSpacing.md)
                         tripSummaryCard(trip: trip)
+                        Spacer().frame(height: HopSpacing.md)
+                        priceSummaryCard(trip: trip)
+                        if trip.model == .b, let threshold = trip.minThreshold {
+                            Spacer().frame(height: HopSpacing.md)
+                            modelBNoticeCard(
+                                booked: Int(trip.seatsBooked) + 1,
+                                threshold: Int(truncating: threshold)
+                            )
+                        }
+                        Spacer().frame(height: HopSpacing.md)
                     }
-
-                    sectionLabel("Price breakdown")
-
-                    // ── Price breakdown ───────────────────────────────────────
-                    if let trip = tripUi?.trip {
-                        priceBreakdown(trip: trip)
-                    }
-
-                    // ── Payment method ────────────────────────────────────────
-                    sectionLabel("Payment")
-                    paymentMethodRow
-
-                    // ── Legal note ────────────────────────────────────────────
-                    Text("By confirming you agree to Hop's Terms of Service. Payment is processed by Vipps MobilePay.")
-                        .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
-                        .padding(.horizontal, HopSpacing.md)
-                        .padding(.top, HopSpacing.md)
-                        .padding(.bottom, HopSpacing.xxl + 56)
                 }
             }
 
@@ -59,7 +48,7 @@ struct BookingConfirmationView: View {
             VStack(spacing: 0) {
                 Divider().background(Color.hopSurfaceElevated)
                 HopPrimaryButton(
-                    title: "Confirm & Pay with MobilePay",
+                    title: "Pay with MobilePay",
                     isLoading: wrapper.state.isLoading,
                     isEnabled: wrapper.state.paymentState == .idle || wrapper.state.paymentState == .failed
                 ) {
@@ -127,69 +116,84 @@ struct BookingConfirmationView: View {
 
     private func tripSummaryCard(trip: Trip) -> some View {
         VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            Text("Trip Summary")
+                .font(HopFont.labelMedium()).fontWeight(.semibold)
+                .foregroundColor(Color.hopTextSecondary)
+
+            Spacer().frame(height: 2)
+
             HStack(spacing: HopSpacing.xs) {
-                routeDot(color: .hopPrimaryGreen)
+                routeDot(color: .hopPrimaryLime)
                 Text(trip.originName)
                     .font(HopFont.bodyMedium()).fontWeight(.medium)
                     .foregroundColor(Color.hopTextPrimary).lineLimit(1)
             }
             HStack(spacing: HopSpacing.xs) {
-                routeDot(color: .hopPrimaryLime)
+                routeDot(color: .hopTextSecondary)
                 Text(trip.destName)
                     .font(HopFont.bodyMedium()).fontWeight(.medium)
                     .foregroundColor(Color.hopTextPrimary).lineLimit(1)
             }
             Divider().background(Color.hopSurface)
-            HStack {
-                Label(HopDateFormatter.dayDate(iso: trip.departsAt), systemImage: "calendar")
-                Spacer()
-                Label(HopDateFormatter.timeOnly(iso: trip.departsAt), systemImage: "clock")
-                Spacer()
-                Label("\(seats) seat\(seats == 1 ? "" : "s")", systemImage: "person.2")
+            HStack(spacing: HopSpacing.lg) {
+                summaryMetaItem(label: "Departs", value: HopDateFormatter.shortDisplay(iso: trip.departsAt))
+                summaryMetaItem(label: "Driver",  value: trip.driverId)
+                summaryMetaItem(label: "Seats",   value: seats == 1 ? "1 seat" : "\(seats) seats")
             }
-            .font(HopFont.bodySmall())
-            .foregroundColor(Color.hopTextSecondary)
         }
         .padding(HopSpacing.md)
         .background(Color.hopSurfaceElevated)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
     }
 
-    // MARK: — Price breakdown
+    // MARK: — Price summary card
 
-    private func priceBreakdown(trip: Trip) -> some View {
-        let perSeat    = Double(trip.priceOerePerSeat) / 100.0
-        let total      = perSeat * Double(seats)
-        // Display-only fee estimate (actual fee is on the backend)
-        let feeEst     = total * 0.15
-        let driverEst  = total - feeEst
+    private func priceSummaryCard(trip: Trip) -> some View {
+        let totalOere       = trip.priceOerePerSeat * seats
+        let platformFeeOere = max(0, trip.priceOerePerSeat - trip.driverNetOere)
+        let seatCostOere    = trip.priceOerePerSeat - platformFeeOere
 
-        return VStack(spacing: HopSpacing.sm) {
-            confirmationRow(label: "Fare per seat", value: "DKK \(String(format: "%.0f", perSeat))")
-            if seats > 1 {
-                confirmationRow(label: "× \(seats) seats", value: "DKK \(String(format: "%.0f", total))")
-            }
-            Divider().background(Color.hopSurface)
+        return VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            Text("Price Summary")
+                .font(HopFont.labelMedium()).fontWeight(.semibold)
+                .foregroundColor(Color.hopTextSecondary)
+
+            Spacer().frame(height: 2)
+
+            // Total (prominent)
             HStack {
                 Text("Total")
-                    .font(HopFont.labelMedium()).fontWeight(.semibold)
+                    .font(HopFont.labelLarge()).fontWeight(.semibold)
                     .foregroundColor(Color.hopTextPrimary)
                 Spacer()
-                Text("DKK \(String(format: "%.0f", total))")
+                Text("DKK \(totalOere / 100)")
                     .font(HopFont.headlineSmall()).fontWeight(.bold)
                     .foregroundColor(Color.hopPrimaryLime)
             }
-            Text("Includes platform fee (≈DKK \(String(format: "%.0f", feeEst))). Driver receives ≈DKK \(String(format: "%.0f", driverEst)).")
-                .font(HopFont.bodySmall())
-                .foregroundColor(Color.hopTextSecondary)
+
+            Divider().background(Color.hopSurface)
+
+            // Breakdown rows
+            HStack {
+                Text("\(seats)× seat cost")
+                    .font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary)
+                Spacer()
+                Text("DKK \(seatCostOere * seats / 100)")
+                    .font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary)
+            }
+            HStack {
+                Text("Platform fee")
+                    .font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary)
+                Spacer()
+                Text("DKK \(platformFeeOere * seats / 100)")
+                    .font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary)
+            }
         }
         .padding(HopSpacing.md)
         .background(Color.hopSurfaceElevated)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
     }
 
     // MARK: — Model B notice card
@@ -222,58 +226,19 @@ struct BookingConfirmationView: View {
         .background(Color.hopSurfaceElevated)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
-    }
-
-    // MARK: — Model B notice card
-
-    private func modelBNoticeCard(booked: Int, threshold: Int) -> some View {
-        let progress = threshold > 0 ? min(1.0, Double(booked) / Double(threshold)) : 0.0
-        let met = booked >= threshold
-        return VStack(alignment: .leading, spacing: HopSpacing.sm) {
-            HStack(spacing: HopSpacing.xs) {
-                Image(systemName: met ? "checkmark.circle.fill" : "clock.badge.exclamationmark")
-                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
-                Text(met ? "Trip confirmed" : "Pending confirmation")
-                    .font(HopFont.labelMedium()).fontWeight(.semibold)
-                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.hopSurface).frame(height: 6)
-                    Capsule()
-                        .fill(met ? Color.hopSuccess : Color.hopWarning)
-                        .frame(width: geo.size.width * progress, height: 6)
-                }
-            }
-            .frame(height: 6)
-            Text("\(booked)/\(threshold) seats booked. Trip auto-cancels 6h before departure if threshold not met.")
-                .font(HopFont.bodySmall())
-                .foregroundColor(Color.hopTextSecondary)
-        }
-        .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
     }
 
     // MARK: — Helpers
 
-    private func sectionLabel(_ text: String) -> some View {
-        Text(text)
-            .font(HopFont.labelMedium()).fontWeight(.semibold)
-            .foregroundColor(Color.hopTextSecondary)
-            .padding(.horizontal, HopSpacing.md)
-            .padding(.top, HopSpacing.md)
-            .padding(.bottom, HopSpacing.xs)
-    }
-
-    private func confirmationRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label).font(HopFont.bodyMedium()).foregroundColor(Color.hopTextSecondary)
-            Spacer()
-            Text(value).font(HopFont.bodyMedium()).foregroundColor(Color.hopTextPrimary)
+    private func summaryMetaItem(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(HopFont.bodySmall())
+                .foregroundColor(Color.hopTextSecondary)
+            Text(value)
+                .font(HopFont.bodySmall()).fontWeight(.medium)
+                .foregroundColor(Color.hopTextPrimary)
+                .lineLimit(1)
         }
     }
 

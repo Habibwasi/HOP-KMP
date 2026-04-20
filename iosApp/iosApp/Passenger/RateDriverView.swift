@@ -98,9 +98,6 @@ struct RateDriverView: View {
                     ) {
                         wrapper.submitRating(bookingId: bookingId, stars: starRating, comment: comment.isEmpty ? nil : comment)
                     }
-                    HopButton(text: "Skip for now", variant: .ghost) {
-                        onSubmitted()
-                    }
                 }
                 .padding(.horizontal, HopSpacing.md)
                 .padding(.bottom, HopSpacing.xl)

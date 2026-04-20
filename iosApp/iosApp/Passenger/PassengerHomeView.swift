@@ -42,9 +42,10 @@ struct PassengerHomeView: View {
 
                     // ── Top bar: Hop logo + Role toggle ───────────────────────
                     HStack {
-                        Text("hop.")
-                            .font(HopFont.headlineLarge())
-                            .fontWeight(.bold)
+                        Text("HOP")
+                            .font(.custom("Syne-Bold", size: 24))
+                            .fontWeight(.black)
+                            .tracking(3)
                             .foregroundColor(Color.hopPrimaryLime)
 
                         Spacer()
@@ -57,20 +58,6 @@ struct PassengerHomeView: View {
                     .padding(.horizontal, HopSpacing.md)
                     .padding(.top, HopSpacing.md)
                     .padding(.bottom, HopSpacing.lg)
-
-                    // ── Hero headline ─────────────────────────────────────────
-                    VStack(alignment: .leading, spacing: HopSpacing.xs) {
-                        Text("Where are you\nheaded?")
-                            .font(HopFont.displayLarge())
-                            .foregroundColor(Color.hopTextPrimary)
-                            .lineSpacing(4)
-
-                        Text("Find affordable rides across Denmark")
-                            .font(HopFont.bodyMedium())
-                            .foregroundColor(Color.hopTextSecondary)
-                    }
-                    .padding(.horizontal, HopSpacing.md)
-                    .padding(.bottom, HopSpacing.xl)
 
                     // ── Search card ───────────────────────────────────────────
                     SearchCard(

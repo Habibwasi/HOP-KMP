@@ -57,7 +57,7 @@ struct TripDetailActiveView: View {
                 .accessibilityLabel("Back")
             }
             ToolbarItem(placement: .principal) {
-                Text("Booking Details")
+                Text("My Trip")
                     .font(HopFont.bodyLarge()).fontWeight(.semibold)
                     .foregroundColor(Color.hopTextPrimary)
             }
