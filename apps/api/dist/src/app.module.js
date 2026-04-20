@@ -16,6 +16,7 @@ const users_module_1 = require("./users/users.module");
 const trips_module_1 = require("./trips/trips.module");
 const bookings_module_1 = require("./bookings/bookings.module");
 const payments_module_1 = require("./payments/payments.module");
+const ratings_module_1 = require("./ratings/ratings.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -38,6 +39,7 @@ exports.AppModule = AppModule = __decorate([
             trips_module_1.TripsModule,
             bookings_module_1.BookingsModule,
             payments_module_1.PaymentsModule,
+            ratings_module_1.RatingsModule,
         ],
     })
 ], AppModule);
