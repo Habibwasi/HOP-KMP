@@ -17,11 +17,14 @@ fun App() {
         val navController = rememberNavController()
         val authViewModel: AuthViewModel = koinViewModel()
 
-        // In dev mode, auto-login with dummy credentials so the splash/login
-        // screens are skipped and you land directly on Home.
+        // In dev mode the AuthViewModel auto-populates currentUser, but we
+        // still need to fire a login event once so the AuthEffectHandler
+        // navigates past the splash screen.
         if (BuildConfig.DEV_MODE) {
             LaunchedEffect(Unit) {
-                authViewModel.onEvent(AuthEvent.Login("dev@hop.test", "dev"))
+                if (authViewModel.state.value.isAuthenticated) {
+                    authViewModel.onEvent(AuthEvent.Login("dev@hop.test", "dev"))
+                }
             }
         }
 

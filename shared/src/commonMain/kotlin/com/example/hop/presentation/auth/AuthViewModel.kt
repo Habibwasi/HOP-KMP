@@ -2,6 +2,7 @@ package com.example.hop.presentation.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.hop.data.repository.dev.DevAuthRepository
 import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
@@ -56,6 +57,14 @@ class AuthViewModel(
             sessionExpiryNotifier.events.collect {
                 _effect.send(AuthEffect.SessionExpired)
             }
+        }
+        // In dev mode, auto-populate the authenticated user so every
+        // ViewModel instance (including HomeRoute's) sees currentUser.
+        if (authRepository is DevAuthRepository) {
+            _state.value = _state.value.copy(
+                isAuthenticated = true,
+                currentUser = DevAuthRepository.DEV_USER,
+            )
         }
     }
 
