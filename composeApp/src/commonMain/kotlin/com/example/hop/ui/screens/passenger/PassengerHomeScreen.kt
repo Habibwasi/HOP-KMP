@@ -249,7 +249,7 @@ fun PassengerHomeScreen(
                             TripModel.UNKNOWN -> BadgeType.Custom(
                                 label = "UNKNOWN",
                                 background = HopColors.surfaceElevated,
-                                contentcolor = HopColors.authTextSecondary,
+                                contentColor = HopColors.authTextSecondary,
                             )
                         },
                         pricePerSeatOere = tripUiModel.priceOerePerSeat,
@@ -660,8 +660,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconcolor = HopColors.authTextSecondary,
-                unselectedTextcolor = HopColors.authTextSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
 
@@ -686,8 +686,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconcolor = HopColors.authTextSecondary,
-                unselectedTextcolor = HopColors.authTextSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
 
@@ -712,8 +712,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconcolor = HopColors.authTextSecondary,
-                unselectedTextcolor = HopColors.authTextSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
 
@@ -738,8 +738,8 @@ private fun PassengerBottomNavBar(
                 selectedIconColor = HopColors.primaryLime,
                 selectedTextColor = HopColors.primaryLime,
                 indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconcolor = HopColors.authTextSecondary,
-                unselectedTextcolor = HopColors.authTextSecondary,
+                unselectedIconColor = HopColors.authTextSecondary,
+                unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
     }

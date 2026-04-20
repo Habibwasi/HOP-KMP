@@ -394,7 +394,7 @@ private fun SeatsSummarySection(
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = HopColors.primaryLime,
-                trackcolor = HopColors.authInputBorder,
+                trackColor = HopColors.authInputBorder,
             )
             Spacer(modifier = Modifier.height(HopSpacing.xs))
             Text(

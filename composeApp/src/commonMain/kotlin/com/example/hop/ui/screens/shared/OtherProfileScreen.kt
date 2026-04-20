@@ -481,8 +481,8 @@ private fun ReportUserDialog(
                         focusedTextColor = HopColors.authTextPrimary,
                         unfocusedTextColor = HopColors.authTextPrimary,
                         cursorColor = HopColors.primaryLime,
-                        focusedcontainerColor = HopColors.background,
-                        unfocusedcontainerColor = HopColors.background,
+                        focusedContainerColor = HopColors.background,
+                        unfocusedContainerColor = HopColors.background,
                     ),
                 )
             }

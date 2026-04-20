@@ -545,7 +545,7 @@ internal fun TimePickerDialog(
                     periodSelectorSelectedContentColor = HopColors.primaryLime,
                     periodSelectorUnselectedContentColor = HopColors.authTextSecondary,
                     timeSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.15f),
-                    timeSelectorUnselectedcontainerColor = HopColors.background,
+                    timeSelectorUnselectedContainerColor = HopColors.background,
                     timeSelectorSelectedContentColor = HopColors.primaryLime,
                     timeSelectorUnselectedContentColor = HopColors.authTextSecondary,
                 ),

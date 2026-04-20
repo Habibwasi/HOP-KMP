@@ -254,7 +254,7 @@ fun RatePassengerScreen(
                         focusedTextColor = HopColors.authTextPrimary,
                         unfocusedTextColor = HopColors.authTextPrimary,
                         focusedBorderColor = HopColors.primaryLime,
-                        unfocusedBordercolor = HopColors.authInputBorder,
+                        unfocusedBorderColor = HopColors.authInputBorder,
                         focusedContainerColor = HopColors.background,
                         unfocusedContainerColor = HopColors.background,
                         cursorColor = HopColors.primaryLime,

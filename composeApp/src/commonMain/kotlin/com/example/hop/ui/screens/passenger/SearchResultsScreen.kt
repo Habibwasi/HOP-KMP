@@ -360,7 +360,7 @@ private fun TripResultsList(
                     TripModel.UNKNOWN -> BadgeType.Custom(
                         label = "UNKNOWN",
                         background = HopColors.surfaceElevated,
-                        contentcolor = HopColors.authTextSecondary,
+                        contentColor = HopColors.authTextSecondary,
                     )
                 },
                 pricePerSeatOere = tripUiModel.priceOerePerSeat,
