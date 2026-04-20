@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
+import { ConfigModule } from '@nestjs/config'
 import { BullModule } from '@nestjs/bullmq'
 import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
@@ -9,18 +9,17 @@ import { BookingsModule } from './bookings/bookings.module'
 import { PaymentsModule } from './payments/payments.module'
 import { RatingsModule } from './ratings/ratings.module'
 import { NotificationsModule } from './notifications/notifications.module'
+import { TaxModule } from './tax/tax.module'
+import { AdminModule } from './admin/admin.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    BullModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.get<string>('REDIS_HOST', 'localhost'),
-          port: config.get<number>('REDIS_PORT', 6379),
-        },
-      }),
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST ?? 'localhost',
+        port: parseInt(process.env.REDIS_PORT ?? '6379'),
+      },
     }),
     PrismaModule,
     AuthModule,
@@ -30,6 +29,8 @@ import { NotificationsModule } from './notifications/notifications.module'
     PaymentsModule,
     RatingsModule,
     NotificationsModule,
+    TaxModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

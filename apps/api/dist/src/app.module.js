@@ -18,6 +18,8 @@ const bookings_module_1 = require("./bookings/bookings.module");
 const payments_module_1 = require("./payments/payments.module");
 const ratings_module_1 = require("./ratings/ratings.module");
 const notifications_module_1 = require("./notifications/notifications.module");
+const tax_module_1 = require("./tax/tax.module");
+const admin_module_1 = require("./admin/admin.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -25,14 +27,11 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
-            bullmq_1.BullModule.forRootAsync({
-                inject: [config_1.ConfigService],
-                useFactory: (config) => ({
-                    connection: {
-                        host: config.get('REDIS_HOST', 'localhost'),
-                        port: config.get('REDIS_PORT', 6379),
-                    },
-                }),
+            bullmq_1.BullModule.forRoot({
+                connection: {
+                    host: process.env.REDIS_HOST ?? 'localhost',
+                    port: parseInt(process.env.REDIS_PORT ?? '6379'),
+                },
             }),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
@@ -42,6 +41,8 @@ exports.AppModule = AppModule = __decorate([
             payments_module_1.PaymentsModule,
             ratings_module_1.RatingsModule,
             notifications_module_1.NotificationsModule,
+            tax_module_1.TaxModule,
+            admin_module_1.AdminModule,
         ],
     })
 ], AppModule);
