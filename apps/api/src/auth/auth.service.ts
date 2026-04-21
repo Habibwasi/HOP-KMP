@@ -137,6 +137,7 @@ export class AuthService {
           phone: dto.phone,
           firstName: dto.firstName,
           lastName: dto.lastName,
+          email: dto.email,   
           passwordHash,
         })
 

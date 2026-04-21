@@ -22,6 +22,7 @@ export class UsersService {
     phone: string
     firstName: string
     lastName: string
+    email?: string
     passwordHash?: string
   }): Promise<User> {
     return this.prisma.user.create({ data })
