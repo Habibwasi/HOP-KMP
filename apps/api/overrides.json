@@ -1,0 +1,1 @@
+{"containerOverrides":[{"name":"hop-api","command":["npx","prisma","migrate","deploy"],"environment":[{"name":"DATABASE_URL","value":"postgresql://hop:Ha8801712014742@hop-staging-db.czckaqcosg7x.eu-west-1.rds.amazonaws.com:5432/hop_db"}]}]}
