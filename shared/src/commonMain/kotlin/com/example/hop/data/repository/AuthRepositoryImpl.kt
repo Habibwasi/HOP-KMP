@@ -30,7 +30,7 @@ class AuthRepositoryImpl(
     ): ApiResponse<User> = safeAuthCall {
         httpClient.post("auth/register") {
             setBody(RegisterRequest(phone, firstName, lastName, email, password))
-        }.body()
+        }.body<ApiEnvelope<AuthResponse>>()
     }
 
     override suspend fun login(
@@ -39,7 +39,7 @@ class AuthRepositoryImpl(
     ): ApiResponse<User> = safeAuthCall {
         httpClient.post("auth/login") {
             setBody(LoginRequest(email, password))
-        }.body()
+        }.body<ApiEnvelope<AuthResponse>>()
     }
 
     override suspend fun logout(): ApiResponse<Unit> = safeApiCall {
@@ -50,10 +50,13 @@ class AuthRepositoryImpl(
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private suspend fun safeAuthCall(
-        block: suspend () -> AuthResponse,
+        block: suspend () -> ApiEnvelope<AuthResponse>,
     ): ApiResponse<User> {
         return try {
-            val response = block()
+            val envelope = block()
+            val error = envelope.error
+            if (error != null) return ApiResponse.Error(error.code, error.message)
+            val response = checkNotNull(envelope.data) { "Null data in auth envelope" }
             tokenStorage.saveAccessToken(response.accessToken)
             tokenStorage.saveRefreshToken(response.refreshToken)
             ApiResponse.Success(response.user.toDomain())

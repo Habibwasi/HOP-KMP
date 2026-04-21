@@ -29,6 +29,18 @@ export class TripsController {
     return this.trips.search(dto)
   }
 
+  @Get('me/driver')
+  @UseGuards(AuthGuard('jwt'))
+  myTripsAsDriver(@Req() req: any) {
+    return this.trips.findByDriver(req.user.id)
+  }
+
+  @Get('me/passenger')
+  @UseGuards(AuthGuard('jwt'))
+  myTripsAsPassenger(@Req() req: any) {
+    return this.trips.findByPassenger(req.user.id)
+  }
+
   @Get('my')
   @UseGuards(AuthGuard('jwt'))
   myTrips(@Req() req: any) {

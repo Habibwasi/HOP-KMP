@@ -33,4 +33,8 @@ export class UsersService {
       data: { isVerified: true },
     })
   }
+
+  async getCarDetails(userId: string) {
+    return this.prisma.carDetails.findUnique({ where: { userId } })
+  }
 }

@@ -10,8 +10,8 @@ export declare class TaxController {
         };
     } & {
         id: string;
-        distanceKm: number;
         driverId: string;
+        distanceKm: number;
         tripId: string;
         bookingId: string;
         amountOere: number;
@@ -35,8 +35,8 @@ export declare class TaxController {
             };
         } & {
             id: string;
-            distanceKm: number;
             driverId: string;
+            distanceKm: number;
             tripId: string;
             bookingId: string;
             amountOere: number;
@@ -69,8 +69,8 @@ export declare class TaxController {
                 };
             } & {
                 id: string;
-                distanceKm: number;
                 driverId: string;
+                distanceKm: number;
                 tripId: string;
                 bookingId: string;
                 amountOere: number;

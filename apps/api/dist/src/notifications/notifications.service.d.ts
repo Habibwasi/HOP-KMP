@@ -15,8 +15,8 @@ export declare class NotificationsService {
     registerToken(userId: string, token: string, platform: 'ios' | 'android'): Promise<{
         id: string;
         createdAt: Date;
-        token: string;
         userId: string;
+        token: string;
         platform: string;
     }>;
     removeToken(token: string): Promise<import("@prisma/client").Prisma.BatchPayload>;

@@ -104,6 +104,7 @@ export declare class AdminService {
             createdAt: Date;
             updatedAt: Date;
             model: import("@prisma/client").$Enums.TripModel;
+            driverId: string;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -112,15 +113,14 @@ export declare class AdminService {
             destAddress: string;
             departureAt: Date;
             seats: number;
-            recurringDays: number[];
-            minPassengers: number | null;
-            thresholdDeadline: Date | null;
             pricePerSeat: number;
             status: import("@prisma/client").$Enums.TripStatus;
+            minPassengers: number | null;
+            thresholdDeadline: Date | null;
             distanceKm: number | null;
+            recurringDays: number[];
             isRecurring: boolean;
             isActive: boolean;
-            driverId: string;
         })[];
         total: number;
         page: number;

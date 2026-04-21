@@ -35,6 +35,9 @@ let UsersService = class UsersService {
             data: { isVerified: true },
         });
     }
+    async getCarDetails(userId) {
+        return this.prisma.carDetails.findUnique({ where: { userId } });
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

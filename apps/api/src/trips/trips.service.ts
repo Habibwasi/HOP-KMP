@@ -157,4 +157,20 @@ export class TripsService {
       },
     })
   }
+
+  async findByPassenger(passengerId: string) {
+    const bookings = await this.prisma.booking.findMany({
+      where: { passengerId, status: { not: 'CANCELLED' } },
+      include: {
+        trip: {
+          include: {
+            driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            bookings: { where: { status: 'CONFIRMED' } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    return bookings.map((b) => b.trip)
+  }
 }

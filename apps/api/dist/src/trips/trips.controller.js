@@ -29,6 +29,12 @@ let TripsController = class TripsController {
     search(dto) {
         return this.trips.search(dto);
     }
+    myTripsAsDriver(req) {
+        return this.trips.findByDriver(req.user.id);
+    }
+    myTripsAsPassenger(req) {
+        return this.trips.findByPassenger(req.user.id);
+    }
     myTrips(req) {
         return this.trips.findByDriver(req.user.id);
     }
@@ -56,6 +62,22 @@ __decorate([
     __metadata("design:paramtypes", [search_trips_dto_1.SearchTripsDto]),
     __metadata("design:returntype", void 0)
 ], TripsController.prototype, "search", null);
+__decorate([
+    (0, common_1.Get)('me/driver'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], TripsController.prototype, "myTripsAsDriver", null);
+__decorate([
+    (0, common_1.Get)('me/passenger'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], TripsController.prototype, "myTripsAsPassenger", null);
 __decorate([
     (0, common_1.Get)('my'),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),

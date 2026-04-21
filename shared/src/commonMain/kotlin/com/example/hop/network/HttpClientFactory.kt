@@ -25,6 +25,8 @@ object HttpClientFactory {
     ): HttpClient {
         val client = HttpClient {
 
+            expectSuccess = true
+
             install(ContentNegotiation) {
                 json(Json {
                     ignoreUnknownKeys = true

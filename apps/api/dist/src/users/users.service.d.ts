@@ -13,4 +13,16 @@ export declare class UsersService {
         passwordHash?: string;
     }): Promise<User>;
     markVerified(userId: string): Promise<User>;
+    getCarDetails(userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        make: string;
+        model: string;
+        year: number;
+        licensePlate: string;
+        colour: string;
+        seatsAvailable: number;
+    } | null>;
 }

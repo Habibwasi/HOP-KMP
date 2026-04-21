@@ -55,6 +55,7 @@ model User {
   ratingsReceived Rating[]  @relation("RateeRatings")
   taxRecords      TaxRecord[]
   licence         DriverLicence?
+  carDetails      CarDetails?
   isAdmin         Boolean   @default(false)
 }
 
@@ -200,4 +201,18 @@ model DriverLicence {
   reviewedAt  DateTime?
   reviewedBy  String?
   createdAt   DateTime @default(now())
+}
+
+model CarDetails {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  make          String
+  model         String
+  year          Int
+  licensePlate  String
+  colour        String
+  seatsAvailable Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
