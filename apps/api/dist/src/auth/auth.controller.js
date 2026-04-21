@@ -15,26 +15,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
-const send_otp_dto_1 = require("./dto/send-otp.dto");
-const verify_otp_dto_1 = require("./dto/verify-otp.dto");
 const register_dto_1 = require("./dto/register.dto");
+const login_dto_1 = require("./dto/login.dto");
 const passport_1 = require("@nestjs/passport");
 let AuthController = class AuthController {
     auth;
     constructor(auth) {
         this.auth = auth;
     }
-    sendOtp(dto) {
-        return this.auth.sendOtp(dto.phone, dto.purpose);
-    }
-    verifyOtp(dto) {
-        return this.auth.verifyOtp(dto.phone, dto.code, dto.purpose);
-    }
     register(dto) {
         return this.auth.register(dto);
     }
-    loginWithOtp(dto) {
-        return this.auth.loginWithOtp(dto.phone, dto.code);
+    login(dto) {
+        return this.auth.login(dto.email, dto.password);
     }
     refresh(req) {
         return this.auth.refreshTokens(req.user.sub, req.user.refreshToken);
@@ -45,21 +38,6 @@ let AuthController = class AuthController {
 };
 exports.AuthController = AuthController;
 __decorate([
-    (0, common_1.Post)('otp/send'),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [send_otp_dto_1.SendOtpDto]),
-    __metadata("design:returntype", void 0)
-], AuthController.prototype, "sendOtp", null);
-__decorate([
-    (0, common_1.Post)('otp/verify'),
-    (0, common_1.HttpCode)(200),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [verify_otp_dto_1.VerifyOtpDto]),
-    __metadata("design:returntype", void 0)
-], AuthController.prototype, "verifyOtp", null);
-__decorate([
     (0, common_1.Post)('register'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -67,13 +45,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "register", null);
 __decorate([
-    (0, common_1.Post)('login/otp'),
+    (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(200),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [verify_otp_dto_1.VerifyOtpDto]),
+    __metadata("design:paramtypes", [login_dto_1.LoginDto]),
     __metadata("design:returntype", void 0)
-], AuthController.prototype, "loginWithOtp", null);
+], AuthController.prototype, "login", null);
 __decorate([
     (0, common_1.Post)('refresh'),
     (0, common_1.HttpCode)(200),

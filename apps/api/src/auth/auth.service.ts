@@ -3,6 +3,7 @@ import {
   BadRequestException,
   UnauthorizedException,
   ConflictException,
+  Logger,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
@@ -16,6 +17,8 @@ import twilio from 'twilio'
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
   constructor(
     private prisma: PrismaService,
     private users: UsersService,
@@ -30,6 +33,21 @@ export class AuthService {
     )
   }
 
+  /**
+   * Ensures a phone number is in E.164 format so Twilio always gets a valid `to`.
+   * If the number already starts with '+' it is returned as-is (trimmed).
+   * Otherwise a leading '00' is converted to '+', and bare 8-digit Danish numbers
+   * get '+45' prepended.
+   */
+  private toE164(phone: string): string {
+    const trimmed = phone.trim().replace(/\s+/g, '')
+    if (trimmed.startsWith('+')) return trimmed
+    if (trimmed.startsWith('00')) return '+' + trimmed.slice(2)
+    // Bare 8-digit number — assume Danish (+45)
+    if (/^\d{8}$/.test(trimmed)) return '+45' + trimmed
+    throw new BadRequestException(`Phone number "${phone}" is not in a recognised format. Use E.164 (e.g. +4520123456).`)
+  }
+
   // ─── OTP ────────────────────────────────────────────────────────────────────
 
   async sendOtp(phone: string, purpose: OtpPurpose): Promise<{ message: string }> {
@@ -42,9 +60,28 @@ export class AuthService {
       user = await this.users.create({ phone, firstName: '', lastName: '' })
     }
 
-    await this.getTwilioClient()
+    const e164 = this.toE164(phone)
+    const service = this.getTwilioClient()
       .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
-      .verifications.create({ to: phone, channel: 'sms' })
+
+    // Try SMS first; fall back to voice call if the prefix is SMS-blocked by Twilio.
+    try {
+      await service.verifications.create({ to: e164, channel: 'sms' })
+    } catch (smsErr: any) {
+      // Twilio error 60410 = prefix blocked for SMS channel → retry via call
+      if (smsErr?.code === 60410 || smsErr?.message?.includes('prefix is blocked for the SMS channel')) {
+        this.logger.warn(`SMS blocked for ${e164} — retrying via voice call`)
+        try {
+          await service.verifications.create({ to: e164, channel: 'call' })
+        } catch (callErr: any) {
+          this.logger.error(`Twilio sendOtp (call fallback) failed for ${e164}: ${callErr?.message}`)
+          throw new BadRequestException(callErr?.message ?? 'Failed to send OTP')
+        }
+        return { message: 'OTP sent via voice call' }
+      }
+      this.logger.error(`Twilio sendOtp failed for ${e164}: ${smsErr?.message}`)
+      throw new BadRequestException(smsErr?.message ?? 'Failed to send OTP')
+    }
 
     return { message: 'OTP sent successfully' }
   }
@@ -53,9 +90,16 @@ export class AuthService {
     const user = await this.users.findByPhone(phone)
     if (!user) throw new BadRequestException('User not found')
 
-    const check = await this.getTwilioClient()
-      .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
-      .verificationChecks.create({ to: phone, code })
+    const e164 = this.toE164(phone)
+    let check: { status: string }
+    try {
+      check = await this.getTwilioClient()
+        .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+        .verificationChecks.create({ to: e164, code })
+    } catch (err: any) {
+      this.logger.error(`Twilio verifyOtp failed for ${e164}: ${err?.message}`)
+      throw new BadRequestException(err?.message ?? 'Failed to verify OTP')
+    }
 
     if (check.status !== 'approved') {
       throw new BadRequestException('Invalid or expired OTP')
@@ -95,6 +139,20 @@ export class AuthService {
           lastName: dto.lastName,
           passwordHash,
         })
+
+    const tokens = await this.generateTokens(user.id, user.phone)
+    return { user: this.sanitize(user), ...tokens }
+  }
+
+  // ─── LOGIN (email + password) ─────────────────────────────────────────────
+
+  async login(email: string, password: string) {
+    const user = await this.users.findByEmail(email)
+    if (!user || !user.passwordHash) throw new UnauthorizedException('Invalid credentials')
+    if (user.isBanned) throw new UnauthorizedException('Account banned')
+
+    const valid = await bcrypt.compare(password, user.passwordHash)
+    if (!valid) throw new UnauthorizedException('Invalid credentials')
 
     const tokens = await this.generateTokens(user.id, user.phone)
     return { user: this.sanitize(user), ...tokens }

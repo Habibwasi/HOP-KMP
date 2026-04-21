@@ -35,10 +35,6 @@ fun AuthEffectHandler(
                     }
                 }
 
-                is AuthEffect.NavigateToOtpVerification -> {
-                    navController.navigate(HopRoutes.OtpVerification(phone = effect.phone))
-                }
-
                 is AuthEffect.NavigateToLogin -> {
                     navController.navigate(HopRoutes.Login) {
                         popUpTo(HopRoutes.Splash) { inclusive = true }

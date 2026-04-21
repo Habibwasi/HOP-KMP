@@ -25,17 +25,11 @@ class DevAuthRepository : AuthRepository {
         )
     }
 
-    override suspend fun register(fullName: String, email: String, password: String): ApiResponse<User> =
-        ApiResponse.Success(DEV_USER.copy(fullName = fullName, email = email))
+    override suspend fun register(phone: String, firstName: String, lastName: String, email: String?, password: String?): ApiResponse<User> =
+        ApiResponse.Success(DEV_USER.copy(phone = phone, fullName = "$firstName $lastName"))
 
     override suspend fun login(email: String, password: String): ApiResponse<User> =
         ApiResponse.Success(DEV_USER)
-
-    override suspend fun sendOtp(phone: String): ApiResponse<Unit> =
-        ApiResponse.Success(Unit)
-
-    override suspend fun verifyOtp(phone: String, code: String): ApiResponse<User> =
-        ApiResponse.Success(DEV_USER.copy(phone = phone))
 
     override suspend fun logout(): ApiResponse<Unit> =
         ApiResponse.Success(Unit)

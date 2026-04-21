@@ -28,10 +28,6 @@ sealed interface HopRoutes {
     @Serializable
     data object Login : HopRoutes
 
-    /** ON-04 */
-    @Serializable
-    data class OtpVerification(val phone: String) : HopRoutes
-
     /** ON-03b — Password Reset (stub) */
     @Serializable
     data object ForgotPassword : HopRoutes

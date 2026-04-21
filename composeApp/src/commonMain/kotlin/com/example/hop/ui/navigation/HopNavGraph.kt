@@ -18,7 +18,6 @@ import com.example.hop.ui.components.NoInternetBanner
 import com.example.hop.ui.screens.auth.ForgotPasswordRoute
 import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
-import com.example.hop.ui.screens.auth.OtpVerificationRoute
 import com.example.hop.ui.screens.auth.SignUpRoute
 import com.example.hop.ui.screens.passenger.BookingConfirmationRoute
 import com.example.hop.ui.screens.passenger.BookingSuccessRoute
@@ -85,8 +84,10 @@ fun HopNavGraph(
 
         composable<HopRoutes.SignUp> {
             SignUpRoute(
-                onNavigateToOtpVerification = { phone ->
-                    navController.navigate(HopRoutes.OtpVerification(phone = phone))
+                onNavigateToHome = {
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 },
                 onNavigateToLogin = {
                     navController.navigate(HopRoutes.Login)
@@ -113,18 +114,6 @@ fun HopNavGraph(
         composable<HopRoutes.ForgotPassword> {
             ForgotPasswordRoute(
                 onNavigateBack = { navController.navigateUp() },
-            )
-        }
-
-        composable<HopRoutes.OtpVerification> { backStackEntry ->
-            val route: HopRoutes.OtpVerification = backStackEntry.toRoute()
-            OtpVerificationRoute(
-                phone = route.phone,
-                onNavigateToHome = {
-                    navController.navigate(HopRoutes.Home) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
             )
         }
 
@@ -467,9 +456,7 @@ fun HopNavGraph(
             val route: HopRoutes.Profile = backStackEntry.toRoute()
             OwnProfileRoute(
                 onNavigateBack = { navController.navigateUp() },
-                onNavigateToPhoneVerification = {
-                    navController.navigate(HopRoutes.OtpVerification(phone = ""))
-                },
+                onNavigateToPhoneVerification = { /* phone already verified at registration */ },
                 onNavigateToEditCar = {
                     navController.navigate(HopRoutes.EnableDriverStep1)
                 },

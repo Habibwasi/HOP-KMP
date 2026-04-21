@@ -44,6 +44,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -55,11 +56,12 @@ const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcrypt"));
 const crypto = __importStar(require("crypto"));
 const twilio_1 = __importDefault(require("twilio"));
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     prisma;
     users;
     jwt;
     config;
+    logger = new common_1.Logger(AuthService_1.name);
     constructor(prisma, users, jwt, config) {
         this.prisma = prisma;
         this.users = users;
@@ -69,6 +71,16 @@ let AuthService = class AuthService {
     getTwilioClient() {
         return (0, twilio_1.default)(this.config.getOrThrow('TWILIO_ACCOUNT_SID'), this.config.getOrThrow('TWILIO_AUTH_TOKEN'));
     }
+    toE164(phone) {
+        const trimmed = phone.trim().replace(/\s+/g, '');
+        if (trimmed.startsWith('+'))
+            return trimmed;
+        if (trimmed.startsWith('00'))
+            return '+' + trimmed.slice(2);
+        if (/^\d{8}$/.test(trimmed))
+            return '+45' + trimmed;
+        throw new common_1.BadRequestException(`Phone number "${phone}" is not in a recognised format. Use E.164 (e.g. +4520123456).`);
+    }
     async sendOtp(phone, purpose) {
         let user = await this.users.findByPhone(phone);
         if (!user) {
@@ -77,18 +89,44 @@ let AuthService = class AuthService {
             }
             user = await this.users.create({ phone, firstName: '', lastName: '' });
         }
-        await this.getTwilioClient()
-            .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
-            .verifications.create({ to: phone, channel: 'sms' });
+        const e164 = this.toE164(phone);
+        const service = this.getTwilioClient()
+            .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'));
+        try {
+            await service.verifications.create({ to: e164, channel: 'sms' });
+        }
+        catch (smsErr) {
+            if (smsErr?.code === 60410 || smsErr?.message?.includes('prefix is blocked for the SMS channel')) {
+                this.logger.warn(`SMS blocked for ${e164} — retrying via voice call`);
+                try {
+                    await service.verifications.create({ to: e164, channel: 'call' });
+                }
+                catch (callErr) {
+                    this.logger.error(`Twilio sendOtp (call fallback) failed for ${e164}: ${callErr?.message}`);
+                    throw new common_1.BadRequestException(callErr?.message ?? 'Failed to send OTP');
+                }
+                return { message: 'OTP sent via voice call' };
+            }
+            this.logger.error(`Twilio sendOtp failed for ${e164}: ${smsErr?.message}`);
+            throw new common_1.BadRequestException(smsErr?.message ?? 'Failed to send OTP');
+        }
         return { message: 'OTP sent successfully' };
     }
     async verifyOtp(phone, code, purpose) {
         const user = await this.users.findByPhone(phone);
         if (!user)
             throw new common_1.BadRequestException('User not found');
-        const check = await this.getTwilioClient()
-            .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
-            .verificationChecks.create({ to: phone, code });
+        const e164 = this.toE164(phone);
+        let check;
+        try {
+            check = await this.getTwilioClient()
+                .verify.v2.services(this.config.getOrThrow('TWILIO_VERIFY_SERVICE_SID'))
+                .verificationChecks.create({ to: e164, code });
+        }
+        catch (err) {
+            this.logger.error(`Twilio verifyOtp failed for ${e164}: ${err?.message}`);
+            throw new common_1.BadRequestException(err?.message ?? 'Failed to verify OTP');
+        }
         if (check.status !== 'approved') {
             throw new common_1.BadRequestException('Invalid or expired OTP');
         }
@@ -119,6 +157,18 @@ let AuthService = class AuthService {
                 lastName: dto.lastName,
                 passwordHash,
             });
+        const tokens = await this.generateTokens(user.id, user.phone);
+        return { user: this.sanitize(user), ...tokens };
+    }
+    async login(email, password) {
+        const user = await this.users.findByEmail(email);
+        if (!user || !user.passwordHash)
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        if (user.isBanned)
+            throw new common_1.UnauthorizedException('Account banned');
+        const valid = await bcrypt.compare(password, user.passwordHash);
+        if (!valid)
+            throw new common_1.UnauthorizedException('Invalid credentials');
         const tokens = await this.generateTokens(user.id, user.phone);
         return { user: this.sanitize(user), ...tokens };
     }
@@ -175,7 +225,7 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         users_service_1.UsersService,

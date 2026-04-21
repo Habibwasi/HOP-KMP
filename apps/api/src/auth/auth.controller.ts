@@ -1,34 +1,22 @@
 import { Controller, Post, Body, UseGuards, Req, HttpCode } from '@nestjs/common'
 import { AuthService } from './auth.service'
-import { SendOtpDto } from './dto/send-otp.dto'
-import { VerifyOtpDto } from './dto/verify-otp.dto'
 import { RegisterDto } from './dto/register.dto'
+import { LoginDto } from './dto/login.dto'
 import { AuthGuard } from '@nestjs/passport'
 
 @Controller('auth')
 export class AuthController {
   constructor(private auth: AuthService) {}
 
-  @Post('otp/send')
-  sendOtp(@Body() dto: SendOtpDto) {
-    return this.auth.sendOtp(dto.phone, dto.purpose)
-  }
-
-  @Post('otp/verify')
-  @HttpCode(200)
-  verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.auth.verifyOtp(dto.phone, dto.code, dto.purpose)
-  }
-
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto)
   }
 
-  @Post('login/otp')
+  @Post('login')
   @HttpCode(200)
-  loginWithOtp(@Body() dto: VerifyOtpDto) {
-    return this.auth.loginWithOtp(dto.phone, dto.code)
+  login(@Body() dto: LoginDto) {
+    return this.auth.login(dto.email, dto.password)
   }
 
   @Post('refresh')

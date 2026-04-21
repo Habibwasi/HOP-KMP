@@ -8,26 +8,17 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RegisterRequest(
-    val fullName: String,
-    val email: String,
-    val password: String,
+    val phone: String,
+    val firstName: String,
+    val lastName: String,
+    val email: String? = null,
+    val password: String? = null,
 )
 
 @Serializable
 data class LoginRequest(
     val email: String,
     val password: String,
-)
-
-@Serializable
-data class OtpSendRequest(
-    val phone: String,
-)
-
-@Serializable
-data class OtpVerifyRequest(
-    val phone: String,
-    val code: String,
 )
 
 @Serializable
@@ -40,12 +31,13 @@ data class RefreshTokenRequest(
 @Serializable
 data class UserDto(
     val id: String,
-    val fullName: String,
-    val email: String,
+    val firstName: String,
+    val lastName: String,
+    val email: String? = null,
     val phone: String? = null,
-    val phoneVerified: Boolean,
-    val roles: List<String>,
-    val isBanned: Boolean,
+    val isVerified: Boolean = false,
+    val role: String = "PASSENGER",
+    val isBanned: Boolean = false,
     val ratingDriver: Double? = null,
     val ratingPassenger: Double? = null,
 )
@@ -75,11 +67,11 @@ data class ApiEnvelopeError(
 
 fun UserDto.toDomain(): User = User(
     id = id,
-    fullName = fullName,
-    email = email,
+    fullName = "$firstName $lastName".trim(),
+    email = email.orEmpty(),
     phone = phone,
-    phoneVerified = phoneVerified,
-    roles = roles.mapNotNull { role -> runCatching { UserRole.valueOf(role) }.getOrNull() },
+    phoneVerified = isVerified,
+    roles = listOfNotNull(runCatching { UserRole.valueOf(role) }.getOrNull()),
     isBanned = isBanned,
     ratingDriver = ratingDriver,
     ratingPassenger = ratingPassenger,

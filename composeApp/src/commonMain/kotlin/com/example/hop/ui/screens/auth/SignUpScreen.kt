@@ -74,7 +74,7 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun SignUpRoute(
-    onNavigateToOtpVerification: (phone: String) -> Unit,
+    onNavigateToHome: () -> Unit,
     onNavigateToLogin: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = koinViewModel(),
@@ -86,9 +86,7 @@ fun SignUpRoute(
     LaunchedEffect(viewModel) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is AuthEffect.NavigateToOtpVerification ->
-                    onNavigateToOtpVerification(effect.phone)
-
+                is AuthEffect.NavigateToHome -> onNavigateToHome()
                 is AuthEffect.ShowSnackbar ->
                     scope.launch { snackbarHostState.showSnackbar(effect.message) }
 
@@ -139,7 +137,8 @@ fun SignUpScreen(
     modifier: Modifier = Modifier,
 ) {
     // ── Local form state ──────────────────────────────────────────────────────
-    var fullName by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -147,12 +146,13 @@ fun SignUpScreen(
     var termsAccepted by remember { mutableStateOf(false) }
 
     // ── Derived validation ────────────────────────────────────────────────────
-    val fullNameValid = fullName.trim().isNotEmpty()
+    val firstNameValid = firstName.trim().length >= 2
+    val lastNameValid = lastName.trim().length >= 2
     val emailValid = email.contains("@") && email.substringAfter("@").contains(".")
     // Minimal phone check: +45 followed by 8 digits is the Danish mobile format
     val phoneValid = phone.trim().length >= 8
     val passwordValid = password.length >= 8
-    val formValid = fullNameValid && emailValid && phoneValid && passwordValid && termsAccepted
+    val formValid = firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && termsAccepted
     val canSubmit = formValid && !state.isLoading
 
     Column(
@@ -181,12 +181,29 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
-        // ── Full name ─────────────────────────────────────────────────────────
+        // ── First name ────────────────────────────────────────────────────────
         HopTextField(
-            value = fullName,
-            onValueChange = { fullName = it },
-            label = "Full name",
-            placeholder = "Jane Doe",
+            value = firstName,
+            onValueChange = { firstName = it },
+            label = "First name",
+            placeholder = "Jane",
+            enabled = !state.isLoading,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next,
+            ),
+            lightSurface = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(HopSpacing.md))
+
+        // ── Last name ─────────────────────────────────────────────────────────
+        HopTextField(
+            value = lastName,
+            onValueChange = { lastName = it },
+            label = "Last name",
+            placeholder = "Doe",
             enabled = !state.isLoading,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
@@ -289,9 +306,10 @@ fun SignUpScreen(
             onClick = {
                 onEvent(
                     AuthEvent.Register(
-                        fullName = fullName.trim(),
-                        email = email.trim(),
                         phone = phone.trim(),
+                        firstName = firstName.trim(),
+                        lastName = lastName.trim(),
+                        email = email.trim().ifEmpty { null },
                         password = password,
                     )
                 )

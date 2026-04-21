@@ -138,7 +138,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // ── Derived validation ────────────────────────────────────────────────────
+    // ── Derived validation ────────────────────────────────────────────
     val emailValid = email.contains("@") && email.substringAfter("@").contains(".")
     val passwordValid = password.isNotEmpty()
     val canSubmit = emailValid && passwordValid && !state.isLoading
@@ -169,7 +169,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
-        // ── Email ─────────────────────────────────────────────────────────────
+        // ── Email ─────────────────────────────────────────────────────
         HopTextField(
             value = email,
             onValueChange = { email = it },

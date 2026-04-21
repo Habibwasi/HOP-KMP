@@ -9,8 +9,10 @@ export declare class AuthService {
     private users;
     private jwt;
     private config;
+    private readonly logger;
     constructor(prisma: PrismaService, users: UsersService, jwt: JwtService, config: ConfigService);
     private getTwilioClient;
+    private toE164;
     sendOtp(phone: string, purpose: OtpPurpose): Promise<{
         message: string;
     }>;
@@ -18,6 +20,11 @@ export declare class AuthService {
         verified: boolean;
     }>;
     register(dto: RegisterDto): Promise<{
+        accessToken: string;
+        refreshToken: string;
+        user: any;
+    }>;
+    login(email: string, password: string): Promise<{
         accessToken: string;
         refreshToken: string;
         user: any;

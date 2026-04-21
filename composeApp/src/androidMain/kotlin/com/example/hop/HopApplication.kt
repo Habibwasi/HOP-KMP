@@ -21,7 +21,7 @@ class HopApplication : Application() {
         }
 
         val baseUrl = if (BuildConfig.DEBUG)
-            NetworkConstants.LOCAL_ANDROID_BASE_URL
+            NetworkConstants.LOCAL_DEVICE_BASE_URL
         else
             NetworkConstants.PRODUCTION_BASE_URL
 

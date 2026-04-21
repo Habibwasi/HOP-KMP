@@ -44,25 +44,18 @@ final class AuthViewModelWrapper: ObservableObject {
     // ── Convenience event dispatchers ─────────────────────────────────────────
     // AuthEvent is a sealed interface → SKIE exposes each case as its own class.
 
-    func register(fullName: String, email: String, phone: String, password: String) {
+    func register(firstName: String, lastName: String, phone: String, email: String? = nil, password: String? = nil) {
         viewModel.onEvent(event: AuthEventRegister(
-            fullName: fullName,
-            email: email,
             phone: phone,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
             password: password
         ))
     }
 
-    func login(email: String, password: String) {
-        viewModel.onEvent(event: AuthEventLogin(email: email, password: password))
-    }
-
-    func sendOtp(phone: String) {
-        viewModel.onEvent(event: AuthEventSendOtp(phone: phone))
-    }
-
-    func verifyOtp(phone: String, code: String) {
-        viewModel.onEvent(event: AuthEventVerifyOtp(phone: phone, code: code))
+    func login(phone: String, password: String) {
+        viewModel.onEvent(event: AuthEventLogin(phone: phone, password: password))
     }
 
     func clearError() {

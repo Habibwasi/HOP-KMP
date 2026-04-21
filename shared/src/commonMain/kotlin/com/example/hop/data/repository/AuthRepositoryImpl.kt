@@ -3,8 +3,6 @@ package com.example.hop.data.repository
 import com.example.hop.data.dto.ApiEnvelope
 import com.example.hop.data.dto.AuthResponse
 import com.example.hop.data.dto.LoginRequest
-import com.example.hop.data.dto.OtpSendRequest
-import com.example.hop.data.dto.OtpVerifyRequest
 import com.example.hop.data.dto.RegisterRequest
 import com.example.hop.data.dto.toDomain
 import com.example.hop.domain.model.User
@@ -24,65 +22,24 @@ class AuthRepositoryImpl(
 ) : AuthRepository {
 
     override suspend fun register(
-        fullName: String,
-        email: String,
-        password: String,
-    ): ApiResponse<User> {
-        val response = safeEnvelopeCall<AuthResponse> {
-            httpClient.post("auth/register") {
-                setBody(RegisterRequest(fullName, email, password))
-            }.body()
-        }
-        return when (response) {
-            is ApiResponse.Success -> {
-                tokenStorage.saveAccessToken(response.data.accessToken)
-                tokenStorage.saveRefreshToken(response.data.refreshToken)
-                ApiResponse.Success(response.data.user.toDomain())
-            }
-            is ApiResponse.Error -> response
-        }
+        phone: String,
+        firstName: String,
+        lastName: String,
+        email: String?,
+        password: String?,
+    ): ApiResponse<User> = safeAuthCall {
+        httpClient.post("auth/register") {
+            setBody(RegisterRequest(phone, firstName, lastName, email, password))
+        }.body()
     }
 
     override suspend fun login(
         email: String,
         password: String,
-    ): ApiResponse<User> {
-        val response = safeEnvelopeCall<AuthResponse> {
-            httpClient.post("auth/login") {
-                setBody(LoginRequest(email, password))
-            }.body()
-        }
-        return when (response) {
-            is ApiResponse.Success -> {
-                tokenStorage.saveAccessToken(response.data.accessToken)
-                tokenStorage.saveRefreshToken(response.data.refreshToken)
-                ApiResponse.Success(response.data.user.toDomain())
-            }
-            is ApiResponse.Error -> response
-        }
-    }
-
-    override suspend fun sendOtp(phone: String): ApiResponse<Unit> = safeApiCall {
-        httpClient.post("auth/otp/send") {
-            setBody(OtpSendRequest(phone))
-        }
-        Unit
-    }
-
-    override suspend fun verifyOtp(phone: String, code: String): ApiResponse<User> {
-        val response = safeEnvelopeCall<AuthResponse> {
-            httpClient.post("auth/otp/verify") {
-                setBody(OtpVerifyRequest(phone, code))
-            }.body()
-        }
-        return when (response) {
-            is ApiResponse.Success -> {
-                tokenStorage.saveAccessToken(response.data.accessToken)
-                tokenStorage.saveRefreshToken(response.data.refreshToken)
-                ApiResponse.Success(response.data.user.toDomain())
-            }
-            is ApiResponse.Error -> response
-        }
+    ): ApiResponse<User> = safeAuthCall {
+        httpClient.post("auth/login") {
+            setBody(LoginRequest(email, password))
+        }.body()
     }
 
     override suspend fun logout(): ApiResponse<Unit> = safeApiCall {
@@ -92,16 +49,19 @@ class AuthRepositoryImpl(
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private suspend fun <T> safeEnvelopeCall(
-        block: suspend () -> ApiEnvelope<T>,
-    ): ApiResponse<T> {
+    private suspend fun safeAuthCall(
+        block: suspend () -> AuthResponse,
+    ): ApiResponse<User> {
         return try {
-            val envelope = block()
-            val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
-            ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
+            val response = block()
+            tokenStorage.saveAccessToken(response.accessToken)
+            tokenStorage.saveRefreshToken(response.refreshToken)
+            ApiResponse.Success(response.user.toDomain())
         } catch (e: ClientRequestException) {
-            ApiResponse.Error(e.response.status.value, e.message ?: "Client error")
+            val error = runCatching {
+                e.response.body<ApiEnvelope<Nothing>>().error
+            }.getOrNull()
+            ApiResponse.Error(error?.code ?: e.response.status.value, error?.message ?: e.message)
         } catch (e: Exception) {
             ApiResponse.Error(-1, e.message ?: "Unknown error")
         }
