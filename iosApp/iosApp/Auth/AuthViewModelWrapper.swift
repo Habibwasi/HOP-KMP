@@ -10,10 +10,8 @@ import Shared
 //  • StateFlow<AuthUiState>  → AsyncSequence  (for await in viewModel.state)
 //  • Channel<AuthEffect>     → AsyncSequence  (for await in viewModel.effect)
 //
-// AuthEvent is a Kotlin sealed interface. SKIE exposes it as `any AuthEvent`
-// (a Swift protocol); each subtype is a separate flattened Swift class:
-//   AuthEventRegister, AuthEventLogin, AuthEventSendOtp, AuthEventVerifyOtp …
-// Kotlin data objects (ClearError, Logout) are Swift singletons: .shared
+// AuthEvent is a sealed interface → SKIE exposes each case as its own class:
+//   AuthEventRegister, AuthEventLogin, AuthEventClearError, AuthEventLogout …
 //
 
 @MainActor
@@ -43,19 +41,21 @@ final class AuthViewModelWrapper: ObservableObject {
 
     // ── Convenience event dispatchers ─────────────────────────────────────────
     // AuthEvent is a sealed interface → SKIE exposes each case as its own class.
+    // AuthEvent.Register  → AuthEventRegister(email:password:firstName:lastName:phone:)
+    // AuthEvent.Login     → AuthEventLogin(email:password:)
 
-    func register(firstName: String, lastName: String, phone: String, email: String? = nil, password: String? = nil) {
+    func register(firstName: String, lastName: String, email: String, phone: String? = nil, password: String) {
         viewModel.onEvent(event: AuthEventRegister(
-            phone: phone,
+            email: email,
+            password: password,
             firstName: firstName,
             lastName: lastName,
-            email: email,
-            password: password
+            phone: phone
         ))
     }
 
-    func login(phone: String, password: String) {
-        viewModel.onEvent(event: AuthEventLogin(phone: phone, password: password))
+    func login(email: String, password: String) {
+        viewModel.onEvent(event: AuthEventLogin(email: email, password: password))
     }
 
     func clearError() {

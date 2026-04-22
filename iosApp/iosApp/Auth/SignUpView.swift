@@ -7,7 +7,7 @@ struct SignUpView: View {
 
     @StateObject private var wrapper = AuthViewModelWrapper()
 
-    var onNavigateToOtpVerification: (String) -> Void
+    var onNavigateToHome: () -> Void
     var onNavigateToLogin: () -> Void
 
     // ── Local form state ──────────────────────────────────────────────────────
@@ -119,10 +119,16 @@ struct SignUpView: View {
                         isLoading: wrapper.state.isLoading,
                         isEnabled: canSubmit
                     ) {
+                        let parts = fullName.trimmingCharacters(in: .whitespaces)
+                            .split(separator: " ", maxSplits: 1)
+                        let firstName = parts.first.map(String.init) ?? fullName
+                        let lastName  = parts.count > 1 ? String(parts[1]) : ""
                         wrapper.register(
-                            fullName: fullName.trimmingCharacters(in: .whitespaces),
+                            firstName: firstName,
+                            lastName: lastName,
                             email: email.trimmingCharacters(in: .whitespaces),
-                            phone: phone.trimmingCharacters(in: .whitespaces),
+                            phone: phone.trimmingCharacters(in: .whitespaces).isEmpty ? nil
+                                   : phone.trimmingCharacters(in: .whitespaces),
                             password: password
                         )
                     }
@@ -182,8 +188,8 @@ struct SignUpView: View {
     @MainActor
     private func handleEffect(_ effect: AuthEffect) async {
         switch effect {
-        case let nav as AuthEffectNavigateToOtpVerification:
-            onNavigateToOtpVerification(nav.phone)
+        case is AuthEffectNavigateToHome:
+            onNavigateToHome()
         case let snack as AuthEffectShowSnackbar:
             withAnimation { toastMessage = snack.message }
             wrapper.clearError()
@@ -243,7 +249,7 @@ private struct TermsCheckboxRow: View {
 
 #Preview("Default") {
     SignUpView(
-        onNavigateToOtpVerification: { _ in },
+        onNavigateToHome: {},
         onNavigateToLogin: {}
     )
 }
@@ -251,7 +257,7 @@ private struct TermsCheckboxRow: View {
 #Preview("Loading") {
     // Shown by injecting state — in real app wrapper drives this
     SignUpView(
-        onNavigateToOtpVerification: { _ in },
+        onNavigateToHome: {},
         onNavigateToLogin: {}
     )
 }

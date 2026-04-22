@@ -6,7 +6,6 @@ import androidx.navigation.NavController
 import com.example.hop.presentation.auth.AuthEffect
 import com.example.hop.presentation.auth.AuthViewModel
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
@@ -35,7 +34,7 @@ fun AuthEffectHandler(
         val splashDone = CompletableDeferred<Unit>()
         launch { kotlinx.coroutines.delay(3_000); splashDone.complete(Unit) }
 
-        viewModel.effect.collectLatest { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is AuthEffect.NavigateToHome -> {
                     splashDone.await()
@@ -53,6 +52,13 @@ fun AuthEffectHandler(
 
                 is AuthEffect.ShowSnackbar -> {
                     // Handled by the root SnackbarHost; no navigation needed.
+                }
+
+                is AuthEffect.SessionExpired -> {
+                    splashDone.await()
+                    navController.navigate(HopRoutes.Onboarding) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             }
         }

@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BookingsController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
+const supabase_guard_1 = require("../auth/supabase.guard");
 const bookings_service_1 = require("./bookings.service");
 const create_booking_dto_1 = require("./dto/create-booking.dto");
 let BookingsController = class BookingsController {
@@ -69,7 +69,7 @@ __decorate([
 ], BookingsController.prototype, "cancel", null);
 exports.BookingsController = BookingsController = __decorate([
     (0, common_1.Controller)('bookings'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __metadata("design:paramtypes", [bookings_service_1.BookingsService])
 ], BookingsController);
 //# sourceMappingURL=bookings.controller.js.map

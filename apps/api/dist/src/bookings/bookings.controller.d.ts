@@ -42,10 +42,10 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     }>;
     myBookings(req: any): Promise<({
@@ -94,10 +94,10 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     })[]>;
     findOne(id: string): Promise<{
@@ -145,20 +145,20 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     }>;
     cancel(id: string, req: any): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     }>;
 }

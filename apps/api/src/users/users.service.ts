@@ -1,9 +1,11 @@
-import { ConflictException, Injectable } from '@nestjs/common'
+import { ConflictException, Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { User } from '@prisma/client'
+import { Prisma, User } from '@prisma/client'
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name)
+
   constructor(private prisma: PrismaService) {}
 
   async findByPhone(phone: string): Promise<User | null> {
@@ -29,6 +31,7 @@ export class UsersService {
     supabaseId: string,
     data: { firstName: string; lastName: string; phone?: string; email?: string },
   ): Promise<User> {
+    // Check for phone taken by a *different* account
     if (data.phone) {
       const existing = await this.prisma.user.findUnique({ where: { phone: data.phone } })
       if (existing && existing.id !== supabaseId) {
@@ -36,22 +39,38 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.upsert({
-      where: { id: supabaseId },
-      create: {
-        id: supabaseId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        email: data.email,
-      },
-      update: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        email: data.email,
-      },
-    })
+    // Check for email taken by a *different* account
+    if (data.email) {
+      const existing = await this.prisma.user.findUnique({ where: { email: data.email } })
+      if (existing && existing.id !== supabaseId) {
+        throw new ConflictException('Email already in use')
+      }
+    }
+
+    try {
+      return await this.prisma.user.upsert({
+        where: { id: supabaseId },
+        create: {
+          id: supabaseId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone ?? null,
+          email: data.email ?? null,
+        },
+        update: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone ?? null,
+          email: data.email ?? null,
+        },
+      })
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        const fields = (e.meta?.target as string[])?.join(', ') ?? 'field'
+        throw new ConflictException(`${fields} already in use`)
+      }
+      throw e
+    }
   }
 
   async markVerified(userId: string): Promise<User> {
@@ -59,6 +78,17 @@ export class UsersService {
       where: { id: userId },
       data: { isVerified: true },
     })
+  }
+
+  async updateProfile(userId: string, data: { firstName: string; lastName: string }): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+    })
+  }
+
+  async reportUser(reportedId: string, reporterId: string, reason: string): Promise<void> {
+    this.logger.log(`User ${reporterId} reported ${reportedId}: ${reason}`)
   }
 
   async getCarDetails(userId: string) {

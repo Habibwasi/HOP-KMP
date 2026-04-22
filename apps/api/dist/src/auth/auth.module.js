@@ -8,25 +8,26 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModule = void 0;
 const common_1 = require("@nestjs/common");
-const jwt_1 = require("@nestjs/jwt");
-const passport_1 = require("@nestjs/passport");
-const auth_service_1 = require("./auth.service");
-const auth_controller_1 = require("./auth.controller");
-const jwt_strategy_1 = require("./strategies/jwt.strategy");
-const jwt_refresh_strategy_1 = require("./strategies/jwt-refresh.strategy");
-const users_module_1 = require("../users/users.module");
+const supabase_js_1 = require("@supabase/supabase-js");
+const config_1 = require("@nestjs/config");
+const prisma_module_1 = require("../prisma/prisma.module");
+const supabase_guard_1 = require("./supabase.guard");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
+    (0, common_1.Global)(),
     (0, common_1.Module)({
-        imports: [
-            passport_1.PassportModule,
-            jwt_1.JwtModule.register({}),
-            users_module_1.UsersModule,
+        imports: [prisma_module_1.PrismaModule],
+        providers: [
+            {
+                provide: 'SUPABASE_CLIENT',
+                inject: [config_1.ConfigService],
+                useFactory: (config) => (0, supabase_js_1.createClient)(config.getOrThrow('SUPABASE_URL'), config.getOrThrow('SUPABASE_SERVICE_ROLE_KEY')),
+            },
+            supabase_guard_1.SupabaseGuard,
         ],
-        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, jwt_refresh_strategy_1.JwtRefreshStrategy],
-        controllers: [auth_controller_1.AuthController],
+        exports: ['SUPABASE_CLIENT', supabase_guard_1.SupabaseGuard],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

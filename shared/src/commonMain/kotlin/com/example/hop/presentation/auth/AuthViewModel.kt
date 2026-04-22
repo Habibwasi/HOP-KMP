@@ -6,6 +6,7 @@ import com.example.hop.data.repository.dev.DevAuthRepository
 import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
+import com.example.hop.network.SessionExpiryNotifier
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,10 +35,13 @@ sealed interface AuthEffect {
     data object NavigateToHome : AuthEffect
     data object NavigateToLogin : AuthEffect
     data class ShowSnackbar(val message: String) : AuthEffect
+    /** Emitted when a 401 cannot be recovered; all clients should route to Login. */
+    data object SessionExpired : AuthEffect
 }
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
+    private val sessionExpiryNotifier: SessionExpiryNotifier,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
@@ -58,6 +62,14 @@ class AuthViewModel(
             // Attempt silent session restore on every cold start.
             // If a refresh token is persisted the user skips the login screen.
             viewModelScope.launch { restoreSession() }
+        }
+
+        // Observe 401 signals from the network layer and forward as SessionExpired.
+        viewModelScope.launch {
+            sessionExpiryNotifier.events.collect {
+                _state.value = AuthUiState()
+                _effect.tryEmit(AuthEffect.SessionExpired)
+            }
         }
     }
 

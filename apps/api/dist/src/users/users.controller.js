@@ -11,21 +11,93 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var UsersController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
+const supabase_js_1 = require("@supabase/supabase-js");
+const supabase_guard_1 = require("../auth/supabase.guard");
 const users_service_1 = require("./users.service");
 const ratings_service_1 = require("../ratings/ratings.service");
-let UsersController = class UsersController {
+const notifications_service_1 = require("../notifications/notifications.service");
+const create_profile_dto_1 = require("./dto/create-profile.dto");
+const update_user_dto_1 = require("./dto/update-user.dto");
+const class_validator_1 = require("class-validator");
+class ReportDto {
+    reason;
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
+    __metadata("design:type", String)
+], ReportDto.prototype, "reason", void 0);
+class PushTokenDto {
+    token;
+    platform;
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PushTokenDto.prototype, "token", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PushTokenDto.prototype, "platform", void 0);
+let UsersController = UsersController_1 = class UsersController {
     users;
     ratings;
-    constructor(users, ratings) {
+    notifications;
+    supabase;
+    logger = new common_1.Logger(UsersController_1.name);
+    constructor(users, ratings, notifications, supabase) {
         this.users = users;
         this.ratings = ratings;
+        this.notifications = notifications;
+        this.supabase = supabase;
+    }
+    async createProfile(req, dto) {
+        const auth = req.headers?.authorization;
+        if (!auth?.startsWith('Bearer '))
+            throw new common_1.UnauthorizedException();
+        const token = auth.slice(7);
+        const { data: { user: supabaseUser }, error } = await this.supabase.auth.getUser(token);
+        if (error || !supabaseUser)
+            throw new common_1.UnauthorizedException();
+        try {
+            return await this.users.createProfile(supabaseUser.id, {
+                firstName: dto.firstName,
+                lastName: dto.lastName,
+                phone: dto.phone,
+                email: dto.email ?? supabaseUser.email,
+            });
+        }
+        catch (err) {
+            if (err instanceof common_1.ConflictException) {
+                const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id);
+                if (deleteError) {
+                    this.logger.error(`Failed to delete dangling Supabase user ${supabaseUser.id}: ${deleteError.message}`);
+                }
+            }
+            throw err;
+        }
     }
     async getMe(req) {
         const user = await this.users.findById(req.user.id);
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        return user;
+    }
+    async updateMe(req, dto) {
+        const [firstName, ...rest] = dto.fullName.trim().split(' ');
+        const lastName = rest.join(' ') || '.';
+        return this.users.updateProfile(req.user.id, { firstName, lastName });
+    }
+    async savePushToken(req, dto) {
+        const platform = dto.platform === 'ios' ? 'ios' : 'android';
+        await this.notifications.registerToken(req.user.id, dto.token, platform);
+    }
+    async getUserById(id) {
+        const user = await this.users.findById(id);
         if (!user)
             throw new common_1.NotFoundException('User not found');
         return user;
@@ -46,16 +118,54 @@ let UsersController = class UsersController {
             throw new common_1.NotFoundException('No car details found');
         return car;
     }
+    async reportUser(req, id, dto) {
+        await this.users.reportUser(id, req.user.id, dto.reason);
+    }
 };
 exports.UsersController = UsersController;
 __decorate([
+    (0, common_1.Post)('profile'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_profile_dto_1.CreateProfileDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "createProfile", null);
+__decorate([
     (0, common_1.Get)('me'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getMe", null);
+__decorate([
+    (0, common_1.Patch)('me'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateMe", null);
+__decorate([
+    (0, common_1.Post)('push-token'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, PushTokenDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "savePushToken", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserById", null);
 __decorate([
     (0, common_1.Get)(':id/reviews'),
     __param(0, (0, common_1.Param)('id')),
@@ -70,9 +180,23 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getCarDetails", null);
-exports.UsersController = UsersController = __decorate([
+__decorate([
+    (0, common_1.Post)(':id/report'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, ReportDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "reportUser", null);
+exports.UsersController = UsersController = UsersController_1 = __decorate([
     (0, common_1.Controller)('users'),
+    __param(3, (0, common_1.Inject)('SUPABASE_CLIENT')),
     __metadata("design:paramtypes", [users_service_1.UsersService,
-        ratings_service_1.RatingsService])
+        ratings_service_1.RatingsService,
+        notifications_service_1.NotificationsService,
+        supabase_js_1.SupabaseClient])
 ], UsersController);
 //# sourceMappingURL=users.controller.js.map

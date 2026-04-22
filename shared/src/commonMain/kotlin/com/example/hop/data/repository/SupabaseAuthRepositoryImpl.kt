@@ -11,11 +11,15 @@ import com.example.hop.network.safeApiCall
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class SupabaseAuthRepositoryImpl(
     private val supabase: SupabaseClient,
@@ -29,16 +33,53 @@ class SupabaseAuthRepositoryImpl(
         lastName: String,
         phone: String?,
     ): ApiResponse<User> = safeApiCall {
+        // Store profile data as Supabase user metadata so the backend guard can
+        // auto-create the Prisma profile on first login even if email confirmation
+        // delays the initial profile POST.
         supabase.auth.signUpWith(Email) {
             this.email = email
             this.password = password
+            this.data = buildJsonObject {
+                put("firstName", firstName)
+                put("lastName", lastName)
+                if (phone != null) put("phone", phone)
+            }
         }
-        val envelope = httpClient.post("users/profile") {
-            setBody(CreateProfileRequest(firstName, lastName, phone, email))
-        }.body<ApiEnvelope<UserDto>>()
-        val error = envelope.error
-        if (error != null) throw Exception(error.message)
-        checkNotNull(envelope.data) { "Null data in /users/profile response" }.toDomain()
+
+        // Wait until the Auth plugin has committed the session to its StateFlow.
+        // signUpWith is async-internal in supabase-kt v3 — poll sessionStatus until
+        // it settles so currentSessionOrNull() is reliable before the first request.
+        val status = supabase.auth.sessionStatus.first {
+            it !is SessionStatus.Initializing
+        }
+        val token = (status as? SessionStatus.Authenticated)?.session?.accessToken
+        if (token != null) {
+            // Email confirmation is OFF — we have a session immediately.
+            // POST /users/profile WITHOUT an explicit Authorization header — the
+            // AuthInterceptor (which now uses header set, not append) will add it.
+            // If profile creation fails (e.g. phone conflict), the backend deletes
+            // the dangling Supabase auth user. Sign out locally to clear the orphaned
+            // session so the user can re-register without "user already exists".
+            val envelope = runCatching {
+                httpClient.post("users/profile") {
+                    setBody(CreateProfileRequest(firstName, lastName, phone, email))
+                }.body<ApiEnvelope<UserDto>>()
+            }.getOrElse { e ->
+                supabase.auth.signOut()
+                throw e
+            }
+            val err = envelope.error
+            if (err != null) {
+                supabase.auth.signOut()
+                throw Exception(err.message)
+            }
+            return@safeApiCall checkNotNull(envelope.data) { "Null data in /users/profile response" }.toDomain()
+        }
+
+        // Email confirmation is ON — the guard will auto-create the Prisma profile
+        // from user_metadata on the user's first authenticated request after
+        // they confirm their email. Show a message to prompt confirmation.
+        throw Exception("Account created! Please check your email to confirm, then log in.")
     }
 
     override suspend fun login(
@@ -49,6 +90,9 @@ class SupabaseAuthRepositoryImpl(
             this.email = email
             this.password = password
         }
+        // Wait for the session StateFlow to emit Authenticated before the GET so
+        // AuthInterceptor can reliably read currentSessionOrNull().
+        supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
         val envelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
         val error = envelope.error
         if (error != null) throw Exception(error.message)
@@ -60,6 +104,10 @@ class SupabaseAuthRepositoryImpl(
     }
 
     override suspend fun restoreSession(): ApiResponse<User> {
+        // On cold start in supabase-kt v3 / Android, the session is loaded from
+        // DataStore asynchronously. Wait for that load to complete before reading
+        // the session — otherwise currentSessionOrNull() races and returns null.
+        supabase.auth.sessionStatus.first { it !is SessionStatus.Initializing }
         val session = supabase.auth.currentSessionOrNull()
             ?: return ApiResponse.Error(-1, "No stored session")
         return safeApiCall {

@@ -73,6 +73,14 @@
                 {
                     "name": "TWILIO_ACCOUNT_SID",
                     "value": "AC0e1caf1a0fd6e23445a9a4b12e058128"
+                },
+                {
+                    "name": "SUPABASE_URL",
+                    "value": "https://bfijluuhbkqoldnszeqc.supabase.co"
+                },
+                {
+                    "name": "SUPABASE_SERVICE_ROLE_KEY",
+                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmaWpsdXVoYmtxb2xkbnN6ZXFjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njg3ODc2NiwiZXhwIjoyMDkyNDU0NzY2fQ.u_Zz9Uijkn55HRtw5w3pguexx7dl6yf5FPLlhTH0zww"
                 }
             ],
             "mountPoints": [],

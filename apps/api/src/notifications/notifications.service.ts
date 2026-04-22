@@ -116,4 +116,19 @@ export class NotificationsService {
   async removeToken(token: string) {
     return this.prisma.pushToken.deleteMany({ where: { token } })
   }
+
+  async getForUser(userId: string) {
+    return this.prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
+  }
+
+  async markRead(notificationId: string, userId: string) {
+    return this.prisma.notification.updateMany({
+      where: { id: notificationId, userId },
+      data: { isRead: true },
+    })
+  }
 }

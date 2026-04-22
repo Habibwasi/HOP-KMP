@@ -5,7 +5,7 @@ export declare class AdminService {
     listUsers(page?: number, limit?: number): Promise<{
         users: {
             id: string;
-            phone: string;
+            phone: string | null;
             email: string | null;
             firstName: string;
             lastName: string;
@@ -22,9 +22,8 @@ export declare class AdminService {
     }>;
     banUser(userId: string, durationDays: number | 'permanent'): Promise<{
         id: string;
-        phone: string;
+        phone: string | null;
         email: string | null;
-        passwordHash: string | null;
         firstName: string;
         lastName: string;
         avatarUrl: string | null;
@@ -38,9 +37,8 @@ export declare class AdminService {
     }>;
     unbanUser(userId: string): Promise<{
         id: string;
-        phone: string;
+        phone: string | null;
         email: string | null;
-        passwordHash: string | null;
         firstName: string;
         lastName: string;
         avatarUrl: string | null;
@@ -54,9 +52,8 @@ export declare class AdminService {
     }>;
     makeAdmin(userId: string): Promise<{
         id: string;
-        phone: string;
+        phone: string | null;
         email: string | null;
-        passwordHash: string | null;
         firstName: string;
         lastName: string;
         avatarUrl: string | null;
@@ -71,7 +68,7 @@ export declare class AdminService {
     getPendingLicences(): Promise<({
         user: {
             id: string;
-            phone: string;
+            phone: string | null;
             firstName: string;
             lastName: string;
         };

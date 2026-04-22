@@ -2,6 +2,7 @@ package com.example.hop.network
 
 import io.github.jan.supabase.SupabaseClient
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -9,6 +10,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -18,6 +20,7 @@ object HttpClientFactory {
     fun create(
         supabase: SupabaseClient,
         baseUrl: String = NetworkConstants.PRODUCTION_BASE_URL,
+        sessionExpiryNotifier: SessionExpiryNotifier? = null,
     ): HttpClient = HttpClient {
 
         expectSuccess = true
@@ -45,6 +48,16 @@ object HttpClientFactory {
 
         install(AuthInterceptor) {
             this.supabase = supabase
+        }
+
+        if (sessionExpiryNotifier != null) {
+            HttpResponseValidator {
+                validateResponse { response ->
+                    if (response.status == HttpStatusCode.Unauthorized) {
+                        sessionExpiryNotifier.notifyExpired()
+                    }
+                }
+            }
         }
 
         defaultRequest {

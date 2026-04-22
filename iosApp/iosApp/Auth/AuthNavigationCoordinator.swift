@@ -8,7 +8,6 @@ enum AuthDestination: Hashable {
     case splash
     case signUp
     case login
-    case otpVerification(phone: String)
     case forgotPassword
     // Home is handled at the app root level — not an auth destination.
 }
@@ -56,8 +55,8 @@ struct AuthNavigationCoordinator: View {
 
         case .signUp:
             SignUpView(
-                onNavigateToOtpVerification: { phone in
-                    path.append(AuthDestination.otpVerification(phone: phone))
+                onNavigateToHome: {
+                    onAuthComplete()
                 },
                 onNavigateToLogin: {
                     // Replace sign-up with login (pop sign-up, push login)
@@ -77,14 +76,6 @@ struct AuthNavigationCoordinator: View {
                 },
                 onNavigateToForgotPassword: {
                     path.append(AuthDestination.forgotPassword)
-                }
-            )
-
-        case let .otpVerification(phone):
-            OtpVerificationView(
-                phone: phone,
-                onNavigateToHome: {
-                    onAuthComplete()
                 }
             )
 

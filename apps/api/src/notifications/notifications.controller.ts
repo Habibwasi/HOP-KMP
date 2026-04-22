@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Body, UseGuards, Req } from '@nestjs/common'
+import { Controller, Post, Delete, Get, Param, Body, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { NotificationsService } from './notifications.service'
 import { IsString, IsEnum } from 'class-validator'
@@ -24,5 +24,16 @@ export class NotificationsController {
   @Delete('token')
   remove(@Body('token') token: string) {
     return this.notifications.removeToken(token)
+  }
+
+  @Get()
+  getAll(@Req() req: any) {
+    return this.notifications.getForUser(req.user.id)
+  }
+
+  @Post(':id/read')
+  @HttpCode(HttpStatus.OK)
+  markRead(@Req() req: any, @Param('id') id: string) {
+    return this.notifications.markRead(id, req.user.id)
   }
 }

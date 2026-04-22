@@ -9,26 +9,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.VerifyOtpDto = void 0;
+exports.CreateProfileDto = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
-class VerifyOtpDto {
+class CreateProfileDto {
+    firstName;
+    lastName;
     phone;
-    code;
-    purpose;
+    email;
 }
-exports.VerifyOtpDto = VerifyOtpDto;
-__decorate([
-    (0, class_validator_1.IsPhoneNumber)(undefined),
-    __metadata("design:type", String)
-], VerifyOtpDto.prototype, "phone", void 0);
+exports.CreateProfileDto = CreateProfileDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.Length)(6, 6),
+    (0, class_validator_1.MinLength)(1),
     __metadata("design:type", String)
-], VerifyOtpDto.prototype, "code", void 0);
+], CreateProfileDto.prototype, "firstName", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.OtpPurpose),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
     __metadata("design:type", String)
-], VerifyOtpDto.prototype, "purpose", void 0);
-//# sourceMappingURL=verify-otp.dto.js.map
+], CreateProfileDto.prototype, "lastName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsPhoneNumber)(undefined),
+    __metadata("design:type", String)
+], CreateProfileDto.prototype, "phone", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], CreateProfileDto.prototype, "email", void 0);
+//# sourceMappingURL=create-profile.dto.js.map

@@ -17,7 +17,9 @@ val AuthInterceptor = createClientPlugin("AuthInterceptor", ::AuthInterceptorCon
     onRequest { request, _ ->
         val token = supabase.auth.currentSessionOrNull()?.accessToken
         if (token != null) {
-            request.headers.append(HttpHeaders.Authorization, "Bearer $token")
+            // Use set (not append) — prevents a duplicate Authorization header
+            // if any call site has already set one explicitly.
+            request.headers[HttpHeaders.Authorization] = "Bearer $token"
         }
     }
 }

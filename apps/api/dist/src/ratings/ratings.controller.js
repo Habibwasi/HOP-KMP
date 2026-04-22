@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RatingsController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
+const supabase_guard_1 = require("../auth/supabase.guard");
 const ratings_service_1 = require("./ratings.service");
 const create_rating_dto_1 = require("./dto/create-rating.dto");
 let RatingsController = class RatingsController {
@@ -32,7 +32,7 @@ let RatingsController = class RatingsController {
 exports.RatingsController = RatingsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

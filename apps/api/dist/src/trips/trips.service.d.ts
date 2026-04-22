@@ -79,10 +79,10 @@ export declare class TripsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            tripId: string;
             seats: number;
             status: import("@prisma/client").$Enums.BookingStatus;
             passengerId: string;
-            tripId: string;
             totalOere: number;
         })[];
         driver: {
@@ -142,10 +142,10 @@ export declare class TripsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            tripId: string;
             seats: number;
             status: import("@prisma/client").$Enums.BookingStatus;
             passengerId: string;
-            tripId: string;
             totalOere: number;
         }[];
     } & {
@@ -176,10 +176,10 @@ export declare class TripsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            tripId: string;
             seats: number;
             status: import("@prisma/client").$Enums.BookingStatus;
             passengerId: string;
-            tripId: string;
             totalOere: number;
         }[];
         driver: {

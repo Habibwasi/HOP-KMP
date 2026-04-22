@@ -20,4 +20,15 @@ export declare class NotificationsService {
         platform: string;
     }>;
     removeToken(token: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
+    getForUser(userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        userId: string;
+        title: string;
+        body: string;
+        type: import("@prisma/client").$Enums.NotificationType;
+        isRead: boolean;
+        deepLinkId: string | null;
+    }[]>;
+    markRead(notificationId: string, userId: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
 }

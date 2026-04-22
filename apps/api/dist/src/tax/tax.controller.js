@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaxController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
+const supabase_guard_1 = require("../auth/supabase.guard");
 const tax_service_1 = require("./tax.service");
 let TaxController = class TaxController {
     tax;
@@ -58,7 +58,7 @@ __decorate([
 ], TaxController.prototype, "annual", null);
 exports.TaxController = TaxController = __decorate([
     (0, common_1.Controller)('tax'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __metadata("design:paramtypes", [tax_service_1.TaxService])
 ], TaxController);
 //# sourceMappingURL=tax.controller.js.map

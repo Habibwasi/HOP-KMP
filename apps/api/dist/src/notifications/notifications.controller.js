@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
+const supabase_guard_1 = require("../auth/supabase.guard");
 const notifications_service_1 = require("./notifications.service");
 const class_validator_1 = require("class-validator");
 class RegisterTokenDto {
@@ -40,6 +40,12 @@ let NotificationsController = class NotificationsController {
     remove(token) {
         return this.notifications.removeToken(token);
     }
+    getAll(req) {
+        return this.notifications.getForUser(req.user.id);
+    }
+    markRead(req, id) {
+        return this.notifications.markRead(id, req.user.id);
+    }
 };
 exports.NotificationsController = NotificationsController;
 __decorate([
@@ -57,9 +63,25 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)(),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], NotificationsController.prototype, "getAll", null);
+__decorate([
+    (0, common_1.Post)(':id/read'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], NotificationsController.prototype, "markRead", null);
 exports.NotificationsController = NotificationsController = __decorate([
     (0, common_1.Controller)('notifications'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __metadata("design:paramtypes", [notifications_service_1.NotificationsService])
 ], NotificationsController);
 //# sourceMappingURL=notifications.controller.js.map

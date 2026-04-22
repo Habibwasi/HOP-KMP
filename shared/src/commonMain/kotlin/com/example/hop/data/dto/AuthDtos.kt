@@ -52,7 +52,10 @@ fun UserDto.toDomain(): User = User(
     email = email.orEmpty(),
     phone = phone,
     phoneVerified = isVerified,
-    roles = listOfNotNull(runCatching { UserRole.valueOf(role) }.getOrNull()),
+    roles = when (role.uppercase()) {
+        "BOTH" -> listOf(UserRole.PASSENGER, UserRole.DRIVER)
+        else -> listOfNotNull(runCatching { UserRole.valueOf(role.uppercase()) }.getOrNull())
+    },
     isBanned = isBanned,
     ratingDriver = ratingDriver,
     ratingPassenger = ratingPassenger,

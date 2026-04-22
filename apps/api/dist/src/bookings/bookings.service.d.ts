@@ -44,30 +44,30 @@ export declare class BookingsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     }>;
     confirm(bookingId: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     }>;
     cancel(bookingId: string, userId: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     }>;
     findById(id: string): Promise<{
@@ -115,10 +115,10 @@ export declare class BookingsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     }>;
     findByPassenger(passengerId: string): Promise<({
@@ -167,10 +167,10 @@ export declare class BookingsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
-        tripId: string;
         totalOere: number;
     })[]>;
     checkModelBThreshold(tripId: string): Promise<void>;

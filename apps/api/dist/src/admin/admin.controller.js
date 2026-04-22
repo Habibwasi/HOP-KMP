@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
+const supabase_guard_1 = require("../auth/supabase.guard");
 const admin_guard_1 = require("./guards/admin.guard");
 const admin_service_1 = require("./admin.service");
 const class_validator_1 = require("class-validator");
@@ -130,7 +130,7 @@ __decorate([
 ], AdminController.prototype, "trips", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), admin_guard_1.AdminGuard),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard, admin_guard_1.AdminGuard),
     __metadata("design:paramtypes", [admin_service_1.AdminService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

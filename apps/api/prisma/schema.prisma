@@ -48,6 +48,7 @@ model User {
   taxRecords      TaxRecord[]
   licence         DriverLicence?
   carDetails      CarDetails?
+  notifications   Notification[]
   isAdmin         Boolean   @default(false)
 }
 
@@ -186,4 +187,26 @@ model CarDetails {
   seatsAvailable Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  TRIP_REMINDER
+  NEW_RATING
+  THRESHOLD_MET
+  CHAT_MESSAGE
+  GENERAL
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       NotificationType @default(GENERAL)
+  title      String
+  body       String
+  isRead     Boolean          @default(false)
+  deepLinkId String?
+  createdAt  DateTime         @default(now())
 }

@@ -25,7 +25,7 @@ export declare class AdminController {
     users(page?: number, limit?: number): Promise<{
         users: {
             id: string;
-            phone: string;
+            phone: string | null;
             email: string | null;
             firstName: string;
             lastName: string;
@@ -42,9 +42,8 @@ export declare class AdminController {
     }>;
     ban(id: string, dto: BanUserDto): Promise<{
         id: string;
-        phone: string;
+        phone: string | null;
         email: string | null;
-        passwordHash: string | null;
         firstName: string;
         lastName: string;
         avatarUrl: string | null;
@@ -58,9 +57,8 @@ export declare class AdminController {
     }>;
     unban(id: string): Promise<{
         id: string;
-        phone: string;
+        phone: string | null;
         email: string | null;
-        passwordHash: string | null;
         firstName: string;
         lastName: string;
         avatarUrl: string | null;
@@ -74,9 +72,8 @@ export declare class AdminController {
     }>;
     makeAdmin(id: string): Promise<{
         id: string;
-        phone: string;
+        phone: string | null;
         email: string | null;
-        passwordHash: string | null;
         firstName: string;
         lastName: string;
         avatarUrl: string | null;
@@ -91,7 +88,7 @@ export declare class AdminController {
     pendingLicences(): Promise<({
         user: {
             id: string;
-            phone: string;
+            phone: string | null;
             firstName: string;
             lastName: string;
         };

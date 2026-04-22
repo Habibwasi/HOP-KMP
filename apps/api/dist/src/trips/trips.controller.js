@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TripsController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
+const supabase_guard_1 = require("../auth/supabase.guard");
 const trips_service_1 = require("./trips.service");
 const create_trip_dto_1 = require("./dto/create-trip.dto");
 const search_trips_dto_1 = require("./dto/search-trips.dto");
@@ -48,7 +48,7 @@ let TripsController = class TripsController {
 exports.TripsController = TripsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -64,7 +64,7 @@ __decorate([
 ], TripsController.prototype, "search", null);
 __decorate([
     (0, common_1.Get)('me/driver'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -72,7 +72,7 @@ __decorate([
 ], TripsController.prototype, "myTripsAsDriver", null);
 __decorate([
     (0, common_1.Get)('me/passenger'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -80,7 +80,7 @@ __decorate([
 ], TripsController.prototype, "myTripsAsPassenger", null);
 __decorate([
     (0, common_1.Get)('my'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -95,7 +95,7 @@ __decorate([
 ], TripsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id/cancel'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
