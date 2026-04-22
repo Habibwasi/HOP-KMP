@@ -143,21 +143,15 @@ fun LoginScreen(
     val passwordValid = password.isNotEmpty()
     val canSubmit = emailValid && passwordValid && !state.isLoading
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.background),
+            .background(HopColors.background)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = HopSpacing.md),
     ) {
-        HopLogoBackground(modifier = Modifier.fillMaxSize())
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = HopSpacing.md),
-        ) {
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -305,8 +299,7 @@ fun LoginScreen(
         }
 
         Spacer(modifier = Modifier.height(HopSpacing.lg))
-        }   // end Column
-    }       // end Box
+    }
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────

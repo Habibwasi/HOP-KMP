@@ -174,20 +174,14 @@ private fun FormContent(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.background),
+            .background(HopColors.background)
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
+            .padding(horizontal = HopSpacing.lg),
     ) {
-        HopLogoBackground(modifier = Modifier.fillMaxSize())
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .padding(horizontal = HopSpacing.lg),
-        ) {
         Spacer(modifier = Modifier.height(HopSpacing.lg))
 
         // ── Icon ──────────────────────────────────────────────────────────────
@@ -274,8 +268,7 @@ private fun FormContent(
         }
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
-        }   // end Column
-    }       // end Box
+    }
 }
 
 // ── Success content ───────────────────────────────────────────────────────────
@@ -287,19 +280,13 @@ private fun SuccessContent(
     onTryAgain: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.background),
+            .background(HopColors.background)
+            .padding(horizontal = HopSpacing.lg),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        HopLogoBackground(modifier = Modifier.fillMaxSize())
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = HopSpacing.lg),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
         Spacer(modifier = Modifier.weight(1f))
 
         // ── Illustration ──────────────────────────────────────────────────────
@@ -363,8 +350,7 @@ private fun SuccessContent(
         }
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
-        }   // end Column
-    }       // end Box
+    }
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────

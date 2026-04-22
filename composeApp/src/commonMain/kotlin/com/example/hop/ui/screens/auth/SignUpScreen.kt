@@ -155,21 +155,15 @@ fun SignUpScreen(
     val formValid = firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && termsAccepted
     val canSubmit = formValid && !state.isLoading
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(HopColors.background),
+            .background(HopColors.background)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = HopSpacing.md),
     ) {
-        HopLogoBackground(modifier = Modifier.fillMaxSize())
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = HopSpacing.md),
-        ) {
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -373,8 +367,7 @@ fun SignUpScreen(
         }
 
         Spacer(modifier = Modifier.height(HopSpacing.lg))
-        }   // end Column
-    }       // end Box
+    }
 }
 
 // ── Terms checkbox row ─────────────────────────────────────────────────────────
