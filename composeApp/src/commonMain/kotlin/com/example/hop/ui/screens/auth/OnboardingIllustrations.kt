@@ -3,6 +3,7 @@ package com.example.hop.ui.screens.auth
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -150,8 +151,8 @@ private fun Slide2Illustration(modifier: Modifier = Modifier) {
     val smokeOff   by inf.animateFloat(0f,  30f,    infiniteRepeatable(tween(2500, easing = LinearEasing)),                           "smoke")
     val smokeAlpha by inf.animateFloat(0.7f, 0f,    infiniteRepeatable(tween(2500, easing = LinearEasing)),                           "smkAlpha")
     val sp1        by inf.animateFloat(0f,   1f,    infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse), "sp1")
-    val sp2        by inf.animateFloat(0f,   1f,    infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse, delayMillis = 600), "sp2")
-    val sp3        by inf.animateFloat(0f,   1f,    infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse, delayMillis = 1200), "sp3")
+    val sp2        by inf.animateFloat(0f,   1f,    infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(600)), "sp2")
+    val sp3        by inf.animateFloat(0f,   1f,    infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(1200)), "sp3")
 
     Canvas(modifier = modifier) {
         val scaleX = size.width  / 280f
@@ -252,10 +253,10 @@ private fun Slide3Illustration(modifier: Modifier = Modifier) {
     val dashOffset by inf.animateFloat(0f,  60f,  infiniteRepeatable(tween(1800, easing = LinearEasing)),                           "dash")
     val moonGlow   by inf.animateFloat(0.9f, 1f,  infiniteRepeatable(tween(4000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "moon")
     val s1         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "s1")
-    val s2         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, delayMillis = 400),  "s2")
-    val s3         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, delayMillis = 800),  "s3")
-    val s4         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, delayMillis = 1200), "s4")
-    val s5         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, delayMillis = 1600), "s5")
+    val s2         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(400)),  "s2")
+    val s3         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(800)),  "s3")
+    val s4         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(1200)), "s4")
+    val s5         by inf.animateFloat(0.2f, 1f,  infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(1600)), "s5")
 
     Canvas(modifier = modifier) {
         val scaleX = size.width  / 280f
