@@ -155,6 +155,7 @@ let AuthService = AuthService_1 = class AuthService {
                 phone: dto.phone,
                 firstName: dto.firstName,
                 lastName: dto.lastName,
+                email: dto.email,
                 passwordHash,
             });
         const tokens = await this.generateTokens(user.id, user.phone);

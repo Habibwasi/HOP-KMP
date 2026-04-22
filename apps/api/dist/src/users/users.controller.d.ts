@@ -6,6 +6,8 @@ export declare class UsersController {
     constructor(users: UsersService, ratings: RatingsService);
     getMe(req: any): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         phone: string;
         email: string | null;
         passwordHash: string | null;
@@ -16,8 +18,6 @@ export declare class UsersController {
         isVerified: boolean;
         isBanned: boolean;
         banExpiresAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
         isAdmin: boolean;
     }>;
     getUserReviews(id: string): Promise<{
@@ -29,8 +29,6 @@ export declare class UsersController {
     }[]>;
     getCarDetails(id: string): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         make: string;
         model: string;
@@ -38,5 +36,7 @@ export declare class UsersController {
         licensePlate: string;
         colour: string;
         seatsAvailable: number;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }

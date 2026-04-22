@@ -13,6 +13,8 @@ export declare class JwtStrategy extends JwtStrategy_base {
         phone: string;
     }): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         phone: string;
         email: string | null;
         passwordHash: string | null;
@@ -23,8 +25,6 @@ export declare class JwtStrategy extends JwtStrategy_base {
         isVerified: boolean;
         isBanned: boolean;
         banExpiresAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
         isAdmin: boolean;
     }>;
 }

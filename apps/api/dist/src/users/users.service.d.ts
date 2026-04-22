@@ -10,13 +10,12 @@ export declare class UsersService {
         phone: string;
         firstName: string;
         lastName: string;
+        email?: string;
         passwordHash?: string;
     }): Promise<User>;
     markVerified(userId: string): Promise<User>;
     getCarDetails(userId: string): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         make: string;
         model: string;
@@ -24,5 +23,7 @@ export declare class UsersService {
         licensePlate: string;
         colour: string;
         seatsAvailable: number;
+        createdAt: Date;
+        updatedAt: Date;
     } | null>;
 }
