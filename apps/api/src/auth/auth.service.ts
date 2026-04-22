@@ -219,7 +219,7 @@ export class AuthService {
     )
 
     const refreshToken = crypto.randomBytes(64).toString('hex')
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
 
     await this.prisma.refreshToken.create({
       data: { token: refreshToken, userId, expiresAt },

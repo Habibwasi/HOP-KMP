@@ -26,6 +26,8 @@ sealed interface AuthEvent {
     data class Login(val email: String, val password: String) : AuthEvent
     data object Logout : AuthEvent
     data object ClearError : AuthEvent
+    /** Fired on cold start to silently restore a persisted session. */
+    data object RestoreSession : AuthEvent
 }
 
 sealed interface AuthEffect {
@@ -49,7 +51,9 @@ class AuthViewModel(
     init {
         viewModelScope.launch {
             sessionExpiryNotifier.events.collect {
-                _effect.send(AuthEffect.SessionExpired)
+                // Do NOT force-navigate to login. Surface a non-destructive prompt so
+                // the user can choose when to re-authenticate.
+                _effect.send(AuthEffect.ShowSnackbar("Your session has expired. Please log in again."))
             }
         }
         // In dev mode, auto-populate the authenticated user so every
@@ -59,6 +63,10 @@ class AuthViewModel(
                 isAuthenticated = true,
                 currentUser = DevAuthRepository.DEV_USER,
             )
+        } else {
+            // Attempt silent session restore on every cold start.
+            // If a refresh token is persisted the user skips the login screen.
+            viewModelScope.launch { restoreSession() }
         }
     }
 
@@ -68,6 +76,7 @@ class AuthViewModel(
             is AuthEvent.Login -> login(event.email, event.password)
             is AuthEvent.Logout -> logout()
             is AuthEvent.ClearError -> _state.value = _state.value.copy(error = null)
+            is AuthEvent.RestoreSession -> viewModelScope.launch { restoreSession() }
         }
     }
 
@@ -131,6 +140,29 @@ class AuthViewModel(
                         error = response.message,
                     )
                 }
+            }
+        }
+    }
+
+    /**
+     * Silently restores a persisted session on cold start.
+     * Navigates to Home on success; does nothing on failure so the normal
+     * Onboarding → Login flow remains visible.
+     */
+    private suspend fun restoreSession() {
+        _state.value = _state.value.copy(isLoading = true)
+        when (val response = authRepository.restoreSession()) {
+            is ApiResponse.Success -> {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    isAuthenticated = true,
+                    currentUser = response.data,
+                )
+                _effect.send(AuthEffect.NavigateToHome)
+            }
+            is ApiResponse.Error -> {
+                // No stored session or refresh failed — stay on onboarding/login.
+                _state.value = _state.value.copy(isLoading = false)
             }
         }
     }

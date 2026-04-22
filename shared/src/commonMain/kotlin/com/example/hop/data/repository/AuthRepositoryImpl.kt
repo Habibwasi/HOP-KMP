@@ -4,6 +4,7 @@ import com.example.hop.data.dto.ApiEnvelope
 import com.example.hop.data.dto.AuthResponse
 import com.example.hop.data.dto.LoginRequest
 import com.example.hop.data.dto.RegisterRequest
+import com.example.hop.data.dto.UserDto
 import com.example.hop.data.dto.toDomain
 import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
@@ -13,6 +14,7 @@ import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 
@@ -43,8 +45,38 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun logout(): ApiResponse<Unit> = safeApiCall {
-        httpClient.post("auth/logout")
-        Unit
+        val refreshToken = tokenStorage.getRefreshToken()
+        httpClient.post("auth/logout") {
+            if (refreshToken != null) setBody(mapOf("refreshToken" to refreshToken))
+        }
+        tokenStorage.clearTokens()
+    }
+
+    /**
+     * Silent session restore on cold start.
+     *
+     * If a refresh token is persisted, calls GET /users/me with the stored
+     * access token. The [AuthInterceptor] + [HttpSend] interceptor will
+     * silently exchange it for a fresh token pair if it has expired.
+     * Returns [ApiResponse.Error] (no network call) when no token is stored.
+     */
+    override suspend fun restoreSession(): ApiResponse<User> {
+        val hasToken = tokenStorage.getRefreshToken() != null
+        if (!hasToken) return ApiResponse.Error(-1, "No stored session")
+        return try {
+            val envelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
+            val error = envelope.error
+            if (error != null) return ApiResponse.Error(error.code, error.message)
+            val userDto = checkNotNull(envelope.data) { "Null data in /users/me envelope" }
+            ApiResponse.Success(userDto.toDomain())
+        } catch (e: ClientRequestException) {
+            val error = runCatching {
+                e.response.body<ApiEnvelope<Nothing>>().error
+            }.getOrNull()
+            ApiResponse.Error(error?.code ?: e.response.status.value, error?.message ?: e.message)
+        } catch (e: Exception) {
+            ApiResponse.Error(-1, e.message ?: "Unknown error")
+        }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

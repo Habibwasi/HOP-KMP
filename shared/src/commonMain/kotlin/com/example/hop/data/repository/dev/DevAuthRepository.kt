@@ -33,4 +33,7 @@ class DevAuthRepository : AuthRepository {
 
     override suspend fun logout(): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
+
+    override suspend fun restoreSession(): ApiResponse<User> =
+        ApiResponse.Success(DEV_USER)
 }

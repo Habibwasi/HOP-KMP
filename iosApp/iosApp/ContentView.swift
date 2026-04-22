@@ -11,6 +11,7 @@ import Shared
 struct ContentView: View {
 
     @State private var isAuthenticated = false
+    @StateObject private var authWrapper = AuthViewModelWrapper()
 
     var body: some View {
         Group {
@@ -25,6 +26,20 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .task { authWrapper.startObserving() }
+        .task {
+            // Listen for NavigateToHome effects emitted by the silent session
+            // restore that AuthViewModel fires on init.
+            for await effect in authWrapper.viewModel.effect {
+                if effect is AuthEffectNavigateToHome {
+                    withAnimation(.easeInOut) { isAuthenticated = true }
+                } else if effect is AuthEffectNavigateToLogin {
+                    // Only NavigateToLogin (explicit logout) flips back to auth screens.
+                    // SessionExpired no longer forces the user out automatically.
+                    withAnimation(.easeInOut) { isAuthenticated = false }
+                }
+            }
+        }
     }
 }
 

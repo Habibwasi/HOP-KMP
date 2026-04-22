@@ -86,18 +86,20 @@ class TokenRefreshManager(
                     tokenStorage.saveRefreshToken(authData.refreshToken)
                     true
                 } else {
-                    tokenStorage.clearTokens()
-                    sessionExpiryNotifier.notifyExpired()
+                    // 2xx but no token data — refresh failed, but do NOT wipe tokens
+                    // or force-logout. The failed request will surface an error to the UI.
                     false
                 }
             } else {
-                tokenStorage.clearTokens()
-                sessionExpiryNotifier.notifyExpired()
+                // The refresh token was rejected by the server (401/403/other).
+                // Do NOT clear tokens or force-logout. The user keeps their session
+                // and will see individual API call errors in the UI. They can log out
+                // explicitly via the Settings screen.
                 false
             }
         } catch (e: Exception) {
-            tokenStorage.clearTokens()
-            sessionExpiryNotifier.notifyExpired()
+            // Network error (no internet, timeout, DNS) — retain tokens; user stays
+            // logged in and can retry when connectivity is restored.
             false
         }
     }
