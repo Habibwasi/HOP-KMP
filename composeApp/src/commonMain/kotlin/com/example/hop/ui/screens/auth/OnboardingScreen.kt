@@ -1,9 +1,17 @@
 package com.example.hop.ui.screens.auth
 
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,11 +33,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -50,21 +62,20 @@ private data class OnboardingSlide(
 private val slides = listOf(
     OnboardingSlide(
         illustrationDescription = "Two cars side by side",
-        headline = "Travel cheaper.\nDrive smarter.",
-        subheadline = "Denmark's carpooling platform.\nCost-sharing, not taxi.",
+        headline = "Fewer cars.\nBetter Journeys.",
+        subheadline = "Denmark's carpooling platform.\nShare a ride, shrink your footprint",
     ),
     OnboardingSlide(
-        illustrationDescription = "DKK coin illustration",
-        headline = "Earn while\nyou commute.",
-        subheadline = "Share your empty seats and\nlet SKAT-compliant earnings\nland straight in your pocket.",
+        illustrationDescription = "Leaf and road illustration",
+        headline = "Every seat\nfilled matters.",
+        subheadline = "One shared trip can cut CO₂\nemissions in half. Small change,\nbig difference.",
     ),
     OnboardingSlide(
-        illustrationDescription = "Driver dashboard illustration",
-        headline = "Tax-smart by\ndesign.",
-        subheadline = "Every trip is logged and priced\nwithin the SKAT rate of DKK 2.28/km.\nNo surprises at year-end.",
-    ),
+        illustrationDescription = "Green journey illustration",
+        headline = "Move together.\nLive lighter.",
+        subheadline = "Join thousands of Danes choosing\nsmarter, greener travel \none ride at a time.",
+        ),
 )
-
 // ── Screen ───────────────────────────────────────────────────────────────────
 
 /**
@@ -84,6 +95,8 @@ fun OnboardingScreen(
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(pageCount = { slides.size })
+    var chromeVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { chromeVisible = true }
 
     Box(
         modifier = modifier
@@ -99,14 +112,29 @@ fun OnboardingScreen(
             beyondViewportPageCount = 1,
             key = { index -> index },
         ) { page ->
-            OnboardingSlide(slide = slides[page])
+            AnimatedContent(
+                targetState = page,
+                transitionSpec = {
+                    (fadeIn(tween(300)) + slideInVertically(tween(300)) { it / 8 })
+                        .togetherWith(fadeOut(tween(200)))
+                },
+                label = "slideContent",
+            ) { targetPage ->
+                OnboardingSlide(slide = slides[targetPage])
+            }
         }
 
         // ── Bottom chrome (dots + CTAs) ──────────────────────────────────
 
-        Column(
+        AnimatedVisibility(
+            visible = chromeVisible,
+            enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 4 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+        ) {
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = HopSpacing.lg)
                 .navigationBarsPadding()
@@ -133,6 +161,7 @@ fun OnboardingScreen(
                 variant = HopButtonVariant.Ghost,
             )
         }
+        } // end AnimatedVisibility
     }
 }
 
@@ -143,6 +172,17 @@ private fun OnboardingSlide(
     slide: OnboardingSlide,
     modifier: Modifier = Modifier,
 ) {
+    var illustrationVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { illustrationVisible = true }
+    val illustrationScale by animateFloatAsState(
+        targetValue = if (illustrationVisible) 1f else 0.85f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "illustrationScale",
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -160,6 +200,11 @@ private fun OnboardingSlide(
         Box(
             modifier = Modifier
                 .size(width = 280.dp, height = 200.dp)
+                .graphicsLayer {
+                    scaleX = illustrationScale
+                    scaleY = illustrationScale
+                    alpha = illustrationScale
+                }
                 .clip(RoundedCornerShape(16.dp))
                 .background(HopColors.authInputSurface),
             contentAlignment = Alignment.Center,
