@@ -64,9 +64,11 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * SH-01 — Home Route.
  *
- * Owns the [selectedRole] toggle and reads [AuthViewModel.state] to decide
- * whether the [RoleTogglePill] should be visible. Driver content is only
- * accessible when the current user holds the [UserRole.DRIVER] role.
+ * Owns the [selectedRole] toggle. The [RoleTogglePill] is always visible so
+ * any logged-in user can freely switch to the Driver tab and explore it.
+ *
+ * Driver onboarding is triggered lazily — only when a non-driver taps
+ * "Post a Trip" inside [DriverHomeContent], not at role-toggle time.
  *
  * A single [Scaffold] (and its [SnackbarHostState]) is shared between both
  * sub-content composables to avoid layering two scaffolds on top of each other.
@@ -82,6 +84,8 @@ fun HomeRoute(
     onNavigateToPostTripModelSelect: () -> Unit,
     onNavigateToTaxDashboard: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onNavigateToDriverRegistration: () -> Unit,
+    onNavigateToReviewPending: () -> Unit,
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = koinViewModel(),
 ) {
@@ -96,9 +100,15 @@ fun HomeRoute(
     ) { mutableStateOf(UserRole.PASSENGER) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Reset to PASSENGER if the user's driver role is revoked.
+    // Only reset to PASSENGER when the DRIVER role is actively revoked
+    // (had it → lost it). We must NOT reset when hasDriverRole is simply
+    // false on first load — that would kick a non-driver off the Driver
+    // tab they deliberately chose and cause the "back goes to Passenger"
+    // symptom.
+    var prevHasDriverRole by remember { mutableStateOf(hasDriverRole) }
     LaunchedEffect(hasDriverRole) {
-        if (!hasDriverRole) selectedRole = UserRole.PASSENGER
+        if (prevHasDriverRole && !hasDriverRole) selectedRole = UserRole.PASSENGER
+        prevHasDriverRole = hasDriverRole
     }
 
     Scaffold(
@@ -109,7 +119,6 @@ fun HomeRoute(
     ) { innerPadding ->
         HomeScreen(
             selectedRole = selectedRole,
-            hasDriverRole = hasDriverRole,
             onRoleChange = { selectedRole = it },
             onMyTrips = {
                 if (selectedRole == UserRole.DRIVER) onNavigateToMyTripsDriver()
@@ -122,9 +131,12 @@ fun HomeRoute(
             content = { role ->
                 when (role) {
                     UserRole.DRIVER -> DriverHomeContent(
+                        hasDriverRole = hasDriverRole,
                         onNavigateToPostTripModelSelect = onNavigateToPostTripModelSelect,
                         onNavigateToTripDetail = onNavigateToTripDetail,
                         onNavigateToTaxDashboard = onNavigateToTaxDashboard,
+                        onNavigateToDriverRegistration = onNavigateToDriverRegistration,
+                        onNavigateToReviewPending = onNavigateToReviewPending,
                         snackbarHostState = snackbarHostState,
                     )
                     else -> PassengerHomeContent(
@@ -151,7 +163,6 @@ fun HomeRoute(
 @Composable
 fun HomeScreen(
     selectedRole: UserRole,
-    hasDriverRole: Boolean,
     onRoleChange: (UserRole) -> Unit,
     onMyTrips: () -> Unit,
     onChat: () -> Unit,
@@ -168,7 +179,6 @@ fun HomeScreen(
         // ── Shared top bar ────────────────────────────────────────────────────
         HomeTopBar(
             selectedRole = selectedRole,
-            hasDriverRole = hasDriverRole,
             onRoleChange = onRoleChange,
             onNotifications = onNotifications,
         )
@@ -202,7 +212,6 @@ fun HomeScreen(
 @Composable
 private fun HomeTopBar(
     selectedRole: UserRole,
-    hasDriverRole: Boolean,
     onRoleChange: (UserRole) -> Unit,
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
@@ -219,14 +228,13 @@ private fun HomeTopBar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Role toggle pill — only visible when the user holds the DRIVER role
-        if (hasDriverRole) {
-            RoleTogglePill(
-                selectedRole = selectedRole,
-                onRoleChange = onRoleChange,
-            )
-            Spacer(modifier = Modifier.width(HopSpacing.sm))
-        }
+        // Role toggle pill — always visible; driver tap redirects to registration
+        // if the user hasn't completed the driver onboarding flow yet.
+        RoleTogglePill(
+            selectedRole = selectedRole,
+            onRoleChange = onRoleChange,
+        )
+        Spacer(modifier = Modifier.width(HopSpacing.sm))
 
         // Bell icon
         IconButton(
@@ -371,7 +379,6 @@ private fun HomeScreenPassengerOnlyPreview() {
     HopTheme {
         HomeScreen(
             selectedRole = UserRole.PASSENGER,
-            hasDriverRole = false,
             onRoleChange = {},
             onMyTrips = {},
             onChat = {},
@@ -394,7 +401,6 @@ private fun HomeScreenDriverRolePassengerPreview() {
     HopTheme {
         HomeScreen(
             selectedRole = UserRole.PASSENGER,
-            hasDriverRole = true,
             onRoleChange = {},
             onMyTrips = {},
             onChat = {},
@@ -417,7 +423,6 @@ private fun HomeScreenDriverRoleDriverPreview() {
     HopTheme {
         HomeScreen(
             selectedRole = UserRole.DRIVER,
-            hasDriverRole = true,
             onRoleChange = {},
             onMyTrips = {},
             onChat = {},
@@ -426,6 +431,7 @@ private fun HomeScreenDriverRoleDriverPreview() {
         ) {
             DriverHomeScreen(
                 state = DriverUiState(),
+                hasDriverRole = true,
                 onPostTrip = {},
                 onTripClick = {},
                 onEarningsBannerClick = {},

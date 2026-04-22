@@ -422,14 +422,18 @@ private fun DrawScope.drawLogo(f: (Float) -> Float, g: (Float) -> Float, alpha: 
     val white = LogoWhite.copy(alpha = alpha)
     val accent = LogoAccent.copy(alpha = alpha)
 
-    // ── h ─────────────────────────────────────────────────────────────────────
-    drawRoundRect(white, Offset(f(86f),  g(508f)), Size(f(9f), g(48f)), CornerRadius(f(4.5f)))
-    drawRoundRect(white, Offset(f(122f), g(528f)), Size(f(9f), g(28f)), CornerRadius(f(4.5f)))
-    val hArch = Path().apply {
-        moveTo(f(95f),  g(532f))
-        quadraticBezierTo(f(109f), g(512f), f(122f), g(522f))
-    }
-    drawPath(hArch, white, style = logoStroke)
+        // ── h ─────────────────────────────────────────────────────────────────────
+        drawRoundRect(white, Offset(f(86f),  g(508f)), Size(f(9f), g(48f)), CornerRadius(f(4.5f)))
+        drawRoundRect(white, Offset(f(122f), g(525f)), Size(f(9f), g(31f)), CornerRadius(f(4.5f)))
+        val hArch = Path().apply {
+            // Start ~64% down the left stem (matches HopLogo crossbar proportion).
+            // End 2 units into the right leg so the stroke cap overlaps the rect
+            // seamlessly — no gap.
+            // Control at ~29% x between stems, pulled above both endpoints.
+            moveTo(f(95f),  g(539f))
+            quadraticBezierTo(f(103f), g(514f), f(122f), g(529f))
+        }
+        drawPath(hArch, white, style = logoStroke)
 
     // ── o ─────────────────────────────────────────────────────────────────────
     drawCircle(white, radius = f(20f), center = Offset(f(160f), g(538f)), style = Stroke(f(9f)))

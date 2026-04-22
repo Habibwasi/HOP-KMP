@@ -161,6 +161,12 @@ fun HopNavGraph(
                 onNavigateToNotifications = {
                     navController.navigate(HopRoutes.Notifications)
                 },
+                onNavigateToDriverRegistration = {
+                    navController.navigate(HopRoutes.EnableDriverStep1)
+                },
+                onNavigateToReviewPending = {
+                    navController.navigate(HopRoutes.EnableDriverStep3)
+                },
             )
         }
 
@@ -242,9 +248,10 @@ fun HopNavGraph(
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
                 },
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.Home) {
-                        popUpTo(HopRoutes.Home) { inclusive = false }
-                    }
+                    // popBackStack restores the existing Home entry, preserving
+                    // the selectedRole in rememberSaveable (e.g. DRIVER tab).
+                    // navigate() would create a new entry and reset to PASSENGER.
+                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateToChat = {
                     // TODO: no bookingId in scope at MyTripsPassenger level
@@ -321,9 +328,9 @@ fun HopNavGraph(
         composable<HopRoutes.EnableDriverStep3> {
             ReviewPendingRoute(
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.Home) {
-                        popUpTo(HopRoutes.Home) { inclusive = false }
-                    }
+                    // Pop back to the existing Home so the Driver tab (selectedRole)
+                    // is restored from rememberSaveable — user stays on Driver view.
+                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
             )
         }
@@ -371,9 +378,9 @@ fun HopNavGraph(
                     navController.navigate(HopRoutes.PostTripModelSelect)
                 },
                 onNavigateToHome = {
-                    navController.navigate(HopRoutes.Home) {
-                        popUpTo(HopRoutes.Home) { inclusive = false }
-                    }
+                    // popBackStack preserves the existing Home entry and its
+                    // rememberSaveable state (DRIVER tab selected).
+                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateToChat = {
                     // TODO: Replace with ChatScreen navigation (post-MVP)
@@ -442,9 +449,9 @@ fun HopNavGraph(
                 passengerInitials = route.passengerInitials,
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToDriverHome = {
-                    navController.navigate(HopRoutes.Home) {
-                        popUpTo(HopRoutes.Home) { inclusive = true }
-                    }
+                    // Pop the entire driver post-trip stack back to the existing
+                    // Home entry so the DRIVER tab is preserved.
+                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
             )
         }

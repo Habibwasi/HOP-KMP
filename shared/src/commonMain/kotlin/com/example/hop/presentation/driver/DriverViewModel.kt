@@ -129,6 +129,44 @@ sealed interface DriverEffect {
     data object NavigateToReviewPending : DriverEffect
 }
 
+// ─ Error message mapper ───────────────────────────────────────────────────────
+
+/**
+ * Converts a raw [ApiResponse.Error] into a short, friendly message suitable
+ * for display in a snackbar. Never exposes HTTP status codes or stack traces.
+ *
+ * @param context Optional hint (e.g. "loading trips") used only for the
+ *   generic fallback so the message stays actionable without being technical.
+ */
+private fun ApiResponse.Error.toUserMessage(context: String = "completing your request"): String =
+    when {
+        // Network / connectivity
+        code == -1 && (
+            message.contains("Unable to resolve host", ignoreCase = true) ||
+            message.contains("Network is unreachable", ignoreCase = true) ||
+            message.contains("No address associated", ignoreCase = true) ||
+            message.contains("Failed to connect", ignoreCase = true)
+        ) -> "No internet connection. Please check your network and try again."
+
+        code == -1 && (
+            message.contains("timeout", ignoreCase = true) ||
+            message.contains("timed out", ignoreCase = true)
+        ) -> "The request took too long. Please try again."
+
+        // Auth
+        code == 401 -> "Your session has expired. Please log in again."
+        code == 403 -> "You don't have permission to do that."
+
+        // Client / server
+        code == 404 -> "The information couldn't be found."
+        code == 409 -> "This action conflicts with an existing record. Please refresh and try again."
+        code == 422 -> "Some details were invalid. Please check your input and try again."
+        code in 500..599 -> "Something went wrong on our end. Please try again in a moment."
+
+        // Generic fallback — still friendly, still actionable
+        else -> "Something went wrong while $context. Please try again."
+    }
+
 // ─ ViewModel ──────────────────────────────────────────────────────────────────
 
 class DriverViewModel(
@@ -180,9 +218,9 @@ class DriverViewModel(
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = response.message,
+                        error = response.toUserMessage("loading your trips"),
                     )
-                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("loading your trips")))
                 }
             }
         }
@@ -270,8 +308,8 @@ class DriverViewModel(
                     _effect.send(DriverEffect.NavigateToMyTrips)
                 }
                 is ApiResponse.Error -> {
-                    _state.value = _state.value.copy(isPostingTrip = false, error = response.message)
-                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                    _state.value = _state.value.copy(isPostingTrip = false, error = response.toUserMessage("posting your trip"))
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("posting your trip")))
                 }
             }
         }
@@ -289,9 +327,9 @@ class DriverViewModel(
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = response.message,
+                        error = response.toUserMessage("posting your trip"),
                     )
-                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("posting your trip")))
                 }
             }
         }
@@ -311,16 +349,15 @@ class DriverViewModel(
                     if (firstBookingId != null) {
                         _effect.send(DriverEffect.NavigateToRatePassenger(firstBookingId))
                     } else {
-                        // Fallback: no passengers to rate — return to trip list
                         _effect.send(DriverEffect.NavigateToMyTrips)
                     }
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = response.message,
+                        error = response.toUserMessage("completing the trip"),
                     )
-                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("completing the trip")))
                 }
             }
         }
@@ -342,7 +379,7 @@ class DriverViewModel(
                 _state.value = _state.value.copy(
                     activeTripDetail = _state.value.activeTripDetail.copy(
                         isLoading = false,
-                        error = tripResponse.message,
+                        error = tripResponse.toUserMessage("loading trip details"),
                     )
                 )
                 return@launch
@@ -371,7 +408,8 @@ class DriverViewModel(
                     _state.value = _state.value.copy(licenceStatus = response.data)
                 }
                 is ApiResponse.Error -> {
-                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                    // Silently ignore — licence status is advisory; a snackbar
+                    // on every Home open would be intrusive for non-drivers.
                 }
             }
         }
@@ -411,7 +449,7 @@ class DriverViewModel(
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isSubmittingOnboarding = false)
-                    _effect.send(DriverEffect.ShowSnackbar(response.message))
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("submitting your application")))
                 }
             }
         }

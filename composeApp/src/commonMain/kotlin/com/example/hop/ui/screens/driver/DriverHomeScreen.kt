@@ -60,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.model.TripStatus
 import com.example.hop.presentation.driver.DriverEffect
@@ -87,12 +88,21 @@ import org.koin.compose.viewmodel.koinViewModel
  * Content-only composable designed to be hosted inside [HomeScreen]'s
  * [AnimatedContent] area. Manages its own [DriverViewModel] and effects but
  * contains no Scaffold, top bar, or bottom nav — those are owned by [HomeRoute].
+ *
+ * If [hasDriverRole] is false the user is browsing the Driver tab but hasn't
+ * completed onboarding yet. In that case tapping "Post a Trip" redirects to
+ * the registration flow instead of the post-trip form:
+ *  - [LicenceStatus.PENDING]  → already applied, show review-pending screen
+ *  - otherwise                → fresh (or rejected) application, start Step 1
  */
 @Composable
 fun DriverHomeContent(
+    hasDriverRole: Boolean,
     onNavigateToPostTripModelSelect: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
     onNavigateToTaxDashboard: () -> Unit,
+    onNavigateToDriverRegistration: () -> Unit,
+    onNavigateToReviewPending: () -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
@@ -100,8 +110,11 @@ fun DriverHomeContent(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
+    // Load licence status so the "Post a Trip" intercept knows where to send
+    // a non-driver (PENDING → review screen, otherwise → Step 1).
     LaunchedEffect(Unit) {
-        viewModel.onEvent(DriverEvent.LoadDriverHome)
+        viewModel.onEvent(DriverEvent.LoadLicenceStatus)
+        if (hasDriverRole) viewModel.onEvent(DriverEvent.LoadDriverHome)
     }
 
     LaunchedEffect(viewModel) {
@@ -113,14 +126,11 @@ fun DriverHomeContent(
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
-                // Post-trip flow effects are emitted on the PriceReview/MarkTripComplete
-                // route's own DriverViewModel instance (each nav destination gets its own
-                // VM via koinViewModel / LocalViewModelStoreOwner). They are consumed by
-                // those routes' effect collectors and never reach D1 (Home's VM).
-                is DriverEffect.NavigateToMyTrips -> Unit          // owned by PriceReviewRoute
-                is DriverEffect.NavigateToRatePassenger -> Unit    // owned by MarkTripCompleteRoute
-                is DriverEffect.NavigateToMarkTripComplete -> Unit // unused — never emitted
-                // Onboarding effects — handled by EnableDriverStep1–3 routes.
+                // Post-trip flow effects owned by their own route VMs.
+                is DriverEffect.NavigateToMyTrips -> Unit
+                is DriverEffect.NavigateToRatePassenger -> Unit
+                is DriverEffect.NavigateToMarkTripComplete -> Unit
+                // Onboarding effects handled by EnableDriverStep1–3 routes.
                 is DriverEffect.NavigateToModelAForm -> Unit
                 is DriverEffect.NavigateToModelBForm -> Unit
                 is DriverEffect.NavigateToPriceReview -> Unit
@@ -132,7 +142,19 @@ fun DriverHomeContent(
 
     DriverHomeScreen(
         state = state,
-        onPostTrip = { viewModel.onEvent(DriverEvent.RequestPostTrip) },
+        hasDriverRole = hasDriverRole,
+        onPostTrip = {
+            if (hasDriverRole) {
+                // Approved driver — proceed to the post-trip form.
+                viewModel.onEvent(DriverEvent.RequestPostTrip)
+            } else {
+                // Not yet a driver — redirect to onboarding based on application status.
+                when (state.licenceStatus) {
+                    LicenceStatus.PENDING -> onNavigateToReviewPending()
+                    else -> onNavigateToDriverRegistration()
+                }
+            }
+        },
         onTripClick = { tripId -> viewModel.onEvent(DriverEvent.SelectTrip(tripId)) },
         onEarningsBannerClick = { viewModel.onEvent(DriverEvent.TapEarningsBanner) },
         modifier = modifier,
@@ -146,10 +168,15 @@ fun DriverHomeContent(
  *
  * Stateless content renderer. The top bar and bottom nav are owned by
  * [HomeScreen] — this composable renders only the scrollable body.
+ *
+ * When [hasDriverRole] is false the earnings banner is replaced with a
+ * "Become a Driver" prompt so unregistered users understand what the tab
+ * is for before they tap "Post a Trip".
  */
 @Composable
 fun DriverHomeScreen(
     state: DriverUiState,
+    hasDriverRole: Boolean,
     onPostTrip: () -> Unit,
     onTripClick: (tripId: String) -> Unit,
     onEarningsBannerClick: () -> Unit,
@@ -160,7 +187,6 @@ fun DriverHomeScreen(
             .fillMaxSize()
             .background(HopColors.background),
     ) {
-        // ── Scrollable body ───────────────────────────────────────────────────
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
@@ -171,13 +197,17 @@ fun DriverHomeScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
         ) {
-            // Earnings banner
-            item {
-                EarningsBanner(
-                    monthlyEarningsOere = state.monthlyEarningsOere,
-                    estimatedTaxOere = state.estimatedTaxOere,
-                    onClick = onEarningsBannerClick,
-                )
+            // Earnings banner — only shown to approved drivers
+            if (hasDriverRole) {
+                item {
+                    EarningsBanner(
+                        monthlyEarningsOere = state.monthlyEarningsOere,
+                        estimatedTaxOere = state.estimatedTaxOere,
+                        onClick = onEarningsBannerClick,
+                    )
+                }
+            } else {
+                item { BecomeDriverPrompt() }
             }
 
             // Post a Trip button
@@ -244,6 +274,35 @@ fun DriverHomeScreen(
             // Bottom padding so last card clears nav bar
             item { Spacer(modifier = Modifier.height(HopSpacing.md)) }
         }
+    }
+}
+
+// ── Become-driver prompt (shown when hasDriverRole = false) ──────────────────
+
+@Composable
+private fun BecomeDriverPrompt(modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(HopColors.primaryLime)
+            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.lg),
+    ) {
+        Column {
+            Text(
+                text = "Save money driving with Hop",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFF1A1A1A),
+            )
+            Spacer(modifier = Modifier.height(HopSpacing.xs))
+            Text(
+                text = "Set your own route, time, and price. Tap \"Post a Trip\" below, we'll walk you through the setup.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF1A1A1A).copy(alpha = 0.7f),
+            )
+        }
+
     }
 }
 
@@ -547,17 +606,13 @@ private fun RowScope.DriverNavItem(
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
 @Composable
 private fun DriverHomeScreenEmptyPreview() {
     HopTheme {
         DriverHomeScreen(
-            state = DriverUiState(
-                isLoading = false,
-                trips = emptyList(),
-                monthlyEarningsOere = 0,
-                estimatedTaxOere = 0,
-            ),
+            state = DriverUiState(isLoading = false, trips = emptyList()),
+            hasDriverRole = true,
             onPostTrip = {},
             onTripClick = {},
             onEarningsBannerClick = {},
@@ -565,7 +620,21 @@ private fun DriverHomeScreenEmptyPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Composable
+private fun DriverHomeScreenNonDriverPreview() {
+    HopTheme {
+        DriverHomeScreen(
+            state = DriverUiState(isLoading = false, trips = emptyList()),
+            hasDriverRole = false,
+            onPostTrip = {},
+            onTripClick = {},
+            onEarningsBannerClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
 @Composable
 private fun DriverHomeScreenLoadingPreview() {
     HopTheme {
@@ -576,6 +645,7 @@ private fun DriverHomeScreenLoadingPreview() {
                 monthlyEarningsOere = 69_31200,
                 estimatedTaxOere = 12_50000,
             ),
+            hasDriverRole = true,
             onPostTrip = {},
             onTripClick = {},
             onEarningsBannerClick = {},
@@ -583,7 +653,7 @@ private fun DriverHomeScreenLoadingPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
 @Composable
 private fun DriverHomeScreenWithTripsPreview() {
     HopTheme {
@@ -595,6 +665,7 @@ private fun DriverHomeScreenWithTripsPreview() {
                 monthlyEarningsOere = 69_31200,
                 estimatedTaxOere = 12_50000,
             ),
+            hasDriverRole = true,
             onPostTrip = {},
             onTripClick = {},
             onEarningsBannerClick = {},
