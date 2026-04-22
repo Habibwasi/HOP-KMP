@@ -307,11 +307,11 @@ fun SignUpScreen(
             onClick = {
                 onEvent(
                     AuthEvent.Register(
-                        phone = phone.trim(),
+                        email = email.trim(),
+                        password = password,
                         firstName = firstName.trim(),
                         lastName = lastName.trim(),
-                        email = email.trim().ifEmpty { null },
-                        password = password,
+                        phone = phone.trim().ifEmpty { null },
                     )
                 )
             },

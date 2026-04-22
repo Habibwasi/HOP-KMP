@@ -1,9 +1,9 @@
 import { Controller, Get, Param, ParseIntPipe, UseGuards, Req } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { SupabaseGuard } from '../auth/supabase.guard'
 import { TaxService } from './tax.service'
 
 @Controller('tax')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(SupabaseGuard)
 export class TaxController {
   constructor(private tax: TaxService) {}
 

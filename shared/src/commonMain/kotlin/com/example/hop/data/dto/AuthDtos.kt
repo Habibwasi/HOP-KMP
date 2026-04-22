@@ -7,23 +7,11 @@ import kotlinx.serialization.Serializable
 // ── Request bodies ────────────────────────────────────────────────────────────
 
 @Serializable
-data class RegisterRequest(
-    val phone: String,
+data class CreateProfileRequest(
     val firstName: String,
     val lastName: String,
+    val phone: String? = null,
     val email: String? = null,
-    val password: String? = null,
-)
-
-@Serializable
-data class LoginRequest(
-    val email: String,
-    val password: String,
-)
-
-@Serializable
-data class RefreshTokenRequest(
-    val refreshToken: String,
 )
 
 // ── Response bodies ───────────────────────────────────────────────────────────
@@ -40,13 +28,6 @@ data class UserDto(
     val isBanned: Boolean = false,
     val ratingDriver: Double? = null,
     val ratingPassenger: Double? = null,
-)
-
-@Serializable
-data class AuthResponse(
-    val accessToken: String,
-    val refreshToken: String,
-    val user: UserDto,
 )
 
 // ── Envelope ──────────────────────────────────────────────────────────────────

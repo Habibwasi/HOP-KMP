@@ -1,19 +1,24 @@
-import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
-import { PassportModule } from '@nestjs/passport'
-import { AuthService } from './auth.service'
-import { AuthController } from './auth.controller'
-import { JwtStrategy } from './strategies/jwt.strategy'
-import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy'
-import { UsersModule } from '../users/users.module'
+import { Global, Module } from '@nestjs/common'
+import { createClient } from '@supabase/supabase-js'
+import { ConfigService } from '@nestjs/config'
+import { PrismaModule } from '../prisma/prisma.module'
+import { SupabaseGuard } from './supabase.guard'
 
+@Global()
 @Module({
-  imports: [
-    PassportModule,
-    JwtModule.register({}),
-    UsersModule,
+  imports: [PrismaModule],
+  providers: [
+    {
+      provide: 'SUPABASE_CLIENT',
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        createClient(
+          config.getOrThrow<string>('SUPABASE_URL'),
+          config.getOrThrow<string>('SUPABASE_SERVICE_ROLE_KEY'),
+        ),
+    },
+    SupabaseGuard,
   ],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
-  controllers: [AuthController],
+  exports: ['SUPABASE_CLIENT', SupabaseGuard],
 })
 export class AuthModule {}

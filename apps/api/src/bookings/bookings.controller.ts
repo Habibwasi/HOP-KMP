@@ -1,10 +1,10 @@
 import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req, HttpCode } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { SupabaseGuard } from '../auth/supabase.guard'
 import { BookingsService } from './bookings.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 
 @Controller('bookings')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(SupabaseGuard)
 export class BookingsController {
   constructor(private bookings: BookingsService) {}
 

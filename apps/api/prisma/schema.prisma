@@ -26,16 +26,10 @@ enum TripStatus {
   THRESHOLD_NOT_MET
 }
 
-enum OtpPurpose {
-  PHONE_VERIFY
-  LOGIN
-}
-
 model User {
-  id            String    @id @default(uuid())
-  phone         String    @unique
+  id            String    @id
+  phone         String?   @unique
   email         String?   @unique
-  passwordHash  String?
   firstName     String
   lastName      String
   avatarUrl     String?
@@ -46,8 +40,6 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  refreshTokens   RefreshToken[]
-  otpCodes        OtpCode[]
   pushTokens      PushToken[]
   tripsAsDriver   Trip[]    @relation("DriverTrips")
   bookings        Booking[]
@@ -57,27 +49,6 @@ model User {
   licence         DriverLicence?
   carDetails      CarDetails?
   isAdmin         Boolean   @default(false)
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  isRevoked Boolean  @default(false)
-}
-
-model OtpCode {
-  id        String     @id @default(uuid())
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code      String
-  purpose   OtpPurpose
-  expiresAt DateTime
-  used      Boolean    @default(false)
-  createdAt DateTime   @default(now())
 }
 
 model PushToken {

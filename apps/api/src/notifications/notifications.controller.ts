@@ -1,5 +1,5 @@
 import { Controller, Post, Delete, Body, UseGuards, Req } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { SupabaseGuard } from '../auth/supabase.guard'
 import { NotificationsService } from './notifications.service'
 import { IsString, IsEnum } from 'class-validator'
 
@@ -12,7 +12,7 @@ class RegisterTokenDto {
 }
 
 @Controller('notifications')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(SupabaseGuard)
 export class NotificationsController {
   constructor(private notifications: NotificationsService) {}
 

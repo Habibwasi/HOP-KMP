@@ -7,8 +7,8 @@ import com.example.hop.presentation.trips.SearchTripsViewModel
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatform
 
-fun initKoin() = startKoin {
-    modules(appModules())
+fun initKoin(supabaseUrl: String, supabaseAnonKey: String) = startKoin {
+    modules(appModules(supabaseUrl = supabaseUrl, supabaseAnonKey = supabaseAnonKey))
 }
 
 fun getAuthViewModel(): AuthViewModel = KoinPlatform.getKoin().get()

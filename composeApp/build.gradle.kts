@@ -61,6 +61,10 @@ android {
         versionName = "1.0"
         buildConfigField("String", "SENTRY_DSN",
             "\"${project.findProperty("SENTRY_DSN") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_URL",
+            "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY",
+            "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
     }
     buildFeatures {
         buildConfig = true

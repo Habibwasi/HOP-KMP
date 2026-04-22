@@ -9,7 +9,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { SupabaseGuard } from '../auth/supabase.guard'
 import { TripsService } from './trips.service'
 import { CreateTripDto } from './dto/create-trip.dto'
 import { SearchTripsDto } from './dto/search-trips.dto'
@@ -19,7 +19,7 @@ export class TripsController {
   constructor(private trips: TripsService) {}
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   create(@Req() req: any, @Body() dto: CreateTripDto) {
     return this.trips.create(req.user.id, dto)
   }
@@ -30,19 +30,19 @@ export class TripsController {
   }
 
   @Get('me/driver')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   myTripsAsDriver(@Req() req: any) {
     return this.trips.findByDriver(req.user.id)
   }
 
   @Get('me/passenger')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   myTripsAsPassenger(@Req() req: any) {
     return this.trips.findByPassenger(req.user.id)
   }
 
   @Get('my')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   myTrips(@Req() req: any) {
     return this.trips.findByDriver(req.user.id)
   }
@@ -53,7 +53,7 @@ export class TripsController {
   }
 
   @Patch(':id/cancel')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   cancel(@Param('id') id: string, @Req() req: any) {
     return this.trips.cancel(id, req.user.id)
   }

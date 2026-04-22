@@ -3,7 +3,7 @@ import {
   Req, Headers, HttpCode,
 } from '@nestjs/common'
 import type { RawBodyRequest } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { SupabaseGuard } from '../auth/supabase.guard'
 import { PaymentsService } from './payments.service'
 import { InitiatePaymentDto } from './dto/initiate-payment.dto'
 
@@ -12,20 +12,20 @@ export class PaymentsController {
   constructor(private payments: PaymentsService) {}
 
   @Post('initiate')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   initiate(@Body() dto: InitiatePaymentDto) {
     return this.payments.initiatePayment(dto.bookingId, dto.provider)
   }
 
   @Post('capture/:bookingId')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   @HttpCode(200)
   capture(@Param('bookingId') bookingId: string) {
     return this.payments.capturePayment(bookingId)
   }
 
   @Post('refund/:bookingId')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseGuard)
   @HttpCode(200)
   refund(@Param('bookingId') bookingId: string) {
     return this.payments.refundPayment(bookingId)

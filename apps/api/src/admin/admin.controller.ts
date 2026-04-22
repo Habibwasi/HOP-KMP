@@ -2,7 +2,7 @@ import {
   Controller, Get, Post, Patch, Body, Param,
   UseGuards, Query, ParseIntPipe,
 } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { SupabaseGuard } from '../auth/supabase.guard'
 import { AdminGuard } from './guards/admin.guard'
 import { AdminService } from './admin.service'
 import { IsInt, Min, Max, IsIn, IsOptional } from 'class-validator'
@@ -23,7 +23,7 @@ class BanUserDto {
 }
 
 @Controller('admin')
-@UseGuards(AuthGuard('jwt'), AdminGuard)
+@UseGuards(SupabaseGuard, AdminGuard)
 export class AdminController {
   constructor(private admin: AdminService) {}
 
