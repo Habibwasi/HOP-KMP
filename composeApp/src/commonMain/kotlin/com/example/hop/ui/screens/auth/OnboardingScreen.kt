@@ -103,6 +103,7 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(HopColors.background),
     ) {
+        HopLogoBackground(modifier = Modifier.fillMaxSize())
 
         // ── Slides ───────────────────────────────────────────────────────
 
