@@ -7,11 +7,12 @@ import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.network.SessionExpiryNotifier
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 data class AuthUiState(
@@ -34,7 +35,6 @@ sealed interface AuthEffect {
     data object NavigateToHome : AuthEffect
     data object NavigateToLogin : AuthEffect
     data class ShowSnackbar(val message: String) : AuthEffect
-    data object SessionExpired : AuthEffect
 }
 
 class AuthViewModel(
@@ -45,15 +45,15 @@ class AuthViewModel(
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
-    private val _effect = Channel<AuthEffect>(Channel.BUFFERED)
-    val effect = _effect.receiveAsFlow()
+    private val _effect = MutableSharedFlow<AuthEffect>(extraBufferCapacity = 8)
+    val effect: Flow<AuthEffect> = _effect.asSharedFlow()
 
     init {
         viewModelScope.launch {
             sessionExpiryNotifier.events.collect {
                 // Do NOT force-navigate to login. Surface a non-destructive prompt so
                 // the user can choose when to re-authenticate.
-                _effect.send(AuthEffect.ShowSnackbar("Your session has expired. Please log in again."))
+                _effect.tryEmit(AuthEffect.ShowSnackbar("Your session has expired. Please log in again."))
             }
         }
         // In dev mode, auto-populate the authenticated user so every
@@ -81,6 +81,7 @@ class AuthViewModel(
     }
 
     private fun register(phone: String, firstName: String, lastName: String, email: String?, password: String?) {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.register(phone, firstName, lastName, email, password)) {
@@ -90,20 +91,21 @@ class AuthViewModel(
                         isAuthenticated = true,
                         currentUser = response.data,
                     )
-                    _effect.send(AuthEffect.NavigateToHome)
+                    _effect.tryEmit(AuthEffect.NavigateToHome)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = response.message,
                     )
-                    _effect.send(AuthEffect.ShowSnackbar(response.message))
+                    _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
                 }
             }
         }
     }
 
     private fun login(email: String, password: String) {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.login(email, password)) {
@@ -113,26 +115,27 @@ class AuthViewModel(
                         isAuthenticated = true,
                         currentUser = response.data,
                     )
-                    _effect.send(AuthEffect.NavigateToHome)
+                    _effect.tryEmit(AuthEffect.NavigateToHome)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = response.message,
                     )
-                    _effect.send(AuthEffect.ShowSnackbar(response.message))
+                    _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
                 }
             }
         }
     }
 
     private fun logout() {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.logout()) {
                 is ApiResponse.Success -> {
                     _state.value = AuthUiState()
-                    _effect.send(AuthEffect.NavigateToLogin)
+                    _effect.tryEmit(AuthEffect.NavigateToLogin)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
@@ -158,7 +161,7 @@ class AuthViewModel(
                     isAuthenticated = true,
                     currentUser = response.data,
                 )
-                _effect.send(AuthEffect.NavigateToHome)
+                _effect.tryEmit(AuthEffect.NavigateToHome)
             }
             is ApiResponse.Error -> {
                 // No stored session or refresh failed — stay on onboarding/login.

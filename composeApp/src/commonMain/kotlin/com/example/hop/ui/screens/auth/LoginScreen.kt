@@ -77,9 +77,6 @@ fun LoginRoute(
     LaunchedEffect(viewModel) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is AuthEffect.NavigateToHome ->
-                    onNavigateToHome()
-
                 is AuthEffect.ShowSnackbar -> {
                     scope.launch { snackbarHostState.showSnackbar(effect.message) }
                     viewModel.onEvent(AuthEvent.ClearError)

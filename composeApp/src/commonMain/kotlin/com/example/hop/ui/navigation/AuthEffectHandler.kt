@@ -51,12 +51,6 @@ fun AuthEffectHandler(
                     }
                 }
 
-                is AuthEffect.SessionExpired -> {
-                    // Session expiry no longer force-navigates to login.
-                    // The user stays on their current screen; individual API calls
-                    // will surface errors in-place. They log out explicitly via Settings.
-                }
-
                 is AuthEffect.ShowSnackbar -> {
                     // Handled by the root SnackbarHost; no navigation needed.
                 }
