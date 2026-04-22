@@ -8,6 +8,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import com.example.hop.ui.components.HopLogo
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,10 +43,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.domain.model.UserRole
 import com.example.hop.presentation.auth.AuthViewModel
@@ -216,13 +215,7 @@ private fun HomeTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Hop logotype
-        Text(
-            text = "HOP",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.ExtraBold,
-                color = HopColors.primaryLime,
-                letterSpacing = 3.sp,
-            ),
+        HopLogo(
             modifier = Modifier.weight(1f),
         )
 
