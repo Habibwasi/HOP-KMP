@@ -12,9 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.hop.ui.components.HopButton
 import com.example.hop.ui.components.HopButtonVariant
@@ -54,27 +51,27 @@ import com.example.hop.ui.theme.HopSpacing
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 private data class OnboardingSlide(
-    val illustrationDescription: String,
+    val index: Int,
     val headline: String,
     val subheadline: String,
 )
 
 private val slides = listOf(
     OnboardingSlide(
-        illustrationDescription = "Two cars side by side",
+        index = 0,
         headline = "Fewer cars.\nBetter Journeys.",
         subheadline = "Denmark's carpooling platform.\nShare a ride, shrink your footprint",
     ),
     OnboardingSlide(
-        illustrationDescription = "Leaf and road illustration",
+        index = 1,
         headline = "Every seat\nfilled matters.",
         subheadline = "One shared trip can cut CO₂\nemissions in half. Small change,\nbig difference.",
     ),
     OnboardingSlide(
-        illustrationDescription = "Green journey illustration",
+        index = 2,
         headline = "Move together.\nLive lighter.",
         subheadline = "Join thousands of Danes choosing\nsmarter, greener travel \none ride at a time.",
-        ),
+    ),
 )
 // ── Screen ───────────────────────────────────────────────────────────────────
 
@@ -195,9 +192,10 @@ private fun OnboardingSlide(
         verticalArrangement = Arrangement.Center,
     ) {
 
-        // ── Illustration placeholder ─────────────────────────────────────
+        // ── Illustration ─────────────────────────────────────────────────
 
-        Box(
+        OnboardingIllustration(
+            index = slide.index,
             modifier = Modifier
                 .size(width = 280.dp, height = 200.dp)
                 .graphicsLayer {
@@ -205,18 +203,8 @@ private fun OnboardingSlide(
                     scaleY = illustrationScale
                     alpha = illustrationScale
                 }
-                .clip(RoundedCornerShape(16.dp))
-                .background(HopColors.authInputSurface),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = slide.illustrationDescription,
-                style = MaterialTheme.typography.bodySmall,
-                color = HopColors.authTextSecondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(HopSpacing.md),
-            )
-        }
+                .clip(RoundedCornerShape(16.dp)),
+        )
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
