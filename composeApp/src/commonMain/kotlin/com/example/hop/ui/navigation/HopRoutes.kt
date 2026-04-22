@@ -16,9 +16,13 @@ sealed interface HopRoutes {
 
     // ── Onboarding ─────────────────────────────────────────────────────────
 
-    /** ON-01 */
+    /** ON-00 — Animated brand splash (3 s) */
     @Serializable
     data object Splash : HopRoutes
+
+    /** ON-01 — Onboarding / marketing screen with Sign-up & Login CTAs */
+    @Serializable
+    data object Onboarding : HopRoutes
 
     /** ON-02 */
     @Serializable

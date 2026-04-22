@@ -5,7 +5,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
 import com.example.hop.presentation.auth.AuthEffect
 import com.example.hop.presentation.auth.AuthViewModel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 /**
  * Collects [AuthViewModel.effect] and translates each [AuthEffect] into a
@@ -27,17 +29,25 @@ fun AuthEffectHandler(
     navController: NavController,
 ) {
     LaunchedEffect(viewModel) {
+        // Ensure the splash screen is visible for at least 3 seconds before
+        // any auth-triggered navigation fires (handles both dev auto-login and
+        // future token-refresh flows).
+        val splashDone = CompletableDeferred<Unit>()
+        launch { kotlinx.coroutines.delay(3_000); splashDone.complete(Unit) }
+
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is AuthEffect.NavigateToHome -> {
+                    splashDone.await()
                     navController.navigate(HopRoutes.Home) {
-                        popUpTo(HopRoutes.Splash) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 }
 
                 is AuthEffect.NavigateToLogin -> {
+                    splashDone.await()
                     navController.navigate(HopRoutes.Login) {
-                        popUpTo(HopRoutes.Splash) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 }
 

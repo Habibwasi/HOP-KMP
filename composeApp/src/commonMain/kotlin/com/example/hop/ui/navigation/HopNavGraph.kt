@@ -25,6 +25,7 @@ import com.example.hop.ui.screens.passenger.CancellationConfirmationRoute
 import com.example.hop.ui.screens.passenger.MobilePayHandoffRoute
 import com.example.hop.ui.screens.passenger.MyTripsPassengerRoute
 import com.example.hop.ui.screens.shared.HomeRoute
+import com.example.hop.ui.screens.shared.SplashRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
@@ -76,6 +77,16 @@ fun HopNavGraph(
         // ── Onboarding ────────────────────────────────────────────────────
 
         composable<HopRoutes.Splash> {
+            SplashRoute(
+                onComplete = {
+                    navController.navigate(HopRoutes.Onboarding) {
+                        popUpTo(HopRoutes.Splash) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable<HopRoutes.Onboarding> {
             OnboardingScreen(
                 onNavigateToSignUp = { navController.navigate(HopRoutes.SignUp) },
                 onNavigateToLogin  = { navController.navigate(HopRoutes.Login) },
