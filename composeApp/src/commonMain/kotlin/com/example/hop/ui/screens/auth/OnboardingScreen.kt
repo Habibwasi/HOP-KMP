@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.hop.ui.components.HopButton
 import com.example.hop.ui.components.HopButtonVariant
+import com.example.hop.ui.components.HopLogo
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 
@@ -103,6 +104,15 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(HopColors.background),
     ) {
+
+        // ── Logo ─────────────────────────────────────────────────────────
+
+        HopLogo(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+        )
 
         // ── Slides ───────────────────────────────────────────────────────
 

@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -38,8 +37,8 @@ import com.example.hop.ui.theme.HopTheme
 @Composable
 fun HopLogo(
     modifier: Modifier = Modifier,
-    width: Dp = 120.dp,
-    height: Dp = 26.dp,
+    width: Dp = 88.dp,
+    height: Dp = 38.dp,
 ) {
     Canvas(modifier = modifier.size(width, height)) {
         drawHopLogo(this)
@@ -49,9 +48,10 @@ fun HopLogo(
 // ── Internal drawing ──────────────────────────────────────────────────────────
 
 private fun drawHopLogo(scope: DrawScope) {
-    // SVG viewBox: 690 × 150
-    val viewW = 690f
-    val viewH = 150f
+    // Cropped viewBox: original SVG coords offset by (-195, -8) so content
+    // fills the canvas exactly. Original content spanned x:195–510, y:8–142.
+    val viewW = 315f
+    val viewH = 134f
 
     val scale = minOf(scope.size.width / viewW, scope.size.height / viewH)
     val offsetX = (scope.size.width - viewW * scale) / 2f
@@ -61,83 +61,85 @@ private fun drawHopLogo(scope: DrawScope) {
         translate(left = offsetX, top = offsetY)
         scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
     }) {
-        val white    = Color(0xFFFFFFFF)
-        val darkBg   = Color(0xFF1B4332)
-        val lime     = Color(0xFF52B788)
+        val lime     = Color(0xFFC8F135)
+        val ink      = Color(0xFF1A1A1A)
+        val bgMask   = lime
 
-        // ── Background ────────────────────────────────────────────────────────
-        drawRect(
-            color = darkBg,
+        // ── Pill background ───────────────────────────────────────────────────
+        drawRoundRect(
+            color = lime,
             topLeft = Offset(0f, 0f),
-            size = Size(680f, 140f),
+            size = Size(315f, 134f),
+            cornerRadius = CornerRadius(36f, 36f),
         )
 
         // ── h — left stem ─────────────────────────────────────────────────────
         drawRoundRect(
-            color = white,
-            topLeft = Offset(220f, 28f),
+            color = ink,
+            topLeft = Offset(25f, 20f),
             size = Size(15f, 84f),
             cornerRadius = CornerRadius(7f, 7f),
         )
 
         // ── h — right stem ────────────────────────────────────────────────────
         drawRoundRect(
-            color = white,
-            topLeft = Offset(283f, 58f),
+            color = ink,
+            topLeft = Offset(88f, 50f),
             size = Size(15f, 54f),
             cornerRadius = CornerRadius(7f, 7f),
         )
 
-        // ── h — crossbar arc: M235 82 Q249 48 283 66 ─────────────────────────
+        // ── h — crossbar arc ─────────────────────────────────────────────────
         val hCrossbar = Path().apply {
-            moveTo(235f, 82f)
-            quadraticTo(249f, 48f, 283f, 66f)
+            moveTo(40f, 74f)
+            quadraticTo(54f, 40f, 88f, 58f)
         }
         drawPath(
             path = hCrossbar,
-            color = white,
+            color = ink,
             style = Stroke(width = 15f, cap = StrokeCap.Round),
         )
 
-        // ── o — white ring ────────────────────────────────────────────────────
+        // ── o — ink ring ──────────────────────────────────────────────────────
         drawCircle(
-            color = white,
+            color = ink,
             radius = 33f,
-            center = Offset(358f, 90f),
+            center = Offset(163f, 82f),
             style = Stroke(width = 15f),
         )
 
-        // ── o — road strip (mask with bg color) ───────────────────────────────
+        // ── o — road strip (mask with pill color) ─────────────────────────────
         drawLine(
-            color = darkBg,
-            start = Offset(326f, 90f),
-            end = Offset(391f, 90f),
+            color = bgMask,
+            start = Offset(131f, 82f),
+            end = Offset(196f, 82f),
             strokeWidth = 5f,
         )
 
         // ── o — center-line dashes ────────────────────────────────────────────
-        drawLine(color = lime, start = Offset(336f, 90f), end = Offset(346f, 90f), strokeWidth = 2.5f, cap = StrokeCap.Round)
-        drawLine(color = lime, start = Offset(352f, 90f), end = Offset(362f, 90f), strokeWidth = 2.5f, cap = StrokeCap.Round)
-        drawLine(color = lime, start = Offset(368f, 90f), end = Offset(378f, 90f), strokeWidth = 2.5f, cap = StrokeCap.Round)
+        val dashColor = Color(0xFF167A30)
+        drawLine(color = dashColor, start = Offset(141f, 82f), end = Offset(151f, 82f), strokeWidth = 2.5f, cap = StrokeCap.Round)
+        drawLine(color = dashColor, start = Offset(157f, 82f), end = Offset(167f, 82f), strokeWidth = 2.5f, cap = StrokeCap.Round)
+        drawLine(color = dashColor, start = Offset(173f, 82f), end = Offset(183f, 82f), strokeWidth = 2.5f, cap = StrokeCap.Round)
 
         // ── p — stem ──────────────────────────────────────────────────────────
         drawRoundRect(
-            color = white,
-            topLeft = Offset(412f, 56f),
+            color = ink,
+            topLeft = Offset(217f, 48f),
             size = Size(15f, 76f),
             cornerRadius = CornerRadius(7f, 7f),
         )
 
-        // ── p — bowl: M427 74 Q427 43 458 56 Q485 68 474 90 Q463 112 427 106 ─
+        // ── p — bowl ─────────────────────────────────────────────────────────
         val pBowl = Path().apply {
-            moveTo(427f, 74f)
-            quadraticTo(427f, 43f, 458f, 56f)
-            quadraticTo(485f, 68f, 474f, 90f)
-            quadraticTo(463f, 112f, 427f, 106f)
+            moveTo(232f, 66f)
+            quadraticTo(232f, 35f, 263f, 48f)
+            quadraticTo(290f, 60f, 279f, 82f)
+            quadraticTo(268f, 104f, 232f, 98f)
         }
         drawPath(
             path = pBowl,
-            color = white,
+            color = ink,
             style = Stroke(width = 15f, cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }
@@ -145,7 +147,7 @@ private fun drawHopLogo(scope: DrawScope) {
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(name = "HopLogo — default", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "HopLogo — default", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun HopLogoPreview() {
     HopTheme {
@@ -153,7 +155,7 @@ private fun HopLogoPreview() {
     }
 }
 
-@Preview(name = "HopLogo — large", showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Preview(name = "HopLogo — large", showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun HopLogoLargePreview() {
     HopTheme {

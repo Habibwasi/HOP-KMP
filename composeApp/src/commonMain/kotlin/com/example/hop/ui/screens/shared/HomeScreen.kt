@@ -215,9 +215,9 @@ private fun HomeTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Hop logotype
-        HopLogo(
-            modifier = Modifier.weight(1f),
-        )
+        HopLogo()
+
+        Spacer(modifier = Modifier.weight(1f))
 
         // Role toggle pill — only visible when the user holds the DRIVER role
         if (hasDriverRole) {
