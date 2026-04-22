@@ -46,7 +46,7 @@ fun AuthEffectHandler(
 
                 is AuthEffect.NavigateToLogin -> {
                     splashDone.await()
-                    navController.navigate(HopRoutes.Login) {
+                    navController.navigate(HopRoutes.Onboarding) {
                         popUpTo(0) { inclusive = true }
                     }
                 }

@@ -221,6 +221,15 @@ export class AuthService {
     const refreshToken = crypto.randomBytes(64).toString('hex')
     const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
 
+    // Revoke all previous non-expired refresh tokens for this user before
+    // issuing a new one. Prevents ghost sessions accumulating in the DB and
+    // ensures a new login/register invalidates all prior sessions for the
+    // same account (single-session-per-user policy).
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, isRevoked: false },
+      data: { isRevoked: true },
+    })
+
     await this.prisma.refreshToken.create({
       data: { token: refreshToken, userId, expiresAt },
     })

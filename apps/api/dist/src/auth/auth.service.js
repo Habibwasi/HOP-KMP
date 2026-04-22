@@ -215,6 +215,10 @@ let AuthService = AuthService_1 = class AuthService {
         });
         const refreshToken = crypto.randomBytes(64).toString('hex');
         const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+        await this.prisma.refreshToken.updateMany({
+            where: { userId, isRevoked: false },
+            data: { isRevoked: true },
+        });
         await this.prisma.refreshToken.create({
             data: { token: refreshToken, userId, expiresAt },
         });

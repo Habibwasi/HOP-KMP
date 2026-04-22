@@ -7,7 +7,6 @@ import com.example.hop.presentation.auth.AuthEvent
 import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.ui.navigation.AuthEffectHandler
 import com.example.hop.ui.navigation.HopNavGraph
-import com.example.hop.ui.navigation.HopRoutes
 import com.example.hop.ui.theme.HopTheme
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -36,9 +35,11 @@ fun App() {
         HopNavGraph(
             navController = navController,
             onLogout = {
-                navController.navigate(HopRoutes.Splash) {
-                    popUpTo(0) { inclusive = true }
-                }
+                // Dispatch the real logout to the activity-scoped ViewModel so
+                // authRepository.logout() is called (clears tokens/session).
+                // AuthEffectHandler will then receive NavigateToLogin and drive
+                // the navigation — no manual Splash trip needed.
+                authViewModel.onEvent(AuthEvent.Logout)
             },
         )
     }

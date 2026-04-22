@@ -89,6 +89,23 @@ class AuthRepositoryImpl(
             val error = envelope.error
             if (error != null) return ApiResponse.Error(error.code, error.message)
             val response = checkNotNull(envelope.data) { "Null data in auth envelope" }
+
+            // Revoke the previous refresh token on the server (best-effort) before
+            // overwriting local storage. This prevents a prior session — belonging to
+            // a different account — from remaining valid after a new login/register.
+            val oldRefreshToken = tokenStorage.getRefreshToken()
+            if (oldRefreshToken != null) {
+                try {
+                    httpClient.post("auth/logout") {
+                        setBody(mapOf("refreshToken" to oldRefreshToken))
+                    }
+                } catch (_: Exception) {
+                    // Best-effort: if the revocation call fails we still proceed.
+                    // The server-side single-session policy (revoking all tokens on
+                    // generateTokens) acts as a safety net.
+                }
+            }
+
             tokenStorage.saveAccessToken(response.accessToken)
             tokenStorage.saveRefreshToken(response.refreshToken)
             ApiResponse.Success(response.user.toDomain())
