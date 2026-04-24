@@ -95,8 +95,8 @@
     .badge-seq    { background: #1e1a0f; color: #fbbf24; }
 
     .mermaid {
-      display: flex;
-      justify-content: center;
+      display: block;
+      text-align: center;
       overflow-x: auto;
     }
 
@@ -228,7 +228,7 @@ graph TB
         iOS["iOS\n(SwiftUI)"]
     end
 
-    subgraph Shared["shared/ — Kotlin Multiplatform"]
+    subgraph Shared["shared/ - Kotlin Multiplatform"]
         VM["ViewModels\n(17 VMs)"]
         Repo["Repositories\n(Auth, Trip, Booking,\nDriver, User, Tax)"]
         Domain["Domain Layer\n(interfaces + models)"]
@@ -237,7 +237,7 @@ graph TB
         Supa["Supabase SDK\n(Auth + Realtime Chat)"]
     end
 
-    subgraph Backend["apps/api/ — NestJS"]
+    subgraph Backend["apps/api/ - NestJS"]
         Auth["AuthModule"]
         Trips["TripsModule"]
         Bookings["BookingsModule"]
@@ -644,7 +644,7 @@ graph LR
 
   <script>
     mermaid.initialize({
-      startOnLoad: true,
+      startOnLoad: false,
       theme: 'dark',
       themeVariables: {
         primaryColor: '#1e2d0f',
@@ -662,7 +662,7 @@ graph LR
         attributeBackgroundColorEven: '#161b27',
         attributeBackgroundColorOdd: '#12161f',
       },
-      flowchart: { curve: 'basis', padding: 20 },
+      flowchart: { curve: 'linear', padding: 20 },
       sequence: { actorMargin: 60, width: 160, height: 40 },
       er: { useMaxWidth: true },
     });
@@ -670,13 +670,29 @@ graph LR
     function showTab(name) {
       document.querySelectorAll('.diagram-section').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-      document.getElementById('tab-' + name).classList.add('active');
+      const section = document.getElementById('tab-' + name);
+      section.classList.add('active');
       document.querySelectorAll('.tab').forEach(el => {
         if (el.getAttribute('onclick') === "showTab('" + name + "')") {
           el.classList.add('active');
         }
       });
+      // Render any diagrams that were hidden during initial load
+      const unprocessed = section.querySelectorAll('.mermaid:not([data-processed])');
+      if (unprocessed.length > 0) {
+        mermaid.run({ nodes: unprocessed });
+      }
     }
+
+    // Only render the initially visible section — never render hidden ones
+    document.addEventListener('DOMContentLoaded', function () {
+      const active = document.querySelector('.diagram-section.active');
+      if (active) {
+        const nodes = active.querySelectorAll('.mermaid');
+        if (nodes.length > 0) mermaid.run({ nodes: nodes });
+      }
+    });
   </script>
 </body>
 </html>
+
