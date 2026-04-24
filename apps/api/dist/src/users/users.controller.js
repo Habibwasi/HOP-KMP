@@ -72,11 +72,9 @@ let UsersController = UsersController_1 = class UsersController {
             });
         }
         catch (err) {
-            if (err instanceof common_1.ConflictException) {
-                const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id);
-                if (deleteError) {
-                    this.logger.error(`Failed to delete dangling Supabase user ${supabaseUser.id}: ${deleteError.message}`);
-                }
+            const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id);
+            if (deleteError) {
+                this.logger.error(`Failed to delete dangling Supabase user ${supabaseUser.id}: ${deleteError.message}`);
             }
             throw err;
         }

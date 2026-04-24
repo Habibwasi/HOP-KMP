@@ -14,6 +14,7 @@ exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const libphonenumber_js_1 = require("libphonenumber-js");
 let UsersService = UsersService_1 = class UsersService {
     prisma;
     logger = new common_1.Logger(UsersService_1.name);
@@ -30,6 +31,12 @@ let UsersService = UsersService_1 = class UsersService {
         return this.prisma.user.findUnique({ where: { id } });
     }
     async createProfile(supabaseId, data) {
+        if (data.phone) {
+            if (!(0, libphonenumber_js_1.isValidPhoneNumber)(data.phone)) {
+                throw new common_1.BadRequestException('Phone number must be in international format, e.g. +45 20 12 34 56');
+            }
+            data.phone = (0, libphonenumber_js_1.parsePhoneNumber)(data.phone).format('E.164');
+        }
         if (data.phone) {
             const existing = await this.prisma.user.findUnique({ where: { phone: data.phone } });
             if (existing && existing.id !== supabaseId) {

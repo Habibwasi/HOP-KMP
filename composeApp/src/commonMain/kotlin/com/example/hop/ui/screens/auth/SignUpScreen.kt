@@ -150,8 +150,10 @@ fun SignUpScreen(
     val firstNameValid = firstName.trim().length >= 2
     val lastNameValid = lastName.trim().length >= 2
     val emailValid = email.contains("@") && email.substringAfter("@").contains(".")
-    // Minimal phone check: +45 followed by 8 digits is the Danish mobile format
-    val phoneValid = phone.trim().length >= 8
+    // Require international E.164-style format: starts with + followed by country
+    // code digit and at least 6 more digits (spaces/hyphens allowed between digits)
+    // e.g. "+45 20 12 34 56" or "+4520123456"
+    val phoneValid = phone.trim().matches(Regex("""^\+[1-9][\d\s\-]{6,14}$"""))
     val passwordValid = password.length >= 8
     val formValid = firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && termsAccepted
     val canSubmit = formValid && !state.isLoading

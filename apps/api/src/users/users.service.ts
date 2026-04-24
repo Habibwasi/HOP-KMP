@@ -1,6 +1,7 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { Prisma, User } from '@prisma/client'
+import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js'
 
 @Injectable()
 export class UsersService {
@@ -31,6 +32,18 @@ export class UsersService {
     supabaseId: string,
     data: { firstName: string; lastName: string; phone?: string; email?: string },
   ): Promise<User> {
+    // Validate phone format before any DB work so errors are thrown inside
+    // the controller's try/catch (enabling Supabase user cleanup on failure).
+    if (data.phone) {
+      if (!isValidPhoneNumber(data.phone)) {
+        throw new BadRequestException(
+          'Phone number must be in international format, e.g. +45 20 12 34 56',
+        )
+      }
+      // Normalise to E.164 so storage is consistent regardless of spacing
+      data.phone = parsePhoneNumber(data.phone).format('E.164')
+    }
+
     // Check for phone taken by a *different* account
     if (data.phone) {
       const existing = await this.prisma.user.findUnique({ where: { phone: data.phone } })

@@ -17,6 +17,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.Url
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -39,6 +40,7 @@ class SupabaseAuthRepositoryImpl(
         supabase.auth.signUpWith(Email) {
             this.email = email
             this.password = password
+            this.emailRedirectTo = "hop://auth/callback"
             this.data = buildJsonObject {
                 put("firstName", firstName)
                 put("lastName", lastName)
@@ -54,7 +56,16 @@ class SupabaseAuthRepositoryImpl(
         }
         val token = (status as? SessionStatus.Authenticated)?.session?.accessToken
         if (token != null) {
-            // Email confirmation is OFF — we have a session immediately.
+            // When email confirmation is ON, Supabase may return a session whose
+            // JWT is rejected by the backend ("Email not confirmed"). Detect this
+            // early and sign out cleanly before the 401 is ever sent to the UI.
+            val currentUser = supabase.auth.currentUserOrNull()
+            if (currentUser?.emailConfirmedAt == null) {
+                supabase.auth.signOut()
+                throw Exception("Account created! Please check your email to confirm, then log in.")
+            }
+
+            // Email confirmation is OFF — we have a verified session immediately.
             // POST /users/profile WITHOUT an explicit Authorization header — the
             // AuthInterceptor (which now uses header set, not append) will add it.
             // If profile creation fails (e.g. phone conflict), the backend deletes
@@ -116,5 +127,26 @@ class SupabaseAuthRepositoryImpl(
             if (error != null) throw Exception(error.message)
             checkNotNull(envelope.data) { "Null data in /users/me response" }.toDomain()
         }
+    }
+
+    override suspend fun handleDeepLink(url: String): ApiResponse<User> = safeApiCall {
+        // Supabase email-confirmation callbacks come in two flavours:
+        //  • Implicit flow  → hop://auth/callback#access_token=TOKEN&refresh_token=…
+        //  • PKCE / code flow → hop://auth/callback?code=CODE
+        val parsedUrl = Url(url)
+        val code = parsedUrl.parameters["code"]
+        if (code != null) {
+            supabase.auth.exchangeCodeForSession(code)
+        } else {
+            val fragment = url.substringAfter("#", "")
+            check(fragment.contains("access_token")) { "Unrecognised auth callback URL" }
+            supabase.auth.parseFragmentAndImportSession(fragment)
+        }
+        // Wait for the Auth plugin to commit the newly imported session.
+        supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+        val envelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
+        val error = envelope.error
+        if (error != null) throw Exception(error.message)
+        checkNotNull(envelope.data) { "Null data in /users/me response" }.toDomain()
     }
 }

@@ -3,7 +3,7 @@
     "containerDefinitions": [
         {
             "name": "hop-api",
-            "image": "712242348131.dkr.ecr.eu-west-1.amazonaws.com/hop-api@sha256:796f006bcabb67b1775f4a0c2ccebab85d6d358f84d55152a44ede97d2354361",
+            "image": "712242348131.dkr.ecr.eu-west-1.amazonaws.com/hop-api@sha256:511b977e8fef9b12401b7e6b455c1e924df37c3c813bef2190a14eae15541441",
             "cpu": 0,
             "portMappings": [
                 {
@@ -41,6 +41,10 @@
                 {
                     "name": "DATABASE_URL",
                     "value": "postgresql://hop:Ha8801712014742@hop-staging-db.czckaqcosg7x.eu-west-1.rds.amazonaws.com:5432/hop_db?sslmode=require"
+                },
+                {
+                    "name": "NODE_TLS_REJECT_UNAUTHORIZED",
+                    "value": "0"
                 },
                 {
                     "name": "REDIS_PORT",

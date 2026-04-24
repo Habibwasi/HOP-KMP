@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsPhoneNumber, IsString, MinLength } from 'class-validator'
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator'
 
 export class CreateProfileDto {
   @IsString()
@@ -9,8 +9,10 @@ export class CreateProfileDto {
   @MinLength(1)
   lastName: string
 
+  // Phone format is validated inside UsersService.createProfile() so
+  // the controller can clean up the Supabase auth user on failure.
   @IsOptional()
-  @IsPhoneNumber(undefined)
+  @IsString()
   phone?: string
 
   @IsOptional()

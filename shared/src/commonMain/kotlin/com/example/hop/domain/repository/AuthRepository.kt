@@ -14,4 +14,11 @@ interface AuthRepository {
      *         [ApiResponse.Error] if there is no stored session.
      */
     suspend fun restoreSession(): ApiResponse<User>
+
+    /**
+     * Handles an email-confirmation deep-link callback (hop://auth/callback…).
+     * Imports the Supabase session from the URL, then fetches and returns the
+     * current user so the caller can navigate to the home screen.
+     */
+    suspend fun handleDeepLink(url: String): ApiResponse<User>
 }

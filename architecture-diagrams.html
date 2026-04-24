@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hop — Architecture Diagrams</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 32px 24px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #c3f53c;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 36px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid #1e2535;
+      padding-bottom: 16px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid #1e2535;
+      background: #161b27;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .tab:hover { border-color: #c3f53c44; color: #c3f53c; }
+
+    .tab.active {
+      background: #1e2d0f;
+      color: #c3f53c;
+      border-color: #c3f53c66;
+    }
+
+    .diagram-section { display: none; }
+    .diagram-section.active { display: block; }
+
+    .diagram-card {
+      background: #161b27;
+      border: 1px solid #1e2535;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .diagram-card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1e2535;
+    }
+
+    .diagram-card .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .badge-arch   { background: #1e2d0f; color: #c3f53c; }
+    .badge-data   { background: #0f1e2d; color: #38bdf8; }
+    .badge-flow   { background: #1e1127; color: #a78bfa; }
+    .badge-seq    { background: #1e1a0f; color: #fbbf24; }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .index-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .index-card {
+      background: #161b27;
+      border: 1px solid #1e2535;
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .index-card:hover {
+      border-color: #c3f53c44;
+      background: #1a2030;
+    }
+
+    .index-card .num {
+      font-size: 20px;
+      font-weight: 700;
+      color: #c3f53c;
+      margin-bottom: 4px;
+    }
+
+    .index-card .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .index-card .desc {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Hop Architecture Diagrams</h1>
+  <p class="subtitle">KMP Carpooling App — System overview, database schema, navigation flows &amp; sequence diagrams</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">Overview</button>
+    <button class="tab" onclick="showTab('system')">System Architecture</button>
+    <button class="tab" onclick="showTab('udf')">Data Flow</button>
+    <button class="tab" onclick="showTab('di')">DI Graph</button>
+    <button class="tab" onclick="showTab('db')">Database Schema</button>
+    <button class="tab" onclick="showTab('nav')">Navigation</button>
+    <button class="tab" onclick="showTab('auth')">Auth Flow</button>
+    <button class="tab" onclick="showTab('booking')">Booking Flow</button>
+    <button class="tab" onclick="showTab('platform')">Platform Split</button>
+    <button class="tab" onclick="showTab('backend')">Backend Modules</button>
+  </div>
+
+  <!-- ── OVERVIEW ───────────────────────────────────────────── -->
+  <div id="tab-overview" class="diagram-section active">
+    <div class="index-grid">
+      <div class="index-card" onclick="showTab('system')">
+        <div class="num">01</div>
+        <div class="name">System Architecture</div>
+        <div class="desc">How Android, iOS, shared KMP, and NestJS backend connect end-to-end.</div>
+      </div>
+      <div class="index-card" onclick="showTab('udf')">
+        <div class="num">02</div>
+        <div class="name">Unidirectional Data Flow</div>
+        <div class="desc">UI → ViewModel → Repository → Ktor/Supabase → API.</div>
+      </div>
+      <div class="index-card" onclick="showTab('di')">
+        <div class="num">03</div>
+        <div class="name">Koin DI Graph</div>
+        <div class="desc">How all modules (Supabase, Network, Repos, ViewModels) are wired together.</div>
+      </div>
+      <div class="index-card" onclick="showTab('db')">
+        <div class="num">04</div>
+        <div class="name">Database Schema</div>
+        <div class="desc">All Prisma models and their relations (User, Trip, Booking, Payment…).</div>
+      </div>
+      <div class="index-card" onclick="showTab('nav')">
+        <div class="num">05</div>
+        <div class="name">Navigation Flows</div>
+        <div class="desc">All 33 screens and how passengers, drivers and shared flows connect.</div>
+      </div>
+      <div class="index-card" onclick="showTab('auth')">
+        <div class="num">06</div>
+        <div class="name">Authentication Flow</div>
+        <div class="desc">Supabase session check, sign-up, JWT propagation to NestJS.</div>
+      </div>
+      <div class="index-card" onclick="showTab('booking')">
+        <div class="num">07</div>
+        <div class="name">Booking Flow</div>
+        <div class="desc">Search → Book → MobilePay → webhook → confirmation.</div>
+      </div>
+      <div class="index-card" onclick="showTab('platform')">
+        <div class="num">08</div>
+        <div class="name">Platform Split</div>
+        <div class="desc">What iOS/Android each own vs what lives in shared/ KMP.</div>
+      </div>
+      <div class="index-card" onclick="showTab('backend')">
+        <div class="num">09</div>
+        <div class="name">Backend Module Map</div>
+        <div class="desc">NestJS modules, their endpoints, Redis queues and Prisma connections.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01 SYSTEM ARCHITECTURE ─────────────────────────────── -->
+  <div id="tab-system" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-arch">Architecture</span>
+      <h2>01 — High-Level System Architecture</h2>
+      <div class="mermaid">
+graph TB
+    subgraph Mobile["Mobile Apps"]
+        Android["Android\n(Jetpack Compose)"]
+        iOS["iOS\n(SwiftUI)"]
+    end
+
+    subgraph Shared["shared/ — Kotlin Multiplatform"]
+        VM["ViewModels\n(17 VMs)"]
+        Repo["Repositories\n(Auth, Trip, Booking,\nDriver, User, Tax)"]
+        Domain["Domain Layer\n(interfaces + models)"]
+        DI["Koin DI\n(AppModule)"]
+        Ktor["Ktor HTTP Client"]
+        Supa["Supabase SDK\n(Auth + Realtime Chat)"]
+    end
+
+    subgraph Backend["apps/api/ — NestJS"]
+        Auth["AuthModule"]
+        Trips["TripsModule"]
+        Bookings["BookingsModule"]
+        Payments["PaymentsModule"]
+        Ratings["RatingsModule"]
+        Notifications["NotificationsModule"]
+        Tax["TaxModule"]
+        Users["UsersModule"]
+        Admin["AdminModule"]
+        Redis["Redis/BullMQ\n(job queues)"]
+        Prisma["Prisma ORM"]
+    end
+
+    subgraph Infra["Infrastructure"]
+        PG["PostgreSQL\n(AWS RDS)"]
+        SupaDB["Supabase\n(Auth + Realtime)"]
+        MobilePay["MobilePay\n(payments)"]
+        FCM["FCM / APNs\n(push)"]
+    end
+
+    Android --> VM
+    iOS --> VM
+    VM --> Repo
+    Repo --> Domain
+    Repo --> Ktor
+    Repo --> Supa
+    DI -.->|"injects"| VM
+    DI -.->|"injects"| Repo
+
+    Ktor -->|"REST"| Auth
+    Ktor -->|"REST"| Trips
+    Ktor -->|"REST"| Bookings
+    Ktor -->|"REST"| Payments
+    Ktor -->|"REST"| Ratings
+    Ktor -->|"REST"| Tax
+    Ktor -->|"REST"| Users
+    Supa -->|"Realtime"| SupaDB
+
+    Auth --> Prisma
+    Trips --> Redis
+    Bookings --> Redis
+    Payments --> MobilePay
+    Notifications --> FCM
+    Prisma --> PG
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 02 UDF ──────────────────────────────────────────────── -->
+  <div id="tab-udf" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-arch">Architecture</span>
+      <h2>02 — Unidirectional Data Flow (shared/ KMP)</h2>
+      <div class="mermaid">
+graph LR
+    UI["UI Layer\n(Compose / SwiftUI)"]
+    VM["ViewModel\ncollectAsStateWithLifecycle"]
+    Repo["Repository\n(interface in domain)"]
+    Impl["RepositoryImpl\n(Ktor / Supabase)"]
+    API["NestJS API\n(REST)"]
+
+    UI -- "events / intent" --> VM
+    VM -- "UiState (StateFlow)" --> UI
+    VM -- "calls" --> Repo
+    Repo -- "implemented by" --> Impl
+    Impl -- "HTTP / Realtime" --> API
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 03 DI ───────────────────────────────────────────────── -->
+  <div id="tab-di" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-arch">Architecture</span>
+      <h2>03 — Koin Dependency Injection Graph</h2>
+      <div class="mermaid">
+graph TD
+    AppModule["AppModule\n(entry point)"]
+
+    AppModule --> SupabaseModule
+    AppModule --> NetworkModule
+    AppModule --> RepositoryModule
+    AppModule --> PresentationModule
+    AppModule --> ConnectivityModule
+    AppModule --> ChatModule
+
+    SupabaseModule["SupabaseModule\n→ SupabaseClient"]
+    NetworkModule["NetworkModule\n→ Ktor HttpClient\n(JWT token injected)"]
+    RepositoryModule["RepositoryModule\n→ AuthRepository\n→ TripRepository\n→ BookingRepository\n→ DriverRepository\n→ UserRepository\n→ TaxRepository"]
+    PresentationModule["PresentationModule\n→ 17 ViewModels\n(viewModelOf)"]
+    ChatModule["ChatModule\n→ ChatRepository\n(Supabase Realtime)"]
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 04 DATABASE ────────────────────────────────────────── -->
+  <div id="tab-db" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-data">Database</span>
+      <h2>04 — Database Schema (PostgreSQL via Prisma)</h2>
+      <div class="mermaid">
+erDiagram
+    User {
+        String id PK
+        String phone
+        String email
+        String firstName
+        String lastName
+        Role role
+        Boolean isVerified
+        Boolean isAdmin
+    }
+    Trip {
+        String id PK
+        String driverId FK
+        String originAddress
+        String destAddress
+        DateTime departureAt
+        Int seats
+        Int pricePerSeat
+        TripModel model
+        TripStatus status
+        Int minPassengers
+        Float distanceKm
+    }
+    Booking {
+        String id PK
+        String tripId FK
+        String passengerId FK
+        Int totalOere
+        BookingStatus status
+    }
+    Payment {
+        String id PK
+        String bookingId FK
+        Int amountOere
+        PaymentProvider provider
+        PaymentStatus status
+    }
+    Rating {
+        String id PK
+        String raterId FK
+        String rateeId FK
+        Int score
+        String comment
+    }
+    TaxRecord {
+        String id PK
+        String driverId FK
+        String tripId FK
+        String bookingId FK
+        Int amountOere
+        Float distanceKm
+        Float ratePerKm
+    }
+    DriverLicence {
+        String id PK
+        String userId FK
+        String frontUrl
+        String backUrl
+        BookingStatus status
+    }
+    CarDetails {
+        String id PK
+        String userId FK
+        String make
+        String model
+        Int year
+        Int seatsAvailable
+    }
+
+    User ||--o{ Trip : "drives"
+    User ||--o{ Booking : "passenger"
+    User ||--o| DriverLicence : "has"
+    User ||--o| CarDetails : "has"
+    User ||--o{ Rating : "given"
+    User ||--o{ Rating : "received"
+    User ||--o{ TaxRecord : "earns"
+    Trip ||--o{ Booking : "has"
+    Trip ||--o{ TaxRecord : "generates"
+    Booking ||--o| Payment : "paid via"
+    Booking ||--o| TaxRecord : "creates"
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 05 NAVIGATION ─────────────────────────────────────── -->
+  <div id="tab-nav" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-flow">Navigation</span>
+      <h2>05 — Navigation Flows (33 Screens)</h2>
+      <div class="mermaid">
+flowchart TD
+    Splash --> Onboarding
+    Onboarding --> SignUp
+    Onboarding --> Login
+    SignUp --> Home
+    Login --> Home
+    Login --> ForgotPassword
+
+    Home -->|"Passenger tab"| SearchResults
+    Home -->|"Passenger tab"| MyTripsPassenger
+    Home -->|"Driver tab"| PostTripModelSelect
+    Home -->|"Driver tab"| MyTripsDriver
+    Home -->|"Enable driver"| EnableDriverStep1
+
+    subgraph passengerFlow["Passenger Flow"]
+        SearchResults --> TripDetail
+        TripDetail --> BookingConfirmation
+        BookingConfirmation --> MobilePayHandoff
+        MobilePayHandoff --> BookingSuccess
+        BookingSuccess --> MyTripsPassenger
+        MyTripsPassenger --> TripDetailActive
+        TripDetailActive --> RateDriver
+        TripDetailActive --> CancellationConfirmation
+        TripDetailActive --> Chat
+    end
+
+    subgraph driverFlow["Driver Flow"]
+        PostTripModelSelect --> PostTripModelA
+        PostTripModelSelect --> PostTripModelB
+        PostTripModelA --> PriceReview
+        PostTripModelB --> PriceReview
+        PriceReview --> Home
+        MyTripsDriver --> TripDetailActiveDriver
+        TripDetailActiveDriver --> MarkTripComplete
+        MarkTripComplete --> RatePassenger
+        RatePassenger --> Home
+    end
+
+    subgraph enableDriver["Enable Driver Flow"]
+        EnableDriverStep1 --> EnableDriverStep2
+        EnableDriverStep2 --> EnableDriverStep3
+    end
+
+    subgraph sharedScreens["Shared Screens"]
+        Home --> Notifications
+        Home --> OwnProfile
+        OwnProfile --> Settings
+        TripDetail --> OtherProfile
+        TaxDashboard --> TaxReportDownload
+        Home --> TaxDashboard
+    end
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 06 AUTH FLOW ───────────────────────────────────────── -->
+  <div id="tab-auth" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-seq">Sequence</span>
+      <h2>06 — Authentication Flow</h2>
+      <div class="mermaid">
+sequenceDiagram
+    participant App
+    participant AuthViewModel
+    participant SupabaseAuthRepo
+    participant Supabase
+    participant NestAPI
+
+    App->>AuthViewModel: launch (check session)
+    AuthViewModel->>SupabaseAuthRepo: checkSession()
+    SupabaseAuthRepo->>Supabase: currentSession()
+
+    alt Session valid
+        Supabase-->>SupabaseAuthRepo: JWT token
+        SupabaseAuthRepo-->>AuthViewModel: AuthEffect.NavigateToHome
+        AuthViewModel-->>App: navigate to Home
+    else No session
+        Supabase-->>SupabaseAuthRepo: null
+        AuthViewModel-->>App: navigate to Onboarding
+    end
+
+    App->>AuthViewModel: signUp(email, password, phone, name)
+    AuthViewModel->>SupabaseAuthRepo: signUp()
+    SupabaseAuthRepo->>Supabase: auth.signUp()
+    Supabase-->>SupabaseAuthRepo: user + JWT
+    SupabaseAuthRepo->>NestAPI: POST /users (sync profile)
+    NestAPI-->>SupabaseAuthRepo: user record
+    AuthViewModel-->>App: AuthEffect.NavigateToHome
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 07 BOOKING FLOW ────────────────────────────────────── -->
+  <div id="tab-booking" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-seq">Sequence</span>
+      <h2>07 — Booking Flow (Passenger)</h2>
+      <div class="mermaid">
+sequenceDiagram
+    participant UI
+    participant SearchVM as SearchTripsViewModel
+    participant BookingVM as BookingViewModel
+    participant TripRepo
+    participant BookingRepo
+    participant NestAPI
+    participant MobilePay
+
+    UI->>SearchVM: search(origin, dest, date, seats)
+    SearchVM->>TripRepo: searchTrips()
+    TripRepo->>NestAPI: GET /trips?...
+    NestAPI-->>TripRepo: Trip[]
+    SearchVM-->>UI: UiState(trips)
+
+    UI->>BookingVM: confirmBooking(tripId)
+    BookingVM->>BookingRepo: createBooking(tripId, seats)
+    BookingRepo->>NestAPI: POST /bookings
+    NestAPI-->>BookingRepo: booking status=PENDING
+    BookingVM-->>UI: navigate to MobilePay
+
+    UI->>NestAPI: POST /payments/mobilepay/initiate
+    NestAPI->>MobilePay: create payment
+    MobilePay-->>NestAPI: redirectUrl
+    NestAPI-->>UI: redirectUrl
+
+    MobilePay-->>NestAPI: webhook callback
+    NestAPI->>NestAPI: BullMQ job - capture payment
+    NestAPI->>NestAPI: booking.status = CONFIRMED
+    NestAPI->>NestAPI: send push notification
+    UI-->>UI: navigate to BookingSuccess
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 08 PLATFORM SPLIT ──────────────────────────────────── -->
+  <div id="tab-platform" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-arch">Architecture</span>
+      <h2>08 — iOS vs Android Platform Split</h2>
+      <div class="mermaid">
+graph TB
+    subgraph iOS["iOS App (SwiftUI)"]
+        iOSApp["iOSApp.swift\n(entry)"]
+        ContentView["ContentView\n(root)"]
+        NavStack["HopNavigationStack\n(path-based nav)"]
+        TabView["HopTabView\n(4 tabs)"]
+        Screens["SwiftUI Screens\n(Passenger/Driver)"]
+        iOSApp --> ContentView --> NavStack --> TabView --> Screens
+    end
+
+    subgraph Android["Android App (Compose)"]
+        MainActivity["MainActivity\n(entry)"]
+        HopApp["HopApp composable"]
+        NavGraph["HopNavGraph\n(NavHost)"]
+        AuthEffect["AuthEffectHandler\n(auth navigation)"]
+        ComposeScreens["Compose Screens\n(Passenger/Driver)"]
+        MainActivity --> HopApp --> NavGraph --> ComposeScreens
+        HopApp --> AuthEffect
+    end
+
+    subgraph KMP["shared/ KMP Module"]
+        ViewModels
+        Repositories
+        DomainModels["Domain Models"]
+    end
+
+    Screens -->|"koinInject / observe"| ViewModels
+    ComposeScreens -->|"koinViewModel"| ViewModels
+    ViewModels --> Repositories
+    Repositories --> DomainModels
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 09 BACKEND ────────────────────────────────────────── -->
+  <div id="tab-backend" class="diagram-section">
+    <div class="diagram-card">
+      <span class="badge badge-data">Backend</span>
+      <h2>09 — Backend Module Map (NestJS)</h2>
+      <div class="mermaid">
+graph LR
+    subgraph NestJS["NestJS API"]
+        Auth["auth/\nSupabase JWT guard\nregister user"]
+        Users["users/\nGET /users/:id\nPATCH /users/me"]
+        Trips["trips/\nGET /trips search\nPOST /trips\nPATCH /trips/:id"]
+        Bookings["bookings/\nPOST /bookings\nGET /bookings/my\nDELETE /bookings/:id"]
+        Payments["payments/\nPOST mobilepay/initiate\nwebhook/capture/refund"]
+        Ratings["ratings/\nPOST /ratings\nGET /ratings/user/:id"]
+        Notifications["notifications/\nGET /notifications\nPATCH read\nregister push token"]
+        Tax["tax/\nGET /tax/records\nGET /tax/report-url"]
+        Admin["admin/\nuser management\ntrip moderation"]
+    end
+
+    Redis["Redis / BullMQ\n(payment jobs\nnotification jobs)"]
+    Prisma["Prisma → PostgreSQL"]
+
+    Trips --> Redis
+    Bookings --> Redis
+    Payments --> Redis
+    Notifications --> Redis
+    Auth --> Prisma
+    Users --> Prisma
+    Trips --> Prisma
+    Bookings --> Prisma
+    Payments --> Prisma
+    Ratings --> Prisma
+    Notifications --> Prisma
+    Tax --> Prisma
+    Admin --> Prisma
+      </div>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#1e2d0f',
+        primaryTextColor: '#e2e8f0',
+        primaryBorderColor: '#c3f53c66',
+        lineColor: '#475569',
+        secondaryColor: '#161b27',
+        tertiaryColor: '#0f1117',
+        background: '#0f1117',
+        mainBkg: '#161b27',
+        nodeBorder: '#c3f53c66',
+        clusterBkg: '#12161f',
+        titleColor: '#c3f53c',
+        edgeLabelBackground: '#161b27',
+        attributeBackgroundColorEven: '#161b27',
+        attributeBackgroundColorOdd: '#12161f',
+      },
+      flowchart: { curve: 'basis', padding: 20 },
+      sequence: { actorMargin: 60, width: 160, height: 40 },
+      er: { useMaxWidth: true },
+    });
+
+    function showTab(name) {
+      document.querySelectorAll('.diagram-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      document.querySelectorAll('.tab').forEach(el => {
+        if (el.getAttribute('onclick') === "showTab('" + name + "')") {
+          el.classList.add('active');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -42,10 +42,10 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
+        tripId: string;
         totalOere: number;
     }>;
     myBookings(req: any): Promise<({
@@ -94,10 +94,10 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
+        tripId: string;
         totalOere: number;
     })[]>;
     findOne(id: string): Promise<{
@@ -124,6 +124,12 @@ export declare class BookingsController {
             isRecurring: boolean;
             isActive: boolean;
         };
+        passenger: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        };
         payment: {
             id: string;
             createdAt: Date;
@@ -135,30 +141,24 @@ export declare class BookingsController {
             providerRef: string | null;
             webhookData: import("@prisma/client/runtime/client").JsonValue | null;
         } | null;
-        passenger: {
-            id: string;
-            firstName: string;
-            lastName: string;
-            avatarUrl: string | null;
-        };
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
+        tripId: string;
         totalOere: number;
     }>;
     cancel(id: string, req: any): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        tripId: string;
         seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
+        tripId: string;
         totalOere: number;
     }>;
 }

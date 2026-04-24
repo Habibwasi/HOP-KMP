@@ -12,6 +12,12 @@ struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onOpenURL { url in
+                    // Handle hop://auth/callback email-confirmation deep links.
+                    guard url.scheme == "hop", url.host == "auth" else { return }
+                    let vm = KoinIOSKt.getAuthViewModel()
+                    vm.onEvent(event: AuthEventHandleDeepLink(url: url.absoluteString))
+                }
         }
     }
 }

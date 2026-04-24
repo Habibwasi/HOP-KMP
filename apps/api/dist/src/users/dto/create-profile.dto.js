@@ -30,7 +30,7 @@ __decorate([
 ], CreateProfileDto.prototype, "lastName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsPhoneNumber)(undefined),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProfileDto.prototype, "phone", void 0);
 __decorate([

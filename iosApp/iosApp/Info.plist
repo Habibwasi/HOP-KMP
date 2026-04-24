@@ -10,5 +10,17 @@
 	<key>SUPABASE_JWT_SECRET</key>
 	<string>IQuVo2eP1mb/1baclEOCqWI/OAVwsnVZWqIwgYAI5pnBL0COw4qNKyy3zrSGBLm9VyEC8ye/OWP/5QrlkzuvvA==</string>	
 	<true/>
+	<!-- hop:// deep link for Supabase email-confirmation callbacks -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.example.hop</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>hop</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

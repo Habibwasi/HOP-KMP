@@ -29,6 +29,8 @@ sealed interface AuthEvent {
     data object ClearError : AuthEvent
     /** Fired on cold start to silently restore a persisted session. */
     data object RestoreSession : AuthEvent
+    /** Fired when the app is opened via the hop://auth/callback email-confirmation deep link. */
+    data class HandleDeepLink(val url: String) : AuthEvent
 }
 
 sealed interface AuthEffect {
@@ -80,6 +82,27 @@ class AuthViewModel(
             is AuthEvent.Logout -> logout()
             is AuthEvent.ClearError -> _state.value = _state.value.copy(error = null)
             is AuthEvent.RestoreSession -> viewModelScope.launch { restoreSession() }
+            is AuthEvent.HandleDeepLink -> handleDeepLink(event.url)
+        }
+    }
+
+    private fun handleDeepLink(url: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            when (val response = authRepository.handleDeepLink(url)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        isAuthenticated = true,
+                        currentUser = response.data,
+                    )
+                    _effect.tryEmit(AuthEffect.NavigateToHome)
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isLoading = false, error = response.message)
+                    _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
+                }
+            }
         }
     }
 

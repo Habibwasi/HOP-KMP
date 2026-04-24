@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, UseGuards, Req, Param,
-  Body, NotFoundException, UnauthorizedException, ConflictException, Logger,
+  Body, NotFoundException, UnauthorizedException, Logger,
   HttpCode, HttpStatus,
   Inject,
 } from '@nestjs/common'
@@ -64,15 +64,14 @@ export class UsersController {
         email: dto.email ?? supabaseUser.email,
       })
     } catch (err) {
-      if (err instanceof ConflictException) {
-        // Roll back: delete the Supabase auth user so the email is free again.
-        // The service-role client has the rights to do this.
-        const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id)
-        if (deleteError) {
-          this.logger.error(
-            `Failed to delete dangling Supabase user ${supabaseUser.id}: ${deleteError.message}`,
-          )
-        }
+      // Roll back on ANY profile-creation error (conflict, bad request, unexpected
+      // Prisma error, etc.) — delete the Supabase auth user so the email/phone is
+      // free for a corrected re-registration attempt.
+      const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id)
+      if (deleteError) {
+        this.logger.error(
+          `Failed to delete dangling Supabase user ${supabaseUser.id}: ${deleteError.message}`,
+        )
       }
       throw err
     }
