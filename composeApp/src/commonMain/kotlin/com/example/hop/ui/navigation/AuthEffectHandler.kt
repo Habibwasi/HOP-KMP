@@ -60,6 +60,22 @@ fun AuthEffectHandler(
                         popUpTo(0) { inclusive = true }
                     }
                 }
+
+                is AuthEffect.PasswordResetEmailSent -> {
+                    // Handled locally in ForgotPasswordRoute; no navigation needed here.
+                }
+
+                is AuthEffect.NavigateToSetPassword -> {
+                    navController.navigate(HopRoutes.SetNewPassword) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+
+                is AuthEffect.PasswordUpdated -> {
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             }
         }
     }

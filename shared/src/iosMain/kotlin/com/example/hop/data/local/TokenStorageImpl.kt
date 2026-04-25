@@ -53,6 +53,15 @@ class TokenStorageImpl : TokenStorage {
     override suspend fun clearTokens() {
         delete(KEY_ACCESS_TOKEN)
         delete(KEY_REFRESH_TOKEN)
+        delete(KEY_RECOVERY_PENDING)
+    }
+
+    override suspend fun saveRecoveryPending(pending: Boolean) {
+        upsert(KEY_RECOVERY_PENDING, pending.toString())
+    }
+
+    override suspend fun getRecoveryPending(): Boolean {
+        return read(KEY_RECOVERY_PENDING) == "true"
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
@@ -125,5 +134,6 @@ class TokenStorageImpl : TokenStorage {
         const val SERVICE = "com.example.hop"
         const val KEY_ACCESS_TOKEN = "hop_access_token"
         const val KEY_REFRESH_TOKEN = "hop_refresh_token"
+        const val KEY_RECOVERY_PENDING = "hop_recovery_pending"
     }
 }

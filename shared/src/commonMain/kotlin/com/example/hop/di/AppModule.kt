@@ -8,6 +8,7 @@ fun appModules(
     supabaseUrl: String,
     supabaseAnonKey: String,
 ): List<Module> = listOf(
+    tokenStorageModule,
     supabaseModule(supabaseUrl, supabaseAnonKey),
     networkModule(baseUrl),
     repositoryModule,
@@ -21,6 +22,7 @@ fun devAppModules(
     supabaseUrl: String,
     supabaseAnonKey: String,
 ): List<Module> = listOf(
+    tokenStorageModule,
     supabaseModule(supabaseUrl, supabaseAnonKey),
     networkModule(baseUrl),
     devRepositoryModule,

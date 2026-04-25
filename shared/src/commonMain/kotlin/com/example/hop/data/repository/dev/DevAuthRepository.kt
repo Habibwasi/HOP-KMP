@@ -39,4 +39,13 @@ class DevAuthRepository : AuthRepository {
 
     override suspend fun handleDeepLink(url: String): ApiResponse<User> =
         ApiResponse.Success(DEV_USER)
+
+    override suspend fun handleRecoveryDeepLink(url: String): ApiResponse<Unit> =
+        ApiResponse.Success(Unit)
+
+    override suspend fun requestPasswordReset(email: String): ApiResponse<Unit> =
+        ApiResponse.Success(Unit)
+
+    override suspend fun updatePassword(newPassword: String): ApiResponse<Unit> =
+        ApiResponse.Success(Unit)
 }

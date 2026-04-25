@@ -18,6 +18,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Url
+import io.ktor.http.parseQueryString
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -37,10 +38,9 @@ class SupabaseAuthRepositoryImpl(
         // Store profile data as Supabase user metadata so the backend guard can
         // auto-create the Prisma profile on first login even if email confirmation
         // delays the initial profile POST.
-        supabase.auth.signUpWith(Email) {
+        supabase.auth.signUpWith(Email, redirectUrl = "hop://auth/callback") {
             this.email = email
             this.password = password
-            this.emailRedirectTo = "hop://auth/callback"
             this.data = buildJsonObject {
                 put("firstName", firstName)
                 put("lastName", lastName)
@@ -140,7 +140,13 @@ class SupabaseAuthRepositoryImpl(
         } else {
             val fragment = url.substringAfter("#", "")
             check(fragment.contains("access_token")) { "Unrecognised auth callback URL" }
-            supabase.auth.parseFragmentAndImportSession(fragment)
+            // supabase-kt v3 removed parseFragmentAndImportSession.
+            // Parse the access_token / refresh_token from the fragment and import them directly.
+            val fragmentParams = parseQueryString(fragment)
+            val accessToken = fragmentParams["access_token"]
+                ?: error("No access_token in auth callback fragment")
+            val refreshToken = fragmentParams["refresh_token"] ?: ""
+            supabase.auth.importAuthToken(accessToken, refreshToken, retrieveUser = false, autoRefresh = true)
         }
         // Wait for the Auth plugin to commit the newly imported session.
         supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
@@ -148,5 +154,37 @@ class SupabaseAuthRepositoryImpl(
         val error = envelope.error
         if (error != null) throw Exception(error.message)
         checkNotNull(envelope.data) { "Null data in /users/me response" }.toDomain()
+    }
+
+    override suspend fun handleRecoveryDeepLink(url: String): ApiResponse<Unit> = safeApiCall {
+        val parsedUrl = Url(url)
+        val code = parsedUrl.parameters["code"]
+        if (code != null) {
+            supabase.auth.exchangeCodeForSession(code)
+        } else {
+            val fragment = url.substringAfter("#", "")
+            check(fragment.contains("access_token")) { "Unrecognised recovery callback URL" }
+            val fragmentParams = parseQueryString(fragment)
+            val accessToken = fragmentParams["access_token"]
+                ?: error("No access_token in recovery callback fragment")
+            val refreshToken = fragmentParams["refresh_token"] ?: ""
+            supabase.auth.importAuthToken(accessToken, refreshToken, retrieveUser = false, autoRefresh = true)
+        }
+        // Wait for the session to be committed — recovery sessions are still
+        // SessionStatus.Authenticated, but the JWT role is "recovery".
+        supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+    }
+
+    override suspend fun requestPasswordReset(email: String): ApiResponse<Unit> = safeApiCall {
+        supabase.auth.resetPasswordForEmail(
+            email = email,
+            redirectUrl = "hop://auth/callback",
+        )
+    }
+
+    override suspend fun updatePassword(newPassword: String): ApiResponse<Unit> = safeApiCall {
+        supabase.auth.updateUser {
+            password = newPassword
+        }
     }
 }

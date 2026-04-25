@@ -29,11 +29,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,31 +51,61 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.hop.presentation.auth.AuthEffect
+import com.example.hop.presentation.auth.AuthEvent
+import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.ui.components.HopButton
 import com.example.hop.ui.components.HopButtonVariant
 import com.example.hop.ui.components.HopTextField
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.viewmodel.koinViewModel
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 /**
  * ON-03b — Forgot Password Route.
  *
- * MVP stub: no ViewModel. Simulates a brief loading delay then shows
- * the "Check your email" success state.
- * Post-MVP: wire to AuthEvent.RequestPasswordReset + AuthRepository.
+ * Injects [AuthViewModel] and wires the real Supabase password-reset call.
+ * Observes [AuthEffect.PasswordResetEmailSent] to flip the success state and
+ * [AuthEffect.ShowSnackbar] to surface API errors.
  */
 @Composable
 fun ForgotPasswordRoute(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: AuthViewModel = koinViewModel(),
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var submitted by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is AuthEffect.PasswordResetEmailSent -> submitted = true
+                is AuthEffect.ShowSnackbar -> scope.launch {
+                    snackbarHostState.showSnackbar(effect.message)
+                    viewModel.onEvent(AuthEvent.ClearError)
+                }
+                else -> Unit
+            }
+        }
+    }
+
     ForgotPasswordScreen(
+        isLoading = state.isLoading,
+        submitted = submitted,
+        onSubmitEmail = { email ->
+            viewModel.onEvent(AuthEvent.RequestPasswordReset(email))
+        },
+        onTryAgain = { submitted = false },
         onNavigateBack = onNavigateBack,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
@@ -82,24 +115,29 @@ fun ForgotPasswordRoute(
 /**
  * ON-03b — Forgot Password Screen.
  *
- * Two states driven by local [submitted] flag:
+ * Two states driven by [submitted]:
  *  - **Form** — email input + "Send reset link" CTA
  *  - **Success** — envelope icon + "Check your email" confirmation
  *
- * No ViewModel in MVP. Network call is stubbed with a [delay].
- *
- * @param onNavigateBack  Called when the user taps the back arrow or "Back to Log In".
+ * @param isLoading        Mirrors [AuthUiState.isLoading] from the ViewModel.
+ * @param submitted        True once the reset email was sent successfully.
+ * @param onSubmitEmail    Callback with the entered email; caller dispatches to VM.
+ * @param onTryAgain       Resets [submitted] to false so the user can re-enter an email.
+ * @param onNavigateBack   Called when the user taps the back arrow or "Back to Log In".
+ * @param snackbarHostState Host for error snackbars.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForgotPasswordScreen(
+    isLoading: Boolean,
+    submitted: Boolean,
+    onSubmitEmail: (email: String) -> Unit,
+    onTryAgain: () -> Unit,
     onNavigateBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
 ) {
-    var email     by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var submitted by remember { mutableStateOf(false) }
-    val scope     = rememberCoroutineScope()
+    var email by remember { mutableStateOf("") }
 
     val emailValid = email.contains("@") && email.split("@").lastOrNull()?.contains(".") == true
     val canSubmit  = emailValid && !isLoading
@@ -107,6 +145,7 @@ fun ForgotPasswordScreen(
     Scaffold(
         modifier = modifier,
         containerColor = HopColors.background,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {},
@@ -139,7 +178,7 @@ fun ForgotPasswordScreen(
                 SuccessContent(
                     email = email,
                     onNavigateBack = onNavigateBack,
-                    onTryAgain = { submitted = false },
+                    onTryAgain = onTryAgain,
                 )
             } else {
                 FormContent(
@@ -147,14 +186,7 @@ fun ForgotPasswordScreen(
                     onEmailChange = { email = it },
                     isLoading = isLoading,
                     canSubmit = canSubmit,
-                    onSubmit = {
-                        scope.launch {
-                            isLoading = true
-                            delay(800L) // MVP stub — replace with real API call
-                            isLoading = false
-                            submitted = true
-                        }
-                    },
+                    onSubmit = { onSubmitEmail(email) },
                     onNavigateBack = onNavigateBack,
                 )
             }
@@ -359,7 +391,14 @@ private fun SuccessContent(
 @Composable
 private fun ForgotPasswordScreenEmptyPreview() {
     HopTheme {
-        ForgotPasswordScreen(onNavigateBack = {})
+        ForgotPasswordScreen(
+            isLoading = false,
+            submitted = false,
+            onSubmitEmail = {},
+            onTryAgain = {},
+            onNavigateBack = {},
+            snackbarHostState = remember { SnackbarHostState() },
+        )
     }
 }
 
@@ -367,8 +406,14 @@ private fun ForgotPasswordScreenEmptyPreview() {
 @Composable
 private fun ForgotPasswordScreenLoadingPreview() {
     HopTheme {
-        // Show the form with a valid email so the enabled state is visible.
-        ForgotPasswordScreen(onNavigateBack = {})
+        ForgotPasswordScreen(
+            isLoading = true,
+            submitted = false,
+            onSubmitEmail = {},
+            onTryAgain = {},
+            onNavigateBack = {},
+            snackbarHostState = remember { SnackbarHostState() },
+        )
     }
 }
 
@@ -376,7 +421,6 @@ private fun ForgotPasswordScreenLoadingPreview() {
 @Composable
 private fun ForgotPasswordScreenSuccessPreview() {
     HopTheme {
-        // Drive the success content directly.
         Box(
             modifier = Modifier
                 .fillMaxSize()

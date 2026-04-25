@@ -52,12 +52,22 @@ class TokenStorageImpl(context: Context) : TokenStorage {
         sharedPreferences.edit()
             .remove(KEY_ACCESS_TOKEN)
             .remove(KEY_REFRESH_TOKEN)
+            .remove(KEY_RECOVERY_PENDING)
             .apply()
+    }
+
+    override suspend fun saveRecoveryPending(pending: Boolean) = withContext(Dispatchers.IO) {
+        sharedPreferences.edit().putBoolean(KEY_RECOVERY_PENDING, pending).apply()
+    }
+
+    override suspend fun getRecoveryPending(): Boolean = withContext(Dispatchers.IO) {
+        sharedPreferences.getBoolean(KEY_RECOVERY_PENDING, false)
     }
 
     private companion object {
         const val PREFS_NAME = "hop_secure_prefs"
         const val KEY_ACCESS_TOKEN = "access_token"
         const val KEY_REFRESH_TOKEN = "refresh_token"
+        const val KEY_RECOVERY_PENDING = "recovery_pending"
     }
 }

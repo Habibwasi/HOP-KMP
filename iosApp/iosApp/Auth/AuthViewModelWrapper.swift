@@ -58,6 +58,10 @@ final class AuthViewModelWrapper: ObservableObject {
         viewModel.onEvent(event: AuthEventLogin(email: email, password: password))
     }
 
+    func requestPasswordReset(email: String) {
+        viewModel.onEvent(event: AuthEventRequestPasswordReset(email: email))
+    }
+
     func clearError() {
         // data object ClearError → Kotlin singleton → Swift .shared
         viewModel.onEvent(event: AuthEventClearError.shared)

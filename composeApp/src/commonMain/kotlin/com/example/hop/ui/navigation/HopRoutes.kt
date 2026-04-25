@@ -36,6 +36,10 @@ sealed interface HopRoutes {
     @Serializable
     data object ForgotPassword : HopRoutes
 
+    /** ON-03c — Set a new password after clicking the reset email link */
+    @Serializable
+    data object SetNewPassword : HopRoutes
+
     // ── Shared Home ────────────────────────────────────────────────────────
 
     /** SH-01 — Unified home screen (passenger + driver via role toggle) */

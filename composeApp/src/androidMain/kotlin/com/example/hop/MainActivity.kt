@@ -2,6 +2,7 @@ package com.example.hop
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,6 +17,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        Log.d("HopDeepLink", "onCreate | action=${intent?.action} | data=${intent?.data}")
         handleDeepLinkIntent(intent)
         setContent {
             App()
@@ -24,13 +26,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Log.d("HopDeepLink", "onNewIntent | action=${intent.action} | data=${intent.data}")
         handleDeepLinkIntent(intent)
     }
 
     private fun handleDeepLinkIntent(intent: Intent?) {
-        val url = intent?.data?.toString() ?: return
+        val url = intent?.data?.toString()
+        Log.d("HopDeepLink", "handleDeepLinkIntent | url=$url")
+        if (url == null) return
         if (url.startsWith("hop://auth/callback")) {
-            authViewModel.onEvent(AuthEvent.HandleDeepLink(url))
+            Log.d("HopDeepLink", "Queueing deep link: $url")
+            authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
+        } else {
+            Log.w("HopDeepLink", "URL does not match hop://auth/callback — ignored: $url")
         }
     }
 }

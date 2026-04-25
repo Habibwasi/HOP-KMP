@@ -10,7 +10,12 @@ fun supabaseModule(supabaseUrl: String, supabaseAnonKey: String) = module {
             supabaseUrl = supabaseUrl,
             supabaseKey = supabaseAnonKey,
         ) {
-            install(Auth)
+            install(Auth) {
+                // Tell supabase-kt which custom-scheme URI to recognise as a
+                // callback so PKCE code exchange works correctly on Android/iOS.
+                scheme = "hop"
+                host   = "auth"
+            }
         }
     }
 }

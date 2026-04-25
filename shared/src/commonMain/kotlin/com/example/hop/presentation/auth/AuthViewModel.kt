@@ -7,6 +7,7 @@ import com.example.hop.domain.model.User
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.network.SessionExpiryNotifier
+import com.example.hop.network.TokenStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,9 @@ data class AuthUiState(
     val error: String? = null,
     val isAuthenticated: Boolean = false,
     val currentUser: User? = null,
+    /** Set to true after a password-reset email is sent; cleared once the recovery deep-link is processed. */
+    val isPasswordRecoveryPending: Boolean = false,
+    val pendingDeepLinkUrl: String? = null,
 )
 
 sealed interface AuthEvent {
@@ -31,6 +35,16 @@ sealed interface AuthEvent {
     data object RestoreSession : AuthEvent
     /** Fired when the app is opened via the hop://auth/callback email-confirmation deep link. */
     data class HandleDeepLink(val url: String) : AuthEvent
+    /**
+     * Fired from the platform layer (e.g. MainActivity) to STORE a deep-link URL
+     * without processing it. The composable must later dispatch [HandleDeepLink]
+     * once the effect collector is live, avoiding the SharedFlow replay-0 race.
+     */
+    data class QueueDeepLink(val url: String) : AuthEvent
+    /** Fired from the Forgot Password screen. */
+    data class RequestPasswordReset(val email: String) : AuthEvent
+    /** Fired from the Set New Password screen after the user enters a new password. */
+    data class UpdatePassword(val newPassword: String) : AuthEvent
 }
 
 sealed interface AuthEffect {
@@ -39,11 +53,18 @@ sealed interface AuthEffect {
     data class ShowSnackbar(val message: String) : AuthEffect
     /** Emitted when a 401 cannot be recovered; all clients should route to Login. */
     data object SessionExpired : AuthEffect
+    /** Emitted when a password-reset email has been sent successfully. */
+    data object PasswordResetEmailSent : AuthEffect
+    /** Emitted when the deep-link callback is a recovery (password-reset) link. Navigate to Set New Password. */
+    data object NavigateToSetPassword : AuthEffect
+    /** Emitted after the user successfully updates their password. */
+    data object PasswordUpdated : AuthEffect
 }
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
     private val sessionExpiryNotifier: SessionExpiryNotifier,
+    private val tokenStorage: TokenStorage,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
@@ -64,6 +85,12 @@ class AuthViewModel(
             // Attempt silent session restore on every cold start.
             // If a refresh token is persisted the user skips the login screen.
             viewModelScope.launch { restoreSession() }
+            // Restore the recovery-pending flag so a cold-start deep-link is handled correctly.
+            viewModelScope.launch {
+                if (tokenStorage.getRecoveryPending()) {
+                    _state.value = _state.value.copy(isPasswordRecoveryPending = true)
+                }
+            }
         }
 
         // Observe 401 signals from the network layer and forward as SessionExpired.
@@ -82,11 +109,58 @@ class AuthViewModel(
             is AuthEvent.Logout -> logout()
             is AuthEvent.ClearError -> _state.value = _state.value.copy(error = null)
             is AuthEvent.RestoreSession -> viewModelScope.launch { restoreSession() }
-            is AuthEvent.HandleDeepLink -> handleDeepLink(event.url)
+            is AuthEvent.QueueDeepLink -> _state.value = _state.value.copy(pendingDeepLinkUrl = event.url)
+            is AuthEvent.HandleDeepLink -> {
+                _state.value = _state.value.copy(pendingDeepLinkUrl = null)
+                handleDeepLink(event.url)
+            }
+            is AuthEvent.RequestPasswordReset -> requestPasswordReset(event.email)
+            is AuthEvent.UpdatePassword -> updatePassword(event.newPassword)
         }
     }
 
     private fun handleDeepLink(url: String) {
+        viewModelScope.launch {
+            val urlIndicatesRecovery = url.contains("type=recovery")
+            val storedPending = tokenStorage.getRecoveryPending()
+            val statePending = _state.value.isPasswordRecoveryPending
+            val isRecovery = statePending || storedPending || urlIndicatesRecovery
+            println("[HopDeepLink] handleDeepLink | url=$url | urlIndicatesRecovery=$urlIndicatesRecovery | storedPending=$storedPending | statePending=$statePending | isRecovery=$isRecovery")
+            if (isRecovery) {
+                if (!statePending) {
+                    _state.value = _state.value.copy(isPasswordRecoveryPending = true)
+                }
+                handleRecoveryCallback(url)
+            } else {
+                handleAuthCallback(url)
+            }
+        }
+    }
+
+    private fun handleRecoveryCallback(url: String) {
+        viewModelScope.launch {
+            println("[HopDeepLink] handleRecoveryCallback start | url=$url")
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            when (val response = authRepository.handleRecoveryDeepLink(url)) {
+                is ApiResponse.Success -> {
+                    println("[HopDeepLink] handleRecoveryDeepLink SUCCESS — emitting NavigateToSetPassword")
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        isPasswordRecoveryPending = false,
+                    )
+                    viewModelScope.launch { tokenStorage.saveRecoveryPending(false) }
+                    _effect.tryEmit(AuthEffect.NavigateToSetPassword)
+                }
+                is ApiResponse.Error -> {
+                    println("[HopDeepLink] handleRecoveryDeepLink ERROR: ${response.message}")
+                    _state.value = _state.value.copy(isLoading = false, error = response.message)
+                    _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
+                }
+            }
+        }
+    }
+
+    private fun handleAuthCallback(url: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.handleDeepLink(url)) {
@@ -173,12 +247,57 @@ class AuthViewModel(
         }
     }
 
+    private fun requestPasswordReset(email: String) {
+        if (_state.value.isLoading) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            when (val response = authRepository.requestPasswordReset(email)) {
+                is ApiResponse.Success -> {
+                    // Mark recovery as pending so the next deep-link callback is
+                    // treated as a recovery link (Supabase PKCE doesn't pass type=recovery in the URL).
+                    // Persisted to survive process death so clicking the link after app kill still works.
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        isPasswordRecoveryPending = true,
+                    )
+                    viewModelScope.launch { tokenStorage.saveRecoveryPending(true) }
+                    _effect.tryEmit(AuthEffect.PasswordResetEmailSent)
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isLoading = false, error = response.message)
+                    _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
+                }
+            }
+        }
+    }
+
+    private fun updatePassword(newPassword: String) {
+        if (_state.value.isLoading) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            when (val response = authRepository.updatePassword(newPassword)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(isLoading = false)
+                    _effect.tryEmit(AuthEffect.PasswordUpdated)
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isLoading = false, error = response.message)
+                    _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
+                }
+            }
+        }
+    }
+
     /**
      * Silently restores a persisted session on cold start.
      * Navigates to Home on success; does nothing on failure so the normal
      * Onboarding → Login flow remains visible.
      */
     private suspend fun restoreSession() {
+        // Skip if a deep link (e.g. recovery callback) is already queued — processing that
+        // deep link will determine the correct destination. NavigateToHome here would race
+        // with NavigateToSetPassword and clear the back stack 3 seconds later.
+        if (_state.value.pendingDeepLinkUrl != null) return
         _state.value = _state.value.copy(isLoading = true)
         when (val response = authRepository.restoreSession()) {
             is ApiResponse.Success -> {

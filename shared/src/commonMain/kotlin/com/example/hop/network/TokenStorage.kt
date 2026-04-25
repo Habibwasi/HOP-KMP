@@ -11,4 +11,7 @@ interface TokenStorage {
     suspend fun getRefreshToken(): String?
     suspend fun saveRefreshToken(token: String)
     suspend fun clearTokens()
+    /** Persists whether a password-reset email has been sent and the recovery link has not yet been handled. */
+    suspend fun saveRecoveryPending(pending: Boolean)
+    suspend fun getRecoveryPending(): Boolean
 }

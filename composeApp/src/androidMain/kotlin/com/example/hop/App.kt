@@ -2,6 +2,8 @@ package com.example.hop
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.example.hop.presentation.auth.AuthEvent
 import com.example.hop.presentation.auth.AuthViewModel
@@ -15,6 +17,15 @@ fun App() {
     HopTheme {
         val navController = rememberNavController()
         val authViewModel: AuthViewModel = koinViewModel()
+        val state by authViewModel.state.collectAsStateWithLifecycle()
+
+        // Process any deep link that arrived before the AuthEffectHandler collector
+        // was live. The URL is stored in state by MainActivity (QueueDeepLink) and
+        // dispatched here once the composable tree is mounted and effects are active.
+        LaunchedEffect(state.pendingDeepLinkUrl) {
+            val url = state.pendingDeepLinkUrl ?: return@LaunchedEffect
+            authViewModel.onEvent(AuthEvent.HandleDeepLink(url))
+        }
 
         // In dev mode the AuthViewModel auto-populates currentUser, but we
         // still need to fire a login event once so the AuthEffectHandler

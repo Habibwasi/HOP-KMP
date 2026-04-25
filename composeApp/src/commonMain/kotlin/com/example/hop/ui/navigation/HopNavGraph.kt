@@ -16,6 +16,7 @@ import androidx.navigation.toRoute
 import com.example.hop.network.ConnectivityObserver
 import com.example.hop.ui.components.NoInternetBanner
 import com.example.hop.ui.screens.auth.ForgotPasswordRoute
+import com.example.hop.ui.screens.auth.SetNewPasswordRoute
 import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.SignUpRoute
@@ -125,6 +126,16 @@ fun HopNavGraph(
         composable<HopRoutes.ForgotPassword> {
             ForgotPasswordRoute(
                 onNavigateBack = { navController.navigateUp() },
+            )
+        }
+
+        composable<HopRoutes.SetNewPassword> {
+            SetNewPasswordRoute(
+                onPasswordUpdated = {
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
 

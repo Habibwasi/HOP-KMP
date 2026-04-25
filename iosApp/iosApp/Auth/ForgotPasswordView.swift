@@ -1,25 +1,26 @@
 import SwiftUI
 
-// ── ON-03b Forgot Password (stub) ─────────────────────────────────────────────
+// ── ON-03b Forgot Password ────────────────────────────────────────────────────
 //
-// Post-MVP: backend /auth/password/reset-request + /auth/password/reset.
-// MVP: collects email, shows a generic "Check your email" confirmation so the
-// flow is navigable end-to-end.  No ViewModel is wired — server call is a stub.
+// Wired to the shared AuthViewModel via AuthViewModelWrapper.
+// Calls requestPasswordReset(email:) which uses Supabase resetPasswordForEmail.
 
 struct ForgotPasswordView: View {
 
     var onBack: () -> Void
 
+    // ── ViewModel ─────────────────────────────────────────────────────────────
+    @StateObject private var wrapper = AuthViewModelWrapper()
+
     // ── Local state ───────────────────────────────────────────────────────────
     @State private var email      = ""
     @State private var submitted  = false
-    @State private var isLoading  = false
 
     // ── Validation ────────────────────────────────────────────────────────────
     private var emailValid: Bool {
         email.contains("@") && email.split(separator: "@").last?.contains(".") == true
     }
-    private var canSubmit: Bool { emailValid && !isLoading }
+    private var canSubmit: Bool { emailValid && !wrapper.state.isLoading }
 
     var body: some View {
         ZStack {
@@ -46,6 +47,19 @@ struct ForgotPasswordView: View {
         }
         .toolbarBackground(Color.hopSurface, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .task { wrapper.startObserving() }
+        .task {
+            // Observe PasswordResetEmailSent effect
+            for await effect in wrapper.viewModel.effect {
+                if effect is AuthEffectPasswordResetEmailSent {
+                    withAnimation(.easeInOut) { submitted = true }
+                } else if let snackbar = effect as? AuthEffectShowSnackbar {
+                    // surface error — could use a toast; for now just clear
+                    _ = snackbar.message
+                    wrapper.clearError()
+                }
+            }
+        }
     }
 
     // MARK: — Form ─────────────────────────────────────────────────────────────
@@ -97,8 +111,8 @@ struct ForgotPasswordView: View {
 
                 // ── Send button ───────────────────────────────────────────────
                 HopPrimaryButton(
-                    title: isLoading ? "Sending…" : "Send reset link",
-                    isLoading: isLoading,
+                    title: wrapper.state.isLoading ? "Sending…" : "Send reset link",
+                    isLoading: wrapper.state.isLoading,
                     isEnabled: canSubmit
                 ) {
                     sendResetLink()
@@ -187,15 +201,7 @@ struct ForgotPasswordView: View {
 
     private func sendResetLink() {
         guard canSubmit else { return }
-        // MVP stub — no network call yet.  Simulate brief loading then success.
-        Task { @MainActor in
-            withAnimation { isLoading = true }
-            try? await Task.sleep(nanoseconds: 800_000_000)
-            withAnimation(.easeInOut) {
-                isLoading = false
-                submitted = true
-            }
-        }
+        wrapper.requestPasswordReset(email: email.trimmingCharacters(in: .whitespaces))
     }
 }
 
