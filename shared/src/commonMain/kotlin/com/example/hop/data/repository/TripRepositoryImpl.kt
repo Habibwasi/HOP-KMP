@@ -12,6 +12,11 @@ import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.delete
@@ -30,11 +35,12 @@ class TripRepositoryImpl(
         date: String,
         seats: Int,
     ): ApiResponse<List<Trip>> {
+        val isoDate = resolveDate(date)
         val response = safeEnvelopeCall<List<TripDto>> {
             httpClient.get("trips/search") {
                 url.parameters.append("origin", origin)
                 url.parameters.append("dest", dest)
-                url.parameters.append("date", date)
+                url.parameters.append("date", isoDate)
                 url.parameters.append("seats", seats.toString())
             }.body()
         }
@@ -43,6 +49,17 @@ class TripRepositoryImpl(
                 ApiResponse.Success(response.data.map { it.toDomain() })
             }
             is ApiResponse.Error -> response
+        }
+    }
+
+    /** Converts human-friendly labels to ISO-8601 date strings (yyyy-MM-dd). */
+    private fun resolveDate(date: String): String {
+        val tz = TimeZone.currentSystemDefault()
+        val today = Clock.System.now().toLocalDateTime(tz).date
+        return when (date.lowercase().trim()) {
+            "today" -> today.toString()
+            "tomorrow" -> today.plus(1, DateTimeUnit.DAY).toString()
+            else -> date // assume already ISO
         }
     }
 

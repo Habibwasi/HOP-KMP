@@ -19,12 +19,12 @@ class HopApplication : Application() {
                 options.isEnableUserInteractionTracing = true
             }
         }
-       val baseUrl = NetworkConstants.PRODUCTION_BASE_URL
+//       val baseUrl = NetworkConstants.PRODUCTION_BASE_URL
 
-//        val baseUrl = if (BuildConfig.DEBUG)
-//            NetworkConstants.LOCAL_DEVICE_BASE_URL
-//        else
-//            NetworkConstants.PRODUCTION_BASE_URL
+        val baseUrl = if (BuildConfig.DEBUG)
+            NetworkConstants.LOCAL_DEVICE_BASE_URL
+        else
+            NetworkConstants.PRODUCTION_BASE_URL
 
         startKoin {
             androidContext(this@HopApplication)

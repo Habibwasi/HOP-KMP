@@ -1,22 +1,36 @@
-import { IsNumber, IsDateString, IsOptional, IsInt, Min, Max } from 'class-validator'
+import { IsNumber, IsDateString, IsOptional, IsInt, Min, Max, IsString } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export class SearchTripsDto {
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  originLat: number
+  originLat?: number
 
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  originLng: number
+  originLng?: number
 
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  destLat: number
+  destLat?: number
 
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  destLng: number
+  destLng?: number
+
+  /** Text-based origin city/address (used when lat/lng are absent). */
+  @IsOptional()
+  @IsString()
+  origin?: string
+
+  /** Text-based destination city/address (used when lat/lng are absent). */
+  @IsOptional()
+  @IsString()
+  dest?: string
 
   @IsDateString()
   date: string

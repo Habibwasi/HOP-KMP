@@ -68,12 +68,25 @@ let TripsService = class TripsService {
         dayStart.setHours(0, 0, 0, 0);
         const dayEnd = new Date(date);
         dayEnd.setHours(23, 59, 59, 999);
+        const useCoordinates = dto.originLat != null &&
+            dto.originLng != null &&
+            dto.destLat != null &&
+            dto.destLng != null;
+        const where = {
+            status: client_1.TripStatus.ACTIVE,
+            departureAt: { gte: dayStart, lte: dayEnd },
+            seats: { gte: seats },
+        };
+        if (!useCoordinates) {
+            if (dto.origin) {
+                where.originAddress = { contains: dto.origin, mode: 'insensitive' };
+            }
+            if (dto.dest) {
+                where.destAddress = { contains: dto.dest, mode: 'insensitive' };
+            }
+        }
         const trips = await this.prisma.trip.findMany({
-            where: {
-                status: client_1.TripStatus.ACTIVE,
-                departureAt: { gte: dayStart, lte: dayEnd },
-                seats: { gte: seats },
-            },
+            where,
             include: {
                 driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
                 bookings: { where: { status: 'CONFIRMED' } },
@@ -81,11 +94,14 @@ let TripsService = class TripsService {
         });
         return trips
             .filter((trip) => {
-            const originDist = this.pricing.calculateDistance(dto.originLat, dto.originLng, trip.originLat, trip.originLng);
-            const destDist = this.pricing.calculateDistance(dto.destLat, dto.destLng, trip.destLat, trip.destLng);
             const bookedSeats = trip.bookings.reduce((sum, b) => sum + b.seats, 0);
             const availableSeats = trip.seats - bookedSeats;
-            return originDist <= radiusKm && destDist <= radiusKm && availableSeats >= seats;
+            if (useCoordinates) {
+                const originDist = this.pricing.calculateDistance(dto.originLat, dto.originLng, trip.originLat, trip.originLng);
+                const destDist = this.pricing.calculateDistance(dto.destLat, dto.destLng, trip.destLat, trip.destLng);
+                return originDist <= radiusKm && destDist <= radiusKm && availableSeats >= seats;
+            }
+            return availableSeats >= seats;
         })
             .map((trip) => {
             const bookedSeats = trip.bookings.reduce((sum, b) => sum + b.seats, 0);
