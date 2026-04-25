@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,10 +69,31 @@ import com.example.hop.presentation.driver.DriverEffect
 import com.example.hop.presentation.driver.DriverEvent
 import com.example.hop.presentation.driver.DriverUiState
 import com.example.hop.presentation.driver.DriverViewModel
+import com.example.hop.presentation.home.DriverAggregatesEvent
+import com.example.hop.presentation.home.DriverAggregatesUiState
+import com.example.hop.presentation.home.DriverAggregatesViewModel
 import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.ui.components.BadgeType
 import com.example.hop.ui.components.EmptyState
 import com.example.hop.ui.components.HopButton
+import com.example.hop.ui.components.SkeletonBox
+import com.example.hop.ui.components.home.DefaultDemandHotspots
+import com.example.hop.ui.components.home.DefaultHomeTips
+import com.example.hop.ui.components.home.DemandTeaserRow
+import com.example.hop.ui.components.home.EarningsHeroCard
+import com.example.hop.ui.components.home.GoalsRingCard
+import com.example.hop.ui.components.home.RepostTripTemplate
+import com.example.hop.ui.components.home.RepostTripsRow
+import com.example.hop.ui.components.home.TipsPager
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.runtime.derivedStateOf
 import com.example.hop.ui.components.StatusBadge
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
@@ -106,15 +129,20 @@ fun DriverHomeContent(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
+    aggregatesViewModel: DriverAggregatesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val aggregatesState by aggregatesViewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     // Load licence status so the "Post a Trip" intercept knows where to send
     // a non-driver (PENDING → review screen, otherwise → Step 1).
     LaunchedEffect(Unit) {
         viewModel.onEvent(DriverEvent.LoadLicenceStatus)
-        if (hasDriverRole) viewModel.onEvent(DriverEvent.LoadDriverHome)
+        if (hasDriverRole) {
+            viewModel.onEvent(DriverEvent.LoadDriverHome)
+            aggregatesViewModel.onEvent(DriverAggregatesEvent.Load)
+        }
     }
 
     LaunchedEffect(viewModel) {
@@ -142,6 +170,7 @@ fun DriverHomeContent(
 
     DriverHomeScreen(
         state = state,
+        aggregatesState = aggregatesState,
         hasDriverRole = hasDriverRole,
         onPostTrip = {
             if (hasDriverRole) {
@@ -157,6 +186,7 @@ fun DriverHomeContent(
         },
         onTripClick = { tripId -> viewModel.onEvent(DriverEvent.SelectTrip(tripId)) },
         onEarningsBannerClick = { viewModel.onEvent(DriverEvent.TapEarningsBanner) },
+        onRefresh = { viewModel.onEvent(DriverEvent.RefreshDriverHome) },
         modifier = modifier,
     )
 }
@@ -173,6 +203,7 @@ fun DriverHomeContent(
  * "Become a Driver" prompt so unregistered users understand what the tab
  * is for before they tap "Post a Trip".
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DriverHomeScreen(
     state: DriverUiState,
@@ -181,100 +212,224 @@ fun DriverHomeScreen(
     onTripClick: (tripId: String) -> Unit,
     onEarningsBannerClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onRefresh: () -> Unit = {},
+    aggregatesState: DriverAggregatesUiState = DriverAggregatesUiState(),
 ) {
-    Column(
+    val listState = rememberLazyListState()
+    // Hide the FAB while the user is actively scrolling down so it doesn't
+    // obscure cards; show it again at rest or when scrolling up.
+    val fabVisible by remember {
+        derivedStateOf {
+            val offset = listState.firstVisibleItemScrollOffset
+            val index = listState.firstVisibleItemIndex
+            // Always visible near the top; otherwise hide while moving forward.
+            index < 2 || !listState.isScrollInProgress || offset == 0
+        }
+    }
+
+    val repostTemplates = remember(state.trips) {
+        state.trips
+            .filter { it.status == TripStatus.COMPLETED }
+            .take(5)
+            .map { trip ->
+                RepostTripTemplate(
+                    tripId = trip.id,
+                    origin = trip.originName,
+                    destination = trip.destName,
+                    priceDkkPerSeat = trip.priceOerePerSeat / 100,
+                )
+            }
+    }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(HopColors.background),
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(
-                horizontal = HopSpacing.md,
-                vertical = HopSpacing.md,
-            ),
-            verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize(),
         ) {
-            // Earnings banner — only shown to approved drivers
-            if (hasDriverRole) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = HopSpacing.md,
+                    end = HopSpacing.md,
+                    top = HopSpacing.md,
+                    // Extra bottom padding so the FAB never overlaps the last card.
+                    bottom = HopSpacing.xxl + HopSpacing.md,
+                ),
+                verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
+            ) {
+                // Earnings hero — only shown to approved drivers.
+                if (hasDriverRole) {
+                    item {
+                        EarningsHeroCard(
+                            monthlyEarningsOere = state.monthlyEarningsOere,
+                            estimatedTaxOere = state.estimatedTaxOere,
+                            // Real 7-day series from the aggregates endpoint;
+                            // fall back to the synthesised baseline before the
+                            // first response so the sparkline never looks empty.
+                            // .toFloat() applied at render only — money stays Int upstream.
+                            sparkSeriesOere = if (aggregatesState.earningsSeries.isNotEmpty()) {
+                                aggregatesState.earningsSeries.map { it.earningsOere }
+                            } else {
+                                synthesiseSparkSeries(state.monthlyEarningsOere)
+                            },
+                            onClick = onEarningsBannerClick,
+                        )
+                    }
+
+                    // Goals & streak — placeholder values until the goals API ships.
+                    item {
+                        GoalsRingCard(
+                            tripsCompleted = state.trips.count { it.status == TripStatus.COMPLETED }.coerceAtMost(5),
+                            tripsGoal = 5,
+                            streakDays = 0,
+                        )
+                    }
+
+                    // Demand near you.
+                    item {
+                        Text(
+                            text = "Demand near you",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = HopColors.authTextPrimary,
+                        )
+                    }
+                    item {
+                        // Real hotspots from the aggregates endpoint, mapped
+                        // into the UI model. Falls back to default fixtures so
+                        // the carousel never empties on first load.
+                        val uiHotspots = if (aggregatesState.demandHotspots.isNotEmpty()) {
+                            aggregatesState.demandHotspots.map { hot ->
+                                val level = when {
+                                    hot.demandCount >= 10 -> com.example.hop.ui.components.home.DemandLevel.HIGH
+                                    hot.demandCount >= 5 -> com.example.hop.ui.components.home.DemandLevel.MEDIUM
+                                    else -> com.example.hop.ui.components.home.DemandLevel.LOW
+                                }
+                                com.example.hop.ui.components.home.DemandHotspot(
+                                    areaName = hot.areaName,
+                                    tagline = "${hot.demandCount} bookings in last 7 days",
+                                    level = level,
+                                )
+                            }
+                        } else {
+                            DefaultDemandHotspots
+                        }
+                        DemandTeaserRow(
+                            hotspots = uiHotspots,
+                            onHotspotClick = { onPostTrip() },
+                        )
+                    }
+
+                    // Repost templates — only when there's something to repost.
+                    if (repostTemplates.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Repost a recent trip",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = HopColors.authTextPrimary,
+                            )
+                        }
+                        item {
+                            RepostTripsRow(
+                                templates = repostTemplates,
+                                onRepost = { onPostTrip() },
+                            )
+                        }
+                    }
+                } else {
+                    item { BecomeDriverPrompt() }
+                }
+
+                // Tips & announcements pager.
+                item { TipsPager(tips = DefaultHomeTips) }
+
+                // Section heading
                 item {
-                    EarningsBanner(
-                        monthlyEarningsOere = state.monthlyEarningsOere,
-                        estimatedTaxOere = state.estimatedTaxOere,
-                        onClick = onEarningsBannerClick,
+                    Text(
+                        text = "My Trips",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = HopColors.authTextPrimary,
+                        modifier = Modifier.padding(top = HopSpacing.xs),
                     )
                 }
-            } else {
-                item { BecomeDriverPrompt() }
-            }
 
-            // Post a Trip button
-            item {
-                HopButton(
-                    text = "Post a Trip",
-                    onClick = onPostTrip,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = null,
-                            tint = HopColors.authTextPrimary,
-                            modifier = Modifier.size(20.dp),
+                // Loading / empty / list
+                if (state.isLoading) {
+                    items(3) {
+                        SkeletonBox(height = 120.dp, cornerRadius = 12.dp)
+                    }
+                } else if (state.trips.isEmpty()) {
+                    item {
+                        EmptyState(
+                            headline = "Post your first trip to start earning",
+                            subtext = "Set a route, pick a time, and let passengers book seats.",
+                            ctaLabel = "Post a trip",
+                            onCtaClick = onPostTrip,
                         )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            // Section heading
-            item {
-                Text(
-                    text = "My Trips",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = HopColors.authTextPrimary,
-                    modifier = Modifier.padding(top = HopSpacing.xs),
-                )
-            }
-
-            // Loading / empty / list
-            if (state.isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = HopSpacing.xl),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            color = HopColors.primaryLime,
-                            modifier = Modifier.size(36.dp),
+                    }
+                } else {
+                    items(state.trips, key = { it.id }) { tripUiModel ->
+                        DriverTripCard(
+                            tripUiModel = tripUiModel,
+                            onClick = { onTripClick(tripUiModel.id) },
+                            modifier = if (tripUiModel.isBroken) Modifier.alpha(0.5f) else Modifier,
                         )
                     }
                 }
-            } else if (state.trips.isEmpty()) {
-                item {
-                    EmptyState(
-                        headline = "Post your first trip to start earning",
-                        subtext = "Set a route, pick a time, and let passengers book seats.",
-                        ctaLabel = "Post a trip",
-                        onCtaClick = onPostTrip,
-                    )
-                }
-            } else {
-                items(state.trips, key = { it.id }) { tripUiModel ->
-                    DriverTripCard(
-                        tripUiModel = tripUiModel,
-                        onClick = { onTripClick(tripUiModel.id) },
-                        modifier = if (tripUiModel.isBroken) Modifier.alpha(0.5f) else Modifier,
-                    )
-                }
             }
+        }
 
-            // Bottom padding so last card clears nav bar
-            item { Spacer(modifier = Modifier.height(HopSpacing.md)) }
+        // ── Floating action button — Post a Trip ──────────────────────────────
+        // Hides when the user is actively scrolling further down the list so
+        // it never obscures content; reappears at rest.
+        AnimatedVisibility(
+            visible = fabVisible,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = HopSpacing.md, bottom = HopSpacing.md),
+        ) {
+            ExtendedFloatingActionButton(
+                onClick = onPostTrip,
+                containerColor = HopColors.primaryLime,
+                contentColor = HopColors.authTextPrimary,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Post a Trip",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    )
+                },
+            )
         }
     }
+}
+
+/**
+ * Builds a deterministic, gently-rising 7-point series in øre derived from the
+ * running monthly total. Used as a placeholder until the real
+ * `/drivers/me/earnings/series` endpoint lands. Renders as a flat baseline at
+ * zero when no earnings exist yet.
+ */
+private fun synthesiseSparkSeries(monthlyTotalOere: Int): List<Int> {
+    if (monthlyTotalOere <= 0) return List(7) { 0 }
+    val avg = monthlyTotalOere / 30
+    // Mild ascending pattern: 0.6×, 0.7×, 1.1×, 0.9×, 1.3×, 1.5×, 1.4× of daily avg.
+    val factors = floatArrayOf(0.6f, 0.7f, 1.1f, 0.9f, 1.3f, 1.5f, 1.4f)
+    return factors.map { (avg * it).toInt() }
 }
 
 // ── Become-driver prompt (shown when hasDriverRole = false) ──────────────────

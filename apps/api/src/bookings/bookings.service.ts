@@ -131,6 +131,29 @@ export class BookingsService {
     return booking
   }
 
+  /**
+   * Returns the next upcoming confirmed booking for a passenger, or null.
+   * Used by the home screen "active trip" hero card.
+   */
+  async findActiveForPassenger(passengerId: string) {
+    return this.prisma.booking.findFirst({
+      where: {
+        passengerId,
+        status: BookingStatus.CONFIRMED,
+        trip: { departureAt: { gte: new Date() }, status: TripStatus.ACTIVE },
+      },
+      orderBy: { trip: { departureAt: 'asc' } },
+      include: {
+        trip: {
+          include: {
+            driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          },
+        },
+        payment: true,
+      },
+    })
+  }
+
   async findByPassenger(passengerId: string) {
     return this.prisma.booking.findMany({
       where: { passengerId },

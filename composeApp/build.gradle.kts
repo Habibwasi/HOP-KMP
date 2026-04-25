@@ -27,6 +27,10 @@ kotlin {
             // Firebase (Android only — no KMP artifact)
             implementation(libs.firebase.messaging)
             implementation(libs.sentry.android)
+            // Google Maps + Places (Android only)
+            implementation(libs.maps.compose)
+            implementation(libs.play.services.maps)
+            implementation(libs.google.places)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -39,6 +43,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.material.icons.extended)
             implementation(projects.shared)
@@ -65,6 +70,9 @@ android {
             "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY",
             "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+        buildConfigField("String", "MAPS_API_KEY",
+            "\"${project.findProperty("MAPS_API_KEY") ?: ""}\"")
+        manifestPlaceholders["MAPS_API_KEY"] = project.findProperty("MAPS_API_KEY") ?: ""
     }
     buildFeatures {
         buildConfig = true

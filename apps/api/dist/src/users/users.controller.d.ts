@@ -48,6 +48,11 @@ export declare class UsersController {
         updatedAt: Date;
         isAdmin: boolean;
     }>;
+    getMyStats(req: any): Promise<{
+        averageRating: number | null;
+        totalRatings: number;
+        completedTrips: number;
+    }>;
     updateMe(req: any, dto: UpdateUserDto): Promise<{
         id: string;
         phone: string | null;

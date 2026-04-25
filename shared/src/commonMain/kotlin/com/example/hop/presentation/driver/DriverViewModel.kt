@@ -75,6 +75,8 @@ data class ActiveTripDetailUiState(
 
 data class DriverUiState(
     val isLoading: Boolean = false,
+    /** True only while a user-initiated pull-to-refresh is in flight. */
+    val isRefreshing: Boolean = false,
     val trips: List<TripUiModel> = emptyList(),
     val error: String? = null,
     val licenceStatus: LicenceStatus? = null,
@@ -95,6 +97,7 @@ data class DriverUiState(
 
 sealed interface DriverEvent {
     data object LoadDriverHome : DriverEvent
+    data object RefreshDriverHome : DriverEvent
     data object RequestPostTrip : DriverEvent
     data object SelectModelA : DriverEvent
     data object SelectModelB : DriverEvent
@@ -186,6 +189,7 @@ class DriverViewModel(
     fun onEvent(event: DriverEvent) {
         when (event) {
             is DriverEvent.LoadDriverHome -> loadDriverHome()
+            is DriverEvent.RefreshDriverHome -> loadDriverHome(refresh = true)
             is DriverEvent.RequestPostTrip -> requestPostTrip()
             is DriverEvent.SelectModelA -> selectModel(modelA = true)
             is DriverEvent.SelectModelB -> selectModel(modelA = false)
@@ -204,20 +208,26 @@ class DriverViewModel(
         }
     }
 
-    private fun loadDriverHome() {
-        if (_state.value.isLoading) return
+    private fun loadDriverHome(refresh: Boolean = false) {
+        if (_state.value.isLoading || _state.value.isRefreshing) return
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            _state.value = if (refresh) {
+                _state.value.copy(isRefreshing = true, error = null)
+            } else {
+                _state.value.copy(isLoading = true, error = null)
+            }
             when (val response = tripRepository.getMyTripsAsDriver()) {
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
+                        isRefreshing = false,
                         trips = response.data.toUiModels(),
                     )
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
+                        isRefreshing = false,
                         error = response.toUserMessage("loading your trips"),
                     )
                     _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("loading your trips")))

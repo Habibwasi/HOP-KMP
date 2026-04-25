@@ -93,6 +93,19 @@ let UsersService = UsersService_1 = class UsersService {
     async getCarDetails(userId) {
         return this.prisma.carDetails.findUnique({ where: { userId } });
     }
+    async completedTripCount(userId) {
+        const [asDriver, asPassenger] = await Promise.all([
+            this.prisma.trip.count({ where: { driverId: userId, status: 'COMPLETED' } }),
+            this.prisma.booking.count({
+                where: {
+                    passengerId: userId,
+                    status: 'CONFIRMED',
+                    trip: { status: 'COMPLETED' },
+                },
+            }),
+        ]);
+        return asDriver + asPassenger;
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = UsersService_1 = __decorate([

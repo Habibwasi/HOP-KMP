@@ -49,6 +49,8 @@ model User {
   licence         DriverLicence?
   carDetails      CarDetails?
   notifications   Notification[]
+  savedPlaces     SavedPlace[]
+  recentSearches  RecentSearch[]
   isAdmin         Boolean   @default(false)
 }
 
@@ -209,4 +211,51 @@ model Notification {
   isRead     Boolean          @default(false)
   deepLinkId String?
   createdAt  DateTime         @default(now())
+
+  @@index([userId, isRead])
+}
+
+enum SavedPlaceKind {
+  HOME
+  WORK
+  CUSTOM
+}
+
+/**
+ * User-saved location for one-tap destination prefill on the home screen.
+ * Lat/lng are optional so a user can save a free-text label like "Mum's place"
+ * before geocoding lands.
+ */
+model SavedPlace {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  address   String
+  lat       Float?
+  lng       Float?
+  kind      SavedPlaceKind @default(CUSTOM)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId, createdAt])
+  @@unique([userId, label])
+}
+
+/**
+ * Persisted recent search rows surfaced on the home screen.
+ * Upserted on every successful trip search so the most-recent timestamp wins
+ * and the use-count grows for prioritisation.
+ */
+model RecentSearch {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originLabel String
+  destLabel   String
+  lastUsedAt  DateTime @default(now())
+  useCount    Int      @default(1)
+
+  @@unique([userId, originLabel, destLabel])
+  @@index([userId, lastUsedAt])
 }

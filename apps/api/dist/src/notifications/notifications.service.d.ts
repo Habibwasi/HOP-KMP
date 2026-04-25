@@ -30,5 +30,8 @@ export declare class NotificationsService {
         isRead: boolean;
         deepLinkId: string | null;
     }[]>;
+    unreadCount(userId: string): Promise<{
+        count: number;
+    }>;
     markRead(notificationId: string, userId: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
 }

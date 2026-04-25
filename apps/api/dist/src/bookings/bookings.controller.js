@@ -28,6 +28,9 @@ let BookingsController = class BookingsController {
     myBookings(req) {
         return this.bookings.findByPassenger(req.user.id);
     }
+    activeForMe(req) {
+        return this.bookings.findActiveForPassenger(req.user.id);
+    }
     findOne(id) {
         return this.bookings.findById(id);
     }
@@ -51,6 +54,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], BookingsController.prototype, "myBookings", null);
+__decorate([
+    (0, common_1.Get)('me/active'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], BookingsController.prototype, "activeForMe", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

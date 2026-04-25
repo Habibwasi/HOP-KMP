@@ -11,6 +11,9 @@ import { RatingsModule } from './ratings/ratings.module'
 import { NotificationsModule } from './notifications/notifications.module'
 import { TaxModule } from './tax/tax.module'
 import { AdminModule } from './admin/admin.module'
+import { PlacesModule } from './places/places.module'
+import { SearchHistoryModule } from './search-history/search-history.module'
+import { AggregatesModule } from './aggregates/aggregates.module'
 import { HealthController } from './health.controller'
 
 @Module({
@@ -33,6 +36,9 @@ import { HealthController } from './health.controller'
     NotificationsModule,
     TaxModule,
     AdminModule,
+    PlacesModule,
+    SearchHistoryModule,
+    AggregatesModule,
   ],
 })
 export class AppModule {}

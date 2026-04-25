@@ -107,4 +107,22 @@ export class UsersService {
   async getCarDetails(userId: string) {
     return this.prisma.carDetails.findUnique({ where: { userId } })
   }
+
+  /**
+   * Counts trips the user has fully completed, both as driver (trip.status COMPLETED)
+   * and as passenger (CONFIRMED booking on a COMPLETED trip).
+   */
+  async completedTripCount(userId: string): Promise<number> {
+    const [asDriver, asPassenger] = await Promise.all([
+      this.prisma.trip.count({ where: { driverId: userId, status: 'COMPLETED' } }),
+      this.prisma.booking.count({
+        where: {
+          passengerId: userId,
+          status: 'CONFIRMED',
+          trip: { status: 'COMPLETED' },
+        },
+      }),
+    ])
+    return asDriver + asPassenger
+  }
 }

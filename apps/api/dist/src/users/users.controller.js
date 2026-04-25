@@ -85,6 +85,18 @@ let UsersController = UsersController_1 = class UsersController {
             throw new common_1.NotFoundException('User not found');
         return user;
     }
+    async getMyStats(req) {
+        const userId = req.user.id;
+        const [ratingSummary, completedTrips] = await Promise.all([
+            this.ratings.getUserRatings(userId),
+            this.users.completedTripCount(userId),
+        ]);
+        return {
+            averageRating: ratingSummary.averageScore,
+            totalRatings: ratingSummary.totalRatings,
+            completedTrips,
+        };
+    }
     async updateMe(req, dto) {
         const [firstName, ...rest] = dto.fullName.trim().split(' ');
         const lastName = rest.join(' ') || '.';
@@ -137,6 +149,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getMe", null);
+__decorate([
+    (0, common_1.Get)('me/stats'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getMyStats", null);
 __decorate([
     (0, common_1.Patch)('me'),
     (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),

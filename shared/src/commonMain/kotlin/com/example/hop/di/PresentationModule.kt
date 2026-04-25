@@ -5,6 +5,9 @@ import com.example.hop.presentation.booking.BookingViewModel
 import com.example.hop.presentation.profile.OtherProfileViewModel
 import com.example.hop.presentation.profile.OwnProfileViewModel
 import com.example.hop.presentation.driver.DriverViewModel
+import com.example.hop.presentation.home.DriverAggregatesViewModel
+import com.example.hop.presentation.home.HomeStatsViewModel
+import com.example.hop.presentation.home.SavedPlacesViewModel
 import com.example.hop.presentation.bookingsuccess.BookingSuccessViewModel
 import com.example.hop.presentation.cancellationconfirmation.CancellationConfirmationViewModel
 import com.example.hop.presentation.mytrips.MyTripsPassengerViewModel
@@ -38,4 +41,7 @@ val presentationModule = module {
     viewModelOf(::OtherProfileViewModel)
     viewModelOf(::NotificationsViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::SavedPlacesViewModel)
+    viewModelOf(::HomeStatsViewModel)
+    viewModelOf(::DriverAggregatesViewModel)
 }

@@ -31,6 +31,11 @@ export class NotificationsController {
     return this.notifications.getForUser(req.user.id)
   }
 
+  @Get('unread-count')
+  unreadCount(@Req() req: any) {
+    return this.notifications.unreadCount(req.user.id)
+  }
+
   @Post(':id/read')
   @HttpCode(HttpStatus.OK)
   markRead(@Req() req: any, @Param('id') id: string) {

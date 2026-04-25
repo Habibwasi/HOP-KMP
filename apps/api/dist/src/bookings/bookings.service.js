@@ -121,6 +121,24 @@ let BookingsService = class BookingsService {
             throw new common_1.NotFoundException('Booking not found');
         return booking;
     }
+    async findActiveForPassenger(passengerId) {
+        return this.prisma.booking.findFirst({
+            where: {
+                passengerId,
+                status: client_1.BookingStatus.CONFIRMED,
+                trip: { departureAt: { gte: new Date() }, status: client_1.TripStatus.ACTIVE },
+            },
+            orderBy: { trip: { departureAt: 'asc' } },
+            include: {
+                trip: {
+                    include: {
+                        driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+                    },
+                },
+                payment: true,
+            },
+        });
+    }
     async findByPassenger(passengerId) {
         return this.prisma.booking.findMany({
             where: { passengerId },

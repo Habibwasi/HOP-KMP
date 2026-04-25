@@ -20,6 +20,9 @@ const ratings_module_1 = require("./ratings/ratings.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const tax_module_1 = require("./tax/tax.module");
 const admin_module_1 = require("./admin/admin.module");
+const places_module_1 = require("./places/places.module");
+const search_history_module_1 = require("./search-history/search-history.module");
+const aggregates_module_1 = require("./aggregates/aggregates.module");
 const health_controller_1 = require("./health.controller");
 let AppModule = class AppModule {
 };
@@ -45,6 +48,9 @@ exports.AppModule = AppModule = __decorate([
             notifications_module_1.NotificationsModule,
             tax_module_1.TaxModule,
             admin_module_1.AdminModule,
+            places_module_1.PlacesModule,
+            search_history_module_1.SearchHistoryModule,
+            aggregates_module_1.AggregatesModule,
         ],
     })
 ], AppModule);

@@ -85,6 +85,21 @@ export class UsersController {
     return user
   }
 
+  @Get('me/stats')
+  @UseGuards(SupabaseGuard)
+  async getMyStats(@Req() req: any) {
+    const userId = req.user.id
+    const [ratingSummary, completedTrips] = await Promise.all([
+      this.ratings.getUserRatings(userId),
+      this.users.completedTripCount(userId),
+    ])
+    return {
+      averageRating: ratingSummary.averageScore,
+      totalRatings: ratingSummary.totalRatings,
+      completedTrips,
+    }
+  }
+
   @Patch('me')
   @UseGuards(SupabaseGuard)
   async updateMe(@Req() req: any, @Body() dto: UpdateUserDto) {

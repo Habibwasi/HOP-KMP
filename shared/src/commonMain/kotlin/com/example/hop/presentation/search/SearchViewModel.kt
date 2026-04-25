@@ -3,6 +3,7 @@ package com.example.hop.presentation.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.TripModel
+import com.example.hop.domain.repository.SearchHistoryRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
@@ -62,6 +63,7 @@ sealed interface SearchEffect {
 
 class SearchViewModel(
     private val tripRepository: TripRepository,
+    private val searchHistoryRepository: SearchHistoryRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SearchUiState())
@@ -98,6 +100,13 @@ class SearchViewModel(
                         isLoading = false,
                         results = uiModels.applyFilters(_state.value.activeFilters),
                     )
+                    // Record this query for the home-screen "Recent" row.
+                    // Fire-and-forget — never block the UI on history side-effects.
+                    if (origin.isNotBlank() && dest.isNotBlank()) {
+                        viewModelScope.launch {
+                            searchHistoryRepository.record(origin.trim(), dest.trim())
+                        }
+                    }
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(

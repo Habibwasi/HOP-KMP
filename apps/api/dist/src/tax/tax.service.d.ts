@@ -19,9 +19,9 @@ export declare class TaxService {
             };
         } & {
             id: string;
-            tripId: string;
             driverId: string;
             distanceKm: number;
+            tripId: string;
             bookingId: string;
             amountOere: number;
             ratePerKm: number;
@@ -53,9 +53,9 @@ export declare class TaxService {
                 };
             } & {
                 id: string;
-                tripId: string;
                 driverId: string;
                 distanceKm: number;
+                tripId: string;
                 bookingId: string;
                 amountOere: number;
                 ratePerKm: number;
@@ -71,9 +71,9 @@ export declare class TaxService {
         };
     } & {
         id: string;
-        tripId: string;
         driverId: string;
         distanceKm: number;
+        tripId: string;
         bookingId: string;
         amountOere: number;
         ratePerKm: number;

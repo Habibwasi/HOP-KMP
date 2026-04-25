@@ -18,6 +18,11 @@ export class BookingsController {
     return this.bookings.findByPassenger(req.user.id)
   }
 
+  @Get('me/active')
+  activeForMe(@Req() req: any) {
+    return this.bookings.findActiveForPassenger(req.user.id)
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.bookings.findById(id)
