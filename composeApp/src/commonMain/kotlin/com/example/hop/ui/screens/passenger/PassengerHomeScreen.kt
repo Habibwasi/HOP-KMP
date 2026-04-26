@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
@@ -43,6 +44,8 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,6 +74,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -292,6 +296,7 @@ fun PassengerHomeScreen(
     var seats by remember { mutableIntStateOf(1) }
     var showAddPlaceSheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showSeatPicker by remember { mutableStateOf(false) }
     var locationPickerField by remember { mutableStateOf<String?>(null) }
     val haptics = LocalHapticFeedback.current
     val listState = rememberLazyListState()
@@ -317,6 +322,20 @@ fun PassengerHomeScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
+        // Lime→background gradient band — sits behind the greeting banner
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(260.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            HopColors.primaryLime.copy(alpha = 0.22f),
+                            HopColors.background,
+                        )
+                    )
+                )
+        )
         Column(modifier = Modifier.fillMaxSize()) {
         // ── Greeting banner (collapses on scroll for headroom) ──────────────
         AnimatedVisibility(
@@ -344,36 +363,6 @@ fun PassengerHomeScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
             ) {
-            // Saved places chips — one-tap prefill destination.
-            item {
-                val chipData = remember(savedPlaces) {
-                    if (savedPlaces.isEmpty()) {
-                        com.example.hop.ui.components.home.DefaultSavedPlaces
-                    } else {
-                        savedPlaces.map { it.toChipData() }
-                    }
-                }
-                com.example.hop.ui.components.home.SavedPlacesRow(
-                    places = chipData,
-                    onPlaceClick = { place ->
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        toLocation = place.address ?: place.label
-                    },
-                    onAddPlace = { showAddPlaceSheet = true },
-                )
-            }
-
-            // Recent searches — one-tap re-runs. Hidden when empty.
-            if (recentSearches.isNotEmpty()) {
-                item {
-                    com.example.hop.ui.components.home.RecentSearchesRow(
-                        searches = recentSearches,
-                        onSearchClick = onRecentSearchClick,
-                        onDeleteSearch = onDeleteRecentSearch,
-                    )
-                }
-            }
-
             // Active-booking countdown — prefer the authoritative server
             // record (handles refunds/sync); fall back to the soonest trip in
             // the local list if the server hasn't responded yet.
@@ -398,9 +387,9 @@ fun PassengerHomeScreen(
                 }
             }
 
-            // Search card
+            // Search hero (replaces old multi-row SearchCard)
             item {
-                SearchCard(
+                SearchHero(
                     fromLocation = fromLocation,
                     toLocation = toLocation,
                     selectedDate = selectedDate,
@@ -413,11 +402,9 @@ fun PassengerHomeScreen(
                         fromLocation = toLocation
                         toLocation = tmp
                     },
-                    onDateChange = { selectedDate = it },
                     onPickDate = { showDatePicker = true },
-                    onSeatsDecrease = { if (seats > 1) seats-- },
-                    onSeatsIncrease = { if (seats < 4) seats++ },
-                    onFindRides = {
+                    onPickSeats = { showSeatPicker = true },
+                    onSearch = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         onFindRides(fromLocation, toLocation, selectedDate, seats)
                     },
@@ -570,6 +557,17 @@ fun PassengerHomeScreen(
         )
     }
 
+    if (showSeatPicker) {
+        SeatPickerSheet(
+            currentSeats = seats,
+            onDismiss = { showSeatPicker = false },
+            onSeatsSelected = { selected ->
+                seats = selected
+                showSeatPicker = false
+            },
+        )
+    }
+
     // ── Location picker overlay (full-screen) ──────────────────────────────
     locationPickerField?.let { field ->
         Popup(
@@ -580,21 +578,32 @@ fun PassengerHomeScreen(
             LocationPickerOverlay(
                 title = if (field == "from") "Where from?" else "Where to?",
                 initialText = if (field == "from") fromLocation else toLocation,
+                savedPlaces = savedPlaces,
+                recentSearches = recentSearches,
                 onDismiss = { locationPickerField = null },
                 onConfirm = { address ->
                     if (field == "from") fromLocation = address
                     else toLocation = address
                     locationPickerField = null
                 },
+                onRouteConfirm = { origin, dest ->
+                    fromLocation = origin
+                    toLocation = dest
+                    locationPickerField = null
+                },
+                onRequestAddPlace = {
+                    locationPickerField = null
+                    showAddPlaceSheet = true
+                },
             )
         }
     }
 }
 
-// ── Search card ───────────────────────────────────────────────────────────────
+// ── Search hero (BlaBlaCar × Bolt hybrid) ────────────────────────────────────
 
 @Composable
-private fun SearchCard(
+private fun SearchHero(
     fromLocation: String,
     toLocation: String,
     selectedDate: String,
@@ -602,56 +611,90 @@ private fun SearchCard(
     onFromClick: () -> Unit,
     onToClick: () -> Unit,
     onSwap: () -> Unit,
-    onDateChange: (String) -> Unit,
     onPickDate: () -> Unit,
-    onSeatsDecrease: () -> Unit,
-    onSeatsIncrease: () -> Unit,
-    onFindRides: () -> Unit,
+    onPickSeats: () -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val cardShape = RoundedCornerShape(16.dp)
+    val canSearch = fromLocation.isNotBlank() && toLocation.isNotBlank()
+    val cardShape = RoundedCornerShape(24.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(elevation = 8.dp, shape = cardShape, ambientColor = Color(0x26000000))
+            .shadow(elevation = 6.dp, shape = cardShape, ambientColor = Color(0x1A000000))
             .clip(cardShape)
             .background(Color.White)
-            .padding(HopSpacing.md),
+            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-
-            // ── From / To block with swap ─────────────────────────────────────
+        Column {
+            // ── From / To with timeline rail ──────────────────────────────────
             Box(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // From row
-                    LocationDisplayRow(
-                        value = fromLocation,
-                        placeholder = "From — city or address",
-                        icon = Icons.Filled.LocationOn,
-                        iconTint = HopColors.primaryGreen,
-                        iconDescription = "Origin",
-                        onClick = onFromClick,
-                    )
-
-                    HorizontalDivider(
-                        color = Color(0xFFEEEEEE),
-                        thickness = 1.dp,
-                        modifier = Modifier.padding(start = 40.dp),
-                    )
-
-                    // To row
-                    LocationDisplayRow(
-                        value = toLocation,
-                        placeholder = "To — city or address",
-                        icon = Icons.Filled.LocationOn,
-                        iconTint = HopColors.error,
-                        iconDescription = "Destination",
-                        onClick = onToClick,
-                    )
+                TimelineRail(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(top = 18.dp, bottom = 18.dp),
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 28.dp),
+                ) {
+                    // From tappable row
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onFromClick,
+                            )
+                            .padding(top = HopSpacing.sm, bottom = HopSpacing.sm, end = 44.dp),
+                    ) {
+                        Text(
+                            text = "From",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = Color(0xFF888888),
+                            ),
+                        )
+                        Text(
+                            text = fromLocation.takeIf { it.isNotEmpty() } ?: "Where from?",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = if (fromLocation.isEmpty()) Color(0xFFB8B8B8) else Color(0xFF1A1A1A),
+                                fontWeight = if (fromLocation.isEmpty()) FontWeight.Normal else FontWeight.Medium,
+                            ),
+                            maxLines = 1,
+                        )
+                    }
+                    HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
+                    // To tappable row
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onToClick,
+                            )
+                            .padding(top = HopSpacing.sm, bottom = HopSpacing.sm, end = 44.dp),
+                    ) {
+                        Text(
+                            text = "To",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = Color(0xFF888888),
+                            ),
+                        )
+                        Text(
+                            text = toLocation.takeIf { it.isNotEmpty() } ?: "Where to?",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = if (toLocation.isEmpty()) Color(0xFFB8B8B8) else Color(0xFF1A1A1A),
+                                fontWeight = if (toLocation.isEmpty()) FontWeight.Normal else FontWeight.Medium,
+                            ),
+                            maxLines = 1,
+                        )
+                    }
                 }
-
-                // Swap button — centred on the divider between the two rows
+                // Swap button centred between the two rows on the right
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
@@ -681,77 +724,227 @@ private fun SearchCard(
             }
 
             HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(HopSpacing.sm))
 
-            // ── Date row ─────────────────────────────────────────────────────
-            DateRow(
-                selectedDate = selectedDate,
-                onDateChange = onDateChange,
-                onPickDate = onPickDate,
-            )
+            // ── Date + Seats pills ────────────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(HopSpacing.xs),
+            ) {
+                DatePill(selectedDate = selectedDate, onClick = onPickDate)
+                SeatsPill(seats = seats, onClick = onPickSeats)
+            }
 
-            HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(HopSpacing.sm))
 
-            // ── Seat selector ─────────────────────────────────────────────────
-            SeatRow(
-                seats = seats,
-                onDecrease = onSeatsDecrease,
-                onIncrease = onSeatsIncrease,
-            )
-
-            Spacer(modifier = Modifier.height(HopSpacing.md))
-
-            // ── Find rides button ─────────────────────────────────────────────
+            // ── Search CTA ────────────────────────────────────────────────────
             HopButton(
-                text = "Find rides",
-                onClick = onFindRides,
+                text = "Search",
+                onClick = onSearch,
+                enabled = canSearch,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
     }
 }
 
-// ── Location display row (tappable, opens map picker) ─────────────────────────
+// ── Timeline rail ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun LocationDisplayRow(
-    value: String,
-    placeholder: String,
-    icon: ImageVector,
-    iconTint: Color,
-    iconDescription: String,
+private fun TimelineRail(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.width(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(HopColors.primaryGreen),
+        )
+        Box(
+            modifier = Modifier
+                .width(2.dp)
+                .height(34.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            HopColors.primaryGreen.copy(alpha = 0.35f),
+                            HopColors.error.copy(alpha = 0.35f),
+                        )
+                    )
+                ),
+        )
+        Icon(
+            imageVector = Icons.Filled.LocationOn,
+            contentDescription = null,
+            tint = HopColors.error,
+            modifier = Modifier.size(14.dp),
+        )
+    }
+}
+
+// ── Date pill ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun DatePill(
+    selectedDate: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(top = HopSpacing.sm, bottom = HopSpacing.sm, end = 44.dp),
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, Color(0xFFDDDDDD), RoundedCornerShape(20.dp))
+            .background(Color.White)
+            .clickable(onClick = onClick)
+            .padding(horizontal = HopSpacing.sm, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = icon,
-            contentDescription = iconDescription,
-            tint = iconTint,
-            modifier = Modifier.size(24.dp),
+            imageVector = Icons.Filled.CalendarMonth,
+            contentDescription = null,
+            tint = HopColors.authTextSecondary,
+            modifier = Modifier.size(14.dp),
         )
-        Spacer(modifier = Modifier.width(HopSpacing.sm))
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = value.takeIf { it.isNotEmpty() } ?: placeholder,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = if (value.isEmpty()) Color(0xFFB0B0B0) else Color(0xFF1A1A1A),
-                fontWeight = FontWeight.Normal,
+            text = selectedDate,
+            style = MaterialTheme.typography.labelMedium.copy(
+                color = Color(0xFF1A1A1A),
+                fontWeight = FontWeight.Medium,
             ),
-            maxLines = 1,
+        )
+        Spacer(modifier = Modifier.width(2.dp))
+        Icon(
+            imageVector = Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = HopColors.authTextSecondary,
+            modifier = Modifier.size(14.dp),
         )
     }
 }
 
-// ── Location row (kept for overlay internal use) ───────────────────────────────
+// ── Seats pill ────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SeatsPill(
+    seats: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, Color(0xFFDDDDDD), RoundedCornerShape(20.dp))
+            .background(Color.White)
+            .clickable(onClick = onClick)
+            .padding(horizontal = HopSpacing.sm, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Person,
+            contentDescription = null,
+            tint = HopColors.authTextSecondary,
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = if (seats == 1) "1 seat" else "$seats seats",
+            style = MaterialTheme.typography.labelMedium.copy(
+                color = Color(0xFF1A1A1A),
+                fontWeight = FontWeight.Medium,
+            ),
+        )
+        Spacer(modifier = Modifier.width(2.dp))
+        Icon(
+            imageVector = Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = HopColors.authTextSecondary,
+            modifier = Modifier.size(14.dp),
+        )
+    }
+}
+
+// ── Seat picker bottom sheet ──────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SeatPickerSheet(
+    currentSeats: Int,
+    onDismiss: () -> Unit,
+    onSeatsSelected: (Int) -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color.White,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = HopSpacing.lg, vertical = HopSpacing.md),
+        ) {
+            Text(
+                text = "How many seats?",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = HopColors.authTextPrimary,
+                ),
+            )
+            Spacer(modifier = Modifier.height(HopSpacing.md))
+            (1..4).forEach { n ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (n == currentSeats) HopColors.primaryLime.copy(alpha = 0.18f)
+                            else Color.Transparent
+                        )
+                        .clickable { onSeatsSelected(n) }
+                        .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (n == currentSeats) HopColors.primaryLime
+                                else HopColors.cardSurfaceMuted
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = null,
+                            tint = if (n == currentSeats) Color(0xFF1A1A1A) else HopColors.authTextSecondary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(HopSpacing.md))
+                    Text(
+                        text = if (n == 1) "1 seat" else "$n seats",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = if (n == currentSeats) FontWeight.SemiBold else FontWeight.Normal,
+                            color = HopColors.authTextPrimary,
+                        ),
+                    )
+                }
+                if (n < 4) {
+                    HorizontalDivider(
+                        color = Color(0xFFF0F0F0),
+                        modifier = Modifier.padding(start = 48.dp),
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(HopSpacing.xl))
+        }
+    }
+}
+
+// ── Location row (autocomplete inline helper used by LocationPickerOverlay) ────
 
 @Composable
 private fun LocationRow(
@@ -876,324 +1069,6 @@ private fun LocationRow(
     }
 }
 
-// ── Date row ──────────────────────────────────────────────────────────────────
-
-@Composable
-private fun DateRow(
-    selectedDate: String,
-    onDateChange: (String) -> Unit,
-    onPickDate: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = HopSpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Filled.CalendarMonth,
-                contentDescription = "Date",
-                tint = Color(0xFF888888),
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(modifier = Modifier.width(HopSpacing.sm))
-            Text(
-                text = "Date",
-                style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF888888)),
-            )
-        }
-
-        // Date chips
-        Row(horizontalArrangement = Arrangement.spacedBy(HopSpacing.xs)) {
-            DateChip(
-                label = "Today",
-                isSelected = selectedDate == "Today",
-                onClick = { onDateChange("Today") },
-            )
-            DateChip(
-                label = "Tomorrow",
-                isSelected = selectedDate == "Tomorrow",
-                onClick = { onDateChange("Tomorrow") },
-            )
-            // Custom date selector — opens DatePickerDialog
-            val isCustom = selectedDate != "Today" && selectedDate != "Tomorrow"
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .border(
-                        1.dp,
-                        if (isCustom) HopColors.primaryGreen else Color(0xFFDDDDDD),
-                        RoundedCornerShape(20.dp),
-                    )
-                    .background(if (isCustom) HopColors.primaryGreen.copy(alpha = 0.08f) else Color.Transparent)
-                    .clickable(onClick = onPickDate)
-                    .padding(horizontal = HopSpacing.sm, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = if (isCustom) selectedDate else "Pick",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = if (isCustom) HopColors.primaryGreen else Color(0xFF444444),
-                        fontWeight = if (isCustom) FontWeight.SemiBold else FontWeight.Normal,
-                    ),
-                )
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = if (isCustom) HopColors.primaryGreen else Color(0xFF888888),
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DateChip(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val background = if (isSelected) HopColors.primaryLime else Color.Transparent
-    val border = if (isSelected) HopColors.primaryLime else Color(0xFFDDDDDD)
-    val textColor = if (isSelected) Color(0xFF1A1A1A) else Color(0xFF444444)
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, border, RoundedCornerShape(20.dp))
-            .background(background)
-            .clickable(onClick = onClick)
-            .padding(horizontal = HopSpacing.sm, vertical = 4.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                color = textColor,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            ),
-        )
-    }
-}
-
-// ── Seat row ──────────────────────────────────────────────────────────────────
-
-@Composable
-private fun SeatRow(
-    seats: Int,
-    onDecrease: () -> Unit,
-    onIncrease: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = HopSpacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = "Seats",
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = Color(0xFF444444),
-                fontWeight = FontWeight.Medium,
-            ),
-        )
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
-        ) {
-            // Decrease button
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .border(
-                        width = 1.dp,
-                        color = if (seats > 1) Color(0xFFCCCCCC) else Color(0xFFEEEEEE),
-                        shape = CircleShape,
-                    )
-                    .background(Color.White)
-                    .clickable(
-                        enabled = seats > 1,
-                        onClick = onDecrease,
-                    )
-                    .semantics { contentDescription = "Decrease seats" },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Remove,
-                    contentDescription = null,
-                    tint = if (seats > 1) Color(0xFF1A1A1A) else Color(0xFFCCCCCC),
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-
-            // Seat count
-            Text(
-                text = "$seats",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1A1A),
-                ),
-                modifier = Modifier.width(20.dp),
-            )
-
-            // Increase button
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .border(
-                        width = 1.dp,
-                        color = if (seats < 4) HopColors.primaryGreen else Color(0xFFEEEEEE),
-                        shape = CircleShape,
-                    )
-                    .background(if (seats < 4) HopColors.primaryGreen.copy(alpha = 0.08f) else Color.White)
-                    .clickable(
-                        enabled = seats < 4,
-                        onClick = onIncrease,
-                    )
-                    .semantics { contentDescription = "Increase seats" },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null,
-                    tint = if (seats < 4) HopColors.primaryGreen else Color(0xFFCCCCCC),
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-        }
-    }
-}
-
-// ── Bottom navigation bar ─────────────────────────────────────────────────────
-
-@Composable
-private fun PassengerBottomNavBar(
-    onMyTrips: () -> Unit,
-    onChat: () -> Unit,
-    onProfile: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    NavigationBar(
-        modifier = modifier.navigationBarsPadding(),
-        containerColor = HopColors.background,
-        tonalElevation = 0.dp,
-    ) {
-        // Home — always selected on this screen
-        NavigationBarItem(
-            selected = true,
-            onClick = { /* already on home */ },
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Home,
-                    contentDescription = "Home",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "Home",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.authTextSecondary,
-                unselectedTextColor = HopColors.authTextSecondary,
-            ),
-        )
-
-        // My Trips
-        NavigationBarItem(
-            selected = false,
-            onClick = onMyTrips,
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.DirectionsCar,
-                    contentDescription = "My Trips",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "My Trips",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.authTextSecondary,
-                unselectedTextColor = HopColors.authTextSecondary,
-            ),
-        )
-
-        // Chat
-        NavigationBarItem(
-            selected = false,
-            onClick = onChat,
-            icon = {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.Chat,
-                    contentDescription = "Chat",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "Chat",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.authTextSecondary,
-                unselectedTextColor = HopColors.authTextSecondary,
-            ),
-        )
-
-        // Profile
-        NavigationBarItem(
-            selected = false,
-            onClick = onProfile,
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.Person,
-                    contentDescription = "Profile",
-                    modifier = Modifier.size(24.dp),
-                )
-            },
-            label = {
-                Text(
-                    text = "Profile",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
-                unselectedIconColor = HopColors.authTextSecondary,
-                unselectedTextColor = HopColors.authTextSecondary,
-            ),
-        )
-    }
-}
-
 // ── Location picker overlay ───────────────────────────────────────────────────
 
 /**
@@ -1201,13 +1076,22 @@ private fun PassengerBottomNavBar(
  * Supports both text search (with autocomplete) and pin-on-map.
  * Tapping a suggestion confirms immediately; dragging the map and pressing
  * "Confirm pin" reverse-geocodes the crosshair center.
+ *
+ * When the search field is empty, a quick-action chip row (current location +
+ * saved places) and a recent-searches list are shown for one-tap fills.
+ * Tapping a recent-search row calls [onRouteConfirm] which sets both
+ * From and To at once.
  */
 @Composable
 private fun LocationPickerOverlay(
     title: String,
     initialText: String,
+    savedPlaces: List<SavedPlace>,
+    recentSearches: List<RecentSearch>,
     onDismiss: () -> Unit,
     onConfirm: (address: String) -> Unit,
+    onRouteConfirm: (origin: String, dest: String) -> Unit,
+    onRequestAddPlace: () -> Unit,
 ) {
     val context = LocalContext.current
     val placesClient = remember(context) {
@@ -1342,6 +1226,149 @@ private fun LocationPickerOverlay(
                             tint = Color(0xFF888888),
                             modifier = Modifier.size(18.dp),
                         )
+                    }
+                }
+            }
+
+            // ── Quick-action chips (saved places + current location) ─────────
+            // Visible only when the text field is empty
+            if (searchText.isEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                val chipData = remember(savedPlaces) {
+                    if (savedPlaces.isEmpty()) com.example.hop.ui.components.home.DefaultSavedPlaces
+                    else savedPlaces.map { it.toChipData() }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(4.dp, RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .padding(horizontal = HopSpacing.sm, vertical = HopSpacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(HopSpacing.xs),
+                ) {
+                    // Current location chip
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(HopColors.primaryLime.copy(alpha = 0.15f))
+                            .border(1.dp, HopColors.primaryLime, RoundedCornerShape(20.dp))
+                            .clickable {
+                                val addr = pinnedAddress.takeIf { it.isNotEmpty() }
+                                if (addr != null) onConfirm(addr)
+                            }
+                            .padding(horizontal = HopSpacing.sm, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = null,
+                            tint = HopColors.primaryGreen,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Current",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = HopColors.primaryGreen,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        )
+                    }
+                    // Saved place chips
+                    chipData.take(3).forEach { place ->
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(HopColors.cardSurfaceMuted)
+                                .border(1.dp, HopColors.cardBorder, RoundedCornerShape(20.dp))
+                                .clickable { onConfirm(place.address ?: place.label) }
+                                .padding(horizontal = HopSpacing.sm, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = place.icon,
+                                contentDescription = null,
+                                tint = HopColors.primaryGreen,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = place.label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = HopColors.authTextPrimary,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                            )
+                        }
+                    }
+                    // Add chip
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, HopColors.authInputBorder, RoundedCornerShape(20.dp))
+                            .clickable { onRequestAddPlace() }
+                            .padding(horizontal = HopSpacing.sm, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add place",
+                            tint = HopColors.authTextSecondary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Add",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = HopColors.authTextSecondary,
+                            ),
+                        )
+                    }
+                }
+
+                // Recent searches
+                if (recentSearches.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(4.dp, RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White),
+                    ) {
+                        recentSearches.take(5).forEachIndexed { index, search ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onRouteConfirm(search.originLabel, search.destLabel) }
+                                    .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.History,
+                                    contentDescription = null,
+                                    tint = HopColors.authTextSecondary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(modifier = Modifier.width(HopSpacing.sm))
+                                Text(
+                                    text = "${search.originLabel} → ${search.destLabel}",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = HopColors.authTextPrimary,
+                                    ),
+                                    maxLines = 1,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            if (index < minOf(recentSearches.size, 5) - 1) {
+                                HorizontalDivider(
+                                    color = Color(0xFFF5F5F5),
+                                    thickness = 0.5.dp,
+                                    modifier = Modifier.padding(start = 40.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }

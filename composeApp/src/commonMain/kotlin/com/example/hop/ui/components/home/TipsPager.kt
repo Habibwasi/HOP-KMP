@@ -75,7 +75,7 @@ fun TipsPager(
                         .padding(horizontal = 3.dp)
                         .size(if (active) 8.dp else 6.dp)
                         .clip(CircleShape)
-                        .background(if (active) HopColors.primaryGreen else HopColors.cardBorder),
+                        .background(if (active) HopColors.primaryLime else HopColors.cardBorder),
                 )
             }
         }
@@ -93,7 +93,7 @@ private fun TipCard(tip: HomeTip, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(gradient)
             .padding(HopSpacing.md),
     ) {

@@ -47,8 +47,7 @@ fun TrustStatsCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.cardSurface)
-            .border(1.dp, HopColors.cardBorder, RoundedCornerShape(16.dp))
+            .background(HopColors.cardSurfaceMuted)
             .padding(vertical = HopSpacing.md, horizontal = HopSpacing.sm),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,

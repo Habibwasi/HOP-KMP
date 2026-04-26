@@ -31,10 +31,11 @@ import kotlinx.datetime.toLocalDateTime
 
 /**
  * Compact greeting banner shown above the search card on the passenger home.
- * Uses a time-of-day gradient and shows a personalised salutation.
+ * Transparent — the parent [PassengerHomeScreen] supplies the lime→background
+ * gradient behind it, so no own background is applied here.
  *
  * Pure presentation — accepts an optional [firstName] and [subtitle];
- * the gradient is selected automatically from the device clock.
+ * the greeting is selected automatically from the device clock.
  */
 @Composable
 fun GreetingBanner(
@@ -42,77 +43,52 @@ fun GreetingBanner(
     subtitle: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    val hour = now.hour
-    val (greeting, gradient, contentColor) = when (hour) {
-        in 5..11 -> Triple(
-            "Good morning",
-            Brush.verticalGradient(listOf(HopColors.gradientDayStart, HopColors.gradientDayEnd)),
-            HopColors.authTextPrimary,
-        )
-        in 12..16 -> Triple(
-            "Good afternoon",
-            Brush.verticalGradient(listOf(HopColors.gradientDayStart, HopColors.gradientDayEnd)),
-            HopColors.authTextPrimary,
-        )
-        in 17..21 -> Triple(
-            "Good evening",
-            Brush.verticalGradient(listOf(HopColors.gradientDuskStart, HopColors.gradientDuskEnd)),
-            HopColors.authTextPrimary,
-        )
-        else -> Triple(
-            "Travelling late?",
-            Brush.verticalGradient(listOf(HopColors.gradientNightStart, HopColors.gradientNightEnd)),
-            Color.White,
-        )
+    val hour = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
+    val greeting = when (hour) {
+        in 5..11 -> "Good morning"
+        in 12..16 -> "Good afternoon"
+        in 17..21 -> "Good evening"
+        else -> "Travelling late?"
     }
     val name = firstName?.takeIf { it.isNotBlank() }
     val resolvedSubtitle = subtitle ?: defaultSubtitle(hour)
 
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-            .background(gradient)
             .padding(
-                PaddingValues(
-                    start = HopSpacing.md,
-                    end = HopSpacing.md,
-                    top = HopSpacing.lg,
-                    bottom = HopSpacing.lg,
-                )
+                start = HopSpacing.md,
+                end = HopSpacing.md,
+                top = HopSpacing.lg,
+                bottom = HopSpacing.sm,
             ),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.55f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = (name?.firstOrNull()?.uppercase() ?: "H"),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = HopColors.authTextPrimary,
+            )
+        }
+        Spacer(modifier = Modifier.padding(start = HopSpacing.sm))
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = (name?.firstOrNull()?.uppercase() ?: "H"),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = contentColor,
-                    )
-                }
-                Spacer(modifier = Modifier.padding(start = HopSpacing.sm))
-                Column {
-                    Text(
-                        text = if (name != null) "$greeting, $name 👋" else "$greeting 👋",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = contentColor,
-                    )
-                    Text(
-                        text = resolvedSubtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = contentColor.copy(alpha = 0.78f),
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(HopSpacing.sm))
+            Text(
+                text = if (name != null) "$greeting, $name 👋" else "$greeting 👋",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = HopColors.authTextPrimary,
+            )
+            Text(
+                text = resolvedSubtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = HopColors.authTextPrimary.copy(alpha = 0.6f),
+            )
         }
     }
 }
