@@ -5,6 +5,13 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -463,11 +470,15 @@ fun PassengerHomeScreen(
 
             // Loading / empty / list
             if (isLoading) {
-                items(3) {
-                    com.example.hop.ui.components.SkeletonBox(
-                        height = 96.dp,
-                        cornerRadius = 16.dp,
-                    )
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = HopSpacing.lg),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AnimatedLoadingIndicator()
+                    }
                 }
             } else if (trips.isEmpty()) {
                 item {
@@ -1431,6 +1442,118 @@ private fun LocationPickerOverlay(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+// ── Animated Loading Indicator ────────────────────────────────────────────────
+
+/**
+ * Animated loading indicator inspired by splash screen and onboarding animations.
+ * Features a pulsing central circle with orbiting dots for smooth, engaging feedback.
+ */
+@Composable
+private fun AnimatedLoadingIndicator(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "loading")
+
+    // Pulsing scale & alpha for central circle (breathing effect)
+    val centralScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1_200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "centralScale",
+    )
+
+    val centralAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1_200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "centralAlpha",
+    )
+
+    // Rotating dots animation (360° rotation)
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2_000, easing = LinearEasing),
+        ),
+        label = "dotRotation",
+    )
+
+    // Orbiting dot scale (subtle pulse as they orbit)
+    val dotScale by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "dotScale",
+    )
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier.size(100.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            // Central pulsing circle
+            Box(
+                modifier = Modifier
+                    .size(48.dp * centralScale)
+                    .clip(CircleShape)
+                    .background(HopColors.primaryLime.copy(alpha = 0.15f * centralAlpha)),
+            )
+
+            // Outer breathing circle
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(HopColors.primaryLime.copy(alpha = 0.3f)),
+            )
+
+            // Central dot
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(HopColors.primaryLime),
+            )
+
+            // Three orbiting dots
+            repeat(3) { index ->
+                val angle = (index * 120f) + rotation
+                val radians = Math.toRadians(angle.toDouble()).toFloat()
+                val x = 30.dp * kotlin.math.cos(radians.toDouble()).toFloat()
+                val y = 30.dp * kotlin.math.sin(radians.toDouble()).toFloat()
+
+                Box(
+                    modifier = Modifier
+                        .offset(x = x, y = y)
+                        .size(8.dp * dotScale)
+                        .clip(CircleShape)
+                        .background(HopColors.primaryLime.copy(alpha = 0.6f)),
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(HopSpacing.md))
+
+        Text(
+            text = "Finding rides...",
+            style = MaterialTheme.typography.labelSmall.copy(
+                color = HopColors.authTextSecondary,
+            ),
+        )
     }
 }
 
