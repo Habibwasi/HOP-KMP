@@ -5,13 +5,16 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -72,8 +75,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -469,7 +480,7 @@ fun PassengerHomeScreen(
             }
 
             // Loading / empty / list
-            if (isLoading) {
+            if (isLoading || trips.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -479,17 +490,6 @@ fun PassengerHomeScreen(
                     ) {
                         AnimatedLoadingIndicator()
                     }
-                }
-            } else if (trips.isEmpty()) {
-                item {
-                    EmptyState(
-                        headline = "No upcoming trips",
-                        subtext = "Find a ride and book your first trip",
-                        ctaLabel = "Find rides",
-                        onCtaClick = {
-                            onFindRides(fromLocation, toLocation, selectedDate, seats)
-                        },
-                    )
                 }
             } else {
                 items(trips, key = { it.id }) { tripUiModel ->
@@ -1448,113 +1448,227 @@ private fun LocationPickerOverlay(
 // ── Animated Loading Indicator ────────────────────────────────────────────────
 
 /**
- * Animated loading indicator inspired by splash screen and onboarding animations.
- * Features a pulsing central circle with orbiting dots for smooth, engaging feedback.
+ * Brand-consistent loading indicator: the cartoon Hop car (with smiley
+ * passenger faces, spinning wheels, and a soft ground shadow) drives in from
+ * the left and then stays in the centre, bobbing gently, while the trips load.
+ * Drawn on a transparent canvas so it blends seamlessly into the surrounding
+ * surface, matching the splash and onboarding style.
  */
 @Composable
 private fun AnimatedLoadingIndicator(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "loading")
+    val infiniteTransition = rememberInfiniteTransition(label = "carLoading")
 
-    // Pulsing scale & alpha for central circle (breathing effect)
-    val centralScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1_200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "centralScale",
-    )
+    // One-shot drive-in: -1f (off-screen left) → 0f (centre).
+    val driveIn = remember { Animatable(-1f) }
+    LaunchedEffect(Unit) {
+        driveIn.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+        )
+    }
 
-    val centralAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1_200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "centralAlpha",
-    )
-
-    // Rotating dots animation (360° rotation)
-    val rotation by infiniteTransition.animateFloat(
+    val wheelAngle by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2_000, easing = LinearEasing),
+            animation = tween(900, easing = LinearEasing),
         ),
-        label = "dotRotation",
+        label = "wheelAngle",
     )
 
-    // Orbiting dot scale (subtle pulse as they orbit)
-    val dotScale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.1f,
+    val bobBase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -4f,
         animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
+            animation = tween(900, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "dotScale",
+        label = "carBob",
     )
+
+    val textAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1_400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "textAlpha",
+    )
+
+    // Once parked, bob gently. While driving in, no bob.
+    val carCenterFraction = driveIn.value
+    val parked = carCenterFraction >= 0f
+    val carBobFactor = if (parked) 1f else 0f
 
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier.size(100.dp),
-            contentAlignment = Alignment.Center,
+        Canvas(
+            modifier = Modifier
+                .size(width = 240.dp, height = 130.dp),
         ) {
-            // Central pulsing circle
-            Box(
-                modifier = Modifier
-                    .size(48.dp * centralScale)
-                    .clip(CircleShape)
-                    .background(HopColors.primaryLime.copy(alpha = 0.15f * centralAlpha)),
+            val sx = size.width / 240f
+            val sy = size.height / 150f
+            val sr = minOf(sx, sy)
+            fun x(v: Float) = v * sx
+            fun y(v: Float) = v * sy
+            fun r(v: Float) = v * sr
+
+            val travelVp = carCenterFraction * 260f  // starts at -260vp, parks at 0 (centre of 240vp = x120)
+            val bobVp = bobBase * carBobFactor
+
+            // Soft ground shadow that follows the car & shrinks with bob.
+            val shadowScale = 1f - 0.22f * carBobFactor * (-bobBase / 4f)
+            val shadowW = x(120f) * shadowScale
+            val shadowH = y(8f) * shadowScale
+            drawOval(
+                color = LoadingShadow.copy(alpha = 0.22f * shadowScale),
+                topLeft = Offset(x(120f + travelVp) - shadowW / 2f, y(110f) - shadowH / 2f),
+                size = Size(shadowW, shadowH),
             )
 
-            // Outer breathing circle
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(HopColors.primaryLime.copy(alpha = 0.3f)),
-            )
-
-            // Central dot
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(HopColors.primaryLime),
-            )
-
-            // Three orbiting dots
-            repeat(3) { index ->
-                val angle = (index * 120f) + rotation
-                val radians = Math.toRadians(angle.toDouble()).toFloat()
-                val x = 30.dp * kotlin.math.cos(radians.toDouble()).toFloat()
-                val y = 30.dp * kotlin.math.sin(radians.toDouble()).toFloat()
-
-                Box(
-                    modifier = Modifier
-                        .offset(x = x, y = y)
-                        .size(8.dp * dotScale)
-                        .clip(CircleShape)
-                        .background(HopColors.primaryLime.copy(alpha = 0.6f)),
+            withTransform({ translate((travelVp + 20f) * sx, bobVp * sy) }) {
+                // Lower body
+                drawRoundRect(
+                    color = LoadingCarBody1,
+                    topLeft = Offset(x(30f), y(58f)),
+                    size = Size(x(140f), y(34f)),
+                    cornerRadius = CornerRadius(r(10f)),
                 )
+                // Cabin
+                drawRoundRect(
+                    color = LoadingCarBody2,
+                    topLeft = Offset(x(52f), y(38f)),
+                    size = Size(x(96f), y(28f)),
+                    cornerRadius = CornerRadius(r(10f)),
+                )
+                // Windows
+                drawRoundRect(
+                    color = LoadingCarWindow.copy(alpha = 0.95f),
+                    topLeft = Offset(x(58f), y(43f)),
+                    size = Size(x(36f), y(20f)),
+                    cornerRadius = CornerRadius(r(5f)),
+                )
+                drawRoundRect(
+                    color = LoadingCarWindow.copy(alpha = 0.95f),
+                    topLeft = Offset(x(106f), y(43f)),
+                    size = Size(x(36f), y(20f)),
+                    cornerRadius = CornerRadius(r(5f)),
+                )
+
+                // Passenger heads
+                drawCircle(LoadingPassL, r(8f), Offset(x(76f), y(53f)))
+                drawCircle(LoadingPassR, r(8f), Offset(x(124f), y(53f)))
+
+                // Eyes
+                val eyeR = r(1.3f)
+                drawCircle(LoadingFaceFeature, eyeR, Offset(x(73.5f), y(51.5f)))
+                drawCircle(LoadingFaceFeature, eyeR, Offset(x(78.5f), y(51.5f)))
+                drawCircle(LoadingFaceFeature, eyeR, Offset(x(121.5f), y(51.5f)))
+                drawCircle(LoadingFaceFeature, eyeR, Offset(x(126.5f), y(51.5f)))
+
+                // Smiles
+                val smileStroke = Stroke(width = r(1.2f), cap = StrokeCap.Round)
+                drawPath(
+                    path = Path().apply {
+                        moveTo(x(73f), y(55.5f))
+                        quadraticBezierTo(x(76f), y(58f), x(79f), y(55.5f))
+                    },
+                    color = LoadingSmile,
+                    style = smileStroke,
+                )
+                drawPath(
+                    path = Path().apply {
+                        moveTo(x(121f), y(55.5f))
+                        quadraticBezierTo(x(124f), y(58f), x(127f), y(55.5f))
+                    },
+                    color = LoadingSmile,
+                    style = smileStroke,
+                )
+
+                // Bumper stripe + lights
+                drawRoundRect(
+                    color = LoadingCarStripe,
+                    topLeft = Offset(x(30f), y(82f)),
+                    size = Size(x(140f), y(6f)),
+                    cornerRadius = CornerRadius(r(3f)),
+                )
+                drawRoundRect(
+                    color = LoadingCarLightF,
+                    topLeft = Offset(x(162f), y(66f)),
+                    size = Size(x(8f), y(7f)),
+                    cornerRadius = CornerRadius(r(2.5f)),
+                )
+                drawRoundRect(
+                    color = LoadingCarLightR,
+                    topLeft = Offset(x(30f), y(66f)),
+                    size = Size(x(8f), y(7f)),
+                    cornerRadius = CornerRadius(r(2.5f)),
+                )
+
+                // Wheels
+                drawSpinningWheel(Offset(x(60f), y(92f)), r(13f), wheelAngle)
+                drawSpinningWheel(Offset(x(140f), y(92f)), r(13f), wheelAngle)
             }
         }
 
-        Spacer(modifier = Modifier.height(HopSpacing.md))
+        Spacer(modifier = Modifier.height(HopSpacing.sm))
 
         Text(
             text = "Finding rides...",
             style = MaterialTheme.typography.labelSmall.copy(
-                color = HopColors.authTextSecondary,
+                color = HopColors.authTextSecondary.copy(alpha = textAlpha),
             ),
         )
     }
+}
+
+private val LoadingCarBody1    = Color(0xFF26C6DA)
+private val LoadingCarBody2    = Color(0xFF00ACC1)
+private val LoadingCarWindow   = Color(0xFFE0F7FA)
+private val LoadingCarStripe   = Color(0xFF0097A7)
+private val LoadingCarLightF   = Color(0xFFFFF59D)
+private val LoadingCarLightR   = Color(0xFFEF9A9A)
+private val LoadingPassL       = Color(0xFFFFCC80)
+private val LoadingPassR       = Color(0xFFFFAB91)
+private val LoadingFaceFeature = Color(0xFF3E2723)
+private val LoadingSmile       = Color(0xFFE64A19)
+private val LoadingWheelOuter  = Color(0xFF37474F)
+private val LoadingWheelMid    = Color(0xFF78909C)
+private val LoadingWheelHub    = Color(0xFFB0BEC5)
+private val LoadingWheelSpoke  = Color(0xFF546E7A)
+private val LoadingShadow      = Color(0xFF263238)
+
+// Scene colours — kept for tints used inline above (Brush gradients use Color literals directly)
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpinningWheel(
+    center: Offset,
+    radius: Float,
+    angleDeg: Float,
+) {
+    drawCircle(LoadingWheelOuter, radius, center)
+    drawCircle(LoadingWheelMid, radius * 0.65f, center)
+    rotate(angleDeg, center) {
+        val spoke = radius * 0.85f
+        val w = radius * 0.18f
+        drawLine(
+            color = LoadingWheelSpoke,
+            start = Offset(center.x, center.y - spoke),
+            end = Offset(center.x, center.y + spoke),
+            strokeWidth = w,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = LoadingWheelSpoke,
+            start = Offset(center.x - spoke, center.y),
+            end = Offset(center.x + spoke, center.y),
+            strokeWidth = w,
+            cap = StrokeCap.Round,
+        )
+    }
+    drawCircle(LoadingWheelHub, radius * 0.28f, center)
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────
