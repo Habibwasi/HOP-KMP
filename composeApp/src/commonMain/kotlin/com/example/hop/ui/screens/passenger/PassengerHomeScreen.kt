@@ -44,6 +44,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -130,6 +131,17 @@ import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import android.location.Geocoder
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.activity.compose.BackHandler
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -280,6 +292,7 @@ fun PassengerHomeScreen(
     var seats by remember { mutableIntStateOf(1) }
     var showAddPlaceSheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var locationPickerField by remember { mutableStateOf<String?>(null) }
     val haptics = LocalHapticFeedback.current
     val listState = rememberLazyListState()
     // Header collapses once the user has scrolled the first item more than
@@ -304,21 +317,6 @@ fun PassengerHomeScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // ── Layer 1: Full-screen Google Map background ──────────────────────
-        val cameraPositionState = rememberCameraPositionState {
-            position = CameraPosition.fromLatLngZoom(LatLng(55.6761, 12.5683), 11f) // Copenhagen
-        }
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(
-                zoomControlsEnabled = false,
-                myLocationButtonEnabled = false,
-                mapToolbarEnabled = false,
-            ),
-        )
-
-        // ── Layer 2: Content overlay (transparent background lets map show) ─
         Column(modifier = Modifier.fillMaxSize()) {
         // ── Greeting banner (collapses on scroll for headroom) ──────────────
         AnimatedVisibility(
@@ -407,8 +405,8 @@ fun PassengerHomeScreen(
                     toLocation = toLocation,
                     selectedDate = selectedDate,
                     seats = seats,
-                    onFromChange = { fromLocation = it },
-                    onToChange = { toLocation = it },
+                    onFromClick = { locationPickerField = "from" },
+                    onToClick = { locationPickerField = "to" },
                     onSwap = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         val tmp = fromLocation
@@ -427,22 +425,22 @@ fun PassengerHomeScreen(
             }
 
             // Popular routes — curated until the API ships.
-            item {
-                Text(
-                    text = "Popular routes",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = HopColors.authTextPrimary,
-                )
-            }
-            item {
-                com.example.hop.ui.components.home.SuggestedRoutesRow(
-                    routes = com.example.hop.ui.components.home.DefaultSuggestedRoutes,
-                    onRouteClick = { route ->
-                        fromLocation = route.origin
-                        toLocation = route.destination
-                    },
-                )
-            }
+//            item {
+//                Text(
+//                    text = "Popular routes",
+//                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+//                    color = HopColors.authTextPrimary,
+//                )
+//            }
+//            item {
+//                com.example.hop.ui.components.home.SuggestedRoutesRow(
+//                    routes = com.example.hop.ui.components.home.DefaultSuggestedRoutes,
+//                    onRouteClick = { route ->
+//                        fromLocation = route.origin
+//                        toLocation = route.destination
+//                    },
+//                )
+//            }
 
             // Tips & announcements pager
             item {
@@ -464,13 +462,13 @@ fun PassengerHomeScreen(
                 )
             }
 
-            // Referral promo
-            item {
-                com.example.hop.ui.components.home.ReferralCard(
-                    rewardDkk = 50,
-                    onShare = { /* TODO referral share — wires to PR-04 */ },
-                )
-            }
+//            // Referral promo
+//            item {
+//                com.example.hop.ui.components.home.ReferralCard(
+//                    rewardDkk = 50,
+//                    onShare = { /* TODO referral share — wires to PR-04 */ },
+//                )
+//            }
 
             // Section heading
             item {
@@ -530,7 +528,7 @@ fun PassengerHomeScreen(
             item { Spacer(modifier = Modifier.height(HopSpacing.md)) }
         }
         } // end PullToRefreshBox
-        } // end Column (Layer 2)
+        } // end Column
     } // end Box
 
     // ── Dialogs (rendered outside the Box so they overlay everything) ────────
@@ -571,6 +569,26 @@ fun PassengerHomeScreen(
             },
         )
     }
+
+    // ── Location picker overlay (full-screen) ──────────────────────────────
+    locationPickerField?.let { field ->
+        Popup(
+            properties = PopupProperties(focusable = true),
+            onDismissRequest = { locationPickerField = null },
+        ) {
+            BackHandler { locationPickerField = null }
+            LocationPickerOverlay(
+                title = if (field == "from") "Where from?" else "Where to?",
+                initialText = if (field == "from") fromLocation else toLocation,
+                onDismiss = { locationPickerField = null },
+                onConfirm = { address ->
+                    if (field == "from") fromLocation = address
+                    else toLocation = address
+                    locationPickerField = null
+                },
+            )
+        }
+    }
 }
 
 // ── Search card ───────────────────────────────────────────────────────────────
@@ -581,8 +599,8 @@ private fun SearchCard(
     toLocation: String,
     selectedDate: String,
     seats: Int,
-    onFromChange: (String) -> Unit,
-    onToChange: (String) -> Unit,
+    onFromClick: () -> Unit,
+    onToClick: () -> Unit,
     onSwap: () -> Unit,
     onDateChange: (String) -> Unit,
     onPickDate: () -> Unit,
@@ -592,10 +610,6 @@ private fun SearchCard(
     modifier: Modifier = Modifier,
 ) {
     val cardShape = RoundedCornerShape(16.dp)
-    val context = LocalContext.current
-    val placesClient = remember(context) {
-        if (Places.isInitialized()) Places.createClient(context) else null
-    }
 
     Box(
         modifier = modifier
@@ -611,15 +625,13 @@ private fun SearchCard(
             Box(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // From row
-                    LocationRow(
+                    LocationDisplayRow(
                         value = fromLocation,
-                        onValueChange = onFromChange,
-                        onSuggestionSelected = onFromChange,
                         placeholder = "From — city or address",
                         icon = Icons.Filled.LocationOn,
                         iconTint = HopColors.primaryGreen,
                         iconDescription = "Origin",
-                        placesClient = placesClient,
+                        onClick = onFromClick,
                     )
 
                     HorizontalDivider(
@@ -629,15 +641,13 @@ private fun SearchCard(
                     )
 
                     // To row
-                    LocationRow(
+                    LocationDisplayRow(
                         value = toLocation,
-                        onValueChange = onToChange,
-                        onSuggestionSelected = onToChange,
                         placeholder = "To — city or address",
                         icon = Icons.Filled.LocationOn,
                         iconTint = HopColors.error,
                         iconDescription = "Destination",
-                        placesClient = placesClient,
+                        onClick = onToClick,
                     )
                 }
 
@@ -700,7 +710,48 @@ private fun SearchCard(
     }
 }
 
-// ── Location row ──────────────────────────────────────────────────────────────
+// ── Location display row (tappable, opens map picker) ─────────────────────────
+
+@Composable
+private fun LocationDisplayRow(
+    value: String,
+    placeholder: String,
+    icon: ImageVector,
+    iconTint: Color,
+    iconDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(top = HopSpacing.sm, bottom = HopSpacing.sm, end = 44.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = iconDescription,
+            tint = iconTint,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(HopSpacing.sm))
+        Text(
+            text = value.takeIf { it.isNotEmpty() } ?: placeholder,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = if (value.isEmpty()) Color(0xFFB0B0B0) else Color(0xFF1A1A1A),
+                fontWeight = FontWeight.Normal,
+            ),
+            maxLines = 1,
+        )
+    }
+}
+
+// ── Location row (kept for overlay internal use) ───────────────────────────────
 
 @Composable
 private fun LocationRow(
@@ -1140,6 +1191,225 @@ private fun PassengerBottomNavBar(
                 unselectedTextColor = HopColors.authTextSecondary,
             ),
         )
+    }
+}
+
+// ── Location picker overlay ───────────────────────────────────────────────────
+
+/**
+ * Full-screen map overlay that appears when the user taps From or To.
+ * Supports both text search (with autocomplete) and pin-on-map.
+ * Tapping a suggestion confirms immediately; dragging the map and pressing
+ * "Confirm pin" reverse-geocodes the crosshair center.
+ */
+@Composable
+private fun LocationPickerOverlay(
+    title: String,
+    initialText: String,
+    onDismiss: () -> Unit,
+    onConfirm: (address: String) -> Unit,
+) {
+    val context = LocalContext.current
+    val placesClient = remember(context) {
+        if (Places.isInitialized()) Places.createClient(context) else null
+    }
+
+    var searchText by remember { mutableStateOf(initialText) }
+    var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+    var pinnedAddress by remember { mutableStateOf("") }
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(55.6761, 12.5683), 13f)
+    }
+
+    // Reverse-geocode when the camera stops moving
+    val isCameraMoving = cameraPositionState.isMoving
+    LaunchedEffect(isCameraMoving) {
+        if (!isCameraMoving) {
+            val pos = cameraPositionState.position.target
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    @Suppress("DEPRECATION")
+                    val addresses = Geocoder(context, Locale.getDefault())
+                        .getFromLocation(pos.latitude, pos.longitude, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val a = addresses[0]
+                        listOfNotNull(a.thoroughfare, a.locality, a.countryName)
+                            .joinToString(", ").ifEmpty { null }
+                    } else null
+                }.getOrNull()
+            }
+            if (result != null) pinnedAddress = result
+        }
+    }
+
+    // Autocomplete with 350 ms debounce
+    LaunchedEffect(searchText) {
+        if (searchText.length >= 2 && placesClient != null) {
+            delay(350L)
+            suggestions = try {
+                val request = FindAutocompletePredictionsRequest.builder()
+                    .setQuery(searchText)
+                    .build()
+                suspendCancellableCoroutine { cont ->
+                    placesClient
+                        .findAutocompletePredictions(request)
+                        .addOnSuccessListener { cont.resume(it.autocompletePredictions) }
+                        .addOnFailureListener { cont.resume(emptyList()) }
+                }
+            } catch (_: Exception) { emptyList() }
+        } else {
+            suggestions = emptyList()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // ── Map layer ─────────────────────────────────────────────────────────
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            uiSettings = MapUiSettings(
+                zoomControlsEnabled = false,
+                myLocationButtonEnabled = false,
+                mapToolbarEnabled = false,
+            ),
+        )
+
+        // ── Centered pin (tip points at map centre) ───────────────────────────
+        Icon(
+            imageVector = Icons.Filled.LocationOn,
+            contentDescription = "Pin location",
+            tint = HopColors.primaryGreen,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(40.dp)
+                .offset(y = (-20).dp),
+        )
+
+        // ── Search bar (top) ──────────────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(HopSpacing.md),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White)
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF1A1A1A),
+                    )
+                }
+                BasicTextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    modifier = Modifier.weight(1f),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color(0xFF1A1A1A),
+                        fontWeight = FontWeight.Normal,
+                    ),
+                    cursorBrush = SolidColor(HopColors.primaryGreen),
+                    singleLine = true,
+                    decorationBox = { innerTextField ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (searchText.isEmpty()) {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = Color(0xFFB0B0B0),
+                                    ),
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
+                )
+                if (searchText.isNotEmpty()) {
+                    IconButton(onClick = { searchText = "" }) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Clear",
+                            tint = Color(0xFF888888),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
+
+            // Autocomplete suggestions dropdown
+            if (suggestions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White),
+                ) {
+                    suggestions.take(5).forEachIndexed { index, prediction ->
+                        val label = prediction.getFullText(null).toString()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onConfirm(label) }
+                                .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LocationOn,
+                                contentDescription = null,
+                                tint = Color(0xFFB0B0B0),
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(HopSpacing.sm))
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = Color(0xFF1A1A1A),
+                                ),
+                                maxLines = 1,
+                            )
+                        }
+                        if (index < minOf(suggestions.size, 5) - 1) {
+                            HorizontalDivider(color = Color(0xFFF5F5F5), thickness = 0.5.dp)
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Confirm pin button (bottom) ───────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(HopSpacing.md),
+        ) {
+            val confirmLabel = when {
+                pinnedAddress.isNotEmpty() -> "Use: $pinnedAddress"
+                else -> "Confirm pin location"
+            }
+            HopButton(
+                text = confirmLabel,
+                onClick = {
+                    val addr = searchText.trim().takeIf { it.isNotEmpty() }
+                        ?: pinnedAddress.takeIf { it.isNotEmpty() }
+                    if (addr != null) onConfirm(addr)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

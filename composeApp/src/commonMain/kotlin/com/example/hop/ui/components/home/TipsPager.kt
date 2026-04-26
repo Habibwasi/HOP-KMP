@@ -124,8 +124,8 @@ val DefaultHomeTips: List<HomeTip> = listOf(
         title = "Travel greener with Hop",
         body = "Carpooling 100 km saves about 12 kg of CO₂ per seat.",
     ),
-    HomeTip(
-        title = "Invite a friend, earn 50 DKK",
-        body = "Share your referral code from the Profile tab.",
-    ),
+//    HomeTip(
+//        title = "Invite a friend, earn 50 DKK",
+//        body = "Share your referral code from the Profile tab.",
+//    ),
 )
