@@ -3,15 +3,17 @@ import Shared
 
 // MARK: — PA-01 Passenger Home ─────────────────────────────────────────────────
 //
-// Unified home screen for the passenger role.
-// Matches Android PassengerHomeScreen layout:
-//   • White search card with shadow (from/to fields + swap button + date chips + seats)
+// Modern redesign to match Android counterpart:
+//   • Lime gradient header band behind greeting
+//   • SearchHero: tappable From/To rows with timeline rail + swap button
+//   • DatePill + SeatsPill inline below hero, full-width Search CTA
+//   • LocationPickerSheet: saved-place chips + recent-search rows at top
+//   • ActiveBookingBanner: white card, lime accent stripe, live dot
 //   • "Upcoming trips" section with TripCard list / loading / empty state
-// The role toggle switches to DR-01 Driver Home (handled by parent).
 
 struct PassengerHomeView: View {
 
-    /// Called when the user taps "Find rides" — pushes PA-02 Search Results.
+    /// Called when the user taps "Search" — pushes PA-02 Search Results.
     var onSearch: (_ origin: String, _ dest: String, _ date: String, _ seats: Int) -> Void
 
     /// Called when the role toggle switches to driver mode.
@@ -20,13 +22,20 @@ struct PassengerHomeView: View {
     var navigate: (HopRoute) -> Void
 
     // ── Local form state ──────────────────────────────────────────────────────
-    @State private var origin       = ""
-    @State private var destination  = ""
-    @State private var selectedDate = "Today"
-    @State private var seats        = 1
+    @State private var origin           = ""
+    @State private var destination      = ""
+    @State private var selectedDate     = "Today"
+    @State private var seats            = 1
     @State private var selectedRole: HopRole = .passenger
 
+    // Picker sheet state
+    @State private var activePickerField: PickerField? = nil
+    @State private var showDatePicker                  = false
+    @State private var showSeatPicker                  = false
+
     @StateObject private var tripWrapper = TripViewModelWrapper()
+
+    enum PickerField { case from, to }
 
     private var canSearch: Bool {
         !origin.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -35,41 +44,42 @@ struct PassengerHomeView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color.hopSurface.ignoresSafeArea(.all, edges: .top)
+            Color.hopBackground.ignoresSafeArea()
+
+            // Lime gradient header band
+            LinearGradient(
+                colors: [Color.hopPrimaryLime.opacity(0.22), Color.hopBackground],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 260)
+            .ignoresSafeArea(edges: .top)
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
 
-                    // ── Top bar: Hop logo + Role toggle ───────────────────────
-                    HStack {
-                        Text("HOP")
-                            .font(HopFont.headlineMedium(weight: .bold))
-                            .tracking(3)
-                            .foregroundColor(Color.hopPrimaryLime)
+                    // ── Greeting ──────────────────────────────────────────────
+                    GreetingRow()
+                        .padding(.horizontal, HopSpacing.md)
+                        .padding(.top, HopSpacing.md)
+                        .padding(.bottom, HopSpacing.sm)
 
-                        Spacer()
-
-                        RoleTogglePill(selectedRole: $selectedRole)
-                            .onChange(of: selectedRole) { _, newRole in
-                                if newRole == .driver { onSwitchToDriver() }
-                            }
-                    }
-                    .padding(.horizontal, HopSpacing.md)
-                    .padding(.top, HopSpacing.md)
-                    .padding(.bottom, HopSpacing.lg)
-
-                    // ── Search card ───────────────────────────────────────────
-                    SearchCard(
-                        origin: $origin,
-                        destination: $destination,
-                        selectedDate: $selectedDate,
-                        seats: $seats,
-                        canSearch: canSearch,
+                    // ── Search hero ───────────────────────────────────────────
+                    SearchHero(
+                        origin:       origin,
+                        destination:  destination,
+                        selectedDate: selectedDate,
+                        seats:        seats,
+                        canSearch:    canSearch,
+                        onFromTap:    { activePickerField = .from },
+                        onToTap:      { activePickerField = .to },
                         onSwap: {
                             let tmp = origin
                             origin = destination
                             destination = tmp
                         },
+                        onDateTap:   { showDatePicker = true },
+                        onSeatsTap:  { showSeatPicker = true },
                         onSearch: {
                             onSearch(
                                 origin.trimmingCharacters(in: .whitespaces),
@@ -139,55 +149,146 @@ struct PassengerHomeView: View {
             tripWrapper.startObserving { _ in }
             tripWrapper.loadMyTripsPassenger()
         }
+        // ── Location picker sheet ─────────────────────────────────────────────
+        .sheet(item: $activePickerField) { field in
+            LocationPickerSheet(
+                title: field == .from ? "Where from?" : "Where to?",
+                onConfirm: { address in
+                    if field == .from { origin = address }
+                    else { destination = address }
+                    activePickerField = nil
+                },
+                onRouteConfirm: { orig, dest in
+                    origin = orig
+                    destination = dest
+                    activePickerField = nil
+                }
+            )
+        }
+        // ── Date picker ───────────────────────────────────────────────────────
+        .sheet(isPresented: $showDatePicker) {
+            DatePickerSheet(selectedDate: $selectedDate, isPresented: $showDatePicker)
+        }
+        // ── Seat picker ───────────────────────────────────────────────────────
+        .sheet(isPresented: $showSeatPicker) {
+            SeatPickerSheet(seats: $seats, isPresented: $showSeatPicker)
+        }
     }
 }
 
-// MARK: — SearchCard
+// Make PickerField Identifiable for .sheet(item:)
+extension PassengerHomeView.PickerField: Identifiable {
+    var id: Int { self == .from ? 0 : 1 }
+}
 
-private struct SearchCard: View {
-    @Binding var origin: String
-    @Binding var destination: String
-    @Binding var selectedDate: String
-    @Binding var seats: Int
-    let canSearch: Bool
-    let onSwap: () -> Void
-    let onSearch: () -> Void
+// MARK: — GreetingRow
+
+private struct GreetingRow: View {
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12:  return "Good morning"
+        case 12..<17: return "Good afternoon"
+        case 17..<22: return "Good evening"
+        default:      return "Travelling late?"
+        }
+    }
 
     var body: some View {
-        let cardShape = RoundedRectangle(cornerRadius: 16)
+        HStack(spacing: HopSpacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.55))
+                    .frame(width: 36, height: 36)
+                Text("H")
+                    .font(HopFont.bodyLarge(weight: .bold))
+                    .foregroundColor(Color.hopTextPrimary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(greeting) 👋")
+                    .font(HopFont.titleLarge(weight: .semibold))
+                    .foregroundColor(Color.hopTextPrimary)
+                Text("Where are you headed today?")
+                    .font(HopFont.bodyMedium())
+                    .foregroundColor(Color.hopTextPrimary.opacity(0.6))
+            }
+        }
+    }
+}
+
+// MARK: — SearchHero
+
+private struct SearchHero: View {
+    let origin:       String
+    let destination:  String
+    let selectedDate: String
+    let seats:        Int
+    let canSearch:    Bool
+    let onFromTap:    () -> Void
+    let onToTap:      () -> Void
+    let onSwap:       () -> Void
+    let onDateTap:    () -> Void
+    let onSeatsTap:   () -> Void
+    let onSearch:     () -> Void
+
+    var body: some View {
+        let cardShape = RoundedRectangle(cornerRadius: 24)
 
         VStack(spacing: 0) {
-
-            // ── From / To block with swap button ─────────────────────────────
+            // ── From / To with timeline rail + swap ──────────────────────────
             ZStack(alignment: .trailing) {
-                VStack(spacing: 0) {
-                    LocationFieldRow(
-                        icon: "location.fill",
-                        iconColor: Color.hopPrimaryGreen,
-                        placeholder: "From — city or address",
-                        text: $origin
-                    )
+                HStack(alignment: .center, spacing: 10) {
+                    // Timeline rail
+                    TimelineRail()
+                        .frame(width: 20)
 
-                    Divider()
-                        .background(Color(hex: 0xEEEEEE))
-                        .padding(.leading, 40)
+                    // From / To rows
+                    VStack(spacing: 0) {
+                        Button(action: onFromTap) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("From")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color(hex: 0x888888))
+                                Text(origin.isEmpty ? "Where from?" : origin)
+                                    .font(HopFont.bodyMedium(weight: origin.isEmpty ? .regular : .medium))
+                                    .foregroundColor(origin.isEmpty ? Color(hex: 0xB8B8B8) : Color(hex: 0x1A1A1A))
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.trailing, 48)
+                            .padding(.vertical, HopSpacing.sm)
+                        }
+                        .buttonStyle(.plain)
 
-                    LocationFieldRow(
-                        icon: "location.fill",
-                        iconColor: Color.hopError,
-                        placeholder: "To — city or address",
-                        text: $destination
-                    )
+                        Divider()
+                            .background(Color(hex: 0xEEEEEE))
+                            .padding(.leading, 0)
+
+                        Button(action: onToTap) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("To")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color(hex: 0x888888))
+                                Text(destination.isEmpty ? "Where to?" : destination)
+                                    .font(HopFont.bodyMedium(weight: destination.isEmpty ? .regular : .medium))
+                                    .foregroundColor(destination.isEmpty ? Color(hex: 0xB8B8B8) : Color(hex: 0x1A1A1A))
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.trailing, 48)
+                            .padding(.vertical, HopSpacing.sm)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
-                // Swap button — centred vertically on the divider
+                // Swap button
                 Button(action: onSwap) {
                     ZStack {
                         Circle()
                             .fill(Color.white)
                             .frame(width: 36, height: 36)
                             .overlay(Circle().stroke(Color(hex: 0xDDDDDD), lineWidth: 1))
-
                         Image(systemName: "arrow.up.arrow.down")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(Color(hex: 0x666666))
@@ -197,191 +298,343 @@ private struct SearchCard: View {
                 .padding(.trailing, HopSpacing.xs)
                 .accessibilityLabel("Swap origin and destination")
             }
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.top, HopSpacing.sm)
 
-            Divider().background(Color(hex: 0xEEEEEE))
-
-            // ── Date chips row ────────────────────────────────────────────────
-            DateChipsRow(selectedDate: $selectedDate)
-
-            Divider().background(Color(hex: 0xEEEEEE))
-
-            // ── Seats row ─────────────────────────────────────────────────────
-            SeatsRow(seats: $seats)
-
-            Spacer().frame(height: HopSpacing.md)
-
-            // ── Find rides CTA ────────────────────────────────────────────────
-            HopPrimaryButton(title: "Find rides", isEnabled: canSearch, action: onSearch)
+            Divider()
+                .background(Color(hex: 0xEEEEEE))
                 .padding(.horizontal, HopSpacing.md)
-                .padding(.bottom, HopSpacing.md)
+
+            // ── Pills ─────────────────────────────────────────────────────────
+            HStack(spacing: HopSpacing.xs) {
+                DatePill(selectedDate: selectedDate, onTap: onDateTap)
+                SeatsPill(seats: seats, onTap: onSeatsTap)
+                Spacer()
+            }
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.top, HopSpacing.sm)
+
+            // ── Search CTA ────────────────────────────────────────────────────
+            HopPrimaryButton(title: "Search", isEnabled: canSearch, action: onSearch)
+                .padding(.horizontal, HopSpacing.md)
+                .padding(.vertical, HopSpacing.sm)
         }
         .background(Color.white)
         .clipShape(cardShape)
-        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 3)
     }
 }
 
-// MARK: — LocationFieldRow
+// MARK: — TimelineRail
 
-private struct LocationFieldRow: View {
-    let icon: String
-    let iconColor: Color
-    let placeholder: String
-    @Binding var text: String
-
+private struct TimelineRail: View {
     var body: some View {
-        HStack(spacing: HopSpacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(iconColor)
-                .frame(width: 24)
-
-            TextField(placeholder, text: $text)
-                .font(HopFont.bodyMedium())
-                .foregroundColor(Color(hex: 0x1A1A1A))
-                .tint(Color.hopPrimaryGreen)
-                .submitLabel(.next)
-                .autocorrectionDisabled()
+        VStack(spacing: 0) {
+            Circle()
+                .fill(Color.hopPrimaryGreen)
+                .frame(width: 10, height: 10)
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.hopPrimaryGreen.opacity(0.35), Color.hopError.opacity(0.35)],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                )
+                .frame(width: 2, height: 34)
+            Image(systemName: "location.fill")
+                .font(.system(size: 10))
+                .foregroundColor(Color.hopError)
         }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.trailing, 44) // leave room for the swap button
-        .padding(.vertical, HopSpacing.sm + 2)
     }
 }
 
-// MARK: — DateChipsRow
+// MARK: — DatePill
 
-private struct DateChipsRow: View {
-    @Binding var selectedDate: String
-
-    var body: some View {
-        HStack(spacing: HopSpacing.sm) {
-            HStack(spacing: 4) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(Color(hex: 0x888888))
-                Text("Date")
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color(hex: 0x888888))
-            }
-
-            Spacer()
-
-            HStack(spacing: HopSpacing.xs) {
-                DateChip(label: "Today",    isSelected: selectedDate == "Today")    { selectedDate = "Today" }
-                DateChip(label: "Tomorrow", isSelected: selectedDate == "Tomorrow") { selectedDate = "Tomorrow" }
-
-                // Custom date trigger (post-MVP)
-                Button {
-                    // Platform date picker — post-MVP
-                } label: {
-                    HStack(spacing: 2) {
-                        Text(selectedDate != "Today" && selectedDate != "Tomorrow" ? selectedDate : "Pick")
-                            .font(HopFont.labelSmall())
-                            .foregroundColor(Color(hex: 0x444444))
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(Color(hex: 0x888888))
-                    }
-                    .padding(.horizontal, HopSpacing.sm)
-                    .padding(.vertical, 4)
-                    .overlay(Capsule().stroke(Color(hex: 0xDDDDDD), lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.sm)
-    }
-}
-
-private struct DateChip: View {
-    let label: String
-    let isSelected: Bool
+private struct DatePill: View {
+    let selectedDate: String
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
-            Text(label)
-                .font(isSelected ? HopFont.labelSmall(weight: .semibold) : HopFont.labelSmall(weight: .regular))
-                .foregroundColor(isSelected ? Color(hex: 0x1A1A1A) : Color(hex: 0x444444))
-                .padding(.horizontal, HopSpacing.sm)
-                .padding(.vertical, 4)
-                .background(isSelected ? Color.hopPrimaryLime : Color.clear)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(isSelected ? Color.hopPrimaryLime : Color(hex: 0xDDDDDD), lineWidth: 1))
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.hopTextSecondary)
+                Text(selectedDate)
+                    .font(HopFont.labelMedium(weight: .medium))
+                    .foregroundColor(Color(hex: 0x1A1A1A))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10))
+                    .foregroundColor(Color.hopTextSecondary)
+            }
+            .padding(.horizontal, HopSpacing.sm)
+            .padding(.vertical, 6)
+            .overlay(Capsule().stroke(Color(hex: 0xDDDDDD), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: — SeatsRow
+// MARK: — SeatsPill
 
-private struct SeatsRow: View {
-    @Binding var seats: Int
-    private let range = 1...4
+private struct SeatsPill: View {
+    let seats: Int
+    let onTap: () -> Void
 
     var body: some View {
-        HStack {
-            Text("Seats")
-                .font(HopFont.bodyMedium(weight: .medium))
-                .foregroundColor(Color(hex: 0x444444))
-
-            Spacer()
-
-            HStack(spacing: HopSpacing.sm) {
-                // Decrease button
-                Button {
-                    if seats > range.lowerBound { seats -= 1 }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Circle().stroke(
-                                    seats > range.lowerBound ? Color(hex: 0xCCCCCC) : Color(hex: 0xEEEEEE),
-                                    lineWidth: 1
-                                )
-                            )
-                        Image(systemName: "minus")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(seats > range.lowerBound ? Color(hex: 0x1A1A1A) : Color(hex: 0xCCCCCC))
-                    }
-                }
-                .buttonStyle(.plain)
-                .disabled(seats <= range.lowerBound)
-
-                Text("\(seats)")
-                    .font(HopFont.bodyLarge(weight: .bold))
+        Button(action: onTap) {
+            HStack(spacing: 4) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.hopTextSecondary)
+                Text(seats == 1 ? "1 seat" : "\(seats) seats")
+                    .font(HopFont.labelMedium(weight: .medium))
                     .foregroundColor(Color(hex: 0x1A1A1A))
-                    .frame(width: 20, alignment: .center)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10))
+                    .foregroundColor(Color.hopTextSecondary)
+            }
+            .padding(.horizontal, HopSpacing.sm)
+            .padding(.vertical, 6)
+            .overlay(Capsule().stroke(Color(hex: 0xDDDDDD), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+}
 
-                // Increase button
-                Button {
-                    if seats < range.upperBound { seats += 1 }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Circle().stroke(
-                                    seats < range.upperBound ? Color(hex: 0xCCCCCC) : Color(hex: 0xEEEEEE),
-                                    lineWidth: 1
-                                )
-                            )
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(seats < range.upperBound ? Color(hex: 0x1A1A1A) : Color(hex: 0xCCCCCC))
-                    }
+// MARK: — LocationPickerSheet
+
+private struct LocationPickerSheet: View {
+    let title: String
+    let onConfirm: (String) -> Void
+    let onRouteConfirm: (String, String) -> Void
+
+    @State private var searchText = ""
+    @Environment(\.dismiss) private var dismiss
+
+    // Synthetic recent routes — in production these would come from HomeStatsViewModel
+    private let recentRoutes: [(origin: String, dest: String)] = [
+        ("Copenhagen Central", "Aarhus"),
+        ("Hellerup", "Odense"),
+    ]
+
+    // Synthetic saved places — in production from SavedPlacesViewModel
+    private let savedPlaces: [(label: String, icon: String)] = [
+        ("Home", "house.fill"),
+        ("Work", "briefcase.fill"),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 0) {
+                // Search field
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Color.hopTextSecondary)
+                    TextField(title, text: $searchText)
+                        .font(HopFont.bodyMedium())
+                        .autocorrectionDisabled()
                 }
-                .buttonStyle(.plain)
-                .disabled(seats >= range.upperBound)
+                .padding(HopSpacing.sm)
+                .background(Color(hex: 0xF1F3F4))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, HopSpacing.md)
+                .padding(.top, HopSpacing.sm)
+
+                if searchText.isEmpty {
+                    // ── Quick chips ───────────────────────────────────────────
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: HopSpacing.xs) {
+                            // Current location chip
+                            Label("Current", systemImage: "location.fill")
+                                .font(HopFont.labelSmall(weight: .medium))
+                                .foregroundColor(Color.hopPrimaryGreen)
+                                .padding(.horizontal, HopSpacing.sm)
+                                .padding(.vertical, 5)
+                                .background(Color.hopPrimaryLime.opacity(0.15))
+                                .overlay(Capsule().stroke(Color.hopPrimaryLime, lineWidth: 1))
+                                .clipShape(Capsule())
+
+                            // Saved place chips
+                            ForEach(savedPlaces, id: \.label) { place in
+                                Button {
+                                    onConfirm(place.label)
+                                } label: {
+                                    Label(place.label, systemImage: place.icon)
+                                        .font(HopFont.labelSmall(weight: .medium))
+                                        .foregroundColor(Color.hopTextPrimary)
+                                        .padding(.horizontal, HopSpacing.sm)
+                                        .padding(.vertical, 5)
+                                        .background(Color(hex: 0xF7F8FA))
+                                        .overlay(Capsule().stroke(Color(hex: 0xE7EAEE), lineWidth: 1))
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, HopSpacing.md)
+                        .padding(.vertical, HopSpacing.sm)
+                    }
+
+                    Divider().padding(.horizontal, HopSpacing.md)
+
+                    // ── Recent routes ─────────────────────────────────────────
+                    if !recentRoutes.isEmpty {
+                        Text("Recent")
+                            .font(HopFont.labelSmall(weight: .semibold))
+                            .foregroundColor(Color.hopTextSecondary)
+                            .padding(.horizontal, HopSpacing.md)
+                            .padding(.top, HopSpacing.sm)
+
+                        ForEach(recentRoutes.indices, id: \.self) { idx in
+                            let route = recentRoutes[idx]
+                            Button {
+                                onRouteConfirm(route.origin, route.dest)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "clock")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Color.hopTextSecondary)
+                                    Text("\(route.origin) → \(route.dest)")
+                                        .font(HopFont.bodySmall())
+                                        .foregroundColor(Color.hopTextPrimary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, HopSpacing.md)
+                                .padding(.vertical, HopSpacing.sm)
+                            }
+                            .buttonStyle(.plain)
+
+                            if idx < recentRoutes.count - 1 {
+                                Divider().padding(.leading, 44)
+                            }
+                        }
+                    }
+                } else {
+                    // Placeholder for autocomplete results
+                    // (Google Places integration reuses existing iOS Places client)
+                    Text("Type to search…")
+                        .font(HopFont.bodySmall())
+                        .foregroundColor(Color.hopTextSecondary)
+                        .padding(.horizontal, HopSpacing.md)
+                        .padding(.top, HopSpacing.md)
+                }
+
+                Spacer()
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
             }
         }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.xs)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+// MARK: — DatePickerSheet
+
+private struct DatePickerSheet: View {
+    @Binding var selectedDate: String
+    @Binding var isPresented: Bool
+
+    private let quickOptions = ["Today", "Tomorrow"]
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(quickOptions, id: \.self) { opt in
+                    Button {
+                        selectedDate = opt
+                        isPresented = false
+                    } label: {
+                        HStack {
+                            Text(opt)
+                                .font(HopFont.bodyLarge())
+                                .foregroundColor(Color.hopTextPrimary)
+                            Spacer()
+                            if selectedDate == opt {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(Color.hopPrimaryGreen)
+                            }
+                        }
+                        .padding(.horizontal, HopSpacing.md)
+                        .padding(.vertical, HopSpacing.sm)
+                    }
+                    .buttonStyle(.plain)
+                    Divider().padding(.leading, HopSpacing.md)
+                }
+                Spacer()
+            }
+            .navigationTitle("Select date")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { isPresented = false }
+                }
+            }
+        }
+        .presentationDetents([.fraction(0.35)])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+// MARK: — SeatPickerSheet
+
+private struct SeatPickerSheet: View {
+    @Binding var seats: Int
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(1...4, id: \.self) { n in
+                    Button {
+                        seats = n
+                        isPresented = false
+                    } label: {
+                        HStack(spacing: HopSpacing.md) {
+                            ZStack {
+                                Circle()
+                                    .fill(n == seats ? Color.hopPrimaryLime : Color(hex: 0xF7F8FA))
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(n == seats ? Color(hex: 0x1A1A1A) : Color.hopTextSecondary)
+                            }
+                            Text(n == 1 ? "1 seat" : "\(n) seats")
+                                .font(HopFont.bodyLarge(weight: n == seats ? .semibold : .regular))
+                                .foregroundColor(Color.hopTextPrimary)
+                            Spacer()
+                            if n == seats {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(Color.hopPrimaryGreen)
+                            }
+                        }
+                        .padding(.horizontal, HopSpacing.md)
+                        .padding(.vertical, HopSpacing.sm)
+                    }
+                    .buttonStyle(.plain)
+                    if n < 4 {
+                        Divider().padding(.leading, 56)
+                    }
+                }
+                Spacer()
+            }
+            .navigationTitle("How many seats?")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { isPresented = false }
+                }
+            }
+        }
+        .presentationDetents([.fraction(0.45)])
+        .presentationDragIndicator(.visible)
     }
 }
 
@@ -423,7 +676,6 @@ private extension TripUiModel {
         onSwitchToDriver: {},
         navigate:         { _ in }
     )
-    .background(Color.hopSurface)
 }
 
 #Preview("PA-01 Passenger Home — Filled") {
@@ -432,5 +684,4 @@ private extension TripUiModel {
         onSwitchToDriver: {},
         navigate:         { _ in }
     )
-    .background(Color.hopSurface)
 }
