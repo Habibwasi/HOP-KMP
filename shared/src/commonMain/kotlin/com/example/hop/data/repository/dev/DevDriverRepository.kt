@@ -7,7 +7,7 @@ import com.example.hop.network.ApiResponse
 
 class DevDriverRepository : DriverRepository {
 
-    override suspend fun submitLicence(carDetails: CarDetails, photoUrl: String): ApiResponse<Unit> =
+    override suspend fun submitCarDetails(carDetails: CarDetails): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
 
     override suspend fun getLicenceStatus(): ApiResponse<LicenceStatus> =

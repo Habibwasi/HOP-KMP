@@ -113,10 +113,8 @@ import org.koin.compose.viewmodel.koinViewModel
  * contains no Scaffold, top bar, or bottom nav — those are owned by [HomeRoute].
  *
  * If [hasDriverRole] is false the user is browsing the Driver tab but hasn't
- * completed onboarding yet. In that case tapping "Post a Trip" redirects to
- * the registration flow instead of the post-trip form:
- *  - [LicenceStatus.PENDING]  → already applied, show review-pending screen
- *  - otherwise                → fresh (or rejected) application, start Step 1
+ * completed onboarding yet. Tapping "Post a Trip" redirects them to the
+ * car details registration flow.
  */
 @Composable
 fun DriverHomeContent(
@@ -125,7 +123,6 @@ fun DriverHomeContent(
     onNavigateToTripDetail: (tripId: String) -> Unit,
     onNavigateToTaxDashboard: () -> Unit,
     onNavigateToDriverRegistration: () -> Unit,
-    onNavigateToReviewPending: () -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
@@ -135,10 +132,8 @@ fun DriverHomeContent(
     val aggregatesState by aggregatesViewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
-    // Load licence status so the "Post a Trip" intercept knows where to send
-    // a non-driver (PENDING → review screen, otherwise → Step 1).
+    // Load driver data on enter.
     LaunchedEffect(Unit) {
-        viewModel.onEvent(DriverEvent.LoadLicenceStatus)
         if (hasDriverRole) {
             viewModel.onEvent(DriverEvent.LoadDriverHome)
             aggregatesViewModel.onEvent(DriverAggregatesEvent.Load)
@@ -158,12 +153,13 @@ fun DriverHomeContent(
                 is DriverEffect.NavigateToMyTrips -> Unit
                 is DriverEffect.NavigateToRatePassenger -> Unit
                 is DriverEffect.NavigateToMarkTripComplete -> Unit
-                // Onboarding effects handled by EnableDriverStep1–3 routes.
+                // Onboarding effects handled by EnableDriverStep1 route.
                 is DriverEffect.NavigateToModelAForm -> Unit
                 is DriverEffect.NavigateToModelBForm -> Unit
                 is DriverEffect.NavigateToPriceReview -> Unit
                 is DriverEffect.NavigateToLicenceUpload -> Unit
                 is DriverEffect.NavigateToReviewPending -> Unit
+                is DriverEffect.NavigateToHome -> Unit
             }
         }
     }
@@ -177,11 +173,8 @@ fun DriverHomeContent(
                 // Approved driver — proceed to the post-trip form.
                 viewModel.onEvent(DriverEvent.RequestPostTrip)
             } else {
-                // Not yet a driver — redirect to onboarding based on application status.
-                when (state.licenceStatus) {
-                    LicenceStatus.PENDING -> onNavigateToReviewPending()
-                    else -> onNavigateToDriverRegistration()
-                }
+                // Not yet a driver — send to car details registration.
+                onNavigateToDriverRegistration()
             }
         },
         onTripClick = { tripId -> viewModel.onEvent(DriverEvent.SelectTrip(tripId)) },
@@ -282,49 +275,49 @@ fun DriverHomeScreen(
                         )
                     }
 
-                    // Goals & streak — placeholder values until the goals API ships.
-                    item {
-                        GoalsRingCard(
-                            tripsCompleted = state.trips.count { it.status == TripStatus.COMPLETED }.coerceAtMost(5),
-                            tripsGoal = 5,
-                            streakDays = 0,
-                        )
-                    }
-
-                    // Demand near you.
-                    item {
-                        Text(
-                            text = "Demand near you",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = HopColors.authTextPrimary,
-                        )
-                    }
-                    item {
-                        // Real hotspots from the aggregates endpoint, mapped
-                        // into the UI model. Falls back to default fixtures so
-                        // the carousel never empties on first load.
-                        val uiHotspots = if (aggregatesState.demandHotspots.isNotEmpty()) {
-                            aggregatesState.demandHotspots.map { hot ->
-                                val level = when {
-                                    hot.demandCount >= 10 -> com.example.hop.ui.components.home.DemandLevel.HIGH
-                                    hot.demandCount >= 5 -> com.example.hop.ui.components.home.DemandLevel.MEDIUM
-                                    else -> com.example.hop.ui.components.home.DemandLevel.LOW
-                                }
-                                com.example.hop.ui.components.home.DemandHotspot(
-                                    areaName = hot.areaName,
-                                    tagline = "${hot.demandCount} bookings in last 7 days",
-                                    level = level,
-                                )
-                            }
-                        } else {
-                            DefaultDemandHotspots
-                        }
-                        DemandTeaserRow(
-                            hotspots = uiHotspots,
-                            onHotspotClick = { onPostTrip() },
-                        )
-                    }
-
+//                    // Goals & streak — placeholder values until the goals API ships.
+//                    item {
+//                        GoalsRingCard(
+//                            tripsCompleted = state.trips.count { it.status == TripStatus.COMPLETED }.coerceAtMost(5),
+//                            tripsGoal = 5,
+//                            streakDays = 0,
+//                        )
+//                    }
+//
+//                    // Demand near you.
+//                    item {
+//                        Text(
+//                            text = "Demand near you",
+//                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+//                            color = HopColors.authTextPrimary,
+//                        )
+//                    }
+//                    item {
+//                        // Real hotspots from the aggregates endpoint, mapped
+//                        // into the UI model. Falls back to default fixtures so
+//                        // the carousel never empties on first load.
+//                        val uiHotspots = if (aggregatesState.demandHotspots.isNotEmpty()) {
+//                            aggregatesState.demandHotspots.map { hot ->
+//                                val level = when {
+//                                    hot.demandCount >= 10 -> com.example.hop.ui.components.home.DemandLevel.HIGH
+//                                    hot.demandCount >= 5 -> com.example.hop.ui.components.home.DemandLevel.MEDIUM
+//                                    else -> com.example.hop.ui.components.home.DemandLevel.LOW
+//                                }
+//                                com.example.hop.ui.components.home.DemandHotspot(
+//                                    areaName = hot.areaName,
+//                                    tagline = "${hot.demandCount} bookings in last 7 days",
+//                                    level = level,
+//                                )
+//                            }
+//                        } else {
+//                            DefaultDemandHotspots
+//                        }
+//                        DemandTeaserRow(
+//                            hotspots = uiHotspots,
+//                            onHotspotClick = { onPostTrip() },
+//                        )
+//                    }
+//
                     // Repost templates — only when there's something to repost.
                     if (repostTemplates.isNotEmpty()) {
                         item {
@@ -344,9 +337,6 @@ fun DriverHomeScreen(
                 } else {
                     item { BecomeDriverPrompt() }
                 }
-
-                // Tips & announcements pager.
-                item { TipsPager(tips = DefaultHomeTips) }
 
                 // Section heading
                 item {

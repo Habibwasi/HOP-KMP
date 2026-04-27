@@ -5,6 +5,6 @@ import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.network.ApiResponse
 
 interface DriverRepository {
-    suspend fun submitLicence(carDetails: CarDetails, photoUrl: String): ApiResponse<Unit>
+    suspend fun submitCarDetails(carDetails: CarDetails): ApiResponse<Unit>
     suspend fun getLicenceStatus(): ApiResponse<LicenceStatus>
 }

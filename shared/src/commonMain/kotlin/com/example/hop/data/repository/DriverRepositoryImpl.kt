@@ -20,10 +20,10 @@ class DriverRepositoryImpl(
     private val httpClient: HttpClient,
 ) : DriverRepository {
 
-    override suspend fun submitLicence(carDetails: CarDetails, photoUrl: String): ApiResponse<Unit> =
+    override suspend fun submitCarDetails(carDetails: CarDetails): ApiResponse<Unit> =
         safeApiCall {
-            httpClient.post("driver/licence") {
-                setBody(carDetails.toSubmitLicenceRequestDto(photoUrl))
+            httpClient.post("users/me/car-details") {
+                setBody(carDetails.toSubmitLicenceRequestDto())
             }
             Unit
         }

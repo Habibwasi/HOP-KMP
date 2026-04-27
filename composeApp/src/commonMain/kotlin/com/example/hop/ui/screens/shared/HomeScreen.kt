@@ -90,13 +90,12 @@ fun HomeRoute(
     onNavigateToTaxDashboard: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToDriverRegistration: () -> Unit,
-    onNavigateToReviewPending: () -> Unit,
     modifier: Modifier = Modifier,
     /** Total unseen notifications — drives the bell icon badge. */
     notificationsUnread: Int = 0,
     /** Total unread chat messages — drives the bottom nav chat badge. */
     chatUnread: Int = 0,
-    authViewModel: AuthViewModel = koinViewModel(),
+    authViewModel: AuthViewModel,
     homeStatsViewModel: HomeStatsViewModel = koinViewModel(),
 ) {
     val authState by authViewModel.state.collectAsStateWithLifecycle()
@@ -157,7 +156,6 @@ fun HomeRoute(
                         onNavigateToTripDetail = onNavigateToTripDetail,
                         onNavigateToTaxDashboard = onNavigateToTaxDashboard,
                         onNavigateToDriverRegistration = onNavigateToDriverRegistration,
-                        onNavigateToReviewPending = onNavigateToReviewPending,
                         snackbarHostState = snackbarHostState,
                     )
                     else -> PassengerHomeContent(

@@ -14,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.example.hop.network.ConnectivityObserver
+import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.ui.components.NoInternetBanner
 import com.example.hop.ui.screens.auth.ForgotPasswordRoute
 import com.example.hop.ui.screens.auth.SetNewPasswordRoute
@@ -36,8 +37,6 @@ import com.example.hop.ui.screens.driver.TripDetailActiveDriverRoute
 import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
 import com.example.hop.ui.screens.driver.RatePassengerRoute
 import com.example.hop.ui.screens.driver.CarDetailsRoute
-import com.example.hop.ui.screens.driver.LicenceUploadRoute
-import com.example.hop.ui.screens.driver.ReviewPendingRoute
 import com.example.hop.ui.screens.driver.PostTripModelSelectRoute
 import com.example.hop.ui.screens.driver.PostTripModelARoute
 import com.example.hop.ui.screens.driver.PostTripModelBRoute
@@ -63,6 +62,7 @@ import org.koin.compose.koinInject
 @Composable
 fun HopNavGraph(
     navController: NavHostController,
+    authViewModel: AuthViewModel,
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -175,9 +175,7 @@ fun HopNavGraph(
                 onNavigateToDriverRegistration = {
                     navController.navigate(HopRoutes.EnableDriverStep1)
                 },
-                onNavigateToReviewPending = {
-                    navController.navigate(HopRoutes.EnableDriverStep3)
-                },
+                authViewModel = authViewModel,
             )
         }
 
@@ -324,25 +322,11 @@ fun HopNavGraph(
 
         composable<HopRoutes.EnableDriverStep1> {
             CarDetailsRoute(
-                onNavigateToLicenceUpload = { navController.navigate(HopRoutes.EnableDriverStep2) },
-                onNavigateBack = { navController.navigateUp() },
-            )
-        }
-
-        composable<HopRoutes.EnableDriverStep2> {
-            LicenceUploadRoute(
-                onNavigateToReviewPending = { navController.navigate(HopRoutes.EnableDriverStep3) },
-                onNavigateBack = { navController.navigateUp() },
-            )
-        }
-
-        composable<HopRoutes.EnableDriverStep3> {
-            ReviewPendingRoute(
                 onNavigateToHome = {
-                    // Pop back to the existing Home so the Driver tab (selectedRole)
-                    // is restored from rememberSaveable — user stays on Driver view.
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
+                onNavigateBack = { navController.navigateUp() },
+                authViewModel = authViewModel,
             )
         }
 

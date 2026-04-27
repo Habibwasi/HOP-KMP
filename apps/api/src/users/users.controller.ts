@@ -143,6 +143,20 @@ export class UsersController {
     return car
   }
 
+  @Post('me/car-details')
+  @UseGuards(SupabaseGuard)
+  @HttpCode(HttpStatus.OK)
+  async saveMyCarDetails(@Req() req: any, @Body() body: any) {
+    return this.users.saveCarDetails(req.user.id, {
+      make: body.make,
+      model: body.model,
+      year: body.year,
+      licensePlate: body.license_plate,
+      colour: body.colour,
+      seatsAvailable: body.seats_available,
+    })
+  }
+
   @Post(':id/report')
   @UseGuards(SupabaseGuard)
   @HttpCode(HttpStatus.OK)

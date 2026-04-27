@@ -112,7 +112,6 @@ sealed interface DriverEvent {
     data class SelectTrip(val tripId: String) : DriverEvent
     data object TapEarningsBanner : DriverEvent
     data class SaveCarDetails(val carDetails: CarDetails) : DriverEvent
-    data class SubmitLicence(val photoUrl: String) : DriverEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -130,6 +129,7 @@ sealed interface DriverEffect {
     data object NavigateToTaxDashboard : DriverEffect
     data object NavigateToLicenceUpload : DriverEffect
     data object NavigateToReviewPending : DriverEffect
+    data object NavigateToHome : DriverEffect
 }
 
 // ─ Error message mapper ───────────────────────────────────────────────────────
@@ -204,7 +204,6 @@ class DriverViewModel(
             is DriverEvent.SelectTrip -> selectTrip(event.tripId)
             is DriverEvent.TapEarningsBanner -> tapEarningsBanner()
             is DriverEvent.SaveCarDetails -> saveCarDetails(event.carDetails)
-            is DriverEvent.SubmitLicence -> submitLicence(event.photoUrl)
         }
     }
 
@@ -441,25 +440,17 @@ class DriverViewModel(
     }
 
     private fun saveCarDetails(carDetails: CarDetails) {
-        _state.value = _state.value.copy(onboardingCarDetails = carDetails)
-        viewModelScope.launch {
-            _effect.send(DriverEffect.NavigateToLicenceUpload)
-        }
-    }
-
-    private fun submitLicence(photoUrl: String) {
-        val carDetails = _state.value.onboardingCarDetails ?: return
         if (_state.value.isSubmittingOnboarding) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isSubmittingOnboarding = true)
-            when (val response = driverRepository.submitLicence(carDetails, photoUrl)) {
+            when (val response = driverRepository.submitCarDetails(carDetails)) {
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(isSubmittingOnboarding = false)
-                    _effect.send(DriverEffect.NavigateToReviewPending)
+                    _effect.send(DriverEffect.NavigateToHome)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isSubmittingOnboarding = false)
-                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("submitting your application")))
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("submitting your car details")))
                 }
             }
         }

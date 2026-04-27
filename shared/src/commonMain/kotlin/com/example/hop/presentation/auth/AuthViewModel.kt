@@ -45,6 +45,8 @@ sealed interface AuthEvent {
     data class RequestPasswordReset(val email: String) : AuthEvent
     /** Fired from the Set New Password screen after the user enters a new password. */
     data class UpdatePassword(val newPassword: String) : AuthEvent
+    /** Re-fetches the current user profile — use after role changes (e.g. becoming a driver). */
+    data object RefreshProfile : AuthEvent
 }
 
 sealed interface AuthEffect {
@@ -116,6 +118,7 @@ class AuthViewModel(
             }
             is AuthEvent.RequestPasswordReset -> requestPasswordReset(event.email)
             is AuthEvent.UpdatePassword -> updatePassword(event.newPassword)
+            is AuthEvent.RefreshProfile -> viewModelScope.launch { refreshUser() }
         }
     }
 
@@ -285,6 +288,19 @@ class AuthViewModel(
                     _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
                 }
             }
+        }
+    }
+
+    /**
+     * Silently re-fetches the current user after a role change (e.g. becoming a
+     * driver). Updates [currentUser] in state without emitting [AuthEffect.NavigateToHome].
+     */
+    private suspend fun refreshUser() {
+        when (val response = authRepository.restoreSession()) {
+            is ApiResponse.Success -> {
+                _state.value = _state.value.copy(currentUser = response.data)
+            }
+            is ApiResponse.Error -> Unit // Silently ignore — stay on current screen
         }
     }
 

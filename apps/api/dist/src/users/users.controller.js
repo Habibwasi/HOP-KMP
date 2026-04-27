@@ -128,6 +128,16 @@ let UsersController = UsersController_1 = class UsersController {
             throw new common_1.NotFoundException('No car details found');
         return car;
     }
+    async saveMyCarDetails(req, body) {
+        return this.users.saveCarDetails(req.user.id, {
+            make: body.make,
+            model: body.model,
+            year: body.year,
+            licensePlate: body.license_plate,
+            colour: body.colour,
+            seatsAvailable: body.seats_available,
+        });
+    }
     async reportUser(req, id, dto) {
         await this.users.reportUser(id, req.user.id, dto.reason);
     }
@@ -198,6 +208,16 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getCarDetails", null);
+__decorate([
+    (0, common_1.Post)('me/car-details'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "saveMyCarDetails", null);
 __decorate([
     (0, common_1.Post)(':id/report'),
     (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),

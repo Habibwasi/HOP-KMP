@@ -108,6 +108,26 @@ export class UsersService {
     return this.prisma.carDetails.findUnique({ where: { userId } })
   }
 
+  async saveCarDetails(
+    userId: string,
+    data: { make: string; model: string; year: number; licensePlate: string; colour: string; seatsAvailable: number },
+  ) {
+    const [carDetails] = await this.prisma.$transaction([
+      this.prisma.carDetails.upsert({
+        where: { userId },
+        create: { userId, ...data },
+        update: data,
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          role: { set: 'DRIVER' },
+        },
+      }),
+    ])
+    return carDetails
+  }
+
   /**
    * Counts trips the user has fully completed, both as driver (trip.status COMPLETED)
    * and as passenger (CONFIRMED booking on a COMPLETED trip).

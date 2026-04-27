@@ -45,6 +45,7 @@ fun App() {
 
         HopNavGraph(
             navController = navController,
+            authViewModel = authViewModel,
             onLogout = {
                 // Dispatch the real logout to the activity-scoped ViewModel so
                 // authRepository.logout() is called (clears tokens/session).
