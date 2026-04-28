@@ -1,4 +1,5 @@
 import SwiftUI
+import Shared
 
 // ── ON-03b Forgot Password ────────────────────────────────────────────────────
 //
@@ -103,7 +104,7 @@ struct ForgotPasswordView: View {
                     placeholder: "jane@example.com",
                     text: $email,
                     keyboardType: .emailAddress,
-                    isEnabled: !isLoading,
+                    isEnabled: !wrapper.state.isLoading,
                     submitLabel: .done
                 )
 

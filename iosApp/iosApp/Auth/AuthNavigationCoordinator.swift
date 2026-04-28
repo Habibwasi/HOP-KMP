@@ -9,6 +9,7 @@ enum AuthDestination: Hashable {
     case signUp
     case login
     case forgotPassword
+    case setNewPassword
     // Home is handled at the app root level — not an auth destination.
 }
 
@@ -83,6 +84,15 @@ struct AuthNavigationCoordinator: View {
             ForgotPasswordView(onBack: {
                 path.removeLast()
             })
+
+        case .setNewPassword:
+            SetNewPasswordView(
+                onPasswordUpdated: {
+                    // Pop back to login
+                    while path.count > 1 { path.removeLast() }
+                },
+                onBack: { path.removeLast() }
+            )
 
         case .splash:
             // Legacy — kept for backwards compat; root now uses OnboardingView.

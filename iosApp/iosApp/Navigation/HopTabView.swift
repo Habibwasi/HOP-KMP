@@ -48,16 +48,19 @@ struct HopTabView: View {
     /// capture params before pushing .searchResults.
     var onSearch: (String, String, String, Int) -> Void
 
+    /// Called when the user logs out from the Settings tab.
+    var onLogout: () -> Void
+
     @State private var selectedTab: HopTab = .home
 
     var body: some View {
         TabView(selection: $selectedTab) {
 
-            // ── Home ──────────────────────────────────────────────────────────
-            PassengerHomeView(
+            // ── Home (unified Passenger ↔ Driver) ────────────────────────────
+            HomeView(
+                navigate: navigate,
                 onSearch: onSearch,
-                onSwitchToDriver: { navigate(.postTripModelSelect) },
-                navigate: navigate
+                onLogout: onLogout
             )
             .tabItem { Label(HopTab.home.label, systemImage: HopTab.home.icon) }
             .tag(HopTab.home)
@@ -70,20 +73,18 @@ struct HopTabView: View {
             .tabItem { Label(HopTab.myTrips.label, systemImage: HopTab.myTrips.icon) }
             .tag(HopTab.myTrips)
 
-            // ── Chat ─────────────────────────────────────────────────────────
-            HopTabPlaceholder(
-                title: "Chat",
-                subtitle: "SH-04",
-                navigate: navigate
+            // ── Notifications (Chat tab repurposed for SH-05) ────────────────
+            NotificationsView(
+                navigate: navigate,
+                onBack:   { selectedTab = .home }
             )
             .tabItem { Label(HopTab.chat.label, systemImage: HopTab.chat.icon) }
             .tag(HopTab.chat)
 
-            // ── Profile ───────────────────────────────────────────────────────
-            HopTabPlaceholder(
-                title: "Profile",
-                subtitle: "SH-02",
-                navigate: navigate
+            // ── Profile (own profile via SH-02) ──────────────────────────────
+            OwnProfileView(
+                navigate: navigate,
+                onBack:   { selectedTab = .home }
             )
             .tabItem { Label(HopTab.profile.label, systemImage: HopTab.profile.icon) }
             .tag(HopTab.profile)
@@ -149,11 +150,11 @@ private struct HopTabPlaceholder: View {
 // MARK: — Previews ─────────────────────────────────────────────────────────────
 
 #Preview("Default – Home selected") {
-    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in })
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {})
 }
 
 #Preview("My Trips selected") {
     // SwiftUI previews cannot drive @State from outside; the tab bar itself
     // controls selection.  Use the live preview to switch tabs interactively.
-    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in })
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {})
 }

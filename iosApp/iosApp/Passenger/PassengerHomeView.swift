@@ -206,7 +206,7 @@ private struct GreetingRow: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(greeting) 👋")
-                    .font(HopFont.titleLarge(weight: .semibold))
+                    .font(HopFont.headlineSmall(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
                 Text("Where are you headed today?")
                     .font(HopFont.bodyMedium())
