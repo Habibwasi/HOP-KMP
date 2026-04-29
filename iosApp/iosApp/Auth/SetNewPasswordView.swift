@@ -1,114 +1,149 @@
 import SwiftUI
 import Shared
 
-// ── ON-03c Set New Password ──────────────────────────────────────────────────
-//
-// Mirror of `SetNewPasswordScreen.kt`. Reached after user follows the password
-// reset email deep-link. Fires AuthEvent.UpdatePassword(newPassword) and pops
-// back on success.
+// MARK: - ON-03c Set New Password ────────────────────────────────────────────
+// Mirrors `SetNewPasswordScreen.kt`. Reached via recovery deep-link.
 
 struct SetNewPasswordView: View {
-
     var onPasswordUpdated: () -> Void
     var onBack: () -> Void
 
     @StateObject private var wrapper = AuthViewModelWrapper()
 
-    @State private var password:        String = ""
-    @State private var confirmPassword: String = ""
-    @State private var showPassword:    Bool   = false
-    @State private var localError:      String? = nil
+    @State private var password = ""
+    @State private var confirm = ""
+    @State private var showPassword = false
+    @State private var showConfirm = false
+    @State private var toast: String? = nil
 
     private var passwordValid: Bool { password.count >= 8 }
-    private var passwordsMatch: Bool { password == confirmPassword }
-    private var canSubmit: Bool {
-        passwordValid && passwordsMatch && !wrapper.state.isLoading
-    }
+    private var passwordsMatch: Bool { password == confirm }
+    private var canSubmit: Bool { passwordValid && passwordsMatch && !wrapper.state.isLoading }
 
     var body: some View {
-        ZStack {
-            Color.hopSurface.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            Color.hopBackground.ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: HopSpacing.md) {
-                    Spacer().frame(height: HopSpacing.lg)
+            VStack(spacing: 0) {
+                topBar
 
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.hopSurfaceElevated)
-                            .frame(width: 64, height: 64)
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 28, weight: .light))
-                            .foregroundColor(Color.hopPrimaryLime)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Spacer().frame(height: HopSpacing.lg)
+
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.hopAuthInputSurface)
+                                .frame(width: 64, height: 64)
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 32))
+                                .foregroundColor(Color.hopAuthAccent)
+                        }
+
+                        Spacer().frame(height: HopSpacing.lg)
+
+                        Text("Set new password")
+                            .font(HopFont.headlineMedium(weight: .bold))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+
+                        Spacer().frame(height: HopSpacing.xs)
+
+                        Text("Choose a strong password of at least 8 characters.")
+                            .font(HopFont.bodyMedium())
+                            .foregroundColor(Color.hopAuthTextSecondary)
+
+                        Spacer().frame(height: HopSpacing.xl)
+
+                        HopTextField(
+                            label: "New password", placeholder: "••••••••",
+                            text: $password, isSecure: !showPassword,
+                            isEnabled: !wrapper.state.isLoading,
+                            trailingLabel: showPassword ? "Hide" : "Show",
+                            trailingAction: { showPassword.toggle() },
+                            submitLabel: .next, lightSurface: true
+                        )
+
+                        Spacer().frame(height: HopSpacing.md)
+
+                        HopTextField(
+                            label: "Confirm password", placeholder: "••••••••",
+                            text: $confirm, isSecure: !showConfirm,
+                            isEnabled: !wrapper.state.isLoading,
+                            errorMessage: (!confirm.isEmpty && !passwordsMatch) ? "Passwords don't match" : nil,
+                            trailingLabel: showConfirm ? "Hide" : "Show",
+                            trailingAction: { showConfirm.toggle() },
+                            submitLabel: .done, lightSurface: true
+                        )
+
+                        Spacer().frame(height: HopSpacing.lg)
+
+                        HopButton(
+                            text: wrapper.state.isLoading ? "Saving…" : "Save password",
+                            variant: .primary,
+                            isLoading: wrapper.state.isLoading,
+                            isEnabled: canSubmit,
+                            action: {
+                                wrapper.viewModel.onEvent(event: AuthEventUpdatePassword(newPassword: password))
+                            }
+                        )
+
+                        Spacer().frame(height: HopSpacing.xl)
                     }
-
-                    Text("Set a new password")
-                        .font(HopFont.headlineLarge(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
-
-                    Text("Choose a strong password with at least 8 characters.")
-                        .font(HopFont.bodyMedium())
-                        .foregroundColor(Color.hopTextSecondary)
-
-                    HopTextField(
-                        label: "New password",
-                        placeholder: "••••••••",
-                        text: $password,
-                        isSecure: !showPassword,
-                        errorMessage: !password.isEmpty && !passwordValid ? "At least 8 characters" : nil,
-                        trailingLabel: showPassword ? "Hide" : "Show",
-                        trailingAction: { showPassword.toggle() }
-                    )
-
-                    HopTextField(
-                        label: "Confirm new password",
-                        placeholder: "••••••••",
-                        text: $confirmPassword,
-                        isSecure: !showPassword,
-                        errorMessage: !confirmPassword.isEmpty && !passwordsMatch ? "Passwords don't match" : nil
-                    )
-
-                    if let err = localError ?? wrapper.state.error {
-                        Text(err)
-                            .font(HopFont.bodySmall())
-                            .foregroundColor(Color.hopError)
-                    }
-
-                    Spacer().frame(height: HopSpacing.md)
-
-                    HopButton(
-                        text: "Update password",
-                        variant: .primary,
-                        isLoading: wrapper.state.isLoading,
-                        isEnabled: canSubmit
-                    ) {
-                        localError = nil
-                        wrapper.viewModel.onEvent(event: AuthEventUpdatePassword(newPassword: password))
-                    }
+                    .padding(.horizontal, HopSpacing.lg)
                 }
-                .padding(HopSpacing.md)
+            }
+
+            if let msg = toast {
+                HopToast(message: msg)
+                    .padding(.bottom, HopSpacing.xl)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(Color.hopTextPrimary)
-                }
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarHidden(true)
+        .task { wrapper.startObserving() }
         .task {
-            wrapper.startObserving()
             for await effect in wrapper.viewModel.effect {
-                if effect is AuthEffectPasswordUpdated {
-                    onPasswordUpdated()
-                } else if let snack = effect as? AuthEffectShowSnackbar {
-                    localError = snack.message
-                }
+                await handleEffect(effect)
             }
         }
     }
+
+    private var topBar: some View {
+        HStack {
+            Button(action: onBack) {
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            Spacer()
+        }
+        .padding(.horizontal, HopSpacing.xs)
+        .frame(height: 56)
+    }
+
+    @MainActor
+    private func handleEffect(_ effect: AuthEffect) async {
+        switch effect {
+        case is AuthEffectPasswordUpdated:
+            onPasswordUpdated()
+        case let snack as AuthEffectShowSnackbar:
+            showToast(snack.message)
+            wrapper.clearError()
+        default:
+            break
+        }
+    }
+
+    private func showToast(_ message: String) {
+        withAnimation { toast = message }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation { toast = nil }
+        }
+    }
+}
+
+#Preview {
+    SetNewPasswordView(onPasswordUpdated: {}, onBack: {})
 }

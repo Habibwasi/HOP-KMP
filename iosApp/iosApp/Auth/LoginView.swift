@@ -1,60 +1,61 @@
 import SwiftUI
 import Shared
 
-// ── ON-03 Log In ──────────────────────────────────────────────────────────────
+// MARK: - ON-03 Log In ───────────────────────────────────────────────────────
+// Mirrors `LoginScreen.kt`. Light theme, welcome header, email/password with
+// Show/Hide toggle, "Forgot password?" link, primary "Log In" button, ghost
+// MitID button (disabled — taps emit "Coming soon" toast).
 
 struct LoginView: View {
+    var onNavigateToHome:           () -> Void
+    var onNavigateToSignUp:         () -> Void
+    var onNavigateToForgotPassword: () -> Void
 
     @StateObject private var wrapper = AuthViewModelWrapper()
 
-    var onNavigateToHome: () -> Void
-    var onNavigateToSignUp: () -> Void
-    var onNavigateToForgotPassword: () -> Void
-
-    // ── Local form state ──────────────────────────────────────────────────────
-    @State private var email        = ""
-    @State private var password     = ""
+    @State private var email = ""
+    @State private var password = ""
     @State private var showPassword = false
+    @State private var toast: String? = nil
 
-    // ── Toast ─────────────────────────────────────────────────────────────────
-    @State private var toastMessage: String? = nil
-
-    // ── Derived validation ────────────────────────────────────────────────────
-    private var emailValid:    Bool { email.contains("@") && email.split(separator: "@").last?.contains(".") == true }
-    private var passwordValid: Bool { !password.isEmpty }
-    private var canSubmit: Bool { emailValid && passwordValid && !wrapper.state.isLoading }
+    private var emailValid: Bool {
+        email.contains("@") && (email.split(separator: "@").last?.contains(".") ?? false)
+    }
+    private var canSubmit: Bool {
+        emailValid && !password.isEmpty && !wrapper.state.isLoading
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            Color.hopBackground.ignoresSafeArea()
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: HopSpacing.xl)
 
-                    // ── Header ─────────────────────────────────────────────────
                     Text("Welcome back")
-                        .font(HopFont.heading)
-                        .foregroundColor(Color.hopTextPrimary)
+                        .font(HopFont.headlineSmall(weight: .bold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
 
                     Spacer().frame(height: HopSpacing.xs)
 
                     Text("Log in to your Hop account")
-                        .font(HopFont.body)
-                        .foregroundColor(Color.hopTextSecondary)
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopAuthTextSecondary)
 
                     Spacer().frame(height: HopSpacing.xl)
 
-                    // ── Email ──────────────────────────────────────────────────
                     HopTextField(
                         label: "Email address",
                         placeholder: "jane@example.com",
                         text: $email,
                         keyboardType: .emailAddress,
-                        isEnabled: !wrapper.state.isLoading
+                        isEnabled: !wrapper.state.isLoading,
+                        lightSurface: true
                     )
 
                     Spacer().frame(height: HopSpacing.md)
 
-                    // ── Password ───────────────────────────────────────────────
                     HopTextField(
                         label: "Password",
                         placeholder: "••••••••",
@@ -63,16 +64,16 @@ struct LoginView: View {
                         isEnabled: !wrapper.state.isLoading,
                         trailingLabel: showPassword ? "Hide" : "Show",
                         trailingAction: { showPassword.toggle() },
-                        submitLabel: .done
+                        submitLabel: .done,
+                        lightSurface: true
                     )
 
-                    // ── Forgot password link ────────────────────────────────────
                     HStack {
                         Spacer()
                         Button(action: onNavigateToForgotPassword) {
                             Text("Forgot password?")
-                                .font(HopFont.label)
-                                .foregroundColor(Color.hopPrimaryLime)
+                                .font(HopFont.labelMedium())
+                                .foregroundColor(Color.hopAuthAccent)
                                 .underline()
                         }
                         .disabled(wrapper.state.isLoading)
@@ -81,39 +82,46 @@ struct LoginView: View {
 
                     Spacer().frame(height: HopSpacing.lg)
 
-                    // ── Log In ─────────────────────────────────────────────────
-                    HopPrimaryButton(
-                        title: "Log In",
+                    HopButton(
+                        text: "Log In",
+                        variant: .primary,
                         isLoading: wrapper.state.isLoading,
-                        isEnabled: canSubmit
-                    ) {
-                        wrapper.login(
-                            email: email.trimmingCharacters(in: .whitespaces),
-                            password: password
-                        )
-                    }
+                        isEnabled: canSubmit,
+                        action: {
+                            wrapper.login(
+                                email: email.trimmingCharacters(in: .whitespaces),
+                                password: password
+                            )
+                        }
+                    )
 
                     Spacer().frame(height: HopSpacing.md)
 
-                    // ── Continue with MitID (disabled) ─────────────────────────
-                    HopGhostButton(title: "Continue with MitID", isEnabled: false) {
-                        toastMessage = "Coming soon"
-                    }
-                    .onTapGesture { toastMessage = "Coming soon" }
+                    HopButton(
+                        text: "Continue with MitID",
+                        variant: .ghost,
+                        isEnabled: false,
+                        lightSurface: true,
+                        action: {}
+                    )
+                    .overlay(
+                        Rectangle()
+                            .fill(Color.clear)
+                            .contentShape(Rectangle())
+                            .onTapGesture { showToast("Coming soon") }
+                    )
 
                     Spacer().frame(height: HopSpacing.xl)
 
-                    // ── Footer link ────────────────────────────────────────────
-                    HStack {
+                    HStack(spacing: 4) {
                         Spacer()
-                        Text("Don't have an account? ")
-                            .font(HopFont.body)
-                            .foregroundColor(Color.hopTextSecondary)
+                        Text("Don't have an account?")
+                            .font(HopFont.bodyMedium())
+                            .foregroundColor(Color.hopAuthTextSecondary)
                         Button(action: onNavigateToSignUp) {
                             Text("Sign up")
-                                .font(HopFont.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(Color.hopPrimaryLime)
+                                .font(HopFont.bodyMedium(weight: .semibold))
+                                .foregroundColor(Color.hopAuthAccent)
                                 .underline()
                         }
                         Spacer()
@@ -124,19 +132,12 @@ struct LoginView: View {
                 .padding(.horizontal, HopSpacing.md)
             }
 
-            // ── Toast overlay ──────────────────────────────────────────────────
-            if let msg = toastMessage {
+            if let msg = toast {
                 HopToast(message: msg)
                     .padding(.bottom, HopSpacing.xl)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                            withAnimation { toastMessage = nil }
-                        }
-                    }
             }
         }
-        .background(Color.hopSurface.ignoresSafeArea())
         .task { wrapper.startObserving() }
         .task {
             for await effect in wrapper.viewModel.effect {
@@ -151,40 +152,24 @@ struct LoginView: View {
         case is AuthEffectNavigateToHome:
             onNavigateToHome()
         case let snack as AuthEffectShowSnackbar:
-            withAnimation { toastMessage = snack.message }
+            showToast(snack.message)
             wrapper.clearError()
         case is AuthEffectSessionExpired:
-            // Token refresh failed while on login screen — surface to user.
-            withAnimation { toastMessage = "Session expired. Please log in again." }
+            showToast("Session expired. Please log in again.")
             wrapper.clearError()
         default:
             break
         }
     }
+
+    private func showToast(_ message: String) {
+        withAnimation { toast = message }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation { toast = nil }
+        }
+    }
 }
 
-// ── Previews ──────────────────────────────────────────────────────────────────
-
-#Preview("Default") {
-    LoginView(
-        onNavigateToHome: {},
-        onNavigateToSignUp: {},
-        onNavigateToForgotPassword: {}
-    )
-}
-
-#Preview("Loading") {
-    LoginView(
-        onNavigateToHome: {},
-        onNavigateToSignUp: {},
-        onNavigateToForgotPassword: {}
-    )
-}
-
-#Preview("Error state — via snackbar") {
-    LoginView(
-        onNavigateToHome: {},
-        onNavigateToSignUp: {},
-        onNavigateToForgotPassword: {}
-    )
+#Preview {
+    LoginView(onNavigateToHome: {}, onNavigateToSignUp: {}, onNavigateToForgotPassword: {})
 }

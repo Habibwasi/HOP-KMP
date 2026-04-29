@@ -21,6 +21,8 @@ struct HopTextField: View {
     var trailingLabel: String? = nil
     var trailingAction: (() -> Void)? = nil
     var submitLabel: SubmitLabel = .next
+    /// Use light theme (white bg + dark text) for auth screens.
+    var lightSurface: Bool = false
 
     @FocusState private var isFocused: Bool
 
@@ -29,14 +31,14 @@ struct HopTextField: View {
             // ── Label ─────────────────────────────────────────────────────────
             Text(label)
                 .font(HopFont.labelSmall())
-                .foregroundColor(Color.hopTextSecondary)
+                .foregroundColor(secondaryColor)
 
             // ── Input row ─────────────────────────────────────────────────────
             HStack(spacing: 0) {
                 fieldContent
                     .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextPrimary)
-                    .tint(Color.hopPrimaryLime)
+                    .foregroundColor(primaryColor)
+                    .tint(accentColor)
                     .focused($isFocused)
                     .disabled(!isEnabled)
                     .submitLabel(submitLabel)
@@ -45,7 +47,7 @@ struct HopTextField: View {
                     Button(action: trailingAction) {
                         Text(trailingLabel)
                             .font(HopFont.labelSmall())
-                            .foregroundColor(Color.hopPrimaryLime)
+                            .foregroundColor(accentColor)
                             .padding(.leading, HopSpacing.xs)
                     }
                     .buttonStyle(.plain)
@@ -53,7 +55,7 @@ struct HopTextField: View {
             }
             .padding(.horizontal, HopSpacing.md)
             .frame(height: 52)
-            .background(isEnabled ? Color.hopSurfaceElevated : Color.hopSurfaceElevated.opacity(0.5))
+            .background(isEnabled ? inputBg : inputBg.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -89,9 +91,15 @@ struct HopTextField: View {
         }
     }
 
+    private var primaryColor:   Color { lightSurface ? Color.hopAuthTextPrimary   : Color.hopTextPrimary }
+    private var secondaryColor: Color { lightSurface ? Color.hopAuthTextSecondary : Color.hopTextSecondary }
+    private var accentColor:    Color { lightSurface ? Color.hopAuthAccent        : Color.hopPrimaryLime }
+    private var inputBg:        Color { lightSurface ? Color.hopAuthInputSurface  : Color.hopSurfaceElevated }
+
     private var borderColor: Color {
         if errorMessage != nil { return Color.hopError }
-        return isFocused ? Color.hopPrimaryLime : Color.clear
+        if isFocused { return accentColor }
+        return lightSurface ? Color.hopAuthInputBorder : .clear
     }
 }
 

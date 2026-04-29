@@ -21,6 +21,8 @@ export declare class UsersService {
     reportUser(reportedId: string, reporterId: string, reason: string): Promise<void>;
     getCarDetails(userId: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         make: string;
         model: string;
@@ -28,8 +30,6 @@ export declare class UsersService {
         licensePlate: string;
         colour: string;
         seatsAvailable: number;
-        createdAt: Date;
-        updatedAt: Date;
     } | null>;
     saveCarDetails(userId: string, data: {
         make: string;
@@ -40,6 +40,8 @@ export declare class UsersService {
         seatsAvailable: number;
     }): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         make: string;
         model: string;
@@ -47,8 +49,6 @@ export declare class UsersService {
         licensePlate: string;
         colour: string;
         seatsAvailable: number;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     completedTripCount(userId: string): Promise<number>;
 }

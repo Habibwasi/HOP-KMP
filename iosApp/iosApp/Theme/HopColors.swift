@@ -21,6 +21,13 @@ extension Color {
     static let hopWarning = Color(hex: 0xFBBF24)
     static let hopError   = Color(hex: 0xEF4444)
 
+    // ── Auth (light theme) ───────────────────────────────────────────────────
+    static let hopAuthTextPrimary    = Color(hex: 0x0D0D0D)
+    static let hopAuthTextSecondary  = Color(hex: 0x5F6368)
+    static let hopAuthAccent         = Color(hex: 0x167A30)
+    static let hopAuthInputSurface   = Color(hex: 0xF1F3F4)
+    static let hopAuthInputBorder    = Color(hex: 0xD1D5DB)
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     init(hex: UInt, opacity: Double = 1) {
         self.init(
