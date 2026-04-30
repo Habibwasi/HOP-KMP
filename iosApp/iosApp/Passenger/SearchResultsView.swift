@@ -2,9 +2,19 @@ import SwiftUI
 import Shared
 
 /// PA-02 — Search Results. Mirrors composeApp `SearchResultsScreen.kt`.
+///
+/// `SearchViewModel` is registered as `viewModelOf` in Koin (factory), so the
+/// instance created by `PassengerHomeView` is **not** the same instance this
+/// view sees. The home view captures the typed search params into
+/// `HopNavigationStack`'s `lastSearch*` state and forwards them here so we can
+/// re-issue the search against this view's own VM instance on appear.
 struct SearchResultsView: View {
     let onBack: () -> Void
     let onNavigateToTripDetail: (_ tripId: String) -> Void
+    var origin: String = ""
+    var dest:   String = ""
+    var date:   String = ""
+    var seats:  Int    = 1
 
     @StateObject private var wrapper = SearchViewModelWrapper()
 
@@ -90,6 +100,13 @@ struct SearchResultsView: View {
                 if let n = effect as? SearchEffectNavigateToTripDetail {
                     onNavigateToTripDetail(n.tripId)
                 }
+            }
+            // Run the search owned by this view's VM instance. The home
+            // screen also kicked off a search on its own VM, but since
+            // `SearchViewModel` is a factory in Koin, that result never
+            // reaches us — we have to re-issue against ours.
+            if !origin.isEmpty || !dest.isEmpty {
+                wrapper.search(origin: origin, dest: dest, date: date, seats: seats)
             }
         }
     }

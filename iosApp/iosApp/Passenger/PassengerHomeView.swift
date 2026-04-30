@@ -172,18 +172,13 @@ struct PassengerHomeView: View {
                         .padding(.top, HopSpacing.xs)
 
                         // Loading / empty / list
-                        if tripsWrapper.state.isLoading {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .tint(Color.hopPrimaryLime)
-                                .padding(.vertical, HopSpacing.lg)
-                        } else if tripsWrapper.state.upcomingTrips.isEmpty {
-                            Text("No upcoming trips yet — search above to find a ride.")
-                                .font(HopFont.bodySmall())
-                                .foregroundColor(Color.hopAuthTextSecondary)
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, HopSpacing.lg)
+                        if tripsWrapper.state.isLoading || tripsWrapper.state.upcomingTrips.isEmpty {
+                            AnimatedLoadingCar(
+                                caption: tripsWrapper.state.isLoading
+                                    ? "Finding rides..."
+                                    : "No upcoming trips yet — search above to find a ride."
+                            )
+                            .padding(.vertical, HopSpacing.lg)
                         } else {
                             VStack(spacing: HopSpacing.sm) {
                                 ForEach(tripsWrapper.state.upcomingTrips, id: \.id) { trip in

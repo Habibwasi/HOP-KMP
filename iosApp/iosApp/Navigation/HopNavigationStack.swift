@@ -45,8 +45,11 @@ struct HopNavigationStack: View {
             }
             .navigationDestination(for: HopRoute.self) { route in
                 destinationView(for: route)
-                    .toolbarBackground(Color.hopSurface, for: .navigationBar)
-                    .toolbarColorScheme(.dark, for: .navigationBar)
+                    // All detail screens render their own custom top bar
+                    // (HStack with arrow.left + title). Hide the system
+                    // NavigationStack toolbar so we don't get a duplicate
+                    // navigation bar stacked above each screen's chrome.
+                    .toolbar(.hidden, for: .navigationBar)
             }
         }
     }
@@ -81,15 +84,17 @@ struct HopNavigationStack: View {
         // ── Passenger ────────────────────────────────────────────────────────
         case .searchResults:
             // Trigger the search via the shared SearchViewModel before pushing.
-            // The screen reads results from VM state and ignores the captured
-            // params (kept here for future deep-linking).
+            // Pass the captured params so the SearchResultsView's own VM
+            // instance can re-issue the search (Koin registers SearchViewModel
+            // as factory, so each call site gets a fresh instance).
             SearchResultsView(
                 onBack: popBack,
-                onNavigateToTripDetail: { id in navigate(.tripDetail(id: id)) }
+                onNavigateToTripDetail: { id in navigate(.tripDetail(id: id)) },
+                origin: lastSearchOrigin,
+                dest:   lastSearchDest,
+                date:   lastSearchDate,
+                seats:  lastSearchSeats
             )
-            .onAppear {
-                _ = lastSearchOrigin; _ = lastSearchDest; _ = lastSearchDate; _ = lastSearchSeats
-            }
 
         case .tripDetail(let id):
             TripDetailView(

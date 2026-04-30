@@ -3,6 +3,12 @@ import Shared
 
 /// PA-07 — My Trips (Passenger). Mirrors composeApp `MyTripsPassengerScreen.kt`.
 /// Top bar + Upcoming/Past tabs + TripCardLight list + bottom nav (Home/MyTrips/Chat/Profile).
+///
+/// `inTab`: when `true`, this view is being rendered as a root tab inside
+/// `HopTabView` — the system tab bar already provides bottom navigation and
+/// the top-level nav is the tab itself, so we hide our own back arrow and
+/// our custom `MyTripsBottomNavBar`. When `false` (pushed via
+/// `HopNavigationStack`), the screen owns its full chrome.
 struct MyTripsPassengerView: View {
     let onNavigateBack: () -> Void
     let onNavigateToTripDetailActive: (_ bookingId: String) -> Void
@@ -11,6 +17,7 @@ struct MyTripsPassengerView: View {
     let onNavigateToChat: () -> Void
     let onNavigateToProfile: () -> Void
     let onNavigateToFindRide: () -> Void
+    var inTab: Bool = false
 
     @StateObject private var wrapper = MyTripsPassengerViewModelWrapper()
     @State private var selectedTab: Int = 0
@@ -22,14 +29,16 @@ struct MyTripsPassengerView: View {
                 Text("My Trips")
                     .font(HopFont.headlineSmall(weight: .bold))
                     .foregroundColor(Color.hopAuthTextPrimary)
-                HStack {
-                    Button(action: onNavigateBack) {
-                        Image(systemName: "arrow.left")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color.hopAuthTextPrimary)
-                            .frame(width: 44, height: 44)
-                    }.buttonStyle(.plain)
-                    Spacer()
+                if !inTab {
+                    HStack {
+                        Button(action: onNavigateBack) {
+                            Image(systemName: "arrow.left")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .frame(width: 44, height: 44)
+                        }.buttonStyle(.plain)
+                        Spacer()
+                    }
                 }
             }
             .padding(.horizontal, HopSpacing.xs)
@@ -75,14 +84,17 @@ struct MyTripsPassengerView: View {
                 }
             }
 
-            // Bottom nav
-            MyTripsBottomNavBar(
-                selected: 1,
-                onHome: onNavigateToHome,
-                onMyTrips: {},
-                onChat: onNavigateToChat,
-                onProfile: onNavigateToProfile
-            )
+            // Bottom nav (only when shown as a pushed route — the system
+            // TabView already provides bottom navigation when in-tab).
+            if !inTab {
+                MyTripsBottomNavBar(
+                    selected: 1,
+                    onHome: onNavigateToHome,
+                    onMyTrips: {},
+                    onChat: onNavigateToChat,
+                    onProfile: onNavigateToProfile
+                )
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.hopBackground.ignoresSafeArea())

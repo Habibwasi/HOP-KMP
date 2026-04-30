@@ -73,7 +73,8 @@ struct HopTabView: View {
                 onNavigateToHome: { selectedTab = .home },
                 onNavigateToChat: { selectedTab = .chat },
                 onNavigateToProfile: { selectedTab = .profile },
-                onNavigateToFindRide: { selectedTab = .home }
+                onNavigateToFindRide: { selectedTab = .home },
+                inTab: true
             )
             .tabItem { Label(HopTab.myTrips.label, systemImage: HopTab.myTrips.icon) }
             .tag(HopTab.myTrips)
@@ -104,12 +105,15 @@ struct HopTabView: View {
     private func applyTabBarAppearance() {
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(Color.hopSurface)
+        // Light theme: white background with subtle top border, matching the
+        // light auth/passenger surfaces and Android's NavigationBar styling.
+        appearance.backgroundColor = UIColor(Color.hopBackground)
+        appearance.shadowColor     = UIColor(Color.hopAuthInputBorder)
 
         // Normal item colour
-        appearance.stackedLayoutAppearance.normal.iconColor    = UIColor(Color.hopTextSecondary)
+        appearance.stackedLayoutAppearance.normal.iconColor    = UIColor(Color.hopAuthTextSecondary)
         appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor(Color.hopTextSecondary)
+            .foregroundColor: UIColor(Color.hopAuthTextSecondary)
         ]
         // Selected item colour
         appearance.stackedLayoutAppearance.selected.iconColor    = UIColor(Color.hopPrimaryLime)

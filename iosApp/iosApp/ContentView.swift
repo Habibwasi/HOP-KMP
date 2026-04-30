@@ -25,7 +25,10 @@ struct ContentView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
+        // Auth + Passenger + Driver screens are light-themed (white background,
+        // hopAuth* tokens). Forcing light colour scheme keeps system controls
+        // (DatePicker, sheets, alerts) readable on white surfaces.
+        .preferredColorScheme(.light)
         .task { authWrapper.startObserving() }
         .task {
             // Listen for NavigateToHome effects emitted by the silent session
