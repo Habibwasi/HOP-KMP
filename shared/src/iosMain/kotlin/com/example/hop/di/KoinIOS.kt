@@ -6,7 +6,10 @@ import com.example.hop.presentation.bookingsuccess.BookingSuccessViewModel
 import com.example.hop.presentation.cancellationconfirmation.CancellationConfirmationViewModel
 import com.example.hop.presentation.chat.ChatViewModel
 import com.example.hop.presentation.driver.DriverViewModel
+import com.example.hop.presentation.home.HomeStatsViewModel
+import com.example.hop.presentation.home.SavedPlacesViewModel
 import com.example.hop.presentation.mytrips.MyTripsPassengerViewModel
+import com.example.hop.presentation.search.SearchViewModel
 import com.example.hop.presentation.notifications.NotificationsViewModel
 import com.example.hop.presentation.profile.OtherProfileViewModel
 import com.example.hop.presentation.profile.OwnProfileViewModel
@@ -45,6 +48,8 @@ fun getDriverViewModel(): DriverViewModel = KoinPlatform.getKoin().get()
 
 fun getNotificationsViewModel(): NotificationsViewModel = KoinPlatform.getKoin().get()
 
+fun getHomeStatsViewModel(): HomeStatsViewModel = KoinPlatform.getKoin().get()
+
 fun getSettingsViewModel(): SettingsViewModel = KoinPlatform.getKoin().get()
 
 fun getOwnProfileViewModel(): OwnProfileViewModel = KoinPlatform.getKoin().get()
@@ -54,3 +59,7 @@ fun getOtherProfileViewModel(): OtherProfileViewModel = KoinPlatform.getKoin().g
 fun getChatViewModel(): ChatViewModel = KoinPlatform.getKoin().get()
 
 fun getTaxViewModel(): TaxViewModel = KoinPlatform.getKoin().get()
+
+fun getSavedPlacesViewModel(): SavedPlacesViewModel = KoinPlatform.getKoin().get()
+
+fun getSearchViewModel(): SearchViewModel = KoinPlatform.getKoin().get()

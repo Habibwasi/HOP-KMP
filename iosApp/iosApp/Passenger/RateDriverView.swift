@@ -1,173 +1,101 @@
 import SwiftUI
 import Shared
 
-// MARK: — PA-09 Rate Driver ───────────────────────────────────────────────────
-//
-// Post-trip rating screen for a completed passenger booking.
-// Supports 1-5 star rating and optional text comment.
-// Dispatches BookingEventSubmitRating via BookingViewModelWrapper.
-// Effect BookingEffectNavigateToMyTripsPassenger → onSubmitted()
-
+/// PA-09 — Rate Driver. Mirrors composeApp `RateDriverScreen.kt`.
 struct RateDriverView: View {
-
-    let bookingId:      String
-    let driverName:     String
+    let bookingId: String
+    let driverName: String
     let driverInitials: String
-
-    var onSubmitted: () -> Void
-    var onBack:      () -> Void
+    let onSubmitted: () -> Void
+    let onBack: () -> Void
 
     @StateObject private var wrapper = BookingViewModelWrapper()
-
-    @State private var starRating: Int    = 0
-    @State private var comment:    String = ""
-    @State private var submitted:  Bool   = false
-
-    private var canSubmit: Bool { starRating > 0 && !wrapper.state.isLoading }
-    private let commentMaxChars = 280
+    @State private var rating: Int = 0
+    @State private var comment: String = ""
+    private let commentMax = 280
 
     var body: some View {
-        ZStack {
-            Color.hopSurface.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-
-                // ── Driver avatar ─────────────────────────────────────────────
-                VStack(spacing: HopSpacing.sm) {
-                    HopAvatar(name: driverInitials, imageURL: nil, size: .xlarge)
-                        .padding(.top, HopSpacing.xxl)
-                    Text("How was your trip with \(driverName)?")
-                        .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, HopSpacing.md)
-                }
-
-                // ── Star picker ───────────────────────────────────────────────
-                HopStarRating(rating: $starRating)
-                    .padding(.top, HopSpacing.xl)
-
-                // ── Optional comment ──────────────────────────────────────────
-                VStack(alignment: .leading, spacing: HopSpacing.xs) {
-                    Text("Leave a comment (optional)")
-                        .font(HopFont.labelMedium(weight: .medium))
-                        .foregroundColor(Color.hopTextSecondary)
-
-                    ZStack(alignment: .topLeading) {
-                        if comment.isEmpty {
-                            Text("How was your experience?")
-                                .font(HopFont.bodyMedium())
-                                .foregroundColor(Color.hopTextSecondary.opacity(0.6))
-                                .padding(.top, 12).padding(.leading, 6)
-                        }
-                        TextEditor(text: $comment)
-                            .font(HopFont.bodyMedium())
-                            .foregroundColor(Color.hopTextPrimary)
-                            .scrollContentBackground(.hidden)
-                            .frame(minHeight: 96)
-                            .onChange(of: comment) { _, newValue in
-                                if newValue.count > commentMaxChars {
-                                    comment = String(newValue.prefix(commentMaxChars))
-                                }
-                            }
-                    }
-                    .padding(.horizontal, HopSpacing.sm)
-                    .padding(.vertical, HopSpacing.xs)
-                    .background(Color.hopSurfaceElevated)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.hopPrimaryLime.opacity(comment.isEmpty ? 0 : 0.5), lineWidth: 1))
-
-                    HStack {
-                        Spacer()
-                        Text("\(comment.count)/\(commentMaxChars)")
-                            .font(HopFont.bodySmall())
-                            .foregroundColor(comment.count >= commentMaxChars ? Color.hopError : Color.hopTextSecondary)
-                    }
-                }
-                .padding(.horizontal, HopSpacing.md)
-                .padding(.top, HopSpacing.xl)
-
-                Spacer()
-
-                // ── CTA ───────────────────────────────────────────────────────
-                VStack(spacing: HopSpacing.sm) {
-                    HopPrimaryButton(
-                        title:     "Submit Rating",
-                        isLoading: wrapper.state.isLoading,
-                        isEnabled: canSubmit
-                    ) {
-                        wrapper.submitRating(bookingId: bookingId, stars: starRating, comment: comment.isEmpty ? nil : comment)
-                    }
-                }
-                .padding(.horizontal, HopSpacing.md)
-                .padding(.bottom, HopSpacing.xl)
-            }
-        }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
+        VStack(spacing: 0) {
+            HStack(spacing: HopSpacing.sm) {
                 Button(action: onBack) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(Color.hopTextPrimary)
-                }
-                .accessibilityLabel("Back")
-            }
-            ToolbarItem(placement: .principal) {
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .frame(width: 36, height: 36)
+                }.buttonStyle(.plain)
                 Text("Rate your trip")
-                    .font(HopFont.bodyLarge(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .font(HopFont.titleMedium())
+                    .foregroundColor(Color.hopAuthTextPrimary)
+                Spacer()
             }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .task {
-            wrapper.startObserving { effect in
-                if effect is BookingEffectNavigateToMyTripsPassenger {
-                    submitted = true
-                    onSubmitted()
-                }
-            }
-        }
-    }
+            .padding(.horizontal, HopSpacing.sm)
+            .padding(.vertical, HopSpacing.xs)
 
-}
+            ScrollView {
+                VStack(alignment: .center, spacing: HopSpacing.lg) {
+                    Spacer().frame(height: HopSpacing.lg)
+                    HopAvatar(name: driverName, size: .large)
+                    Text("How was your trip with \(driverName)?")
+                        .font(HopFont.headlineSmall(weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, HopSpacing.lg)
 
-// MARK: — Star rating component
+                    StarRatingInput(rating: $rating)
 
-struct HopStarRating: View {
-    @Binding var rating: Int
-    var maxStars: Int = 5
-
-    var body: some View {
-        HStack(spacing: HopSpacing.sm) {
-            ForEach(1...maxStars, id: \.self) { index in
-                Image(systemName: index <= rating ? "star.fill" : "star")
-                    .font(.system(size: 36))
-                    .foregroundColor(index <= rating ? Color.hopPrimaryLime : Color.hopTextSecondary.opacity(0.4))
-                    .scaleEffect(index == rating ? 1.2 : 1.0)
-                    .animation(.spring(response: 0.25, dampingFraction: 0.5), value: rating)
-                    .onTapGesture {
-                        withAnimation { rating = index }
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextEditor(text: $comment)
+                            .font(HopFont.bodyMedium())
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                            .scrollContentBackground(.hidden)
+                            .padding(8)
+                            .frame(height: 110)
+                            .background(Color.hopAuthInputSurface)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.hopAuthInputBorder, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .onChange(of: comment) { _, new in
+                                if new.count > commentMax {
+                                    comment = String(new.prefix(commentMax))
+                                }
+                            }
+                        HStack {
+                            Spacer()
+                            Text("\(comment.count) / \(commentMax)")
+                                .font(HopFont.labelSmall())
+                                .foregroundColor(Color.hopAuthTextSecondary)
+                        }
                     }
-                    .accessibilityLabel("\(index) star\(index == 1 ? "" : "s")")
-                    .accessibilityAddTraits(index <= rating ? .isSelected : [])
+                    .padding(.horizontal, HopSpacing.md)
+                    Spacer().frame(height: HopSpacing.lg)
+                }
+                .frame(maxWidth: .infinity)
+            }
+
+            HopButton(
+                text: "Submit",
+                variant: .primary,
+                isLoading: wrapper.state.isLoading,
+                isEnabled: rating > 0
+            ) {
+                wrapper.submitRating(
+                    bookingId: bookingId,
+                    stars: rating,
+                    comment: comment.trimmingCharacters(in: .whitespaces).isEmpty ? nil : comment
+                )
+            }
+            .padding(HopSpacing.md)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.hopBackground.ignoresSafeArea())
+        .onAppear {
+            wrapper.startObserving { effect in
+                // Submit success → screen pops via Route layer; here we just navigate.
+                if effect is BookingEffectShowSnackbar { return }
+                onSubmitted()
             }
         }
     }
-}
-
-// MARK: — Preview
-
-#Preview("PA-09 Rate Driver") {
-    NavigationStack {
-        RateDriverView(
-            bookingId:      "bk-001",
-            driverName:     "Mikkel Hansen",
-            driverInitials: "MH",
-            onSubmitted:    {},
-            onBack:         {}
-        )
-    }
-    .preferredColorScheme(.dark)
 }

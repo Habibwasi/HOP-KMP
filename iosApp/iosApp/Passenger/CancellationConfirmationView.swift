@@ -1,107 +1,112 @@
 import SwiftUI
+import Shared
 
-// MARK: — PA-10 Cancellation Confirmation ─────────────────────────────────────
-//
-// Pure information screen shown after a booking is successfully cancelled.
-// No ViewModel required — state change was completed upstream.
-// CTA: Back to Home (removes the whole nav stack).
-
+/// PA-10 — Cancellation Confirmation. Mirrors composeApp `CancellationConfirmationScreen.kt`.
 struct CancellationConfirmationView: View {
-
     let bookingId: String
-    var onGoHome:  () -> Void
+    let onBackToMyTrips: () -> Void
 
-    @State private var circleScale:   CGFloat = 0.5
-    @State private var circleOpacity: Double  = 0.0
-    @State private var iconScale:     CGFloat = 0.4
-    @State private var contentOffset: CGFloat = 30
-    @State private var contentOpacity:Double  = 0.0
+    @StateObject private var wrapper = CancellationConfirmationViewModelWrapper()
 
     var body: some View {
-        ZStack {
-            Color.hopSurface.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-
-                Spacer()
-
-                // ── Animated icon ─────────────────────────────────────────────
-                ZStack {
-                    Circle()
-                        .fill(Color.hopError.opacity(0.12))
-                        .frame(width: 120, height: 120)
-                        .scaleEffect(circleScale)
-                        .opacity(circleOpacity)
-
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 60, weight: .light))
-                        .foregroundColor(Color.hopError)
-                        .scaleEffect(iconScale)
-                }
-                .padding(.bottom, HopSpacing.xl)
-
-                // ── Text ──────────────────────────────────────────────────────
-                VStack(spacing: HopSpacing.sm) {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .center, spacing: HopSpacing.xl) {
+                    Spacer().frame(height: HopSpacing.xxl)
+                    CancellationIcon()
                     Text("Booking Cancelled")
                         .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
-
-                    Text("Your booking has been successfully cancelled.")
-                        .font(HopFont.bodyLarge()).foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopError)
                         .multilineTextAlignment(.center)
 
-                    // Booking reference pill
-                    Label("#\(bookingId.prefix(8).uppercased())", systemImage: "ticket")
-                        .font(HopFont.bodySmall(weight: .medium))
-                        .foregroundColor(Color.hopTextSecondary)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 12)
-                        .background(Color.hopSurfaceElevated)
-                        .clipShape(Capsule())
-                        .padding(.top, HopSpacing.xs)
-                }
-                .padding(.horizontal, HopSpacing.lg)
-                .offset(y: contentOffset)
-                .opacity(contentOpacity)
+                    Text(refundText)
+                        .font(HopFont.bodyLarge())
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, HopSpacing.lg)
 
-                Spacer()
-
-                // ── CTA ───────────────────────────────────────────────────────
-                HopPrimaryButton(title: "Back to My Trips") {
-                    onGoHome()
+                    if wrapper.state.isModelB {
+                        Text("Payment hold will be released within 1-2 business days.")
+                            .font(HopFont.bodyMedium())
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(HopSpacing.md)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.hopAuthInputSurface)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .padding(.horizontal, HopSpacing.lg)
+                    }
+                    Spacer().frame(height: HopSpacing.xxl)
                 }
-                .padding(.horizontal, HopSpacing.md)
-                .padding(.bottom, HopSpacing.xl)
-                .offset(y: contentOffset)
-                .opacity(contentOpacity)
+                .frame(maxWidth: .infinity)
             }
+            HopButton(text: "Back to My Trips", variant: .primary, action: onBackToMyTrips)
+                .padding(HopSpacing.md)
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .onAppear { animate() }
-    }
-
-    // MARK: — Animation
-
-    private func animate() {
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) {
-            circleScale   = 1
-            circleOpacity = 1
-            iconScale     = 1
-        }
-        withAnimation(.easeOut(duration: 0.45).delay(0.35)) {
-            contentOffset  = 0
-            contentOpacity = 1
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.hopBackground.ignoresSafeArea())
+        .onAppear {
+            wrapper.startObserving()
+            wrapper.load(bookingId: bookingId)
         }
     }
 
+    private var refundText: String {
+        if let amount = wrapper.state.refundAmountOere?.intValue {
+            let dkk = amount / 100
+            let ore = amount % 100
+            let s = ore == 0 ? "DKK \(dkk)" : String(format: "DKK %d.%02d", dkk, ore)
+            return "Your refund of \(s) is on its way."
+        }
+        return "Your refund is on its way."
+    }
 }
 
-// MARK: — Preview
+/// Animated red-circle X. Circle scales 0→1 over 350ms, then strokes draw 250ms.
+private struct CancellationIcon: View {
+    @State private var circleProgress: Double = 0
+    @State private var strokeProgress: Double = 0
 
-#Preview("PA-10 Cancellation Confirmation") {
-    NavigationStack {
-        CancellationConfirmationView(bookingId: "bk-abc123", onGoHome: {})
+    var body: some View {
+        Canvas { ctx, size in
+            let w = size.width, h = size.height
+            let cx = w / 2, cy = h / 2
+            let radius = min(w, h) / 2 - 4
+
+            // Circle outline
+            let circlePath = Path(ellipseIn: CGRect(
+                x: cx - radius * circleProgress,
+                y: cy - radius * circleProgress,
+                width: radius * 2 * circleProgress,
+                height: radius * 2 * circleProgress
+            ))
+            ctx.stroke(circlePath,
+                       with: .color(.red),
+                       style: StrokeStyle(lineWidth: 4, lineCap: .round))
+
+            if strokeProgress > 0 {
+                let armLen = radius * 0.55 * strokeProgress
+                var p1 = Path()
+                p1.move(to: CGPoint(x: cx, y: cy))
+                p1.addLine(to: CGPoint(x: cx - armLen, y: cy - armLen))
+                p1.move(to: CGPoint(x: cx, y: cy))
+                p1.addLine(to: CGPoint(x: cx + armLen, y: cy + armLen))
+                p1.move(to: CGPoint(x: cx, y: cy))
+                p1.addLine(to: CGPoint(x: cx - armLen, y: cy + armLen))
+                p1.move(to: CGPoint(x: cx, y: cy))
+                p1.addLine(to: CGPoint(x: cx + armLen, y: cy - armLen))
+                ctx.stroke(p1,
+                           with: .color(.red),
+                           style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+        }
+        .frame(width: 96, height: 96)
+        .accessibilityLabel("Booking cancelled")
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.35)) { circleProgress = 1 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                withAnimation(.easeInOut(duration: 0.25)) { strokeProgress = 1 }
+            }
+        }
     }
-    .preferredColorScheme(.dark)
 }

@@ -67,8 +67,13 @@ struct HopTabView: View {
 
             // ── My Trips ─────────────────────────────────────────────────────
             MyTripsPassengerView(
-                onTripTapped: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
-                navigate:     navigate
+                onNavigateBack: { selectedTab = .home },
+                onNavigateToTripDetailActive: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
+                onNavigateToTripDetail: { tripId in navigate(.tripDetail(id: tripId)) },
+                onNavigateToHome: { selectedTab = .home },
+                onNavigateToChat: { selectedTab = .chat },
+                onNavigateToProfile: { selectedTab = .profile },
+                onNavigateToFindRide: { selectedTab = .home }
             )
             .tabItem { Label(HopTab.myTrips.label, systemImage: HopTab.myTrips.icon) }
             .tag(HopTab.myTrips)

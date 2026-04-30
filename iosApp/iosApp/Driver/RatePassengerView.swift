@@ -35,7 +35,7 @@ struct RatePassengerView: View {
                         .padding(.horizontal, HopSpacing.md)
                 }
 
-                HopStarRating(rating: $stars)
+                StarRatingInput(rating: $stars)
                     .padding(.top, HopSpacing.xl)
 
                 VStack(alignment: .leading, spacing: HopSpacing.xs) {

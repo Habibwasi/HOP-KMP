@@ -1,279 +1,227 @@
 import SwiftUI
 import Shared
 
-// MARK: — PA-07 My Trips (Passenger) ──────────────────────────────────────────
-//
-// Tab-segmented list: Upcoming / Past.
-// Uses TripViewModel.LoadMyTripsPassenger.
-// Empty states per tab. Tapping a trip pushes PA-08 Trip Detail Active.
-
+/// PA-07 — My Trips (Passenger). Mirrors composeApp `MyTripsPassengerScreen.kt`.
+/// Top bar + Upcoming/Past tabs + TripCardLight list + bottom nav (Home/MyTrips/Chat/Profile).
 struct MyTripsPassengerView: View {
+    let onNavigateBack: () -> Void
+    let onNavigateToTripDetailActive: (_ bookingId: String) -> Void
+    let onNavigateToTripDetail: (_ tripId: String) -> Void
+    let onNavigateToHome: () -> Void
+    let onNavigateToChat: () -> Void
+    let onNavigateToProfile: () -> Void
+    let onNavigateToFindRide: () -> Void
 
-    var onTripTapped:    (String) -> Void   // bookingId → PA-08
-    var navigate:        (HopRoute) -> Void
-
-    @StateObject private var wrapper = TripViewModelWrapper()
-
-    @State private var selectedTab: TripTab = .upcoming
-    @State private var toastMessage: String? = nil
-
-    private enum TripTab: String, CaseIterable {
-        case upcoming = "Upcoming"
-        case past     = "Past"
-    }
+    @StateObject private var wrapper = MyTripsPassengerViewModelWrapper()
+    @State private var selectedTab: Int = 0
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Color.hopSurface.ignoresSafeArea(.all, edges: .top)
-
-            VStack(spacing: 0) {
-                // ── Title bar ─────────────────────────────────────────────────
+        VStack(spacing: 0) {
+            // Top bar
+            ZStack {
+                Text("My Trips")
+                    .font(HopFont.headlineSmall(weight: .bold))
+                    .foregroundColor(Color.hopAuthTextPrimary)
                 HStack {
-                    Text("My Trips")
-                        .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
+                    Button(action: onNavigateBack) {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                            .frame(width: 44, height: 44)
+                    }.buttonStyle(.plain)
                     Spacer()
                 }
-                .padding(.horizontal, HopSpacing.md)
-                .padding(.vertical, HopSpacing.md)
+            }
+            .padding(.horizontal, HopSpacing.xs)
 
-                // ── Segment control ───────────────────────────────────────────
-                tabSegment
+            // Tabs
+            HStack(spacing: 0) {
+                tabButton(title: "Upcoming", index: 0)
+                tabButton(title: "Past", index: 1)
+            }
 
-                // ── Content ───────────────────────────────────────────────────
-                if wrapper.state.isLoading {
-                    loadingView
+            // Content
+            if wrapper.state.isLoading {
+                Spacer()
+                ProgressView().tint(Color.hopPrimaryGreen)
+                Spacer()
+            } else if selectedTab == 0 {
+                if wrapper.state.upcomingTrips.isEmpty {
+                    EmptyStateLight(
+                        systemImage: "car",
+                        headline: "No upcoming trips",
+                        subtitle: "Find a trip and book your first seat.",
+                        ctaLabel: "Find a ride",
+                        onCta: onNavigateToFindRide
+                    )
                 } else {
-                    tripListView
+                    TripList(trips: wrapper.state.upcomingTrips, onTap: { trip in
+                        let id = trip.bookingId ?? trip.id
+                        wrapper.selectUpcoming(bookingId: id)
+                    })
                 }
-            }
-
-            // ── Toast ─────────────────────────────────────────────────────────
-            if let msg = toastMessage {
-                HopToast(message: msg)
-                    .padding(.bottom, HopSpacing.xxl)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                            withAnimation { toastMessage = nil }
-                        }
-                    }
-            }
-        }
-        .navigationBarHidden(true)
-        .task {
-            wrapper.startObserving { effect in
-                if let snack = effect as? TripEffectShowSnackbar {
-                    withAnimation { toastMessage = snack.message }
-                }
-            }
-            wrapper.loadMyTripsPassenger()
-        }
-    }
-
-    // MARK: — Segment control
-
-    private var tabSegment: some View {
-        HStack(spacing: 0) {
-            ForEach(TripTab.allCases, id: \.self) { tab in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab }
-                } label: {
-                    VStack(spacing: HopSpacing.xxs) {
-                        Text(tab.rawValue)
-                            .font(selectedTab == tab ? HopFont.labelMedium(weight: .semibold) : HopFont.labelMedium(weight: .regular))
-                            .foregroundColor(selectedTab == tab ? Color.hopTextPrimary : Color.hopTextSecondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, HopSpacing.sm)
-
-                        Rectangle()
-                            .fill(selectedTab == tab ? Color.hopPrimaryLime : Color.clear)
-                            .frame(height: 2)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .background(Color.hopSurface)
-        .overlay(alignment: .bottom) {
-            Divider().background(Color.hopSurfaceElevated)
-        }
-    }
-
-    // MARK: — Trip list
-
-    private var tripListView: some View {
-        let now       = Date()
-        let allTrips  = wrapper.state.trips
-
-        let upcoming = allTrips.filter { tripUi in
-            let d = HopDateFormatter.parseISO(tripUi.trip.departsAt)
-            return d.map { $0 >= now } ?? true
-        }
-        let past = allTrips.filter { tripUi in
-            let d = HopDateFormatter.parseISO(tripUi.trip.departsAt)
-            return d.map { $0 < now } ?? false
-        }
-
-        let displayed = selectedTab == .upcoming ? upcoming : past
-
-        return Group {
-            if displayed.isEmpty {
-                emptyStateView(for: selectedTab)
-                    .transition(.opacity)
             } else {
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: HopSpacing.sm) {
-                        ForEach(displayed, id: \.id) { tripUi in
-                            PassengerTripRow(tripUi: tripUi) {
-                                // Navigate using bookingId for active trips, tripId otherwise
-                                if let bookingId = tripUi.bookingId {
-                                    onTripTapped(bookingId)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, HopSpacing.md)
-                    .padding(.top, HopSpacing.md)
-                    .padding(.bottom, HopSpacing.xxl)
+                if wrapper.state.pastTrips.isEmpty {
+                    EmptyStateLight(
+                        systemImage: "clock.arrow.circlepath",
+                        headline: "No past trips",
+                        subtitle: "Trips you've completed will appear here.",
+                        ctaLabel: nil, onCta: {}
+                    )
+                } else {
+                    TripList(trips: wrapper.state.pastTrips, onTap: { trip in
+                        wrapper.selectPast(tripId: trip.id)
+                    })
                 }
-                .transition(.opacity)
             }
-        }
-        .animation(.easeInOut(duration: 0.2), value: selectedTab)
-    }
 
-    // MARK: — Loading
-
-    private var loadingView: some View {
-        VStack {
-            Spacer()
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
-                .scaleEffect(1.2)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: — Empty states
-
-    private func emptyStateView(for tab: TripTab) -> some View {
-        switch tab {
-        case .upcoming:
-            return EmptyState(
-                systemImage: "car.2",
-                headline:    "No upcoming trips",
-                subtitle:    "Search for rides and book your next journey.",
-                ctaLabel:    "Find a ride",
-                ctaAction:   { navigate(.home) }
-            )
-        case .past:
-            return EmptyState(
-                systemImage: "clock.arrow.circlepath",
-                headline:    "No past trips",
-                subtitle:    "Your completed trips will appear here.",
-                ctaLabel:    nil,
-                ctaAction:   nil
+            // Bottom nav
+            MyTripsBottomNavBar(
+                selected: 1,
+                onHome: onNavigateToHome,
+                onMyTrips: {},
+                onChat: onNavigateToChat,
+                onProfile: onNavigateToProfile
             )
         }
-    }
-}
-
-// MARK: — PassengerTripRow
-
-private struct PassengerTripRow: View {
-    let tripUi: TripUiModel
-    let onTap:  () -> Void
-
-    private var badgeStatus: HopBadgeStatus {
-        switch tripUi.trip.status {
-        case .active:    return .confirmed
-        case .confirmed: return .confirmed
-        case .cancelled: return .cancelled
-        case .completed: return .confirmed
-        case .unknown:   return .pending
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.hopBackground.ignoresSafeArea())
+        .onAppear {
+            wrapper.startObserving { effect in
+                if let n = effect as? MyTripsPassengerEffectNavigateToTripDetailActive {
+                    onNavigateToTripDetailActive(n.bookingId)
+                } else if let n = effect as? MyTripsPassengerEffectNavigateToTripDetail {
+                    onNavigateToTripDetail(n.tripId)
+                }
+            }
+            wrapper.load()
         }
     }
 
-    var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: HopSpacing.sm) {
-                // Route + badge
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: HopSpacing.xxs) {
-                        HStack(spacing: HopSpacing.xs) {
-                            Circle().fill(Color.hopPrimaryGreen).frame(width: 8, height: 8)
-                            Text(tripUi.trip.originName)
-                                .font(HopFont.bodyMedium(weight: .medium))
-                                .foregroundColor(Color.hopTextPrimary).lineLimit(1)
-                        }
-                        HStack(spacing: HopSpacing.xs) {
-                            Circle().fill(Color.hopPrimaryLime).frame(width: 8, height: 8)
-                            Text(tripUi.trip.destName)
-                                .font(HopFont.bodyMedium(weight: .medium))
-                                .foregroundColor(Color.hopTextPrimary).lineLimit(1)
-                        }
-                    }
-                    Spacer()
-                    StatusBadge(status: badgeStatus)
-                }
-
-                Divider().background(Color.hopSurface.opacity(0.6))
-
-                // Date + price
-                HStack {
-                    Label(HopDateFormatter.dayDate(iso: tripUi.trip.departsAt), systemImage: "calendar")
-                    Spacer()
-                    Text("DKK \(String(format: "%.0f", Double(tripUi.trip.priceOerePerSeat) / 100.0))")
-                        .font(HopFont.labelMedium(weight: .semibold))
-                        .foregroundColor(Color.hopPrimaryLime)
-                }
-                .font(HopFont.bodySmall())
-                .foregroundColor(Color.hopTextSecondary)
+    private func tabButton(title: String, index: Int) -> some View {
+        let active = selectedTab == index
+        return Button(action: { selectedTab = index }) {
+            VStack(spacing: 6) {
+                Text(title)
+                    .font(HopFont.bodyMedium(weight: active ? .semibold : .regular))
+                    .foregroundColor(active ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                Rectangle()
+                    .fill(active ? Color.hopPrimaryLime : Color.clear)
+                    .frame(height: 2)
             }
-            .padding(HopSpacing.md)
-            .background(Color.hopSurfaceElevated)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .opacity(tripUi.isBroken ? 0.6 : 1.0)
+            .padding(.vertical, HopSpacing.sm)
+            .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
-        .disabled(tripUi.isBroken || tripUi.bookingId == nil)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(tripUi.trip.originName) to \(tripUi.trip.destName), \(HopDateFormatter.dayDate(iso: tripUi.trip.departsAt))")
-        .accessibilityHint(tripUi.bookingId != nil ? "Double-tap to view details" : "No booking details available")
     }
 }
 
-// MARK: — parseISO helper extension
-
-private extension HopDateFormatter {
-    static func parseISO(_ iso: String) -> Date? {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-        f.timeZone   = TimeZone(identifier: "UTC")
-        return f.date(from: iso)
+private struct TripList: View {
+    let trips: [TripUiModel]
+    let onTap: (TripUiModel) -> Void
+    var body: some View {
+        ScrollView {
+            VStack(spacing: HopSpacing.md) {
+                ForEach(trips, id: \.id) { trip in
+                    TripCardLight(
+                        driverName: "Driver",
+                        driverInitials: "D",
+                        driverRating: 4.8,
+                        originName: trip.originName,
+                        destinationName: trip.destName,
+                        departureTime: trip.departsAt,
+                        badgeStatus: badgeFor(trip),
+                        pricePerSeatOere: Int(trip.priceOerePerSeat)
+                    ) { onTap(trip) }
+                }
+            }
+            .padding(HopSpacing.md)
+        }
+    }
+    private func badgeFor(_ trip: TripUiModel) -> HopBadgeStatus {
+        switch trip.status {
+        case .confirmed: return .confirmed
+        case .active: return .confirmed
+        case .completed: return .confirmed
+        case .cancelled: return .cancelled
+        default:
+            return trip.model == .a ? .modelA : .modelB
+        }
     }
 }
 
-// MARK: — Previews
+private struct EmptyStateLight: View {
+    let systemImage: String
+    let headline: String
+    let subtitle: String?
+    let ctaLabel: String?
+    let onCta: () -> Void
 
-#Preview("PA-07 My Trips — Empty Upcoming") {
-    NavigationStack {
-        MyTripsPassengerView(
-            onTripTapped: { _ in },
-            navigate:     { _ in }
-        )
+    var body: some View {
+        VStack(spacing: HopSpacing.lg) {
+            Spacer()
+            ZStack {
+                Circle().fill(Color.hopCardSurfaceMuted).frame(width: 120, height: 120)
+                Image(systemName: systemImage)
+                    .font(.system(size: 44))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+            }
+            Text(headline)
+                .font(HopFont.headlineSmall(weight: .semibold))
+                .foregroundColor(Color.hopAuthTextPrimary)
+                .multilineTextAlignment(.center)
+            if let subtitle {
+                Text(subtitle)
+                    .font(HopFont.bodyMedium())
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, HopSpacing.xl)
+            }
+            if let ctaLabel {
+                HopButton(text: ctaLabel, variant: .primary, action: onCta)
+                    .frame(maxWidth: 240)
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    .preferredColorScheme(.dark)
 }
 
-#Preview("PA-07 My Trips — Loading") {
-    NavigationStack {
-        MyTripsPassengerView(
-            onTripTapped: { _ in },
-            navigate:     { _ in }
-        )
+struct MyTripsBottomNavBar: View {
+    /// 0=Home, 1=MyTrips, 2=Chat, 3=Profile
+    let selected: Int
+    let onHome: () -> Void
+    let onMyTrips: () -> Void
+    let onChat: () -> Void
+    let onProfile: () -> Void
+
+    var body: some View {
+        HStack {
+            tab(systemImage: "house.fill", label: "Home", index: 0, action: onHome)
+            tab(systemImage: "car.fill", label: "Trips", index: 1, action: onMyTrips)
+            tab(systemImage: "message.fill", label: "Chat", index: 2, action: onChat)
+            tab(systemImage: "person.fill", label: "Profile", index: 3, action: onProfile)
+        }
+        .padding(.horizontal, HopSpacing.md)
+        .padding(.top, 6)
+        .padding(.bottom, 4)
+        .background(Color.hopBackground)
+        .overlay(Rectangle().fill(Color.hopCardBorder).frame(height: 1), alignment: .top)
     }
-    .preferredColorScheme(.dark)
+    private func tab(systemImage: String, label: String, index: Int, action: @escaping () -> Void) -> some View {
+        let active = selected == index
+        return Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20))
+                    .foregroundColor(active ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                Text(label)
+                    .font(HopFont.labelSmall(weight: active ? .semibold : .medium))
+                    .foregroundColor(active ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(.plain)
+    }
 }

@@ -80,36 +80,37 @@ struct HopNavigationStack: View {
 
         // ── Passenger ────────────────────────────────────────────────────────
         case .searchResults:
+            // Trigger the search via the shared SearchViewModel before pushing.
+            // The screen reads results from VM state and ignores the captured
+            // params (kept here for future deep-linking).
             SearchResultsView(
-                origin: lastSearchOrigin,
-                destination: lastSearchDest,
-                date: lastSearchDate,
-                seats: lastSearchSeats,
-                onTripTapped: { id in navigate(.tripDetail(id: id)) },
-                onBack: popBack
+                onBack: popBack,
+                onNavigateToTripDetail: { id in navigate(.tripDetail(id: id)) }
             )
+            .onAppear {
+                _ = lastSearchOrigin; _ = lastSearchDest; _ = lastSearchDate; _ = lastSearchSeats
+            }
 
         case .tripDetail(let id):
             TripDetailView(
                 tripId: id,
-                onBook: { tripId in navigate(.bookingConfirmation(tripId: tripId)) },
-                onBack: popBack
+                onBack: popBack,
+                onNavigateToOtherProfile: { driverId in navigate(.otherProfile(userId: driverId)) },
+                onNavigateToBookingConfirmation: { tripId in navigate(.bookingConfirmation(tripId: tripId)) }
             )
 
         case .bookingConfirmation(let tripId):
             BookingConfirmationView(
                 tripId: tripId,
-                tripUi: nil,
-                onPayWithMobilePay: { bookingId in
+                onBack: popBack,
+                onNavigateToMobilePay: { bookingId in
                     navigate(.mobilePayHandoff(bookingId: bookingId))
-                },
-                onBack: popBack
+                }
             )
 
         case .mobilePayHandoff(let bookingId):
             MobilePayHandoffView(
                 bookingId: bookingId,
-                redirectURL: "",
                 onSuccess: { bid in navigate(.bookingSuccess(bookingId: bid)) },
                 onBack: popBack
             )
@@ -118,22 +119,26 @@ struct HopNavigationStack: View {
             BookingSuccessView(
                 bookingId: bookingId,
                 onViewMyTrips: { navigate(.myTripsPassenger) },
-                onGoHome: goHome
+                onBackToHome: goHome
             )
 
         case .myTripsPassenger:
             MyTripsPassengerView(
-                onTripTapped: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
-                navigate: navigate
+                onNavigateBack: popBack,
+                onNavigateToTripDetailActive: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
+                onNavigateToTripDetail: { tripId in navigate(.tripDetail(id: tripId)) },
+                onNavigateToHome: goHome,
+                onNavigateToChat: { /* handled by tab bar */ },
+                onNavigateToProfile: { /* tab-bar Profile */ },
+                onNavigateToFindRide: goHome
             )
 
         case .tripDetailActive(let bookingId):
             TripDetailActiveView(
                 bookingId: bookingId,
-                onMessageDriver: { bid in navigate(.chat(bookingId: bid)) },
-                onCancelBooking: { bid in navigate(.cancellationConfirmation(bookingId: bid)) },
-                onRateDriver:    { bid, name, initials in navigate(.rateDriver(bookingId: bid, driverName: name, driverInitials: initials)) },
-                onBack: popBack
+                onBack: popBack,
+                onNavigateToChat: { bid in navigate(.chat(bookingId: bid)) },
+                onNavigateToCancellationConfirmation: { bid in navigate(.cancellationConfirmation(bookingId: bid)) }
             )
 
         case .rateDriver(let bookingId, let driverName, let driverInitials):
@@ -148,7 +153,7 @@ struct HopNavigationStack: View {
         case .cancellationConfirmation(let bookingId):
             CancellationConfirmationView(
                 bookingId: bookingId,
-                onGoHome: goHome
+                onBackToMyTrips: { navigate(.myTripsPassenger) }
             )
 
         // ── Driver ────────────────────────────────────────────────────────────

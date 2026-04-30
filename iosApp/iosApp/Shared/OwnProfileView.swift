@@ -2,7 +2,11 @@ import SwiftUI
 import Shared
 
 // MARK: — SH-02 Own Profile ───────────────────────────────────────────────────
-// Mirrors `OwnProfileScreen.kt`.
+//
+// Mirrors `OwnProfileScreen.kt` 1:1.  Light theme.  Sections: avatar with
+// edit overlay, inline editable name, contact info (email + phone with
+// "Add phone" affordance), ratings block, recent reviews list, and (driver
+// only) car details card.
 
 struct OwnProfileView: View {
 
@@ -10,41 +14,81 @@ struct OwnProfileView: View {
     var onBack:   () -> Void
 
     @StateObject private var wrapper = OwnProfileViewModelWrapper()
-
     @State private var toast: String? = nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopBackground.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: HopSpacing.lg) {
-                    headerSection
-                    accountSection
-                    vehicleSection
-                    reviewsSection
-                    Spacer().frame(height: HopSpacing.xxl)
+            VStack(spacing: 0) {
+                ProfileTopBar(
+                    title: "Profile",
+                    onBack: onBack,
+                    trailing: {
+                        AnyView(
+                            Button(action: { navigate(.settings) }) {
+                                Image(systemName: "gearshape")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(Color.hopAuthTextPrimary)
+                                    .frame(width: 40, height: 40)
+                            }
+                            .accessibilityLabel("Settings")
+                        )
+                    }
+                )
+
+                if wrapper.state.isLoading && wrapper.state.user == nil {
+                    Spacer()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                        .scaleEffect(1.3)
+                    Spacer()
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            avatarSection
+
+                            Spacer().frame(height: HopSpacing.lg)
+
+                            nameSection
+
+                            Spacer().frame(height: HopSpacing.sm)
+
+                            contactSection
+
+                            ratingsSection
+
+                            reviewsSection
+
+                            carSection
+
+                            Spacer().frame(height: HopSpacing.xl)
+                        }
+                    }
                 }
-                .padding(.horizontal, HopSpacing.md)
             }
 
-            loadingOverlay
-            toastOverlay
+            if let msg = toast {
+                HopToast(message: msg)
+                    .padding(.bottom, HopSpacing.xl)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
-        .navigationBarBackButtonHidden(true)
-        .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: toolbarContent)
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarHidden(true)
         .task {
             wrapper.startObserving { effect in
                 switch effect {
                 case let snack as OwnProfileEffectShowSnackbar:
-                    toast = snack.message
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { withAnimation { toast = nil } }
+                    withAnimation { toast = snack.message }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                        withAnimation { toast = nil }
+                    }
                 case is OwnProfileEffectNavigateToEditCar:
                     navigate(.enableDriverStep1)
+                case is OwnProfileEffectNavigateToPhoneVerification:
+                    navigate(.otpVerification(phone: wrapper.state.user?.phone ?? ""))
+                case is OwnProfileEffectNavigateBack:
+                    onBack()
                 default: break
                 }
             }
@@ -55,255 +99,370 @@ struct OwnProfileView: View {
     // MARK: — Sections
 
     @ViewBuilder
-    private var headerSection: some View {
-        if let user = wrapper.state.user {
+    private var avatarSection: some View {
+        ZStack(alignment: .bottomTrailing) {
             HopAvatar(
-                name: user.fullName,
+                name: wrapper.state.user?.fullName ?? "",
                 imageURL: nil,
                 size: .xlarge,
-                isVerified: user.phoneVerified
+                isVerified: wrapper.state.user?.phoneVerified == true
             )
-            .padding(.top, HopSpacing.lg)
 
-            if wrapper.state.isEditingName {
-                editNameRow
-            } else {
-                HStack(spacing: HopSpacing.sm) {
-                    Text(user.fullName)
-                        .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
-                    Button(action: wrapper.startEditName) {
-                        Image(systemName: "pencil")
-                            .foregroundColor(Color.hopPrimaryLime)
+            ZStack {
+                Circle()
+                    .fill(Color.hopPrimaryLime)
+                    .frame(width: 28, height: 28)
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+            }
+            .accessibilityLabel("Edit profile photo")
+            .onTapGesture { /* post-MVP: photo upload */ }
+        }
+        .padding(.top, HopSpacing.xl)
+    }
+
+    @ViewBuilder
+    private var nameSection: some View {
+        if wrapper.state.isEditingName {
+            VStack(spacing: HopSpacing.sm) {
+                HopTextField(
+                    label: "Full name",
+                    placeholder: "",
+                    text: Binding(
+                        get: { wrapper.state.nameDraft },
+                        set: { wrapper.nameDraftChanged($0) }
+                    ),
+                    isEnabled: !wrapper.state.isSavingName,
+                    lightSurface: true
+                )
+                .padding(.horizontal, HopSpacing.md)
+
+                HStack {
+                    Spacer()
+                    Button(action: wrapper.cancelEditName) {
+                        Text("Cancel")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.hopAuthTextSecondary)
                     }
+                    .disabled(wrapper.state.isSavingName)
+
+                    Spacer().frame(width: HopSpacing.sm)
+
+                    Button(action: wrapper.saveName) {
+                        if wrapper.state.isSavingName {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                                .scaleEffect(0.8)
+                                .frame(width: 16, height: 16)
+                        } else {
+                            Text("Save")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Color.hopPrimaryLime)
+                        }
+                    }
+                    .disabled(wrapper.state.isSavingName || wrapper.state.nameDraft.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+                .padding(.horizontal, HopSpacing.md)
             }
-
-            HStack(spacing: HopSpacing.lg) {
-                RatingBadge(label: "As driver",    rating: user.ratingDriver as? Double)
-                RatingBadge(label: "As passenger", rating: user.ratingPassenger as? Double)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var editNameRow: some View {
-        VStack(spacing: HopSpacing.xs) {
-            HopTextField(
-                label: "Full name",
-                placeholder: "",
-                text: Binding(
-                    get: { wrapper.state.nameDraft },
-                    set: { wrapper.nameDraftChanged($0) }
-                )
-            )
-            .padding(.horizontal, HopSpacing.md)
-
+        } else {
             HStack(spacing: HopSpacing.sm) {
-                HopButton(text: "Cancel", variant: .ghost, action: wrapper.cancelEditName)
-                HopButton(
-                    text: "Save",
-                    variant: .primary,
-                    isLoading: wrapper.state.isSavingName,
-                    action: wrapper.saveName
-                )
+                Text(wrapper.state.user?.fullName ?? "")
+                    .font(HopFont.headlineSmall(weight: .bold))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+                Button(action: wrapper.startEditName) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color.hopPrimaryLime)
+                        .frame(width: 32, height: 32)
+                }
+                .accessibilityLabel("Edit name")
             }
-            .padding(.horizontal, HopSpacing.md)
         }
     }
 
     @ViewBuilder
-    private var accountSection: some View {
-        SectionHeader(title: "Account")
-        InfoRow(title: "Email", value: wrapper.state.user?.email ?? "—", icon: "envelope")
-        phoneRow
+    private var contactSection: some View {
+        VStack(spacing: HopSpacing.xs) {
+            ProfileInfoRow(
+                icon: "envelope",
+                label: wrapper.state.user?.email ?? ""
+            )
+            phoneRow
+        }
     }
 
     @ViewBuilder
     private var phoneRow: some View {
-        let phone: String? = wrapper.state.user?.phone
-        if phone == nil {
-            InfoRow(title: "Phone", value: "Add phone", icon: "phone", action: wrapper.addPhone)
+        let phone = wrapper.state.user?.phone
+        let isVerified = wrapper.state.user?.phoneVerified == true
+        if let phone = phone {
+            HStack(spacing: HopSpacing.sm) {
+                Image(systemName: "phone")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                    .frame(width: 18, height: 18)
+                Text(phone)
+                    .font(.system(size: 14))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                Spacer()
+                if isVerified {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color.hopSuccess)
+                        .accessibilityLabel("Phone verified")
+                }
+            }
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.vertical, HopSpacing.xs)
         } else {
-            InfoRow(title: "Phone", value: phone!, icon: "phone", action: nil)
+            Button(action: wrapper.addPhone) {
+                HStack(spacing: HopSpacing.sm) {
+                    Image(systemName: "phone")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color.hopAuthTextSecondary)
+                        .frame(width: 18, height: 18)
+                    Text("Add phone number")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Color.hopPrimaryLime)
+                    Spacer()
+                }
+                .padding(.horizontal, HopSpacing.md)
+                .padding(.vertical, HopSpacing.xs)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add phone number")
         }
     }
 
     @ViewBuilder
-    private var vehicleSection: some View {
-        SectionHeader(title: "Vehicle")
-        if let car = wrapper.state.carDetails {
-            InfoRow(
-                title: "\(car.make) \(car.model) · \(car.year)",
-                value: "\(car.colour.capitalized) · \(car.licensePlate)",
-                icon: "car",
-                action: wrapper.editCar
-            )
-        } else {
-            InfoRow(
-                title: "No vehicle",
-                value: "Add car details to start driving",
-                icon: "car",
-                action: wrapper.editCar
-            )
+    private var ratingsSection: some View {
+        let driver: Double? = wrapper.state.user?.ratingDriver as? Double
+        let passenger: Double? = wrapper.state.user?.ratingPassenger as? Double
+        if driver != nil || passenger != nil {
+            ProfileSectionDividerBlock {
+                ProfileSectionTitle("Ratings")
+                Spacer().frame(height: HopSpacing.md)
+                VStack(alignment: .leading, spacing: HopSpacing.sm) {
+                    if let d = driver { ProfileRatingRow(label: "As driver", rating: d) }
+                    if let p = passenger { ProfileRatingRow(label: "As passenger", rating: p) }
+                }
+                .padding(.horizontal, HopSpacing.md)
+            }
         }
     }
 
     @ViewBuilder
     private var reviewsSection: some View {
-        SectionHeader(title: "Reviews")
-        if wrapper.state.reviews.isEmpty {
-            Text("No reviews yet.")
-                .font(HopFont.bodyMedium())
-                .foregroundColor(Color.hopTextSecondary)
-                .padding(.horizontal, HopSpacing.md)
-        } else {
-            VStack(spacing: HopSpacing.xs) {
-                ForEach(wrapper.state.reviews, id: \.id) { review in
-                    ReviewRow(review: review)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var loadingOverlay: some View {
-        if wrapper.state.isLoading && wrapper.state.user == nil {
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
-                .scaleEffect(1.3)
-        }
-    }
-
-    @ViewBuilder
-    private var toastOverlay: some View {
-        if let msg = toast {
-            HopToast(message: msg)
-                .padding(.bottom, HopSpacing.xl)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-
-    @ToolbarContentBuilder
-    private func toolbarContent() -> some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
-            Button(action: onBack) {
-                Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Button(action: { navigate(.settings) }) {
-                Image(systemName: "gearshape").foregroundColor(Color.hopTextPrimary)
-            }
-        }
-    }
-}
-
-// MARK: — Helpers used by Profile screens
-
-struct SectionHeader: View {
-    let title: String
-    var body: some View {
-        HStack {
-            Text(title)
-                .font(HopFont.labelMedium(weight: .semibold))
-                .foregroundColor(Color.hopTextSecondary)
-            Spacer()
-        }
-        .padding(.top, HopSpacing.md)
-    }
-}
-
-struct InfoRow: View {
-    let title: String
-    let value: String
-    let icon: String
-    var action: (() -> Void)? = nil
-
-    var body: some View {
-        Button(action: { action?() }) {
-            HStack(spacing: HopSpacing.sm) {
-                Image(systemName: icon)
-                    .foregroundColor(Color.hopTextSecondary)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(HopFont.labelMedium(weight: .semibold))
-                        .foregroundColor(Color.hopTextPrimary)
-                    Text(value)
-                        .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
-                }
-                Spacer()
-                if action != nil {
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(Color.hopTextSecondary)
-                        .font(.system(size: 12))
-                }
-            }
-            .padding(HopSpacing.md)
-            .background(Color.hopSurfaceElevated)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(.plain)
-        .disabled(action == nil)
-    }
-}
-
-struct RatingBadge: View {
-    let label: String
-    let rating: Double?
-
-    var body: some View {
-        VStack(spacing: 2) {
-            HStack(spacing: 4) {
-                Image(systemName: "star.fill")
-                    .foregroundColor(Color.hopPrimaryLime)
+        ProfileSectionDividerBlock {
+            ProfileSectionTitle("Recent reviews")
+            Spacer().frame(height: HopSpacing.md)
+            if wrapper.state.reviews.isEmpty {
+                Text("No reviews yet")
                     .font(.system(size: 14))
-                Text(rating.map { String(format: "%.1f", $0) } ?? "—")
-                    .font(HopFont.labelMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
-            }
-            Text(label)
-                .font(HopFont.bodySmall())
-                .foregroundColor(Color.hopTextSecondary)
-        }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.xs)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(Capsule())
-    }
-}
-
-struct ReviewRow: View {
-    let review: UserReview
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: HopSpacing.xs) {
-            HStack {
-                Text(review.raterName)
-                    .font(HopFont.labelMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
-                Spacer()
-                HStack(spacing: 2) {
-                    ForEach(0..<5, id: \.self) { i in
-                        Image(systemName: i < Int(review.stars) ? "star.fill" : "star")
-                            .foregroundColor(Color.hopPrimaryLime)
-                            .font(.system(size: 12))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                    .padding(.horizontal, HopSpacing.md)
+            } else {
+                VStack(spacing: HopSpacing.sm) {
+                    ForEach(wrapper.state.reviews.prefix(5), id: \.id) { review in
+                        ProfileReviewCard(review: review)
                     }
                 }
             }
-            if let comment = review.comment, !comment.isEmpty {
-                Text(comment)
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color.hopTextSecondary)
+        }
+    }
+
+    @ViewBuilder
+    private var carSection: some View {
+        let isDriver = wrapper.state.user?.roles.contains(where: { ($0 as? UserRole) == UserRole.driver }) ?? false
+        if isDriver {
+            ProfileSectionDividerBlock {
+                HStack {
+                    ProfileSectionTitle("Car details")
+                    Spacer()
+                    Button(action: wrapper.editCar) {
+                        Text("Edit")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.hopPrimaryLime)
+                    }
+                    .padding(.trailing, HopSpacing.md)
+                }
+                Spacer().frame(height: HopSpacing.sm)
+
+                if let car = wrapper.state.carDetails {
+                    VStack(spacing: HopSpacing.sm) {
+                        CarDetailRow(label: "Make / Model", value: "\(car.make) \(car.model)")
+                        CarDetailRow(label: "Year",         value: "\(car.year)")
+                        CarDetailRow(label: "Colour",       value: car.colour)
+                        CarDetailRow(label: "Plate",        value: car.licensePlate)
+                        CarDetailRow(label: "Seats",        value: "\(car.seatsAvailable)")
+                    }
+                    .padding(HopSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.hopAuthInputSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, HopSpacing.md)
+                } else {
+                    HStack(spacing: HopSpacing.sm) {
+                        Image(systemName: "car")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                        Text("No car added yet")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                        Spacer()
+                    }
+                    .padding(HopSpacing.md)
+                    .background(Color.hopAuthInputSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, HopSpacing.md)
+                }
+            }
+        }
+    }
+}
+
+// MARK: — Top bar
+
+struct ProfileTopBar: View {
+    let title: String
+    let onBack: () -> Void
+    var trailing: () -> AnyView = { AnyView(EmptyView()) }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: onBack) {
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+                    .frame(width: 40, height: 40)
+            }
+            .accessibilityLabel("Back")
+
+            Text(title)
+                .font(HopFont.headlineSmall(weight: .semibold))
+                .foregroundColor(Color.hopAuthTextPrimary)
+
+            Spacer()
+
+            trailing()
+        }
+        .padding(.horizontal, HopSpacing.xs)
+        .padding(.vertical, HopSpacing.xs)
+        .background(Color.hopBackground)
+    }
+}
+
+// MARK: — Sub-rows
+
+struct ProfileSectionTitle: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+    var body: some View {
+        Text(text)
+            .font(HopFont.bodyLarge(weight: .semibold))
+            .foregroundColor(Color.hopAuthTextPrimary)
+            .padding(.horizontal, HopSpacing.md)
+    }
+}
+
+struct ProfileSectionDividerBlock<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: HopSpacing.lg)
+            Rectangle()
+                .fill(Color.hopAuthInputSurface)
+                .frame(height: 1)
+                .padding(.horizontal, HopSpacing.md)
+            Spacer().frame(height: HopSpacing.lg)
+            content
+        }
+    }
+}
+
+struct ProfileInfoRow: View {
+    let icon: String
+    let label: String
+    var body: some View {
+        HStack(spacing: HopSpacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(Color.hopAuthTextSecondary)
+                .frame(width: 18, height: 18)
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundColor(Color.hopAuthTextSecondary)
+            Spacer()
+        }
+        .padding(.horizontal, HopSpacing.md)
+        .padding(.vertical, HopSpacing.xs)
+    }
+}
+
+struct ProfileRatingRow: View {
+    let label: String
+    let rating: Double
+    var body: some View {
+        HStack(spacing: HopSpacing.sm) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(Color.hopAuthTextSecondary)
+                .frame(width: 100, alignment: .leading)
+            StarRatingDisplay(rating: rating, starSize: 14)
+            Text(String(format: "%.1f", rating))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Color.hopAuthTextPrimary)
+        }
+    }
+}
+
+struct ProfileReviewCard: View {
+    let review: UserReview
+    var body: some View {
+        HStack(alignment: .top, spacing: HopSpacing.sm) {
+            HopAvatar(name: review.raterName, size: .small)
+            VStack(alignment: .leading, spacing: HopSpacing.xs) {
+                HStack {
+                    Text(review.raterName)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                    Spacer()
+                    StarRatingDisplay(rating: Double(review.stars), starSize: 12)
+                }
+                if let comment = review.comment, !comment.isEmpty {
+                    Text(comment)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.hopAuthTextSecondary)
+                }
             }
         }
         .padding(HopSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopAuthInputSurface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, HopSpacing.md)
     }
 }
 
+struct CarDetailRow: View {
+    let label: String
+    let value: String
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(Color.hopAuthTextSecondary)
+                .frame(width: 100, alignment: .leading)
+            Text(value)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color.hopAuthTextPrimary)
+            Spacer()
+        }
+    }
+}
 
+#Preview {
+    OwnProfileView(navigate: { _ in }, onBack: {})
+}
