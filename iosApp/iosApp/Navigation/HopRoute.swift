@@ -63,14 +63,10 @@ enum HopRoute: Hashable {
 
     // MARK: — Driver ──────────────────────────────────────────────────────────
 
-    /// DR-02 Car Details (Enable Driver – Step 1)
+    /// DR-02 Car Details (Enable Driver) — single-step onboarding.
+    /// Licence verification was dropped to match Android: completing this
+    /// screen flips the user's role to DRIVER and returns home.
     case enableDriverStep1
-
-    /// DR-03 Licence Upload (Enable Driver – Step 2)
-    case enableDriverStep2
-
-    /// DR-04 Review Pending (Enable Driver – Step 3)
-    case enableDriverStep3
 
     /// DR-05 Post Trip – Model Select
     case postTripModelSelect

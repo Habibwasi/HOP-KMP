@@ -21,11 +21,17 @@ struct DriverHomeView: View {
 
     var navigate: (HopRoute) -> Void
 
-    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
-    @State private var toast: String? = nil
+    @ObservedObject private var wrapper     = DriverViewModelWrapper.shared
+    @StateObject  private var authWrapper   = AuthViewModelWrapper()
+    @State        private var toast: String? = nil
 
+    /// Mirrors Android: a user is a driver when their `currentUser.roles`
+    /// contains DRIVER. Licence verification was dropped — there is no
+    /// pending/rejected state to worry about.
     private var hasDriverRole: Bool {
-        wrapper.state.licenceStatus == LicenceStatus.approved
+        authWrapper.state.currentUser?.roles.contains(where: {
+            ($0 as? UserRole) == UserRole.driver
+        }) ?? false
     }
 
     var body: some View {
@@ -59,7 +65,6 @@ struct DriverHomeView: View {
                         }
                     } else {
                         BecomeDriverPrompt(
-                            status: wrapper.state.licenceStatus,
                             onTap: { navigate(.enableDriverStep1) }
                         )
                     }
@@ -140,16 +145,14 @@ struct DriverHomeView: View {
             }
         }
         .task {
+            authWrapper.startObserving()
             wrapper.loadDriverHome()
-            wrapper.loadLicenceStatus()
             for await effect in wrapper.effects {
                 switch effect {
                 case is DriverEffectNavigateToPostTrip:
                     navigate(.postTripModelSelect)
                 case is DriverEffectNavigateToTaxDashboard:
                     navigate(.taxDashboard)
-                case is DriverEffectNavigateToLicenceUpload:
-                    navigate(.enableDriverStep2)
                 case let snack as DriverEffectShowSnackbar:
                     showToast(snack.message)
                 default: break
@@ -292,46 +295,26 @@ private struct Sparkline: View {
 // MARK: — Become-driver prompt ─────────────────────────────────────────────
 
 private struct BecomeDriverPrompt: View {
-    let status: LicenceStatus?
     let onTap: () -> Void
 
     var body: some View {
-        let (headline, subtitle, cta): (String, String, String) = {
-            switch status {
-            case .some(LicenceStatus.pending):
-                return ("Licence under review",
-                        "We're verifying your details. You'll get an email within 24 hours.",
-                        "")
-            case .some(LicenceStatus.rejected):
-                return ("Licence rejected",
-                        "Please re-upload a clearer photo of your driving licence.",
-                        "Re-upload")
-            default:
-                return ("Save money driving with Hop",
-                        "Set your own route, time, and price. Tap below — we'll walk you through the setup.",
-                        "Become a driver")
-            }
-        }()
-
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: HopSpacing.xs) {
-                Text(headline)
+                Text("Save money driving with Hop")
                     .font(HopFont.titleMedium(weight: .bold))
                     .foregroundColor(Color.hopAuthTextPrimary)
-                Text(subtitle)
+                Text("Set your own route, time, and price. Tap below — we'll walk you through the setup.")
                     .font(HopFont.bodySmall())
                     .foregroundColor(Color.hopAuthTextPrimary.opacity(0.7))
-                if !cta.isEmpty {
-                    HStack(spacing: 4) {
-                        Text(cta)
-                            .font(HopFont.labelMedium(weight: .semibold))
-                            .foregroundColor(Color.hopAuthTextPrimary)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color.hopAuthTextPrimary)
-                    }
-                    .padding(.top, HopSpacing.xs)
+                HStack(spacing: 4) {
+                    Text("Become a driver")
+                        .font(HopFont.labelMedium(weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
                 }
+                .padding(.top, HopSpacing.xs)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, HopSpacing.md)
@@ -340,7 +323,6 @@ private struct BecomeDriverPrompt: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
-        .disabled(status == LicenceStatus.pending)
     }
 }
 

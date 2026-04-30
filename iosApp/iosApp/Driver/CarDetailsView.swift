@@ -28,9 +28,6 @@ struct CarDetailsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: HopSpacing.md) {
-                    Text("Step 1 of 3 · Car details")
-                        .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopAuthTextSecondary)
                     Text("Tell us about your car")
                         .font(HopFont.headlineMedium(weight: .bold))
                         .foregroundColor(Color.hopAuthTextPrimary)

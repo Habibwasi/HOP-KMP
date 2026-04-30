@@ -163,19 +163,17 @@ struct HopNavigationStack: View {
 
         // ── Driver ────────────────────────────────────────────────────────────
         case .enableDriverStep1:
+            // Single-step onboarding (matches Android): saving car details
+            // fires DriverEffect.NavigateToHome, which the view forwards as
+            // `onNavigateNext` — we refresh the auth profile so the DRIVER
+            // role flips immediately, then pop the entire stack back to home.
             CarDetailsView(
                 onNavigateBack: popBack,
-                onNavigateNext: { navigate(.enableDriverStep2) }
+                onNavigateNext: {
+                    KoinIOSKt.getAuthViewModel().onEvent(event: AuthEventRefreshProfile.shared)
+                    goHome()
+                }
             )
-
-        case .enableDriverStep2:
-            LicenceUploadView(
-                onNavigateBack: popBack,
-                onNavigateNext: { navigate(.enableDriverStep3) }
-            )
-
-        case .enableDriverStep3:
-            ReviewPendingView(onNavigateToHome: goHome)
 
         case .postTripModelSelect:
             PostTripModelSelectView(
