@@ -8,7 +8,7 @@ struct MyTripsDriverView: View {
     var onTripTapped: (String) -> Void
     var onBack: () -> Void
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
 
     @State private var selectedFilter: Filter = .upcoming
 
@@ -29,7 +29,7 @@ struct MyTripsDriverView: View {
 
     var body: some View {
         ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // ── Segmented control ────────────────────────────────────────
@@ -39,7 +39,7 @@ struct MyTripsDriverView: View {
                             VStack(spacing: 4) {
                                 Text(f.rawValue)
                                     .font(HopFont.labelMedium(weight: selectedFilter == f ? .semibold : .regular))
-                                    .foregroundColor(selectedFilter == f ? Color.hopTextPrimary : Color.hopTextSecondary)
+                                    .foregroundColor(selectedFilter == f ? Color.hopAuthTextPrimary : Color.hopAuthTextSecondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, HopSpacing.sm)
                                 Rectangle()
@@ -81,23 +81,13 @@ struct MyTripsDriverView: View {
                 }
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("My Trips").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            wrapper.startObserving { _ in }
             wrapper.loadDriverHome()
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "My Trips", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 }
 
@@ -109,14 +99,14 @@ private struct DriverTripDetailRow: View {
             HStack {
                 Text("\(trip.trip.originName) → \(trip.trip.destName)")
                     .font(HopFont.labelMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .foregroundColor(Color.hopAuthTextPrimary)
                 Spacer()
                 statusBadge
             }
             HStack {
                 Text(trip.trip.departsAt)
                     .font(HopFont.bodySmall())
-                    .foregroundColor(Color.hopTextSecondary)
+                    .foregroundColor(Color.hopAuthTextSecondary)
                 Spacer()
                 Text("\(trip.trip.seatsBooked)/\(trip.trip.seatsTotal) seats")
                     .font(HopFont.bodySmall(weight: .semibold))
@@ -124,7 +114,7 @@ private struct DriverTripDetailRow: View {
             }
         }
         .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopCardSurfaceMuted)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -133,7 +123,7 @@ private struct DriverTripDetailRow: View {
         switch trip.trip.status {
         case TripStatus.active:    Badge(text: "Active",    color: Color.hopPrimaryLime)
         case TripStatus.confirmed: Badge(text: "Confirmed", color: Color.hopSuccess)
-        case TripStatus.completed: Badge(text: "Completed", color: Color.hopTextSecondary)
+        case TripStatus.completed: Badge(text: "Completed", color: Color.hopAuthTextSecondary)
         case TripStatus.cancelled: Badge(text: "Cancelled", color: Color.hopError)
         default: EmptyView()
         }

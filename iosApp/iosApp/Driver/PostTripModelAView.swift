@@ -8,7 +8,7 @@ struct PostTripModelAView: View {
     var onNavigateToReview: () -> Void
     var onBack: () -> Void
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
 
     @State private var origin:    String = ""
     @State private var dest:      String = ""
@@ -32,7 +32,7 @@ struct PostTripModelAView: View {
                 VStack(alignment: .leading, spacing: HopSpacing.md) {
                     Text("Daily Commute")
                         .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
 
                     HopTextField(label: "From", placeholder: "Origin", text: $origin)
                     HopTextField(label: "To",   placeholder: "Destination", text: $dest)
@@ -40,7 +40,7 @@ struct PostTripModelAView: View {
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Days")
                             .font(HopFont.labelSmall())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                         HStack(spacing: HopSpacing.xs) {
                             ForEach(days, id: \.0) { day in
                                 let id = day.0
@@ -51,9 +51,9 @@ struct PostTripModelAView: View {
                                 } label: {
                                     Text(label)
                                         .font(HopFont.labelMedium(weight: .semibold))
-                                        .foregroundColor(isOn ? Color.hopSurface : Color.hopTextPrimary)
+                                        .foregroundColor(isOn ? Color.hopSurface : Color.hopAuthTextPrimary)
                                         .frame(width: 36, height: 36)
-                                        .background(isOn ? Color.hopPrimaryLime : Color.hopSurfaceElevated)
+                                        .background(isOn ? Color.hopPrimaryLime : Color.hopCardSurfaceMuted)
                                         .clipShape(Circle())
                                 }
                                 .buttonStyle(.plain)
@@ -67,12 +67,12 @@ struct PostTripModelAView: View {
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Seats")
                             .font(HopFont.labelSmall())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                         Stepper("\(seats)", value: $seats, in: 1...4)
                             .padding(HopSpacing.sm)
-                            .background(Color.hopSurfaceElevated)
+                            .background(Color.hopCardSurfaceMuted)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .foregroundColor(Color.hopTextPrimary)
+                            .foregroundColor(Color.hopAuthTextPrimary)
                     }
 
                     Spacer().frame(height: HopSpacing.lg)
@@ -96,25 +96,16 @@ struct PostTripModelAView: View {
                 .padding(HopSpacing.md)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Daily commute").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            wrapper.startObserving { effect in
+            for await effect in wrapper.effects {
                 if effect is DriverEffectNavigateToPriceReview {
                     onNavigateToReview()
                 }
             }
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Daily commute", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 }

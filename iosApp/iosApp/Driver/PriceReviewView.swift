@@ -8,7 +8,7 @@ struct PriceReviewView: View {
     var onNavigateToMyTrips: () -> Void
     var onBack: () -> Void
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
     @State private var toast: String? = nil
 
     var body: some View {
@@ -23,10 +23,11 @@ struct PriceReviewView: View {
                     if let summary {
                         TripSummaryCard(summary: summary)
                         PriceBreakdownCard(summary: summary)
+                        SkatWarningCard()
                     } else {
                         Text("No trip draft to review.")
                             .font(HopFont.bodyMedium())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                     }
                     Spacer().frame(height: 96)
                 }
@@ -51,21 +52,8 @@ struct PriceReviewView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Review price").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            wrapper.startObserving { effect in
+            for await effect in wrapper.effects {
                 switch effect {
                 case is DriverEffectNavigateToMyTrips:
                     onNavigateToMyTrips()
@@ -76,6 +64,10 @@ struct PriceReviewView: View {
                 }
             }
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Review price", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 
     private func computeSummary(_ state: DriverUiState) -> TripSummary? {
@@ -136,41 +128,41 @@ private struct TripSummaryCard: View {
         VStack(alignment: .leading, spacing: HopSpacing.sm) {
             Text("Trip summary")
                 .font(HopFont.labelMedium(weight: .semibold))
-                .foregroundColor(Color.hopTextSecondary)
+                .foregroundColor(Color.hopAuthTextSecondary)
 
             HStack(spacing: HopSpacing.xs) {
                 Image(systemName: "mappin.circle.fill").foregroundColor(Color.hopPrimaryLime)
                 Text("\(summary.origin) → \(summary.dest)")
                     .font(HopFont.labelMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .foregroundColor(Color.hopAuthTextPrimary)
             }
             HStack(spacing: HopSpacing.xs) {
-                Image(systemName: "calendar").foregroundColor(Color.hopTextSecondary)
+                Image(systemName: "calendar").foregroundColor(Color.hopAuthTextSecondary)
                 Text(summary.schedule)
                     .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
+                    .foregroundColor(Color.hopAuthTextSecondary)
             }
             HStack(spacing: HopSpacing.xs) {
-                Image(systemName: "person.3").foregroundColor(Color.hopTextSecondary)
+                Image(systemName: "person.3").foregroundColor(Color.hopAuthTextSecondary)
                 Text("\(summary.seats) seat\(summary.seats == 1 ? "" : "s")")
                     .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
+                    .foregroundColor(Color.hopAuthTextSecondary)
                 if let t = summary.threshold {
                     Text("· min \(t) to run")
                         .font(HopFont.bodyMedium())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                 }
             }
             HStack(spacing: HopSpacing.xs) {
-                Image(systemName: "ruler").foregroundColor(Color.hopTextSecondary)
+                Image(systemName: "ruler").foregroundColor(Color.hopAuthTextSecondary)
                 Text("\(summary.distanceKm) km")
                     .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
+                    .foregroundColor(Color.hopAuthTextSecondary)
             }
         }
         .padding(HopSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopCardSurfaceMuted)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
@@ -182,16 +174,16 @@ private struct PriceBreakdownCard: View {
         VStack(alignment: .leading, spacing: HopSpacing.sm) {
             Text("Price breakdown (per seat)")
                 .font(HopFont.labelMedium(weight: .semibold))
-                .foregroundColor(Color.hopTextSecondary)
+                .foregroundColor(Color.hopAuthTextSecondary)
 
             row(label: "Passenger pays", oere: summary.passengerPaysPerSeatOere, highlight: false)
             row(label: "Platform fee (15%)", oere: summary.platformFeeOere, highlight: false)
-            Divider().background(Color.hopTextSecondary.opacity(0.2))
+            Divider().background(Color.hopAuthTextSecondary.opacity(0.2))
             row(label: "You receive", oere: summary.driverNetPerSeatOere, highlight: true)
         }
         .padding(HopSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopCardSurfaceMuted)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
@@ -199,11 +191,39 @@ private struct PriceBreakdownCard: View {
         HStack {
             Text(label)
                 .font(HopFont.bodyMedium())
-                .foregroundColor(Color.hopTextSecondary)
+                .foregroundColor(Color.hopAuthTextSecondary)
             Spacer()
             Text("DKK \(oere / 100)")
                 .font(highlight ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .semibold))
-                .foregroundColor(highlight ? Color.hopPrimaryLime : Color.hopTextPrimary)
+                .foregroundColor(highlight ? Color.hopPrimaryGreen : Color.hopAuthTextPrimary)
         }
+    }
+}
+
+// MARK: — SKAT warning ────────────────────────────────────────────────────────
+
+private struct SkatWarningCard: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: HopSpacing.sm) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(Color(hex: 0xB45309))
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Tax reminder")
+                    .font(HopFont.labelMedium(weight: .semibold))
+                    .foregroundColor(Color(hex: 0x78350F))
+                Text("Hop is not your tax authority. You're responsible for reporting earnings to SKAT. We'll show monthly estimates and an annual report to help — verify before filing.")
+                    .font(HopFont.bodySmall())
+                    .foregroundColor(Color(hex: 0x78350F))
+            }
+        }
+        .padding(HopSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: 0xFEF3C7))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(hex: 0xFCD34D), lineWidth: 1)
+        )
     }
 }

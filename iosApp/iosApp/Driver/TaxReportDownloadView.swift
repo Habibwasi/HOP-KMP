@@ -15,7 +15,7 @@ struct TaxReportDownloadView: View {
         let s = wrapper.state
 
         return ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopBackground.ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: HopSpacing.md) {
@@ -23,18 +23,18 @@ struct TaxReportDownloadView: View {
                     HStack {
                         Button { year -= 1; wrapper.loadTaxReport(year: year) } label: {
                             Image(systemName: "chevron.left")
-                                .foregroundColor(Color.hopTextPrimary)
-                                .padding(8).background(Color.hopSurfaceElevated).clipShape(Circle())
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
                         }.buttonStyle(.plain)
                         Spacer()
                         Text("Tax Year \(year)")
                             .font(HopFont.headlineSmall(weight: .semibold))
-                            .foregroundColor(Color.hopTextPrimary)
+                            .foregroundColor(Color.hopAuthTextPrimary)
                         Spacer()
                         Button { year += 1; wrapper.loadTaxReport(year: year) } label: {
                             Image(systemName: "chevron.right")
-                                .foregroundColor(Color.hopTextPrimary)
-                                .padding(8).background(Color.hopSurfaceElevated).clipShape(Circle())
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
                         }.buttonStyle(.plain)
                     }
 
@@ -55,11 +55,11 @@ struct TaxReportDownloadView: View {
                         VStack(spacing: HopSpacing.sm) {
                             row("Total earnings", oere: Int(s.totalEarningsOere))
                             row("Total deduction", oere: Int(s.totalDeductionOere))
-                            Divider().background(Color.hopTextSecondary.opacity(0.2))
+                            Divider().background(Color.hopAuthTextSecondary.opacity(0.2))
                             row("Total taxable", oere: Int(s.totalTaxableOere), highlight: true)
                         }
                         .padding(HopSpacing.md)
-                        .background(Color.hopSurfaceElevated)
+                        .background(Color.hopCardSurfaceMuted)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
 
                         if let url = s.reportUrl {
@@ -84,19 +84,6 @@ struct TaxReportDownloadView: View {
                 .padding(HopSpacing.md)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Annual report").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             wrapper.startObserving { effect in
                 if let open = effect as? TaxEffectOpenReportUrl, let u = URL(string: open.url) {
@@ -105,17 +92,21 @@ struct TaxReportDownloadView: View {
             }
             wrapper.loadTaxReport(year: year)
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Tax report", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 
     private func row(_ label: String, oere: Int, highlight: Bool = false) -> some View {
         HStack {
             Text(label)
                 .font(HopFont.bodyMedium())
-                .foregroundColor(Color.hopTextSecondary)
+                .foregroundColor(Color.hopAuthTextSecondary)
             Spacer()
             Text("DKK \(oere / 100)")
                 .font(highlight ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .semibold))
-                .foregroundColor(highlight ? Color.hopPrimaryLime : Color.hopTextPrimary)
+                .foregroundColor(highlight ? Color.hopPrimaryLime : Color.hopAuthTextPrimary)
         }
     }
 }

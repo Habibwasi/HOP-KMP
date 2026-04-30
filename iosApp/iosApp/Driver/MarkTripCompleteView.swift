@@ -8,15 +8,15 @@ struct MarkTripCompleteView: View {
     let tripId: String
     let driverNetOere: Int
 
-    var onCompleted: (_ bookingId: String) -> Void
+    var onCompleted: (_ bookingId: String, _ passengerName: String, _ passengerInitials: String) -> Void
     var onBack: () -> Void
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
     @State private var toast: String? = nil
 
     var body: some View {
         ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopBackground.ignoresSafeArea()
 
             VStack(spacing: HopSpacing.lg) {
                 Spacer()
@@ -31,10 +31,10 @@ struct MarkTripCompleteView: View {
                 VStack(spacing: HopSpacing.xs) {
                     Text("Mark trip complete?")
                         .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
                     Text("You'll receive DKK \(driverNetOere / 100) net per seat.")
                         .font(HopFont.bodyMedium())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, HopSpacing.xl)
                 }
@@ -59,24 +59,17 @@ struct MarkTripCompleteView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Complete trip").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            wrapper.startObserving { effect in
+            for await effect in wrapper.effects {
                 switch effect {
                 case let nav as DriverEffectNavigateToRatePassenger:
-                    onCompleted(nav.bookingId)
+                    let passenger = wrapper.state.activeTripDetail.passengers
+                        .first(where: { $0.bookingId == nav.bookingId })
+                    onCompleted(
+                        nav.bookingId,
+                        passenger?.fullName ?? "Passenger",
+                        passenger?.initials ?? "P"
+                    )
                 case let snack as DriverEffectShowSnackbar:
                     toast = snack.message
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { withAnimation { toast = nil } }
@@ -84,5 +77,9 @@ struct MarkTripCompleteView: View {
                 }
             }
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Mark trip complete", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 }

@@ -8,7 +8,7 @@ struct CarDetailsView: View {
     var onNavigateBack: () -> Void
     var onNavigateNext: () -> Void  // → DR-03 LicenceUpload
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
 
     @State private var make:    String = ""
     @State private var model:   String = ""
@@ -30,10 +30,10 @@ struct CarDetailsView: View {
                 VStack(alignment: .leading, spacing: HopSpacing.md) {
                     Text("Step 1 of 3 · Car details")
                         .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                     Text("Tell us about your car")
                         .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
 
                     HopTextField(label: "Make", placeholder: "e.g. Toyota", text: $make)
                     HopTextField(label: "Model", placeholder: "e.g. Corolla", text: $model)
@@ -44,14 +44,14 @@ struct CarDetailsView: View {
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Available seats (excluding driver)")
                             .font(HopFont.labelSmall())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                         Stepper(value: $seats, in: 1...4) {
                             Text("\(seats)")
                                 .font(HopFont.bodyLarge(weight: .semibold))
-                                .foregroundColor(Color.hopTextPrimary)
+                                .foregroundColor(Color.hopAuthTextPrimary)
                         }
                         .padding(HopSpacing.sm)
-                        .background(Color.hopSurfaceElevated)
+                        .background(Color.hopCardSurfaceMuted)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
 
@@ -77,25 +77,16 @@ struct CarDetailsView: View {
                 .padding(HopSpacing.md)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onNavigateBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Become a Driver").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            wrapper.startObserving { effect in
+            for await effect in wrapper.effects {
                 if effect is DriverEffectNavigateToHome {
                     onNavigateNext()
                 }
             }
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Car details", onBack: onNavigateBack)
+            .background(Color.hopBackground)
+    }
     }
 }

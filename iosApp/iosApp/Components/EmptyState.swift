@@ -30,27 +30,27 @@ struct EmptyState: View {
             // ── Illustration placeholder ───────────────────────────────────────
             ZStack {
                 Circle()
-                    .fill(Color.hopSurfaceElevated)
+                    .fill(Color.hopCardSurfaceMuted)
                     .frame(width: 120, height: 120)
 
                 Image(systemName: systemImage)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 52, height: 52)
-                    .foregroundColor(Color.hopTextSecondary)
+                    .foregroundColor(Color.hopAuthTextSecondary)
             }
 
             // ── Text block ────────────────────────────────────────────────────
             VStack(spacing: HopSpacing.xs) {
                 Text(headline)
                     .font(HopFont.headlineSmall(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .foregroundColor(Color.hopAuthTextPrimary)
                     .multilineTextAlignment(.center)
 
                 if let subtitle {
                     Text(subtitle)
                         .font(HopFont.bodyMedium())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, HopSpacing.xl)
                 }
@@ -70,7 +70,7 @@ struct EmptyState: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.hopSurface)
+        .background(Color.hopBackground)
         .accessibilityElement(children: .combine)
     }
 }

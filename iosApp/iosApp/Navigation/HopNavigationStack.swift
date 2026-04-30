@@ -220,8 +220,8 @@ struct HopNavigationStack: View {
             MarkTripCompleteView(
                 tripId: tripId,
                 driverNetOere: driverNetOere,
-                onCompleted: { bookingId in
-                    navigate(.ratePassenger(bookingId: bookingId, passengerName: "Passenger", passengerInitials: "P"))
+                onCompleted: { bookingId, name, initials in
+                    navigate(.ratePassenger(bookingId: bookingId, passengerName: name, passengerInitials: initials))
                 },
                 onBack: popBack
             )

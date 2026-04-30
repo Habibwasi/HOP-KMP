@@ -19,7 +19,7 @@ struct TaxDashboardView: View {
         let s = wrapper.state
 
         return ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopBackground.ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: HopSpacing.md) {
@@ -27,20 +27,20 @@ struct TaxDashboardView: View {
                     HStack {
                         Button { wrapper.previousMonth() } label: {
                             Image(systemName: "chevron.left")
-                                .foregroundColor(Color.hopTextPrimary)
-                                .padding(8).background(Color.hopSurfaceElevated).clipShape(Circle())
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
                         }.buttonStyle(.plain)
 
                         Spacer()
                         Text(monthLabel(s))
                             .font(HopFont.headlineSmall(weight: .semibold))
-                            .foregroundColor(Color.hopTextPrimary)
+                            .foregroundColor(Color.hopAuthTextPrimary)
                         Spacer()
 
                         Button { wrapper.nextMonth() } label: {
                             Image(systemName: "chevron.right")
-                                .foregroundColor(Color.hopTextPrimary)
-                                .padding(8).background(Color.hopSurfaceElevated).clipShape(Circle())
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
                         }.buttonStyle(.plain)
                     }
 
@@ -54,10 +54,10 @@ struct TaxDashboardView: View {
                         VStack(alignment: .leading, spacing: HopSpacing.xs) {
                             Text("Gross earnings")
                                 .font(HopFont.labelSmall())
-                                .foregroundColor(Color.hopSurface.opacity(0.7))
+                                .foregroundColor(Color.hopAuthTextPrimary.opacity(0.7))
                             Text("DKK \(Int(summary.grossOere) / 100)")
                                 .font(HopFont.displayLarge(weight: .bold))
-                                .foregroundColor(Color.hopSurface)
+                                .foregroundColor(Color.hopAuthTextPrimary)
                         }
                         .padding(HopSpacing.md)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,16 +68,16 @@ struct TaxDashboardView: View {
                         VStack(spacing: HopSpacing.sm) {
                             taxRow("Befordringsfradrag (DKK 2.28/km)", oere: Int(summary.befordringsfradragOere))
                             taxRow("Taxable amount", oere: Int(summary.taxableOere))
-                            Divider().background(Color.hopTextSecondary.opacity(0.2))
+                            Divider().background(Color.hopAuthTextSecondary.opacity(0.2))
                             taxRow("Estimated tax", oere: Int(summary.estimatedTaxOere), highlight: true)
                         }
                         .padding(HopSpacing.md)
-                        .background(Color.hopSurfaceElevated)
+                        .background(Color.hopCardSurfaceMuted)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
 
                         Text("Estimates only. Verify with SKAT for filing.")
                             .font(HopFont.bodySmall())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                     } else if let err = s.error {
                         EmptyState(
                             systemImage: "exclamationmark.triangle",
@@ -98,25 +98,16 @@ struct TaxDashboardView: View {
                 .padding(HopSpacing.md)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Tax dashboard").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             wrapper.startObserving { _ in }
             let now = Date()
             let cal = Calendar.current
             wrapper.loadDashboard(year: cal.component(.year, from: now), month: cal.component(.month, from: now))
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Tax dashboard", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 
     private func monthLabel(_ s: TaxUiState) -> String {
@@ -130,11 +121,11 @@ struct TaxDashboardView: View {
         HStack {
             Text(label)
                 .font(HopFont.bodyMedium())
-                .foregroundColor(Color.hopTextSecondary)
+                .foregroundColor(Color.hopAuthTextSecondary)
             Spacer()
             Text("DKK \(oere / 100)")
                 .font(highlight ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .semibold))
-                .foregroundColor(highlight ? Color.hopPrimaryLime : Color.hopTextPrimary)
+                .foregroundColor(highlight ? Color.hopPrimaryLime : Color.hopAuthTextPrimary)
         }
     }
 }

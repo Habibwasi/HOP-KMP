@@ -22,7 +22,7 @@ struct RatePassengerView: View {
 
     var body: some View {
         ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 VStack(spacing: HopSpacing.sm) {
@@ -30,7 +30,7 @@ struct RatePassengerView: View {
                         .padding(.top, HopSpacing.xxl)
                     Text("How was your trip with \(passengerName)?")
                         .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, HopSpacing.md)
                 }
@@ -41,17 +41,17 @@ struct RatePassengerView: View {
                 VStack(alignment: .leading, spacing: HopSpacing.xs) {
                     Text("Leave a comment (optional)")
                         .font(HopFont.labelMedium(weight: .medium))
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                     ZStack(alignment: .topLeading) {
                         if comment.isEmpty {
                             Text("How were they as a passenger?")
                                 .font(HopFont.bodyMedium())
-                                .foregroundColor(Color.hopTextSecondary.opacity(0.6))
+                                .foregroundColor(Color.hopAuthTextSecondary.opacity(0.6))
                                 .padding(.top, 12).padding(.leading, 6)
                         }
                         TextEditor(text: $comment)
                             .font(HopFont.bodyMedium())
-                            .foregroundColor(Color.hopTextPrimary)
+                            .foregroundColor(Color.hopAuthTextPrimary)
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 96)
                             .onChange(of: comment) { _, newValue in
@@ -62,7 +62,7 @@ struct RatePassengerView: View {
                     }
                     .padding(.horizontal, HopSpacing.sm)
                     .padding(.vertical, HopSpacing.xs)
-                    .background(Color.hopSurfaceElevated)
+                    .background(Color.hopCardSurfaceMuted)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.horizontal, HopSpacing.md)
@@ -85,16 +85,6 @@ struct RatePassengerView: View {
                 .padding(HopSpacing.md)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             wrapper.startObserving { effect in
                 if effect is BookingEffectNavigateToMyTripsPassenger {
@@ -102,5 +92,9 @@ struct RatePassengerView: View {
                 }
             }
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Rate passenger", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 }

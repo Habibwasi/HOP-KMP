@@ -11,13 +11,13 @@ struct TripDetailActiveDriverView: View {
     var onMessagePassenger: (String) -> Void
     var onBack: () -> Void
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
 
     var body: some View {
         let detail = wrapper.state.activeTripDetail
 
         return ZStack {
-            Color.hopSurface.ignoresSafeArea()
+            Color.hopBackground.ignoresSafeArea()
 
             ScrollView {
                 if detail.isLoading && detail.trip == nil {
@@ -30,28 +30,28 @@ struct TripDetailActiveDriverView: View {
                         VStack(alignment: .leading, spacing: HopSpacing.sm) {
                             Text("\(trip.originName) → \(trip.destName)")
                                 .font(HopFont.headlineSmall(weight: .semibold))
-                                .foregroundColor(Color.hopTextPrimary)
+                                .foregroundColor(Color.hopAuthTextPrimary)
                             Text(trip.departsAt)
                                 .font(HopFont.bodySmall())
-                                .foregroundColor(Color.hopTextSecondary)
+                                .foregroundColor(Color.hopAuthTextSecondary)
                             Text("\(trip.seatsBooked)/\(trip.seatsTotal) seats booked")
                                 .font(HopFont.bodySmall(weight: .semibold))
                                 .foregroundColor(Color.hopPrimaryLime)
                         }
                         .padding(HopSpacing.md)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.hopSurfaceElevated)
+                        .background(Color.hopCardSurfaceMuted)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
                         Text("Passengers")
                             .font(HopFont.labelMedium(weight: .semibold))
-                            .foregroundColor(Color.hopTextPrimary)
+                            .foregroundColor(Color.hopAuthTextPrimary)
                             .padding(.top, HopSpacing.sm)
 
                         if detail.passengers.isEmpty {
                             Text("No passengers booked yet.")
                                 .font(HopFont.bodyMedium())
-                                .foregroundColor(Color.hopTextSecondary)
+                                .foregroundColor(Color.hopAuthTextSecondary)
                                 .padding(.vertical, HopSpacing.md)
                         } else {
                             VStack(spacing: HopSpacing.xs) {
@@ -80,23 +80,13 @@ struct TripDetailActiveDriverView: View {
                 }
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Trip detail").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            wrapper.startObserving { _ in }
             wrapper.loadActiveTripDetail(tripId: tripId)
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Trip detail", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 }
 
@@ -110,15 +100,15 @@ private struct PassengerRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(passenger.fullName)
                     .font(HopFont.labelMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .foregroundColor(Color.hopAuthTextPrimary)
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill").font(.system(size: 10)).foregroundColor(Color.hopPrimaryLime)
                     Text(String(format: "%.1f", passenger.rating))
                         .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                     Text("· \(passenger.seats) seat\(passenger.seats == 1 ? "" : "s")")
                         .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                 }
             }
             Spacer()
@@ -126,13 +116,13 @@ private struct PassengerRow: View {
                 Image(systemName: "bubble.left")
                     .foregroundColor(Color.hopPrimaryLime)
                     .padding(8)
-                    .background(Color.hopSurfaceElevated)
+                    .background(Color.hopCardSurfaceMuted)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
         }
         .padding(HopSpacing.sm)
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopCardSurfaceMuted)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

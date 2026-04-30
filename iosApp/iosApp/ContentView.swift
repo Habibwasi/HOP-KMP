@@ -11,11 +11,22 @@ import Shared
 struct ContentView: View {
 
     @State private var isAuthenticated = false
+    @State private var showSplash = true
     @StateObject private var authWrapper = AuthViewModelWrapper()
 
     var body: some View {
         Group {
-            if isAuthenticated {
+            if showSplash {
+                // Brand splash shown on cold start — parity with Android's
+                // `SplashRoute` (3-second animated scene before navigating
+                // forward to the auth or main-app root).
+                SplashView(onComplete: {
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        showSplash = false
+                    }
+                })
+                .transition(.opacity)
+            } else if isAuthenticated {
                 HopNavigationStack()
             } else {
                 AuthNavigationCoordinator {

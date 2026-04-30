@@ -24,11 +24,11 @@ struct ReviewPendingView: View {
 
                 Text("Review pending")
                     .font(HopFont.headlineMedium(weight: .bold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .foregroundColor(Color.hopAuthTextPrimary)
 
                 Text("Thanks for joining! We're reviewing your details and will email you within 24 hours once approved.")
                     .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
+                    .foregroundColor(Color.hopAuthTextSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, HopSpacing.lg)
 
@@ -38,13 +38,9 @@ struct ReviewPendingView: View {
                     .padding(HopSpacing.md)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text("Become a Driver").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "Review pending", onBack: onNavigateToHome)
+            .background(Color.hopBackground)
+    }
     }
 }

@@ -1,17 +1,32 @@
+//
+//  DriverHomeView.swift
+//  iosApp
+//
+//  DR-01 Driver Home — light-theme mirror of composeApp `DriverHomeScreen.kt`.
+//  Rendered inside the unified `HomeView` so it does NOT draw the top bar
+//  (HopLogo + RoleTogglePill + bell) — that's owned by `HomeView`.
+//
+//  Sections:
+//    • EarningsHeroCard — lime card, mono DKK total, sparkline, est. tax.
+//    • "Become a driver" prompt when `licenceStatus != approved`.
+//    • Repost templates row (when there are completed trips).
+//    • "My Trips" heading + list / loading / empty.
+//    • Floating "Post a Trip" FAB (lime pill, bottom-right).
+//
+
 import SwiftUI
 import Shared
-
-// MARK: — DR-01 Driver Home (rendered inside unified HomeView) ────────────────
-//
-// Displays driver dashboard: licence status, monthly earnings hero card,
-// list of upcoming trips, FAB to post a new trip.
 
 struct DriverHomeView: View {
 
     var navigate: (HopRoute) -> Void
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
     @State private var toast: String? = nil
+
+    private var hasDriverRole: Bool {
+        wrapper.state.licenceStatus == LicenceStatus.approved
+    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -19,38 +34,58 @@ struct DriverHomeView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: HopSpacing.md) {
-                    // ── Licence status banner ────────────────────────────────
-                    if let status = wrapper.state.licenceStatus, status != LicenceStatus.approved {
-                        LicenceStatusBanner(status: status, onTap: { navigate(.enableDriverStep1) })
-                    }
 
-                    // ── Earnings hero ────────────────────────────────────────
-                    Button(action: wrapper.tapEarningsBanner) {
-                        EarningsHero(
+                    if hasDriverRole {
+                        // ── Earnings hero ─────────────────────────────────
+                        EarningsHeroCard(
                             monthlyOere: Int(wrapper.state.monthlyEarningsOere),
-                            estimatedTaxOere: Int(wrapper.state.estimatedTaxOere)
+                            estimatedTaxOere: Int(wrapper.state.estimatedTaxOere),
+                            series: synthesiseSeries(Int(wrapper.state.monthlyEarningsOere)),
+                            onTap: { wrapper.tapEarningsBanner() }
+                        )
+
+                        // ── Repost templates ──────────────────────────────
+                        let repostable = wrapper.state.trips
+                            .filter { $0.trip.status == TripStatus.completed }
+                            .prefix(5)
+                        if !repostable.isEmpty {
+                            Text("Repost a recent trip")
+                                .font(HopFont.titleMedium(weight: .semibold))
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                            RepostRow(
+                                templates: Array(repostable),
+                                onRepost: { _ in navigate(.postTripModelSelect) }
+                            )
+                        }
+                    } else {
+                        BecomeDriverPrompt(
+                            status: wrapper.state.licenceStatus,
+                            onTap: { navigate(.enableDriverStep1) }
                         )
                     }
-                    .buttonStyle(.plain)
 
-                    // ── Upcoming trips ───────────────────────────────────────
-                    Text("Your trips")
-                        .font(HopFont.labelMedium(weight: .semibold))
-                        .foregroundColor(Color.hopTextPrimary)
-                        .padding(.top, HopSpacing.md)
+                    // ── Section heading ──────────────────────────────────
+                    Text("My Trips")
+                        .font(HopFont.titleMedium(weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .padding(.top, HopSpacing.xs)
 
+                    // ── Trips list / loading / empty ─────────────────────
                     if wrapper.state.isLoading && wrapper.state.trips.isEmpty {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, HopSpacing.xl)
+                        VStack(spacing: HopSpacing.sm) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                SkeletonCard()
+                            }
+                        }
                     } else if wrapper.state.trips.isEmpty {
-                        EmptyState(
-                            systemImage: "car.2",
-                            headline: "No active trips",
-                            subtitle: "Post your first trip to start earning.",
-                            ctaLabel: "Post a trip",
-                            ctaAction: { navigate(.postTripModelSelect) }
+                        EmptyTripsCard(
+                            onPostTrip: {
+                                if hasDriverRole {
+                                    navigate(.postTripModelSelect)
+                                } else {
+                                    navigate(.enableDriverStep1)
+                                }
+                            }
                         )
                     } else {
                         VStack(spacing: HopSpacing.sm) {
@@ -58,44 +93,56 @@ struct DriverHomeView: View {
                                 Button {
                                     navigate(.tripDetailActiveDriver(tripId: trip.id))
                                 } label: {
-                                    DriverTripRow(trip: trip)
+                                    DriverTripCard(trip: trip)
                                 }
                                 .buttonStyle(.plain)
+                                .opacity(trip.isBroken ? 0.5 : 1.0)
+                                .disabled(trip.isBroken)
                             }
                         }
                     }
 
+                    // Bottom padding so last card clears the FAB.
                     Spacer().frame(height: HopSpacing.xxl + 56)
                 }
                 .padding(.horizontal, HopSpacing.md)
                 .padding(.top, HopSpacing.md)
             }
 
-            // ── FAB ─────────────────────────────────────────────────────────
-            Button(action: { navigate(.postTripModelSelect) }) {
+            // ── Floating "Post a Trip" pill ──────────────────────────────
+            Button(action: {
+                if hasDriverRole {
+                    navigate(.postTripModelSelect)
+                } else {
+                    navigate(.enableDriverStep1)
+                }
+            }) {
                 HStack(spacing: HopSpacing.xs) {
                     Image(systemName: "plus")
-                    Text("Post a trip")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("Post a Trip")
+                        .font(HopFont.labelMedium(weight: .semibold))
                 }
-                .font(HopFont.labelMedium(weight: .semibold))
-                .foregroundColor(Color.hopSurface)
+                .foregroundColor(Color.hopAuthTextPrimary)
                 .padding(.horizontal, HopSpacing.md)
-                .padding(.vertical, HopSpacing.sm)
+                .padding(.vertical, HopSpacing.sm + 2)
                 .background(Color.hopPrimaryLime)
                 .clipShape(Capsule())
-                .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+                .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 3)
             }
             .padding(.trailing, HopSpacing.md)
-            .padding(.bottom, HopSpacing.xl)
+            .padding(.bottom, HopSpacing.md)
 
             if let msg = toast {
-                HopToast(message: msg)
+                ToastBubble(message: msg)
                     .padding(.bottom, HopSpacing.xxl)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .task {
-            wrapper.startObserving { effect in
+            wrapper.loadDriverHome()
+            wrapper.loadLicenceStatus()
+            for await effect in wrapper.effects {
                 switch effect {
                 case is DriverEffectNavigateToPostTrip:
                     navigate(.postTripModelSelect)
@@ -104,105 +151,380 @@ struct DriverHomeView: View {
                 case is DriverEffectNavigateToLicenceUpload:
                     navigate(.enableDriverStep2)
                 case let snack as DriverEffectShowSnackbar:
-                    toast = snack.message
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { withAnimation { toast = nil } }
+                    showToast(snack.message)
                 default: break
                 }
             }
-            wrapper.loadDriverHome()
-            wrapper.loadLicenceStatus()
+        }
+    }
+
+    private func showToast(_ message: String) {
+        withAnimation { toast = message }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation { if toast == message { toast = nil } }
         }
     }
 }
 
-// MARK: — Sub-components
+// MARK: — Synthesised 7-day spark series (until /drivers/me/earnings/series)
 
-private struct LicenceStatusBanner: View {
-    let status: LicenceStatus
+private func synthesiseSeries(_ monthlyOere: Int) -> [Int] {
+    if monthlyOere <= 0 { return Array(repeating: 0, count: 7) }
+    let avg = monthlyOere / 30
+    let factors: [Double] = [0.6, 0.7, 1.1, 0.9, 1.3, 1.5, 1.4]
+    return factors.map { Int(Double(avg) * $0) }
+}
+
+// MARK: — EarningsHeroCard ─────────────────────────────────────────────────
+
+private struct EarningsHeroCard: View {
+    let monthlyOere: Int
+    let estimatedTaxOere: Int
+    let series: [Int]
+    let onTap: () -> Void
+
+    @State private var animatedDkk: Int = 0
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Earnings this month")
+                    .font(HopFont.labelSmall(weight: .semibold))
+                    .foregroundColor(Color.hopAuthTextPrimary.opacity(0.7))
+
+                HStack(alignment: .lastTextBaseline) {
+                    Text("DKK ")
+                        .font(HopFont.headlineSmall(weight: .bold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                    Text("\(animatedDkk)")
+                        .font(HopFont.mono(size: 34, weight: .bold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.hopAuthTextPrimary.opacity(0.4))
+                }
+
+                Text("Est. tax: DKK \(estimatedTaxOere / 100)")
+                    .font(HopFont.bodySmall(weight: .medium))
+                    .foregroundColor(Color.hopAuthTextPrimary.opacity(0.65))
+
+                Spacer().frame(height: HopSpacing.sm)
+
+                Sparkline(series: series)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+
+                Text("Last 7 days")
+                    .font(HopFont.labelSmall())
+                    .foregroundColor(Color.hopAuthTextPrimary.opacity(0.55))
+            }
+            .padding(HopSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.hopPrimaryLime)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.9)) {
+                animatedDkk = monthlyOere / 100
+            }
+        }
+        .onChange(of: monthlyOere) { _, new in
+            withAnimation(.easeOut(duration: 0.9)) { animatedDkk = new / 100 }
+        }
+    }
+}
+
+private struct Sparkline: View {
+    let series: [Int]
+
+    var body: some View {
+        Canvas { ctx, size in
+            let data: [Int] = {
+                if series.isEmpty { return [0, 0] }
+                if series.count == 1 { return [series[0], series[0]] }
+                return series
+            }()
+            let maxV = max(data.max() ?? 0, 1)
+            let minV = data.min() ?? 0
+            let range = max(maxV - minV, 1)
+            let stepX = size.width / CGFloat(max(data.count - 1, 1))
+            let h = size.height
+
+            let points: [CGPoint] = data.enumerated().map { (i, v) in
+                let x = stepX * CGFloat(i)
+                let n = CGFloat(v - minV) / CGFloat(range)
+                let y = h - (n * (h - 6)) - 3
+                return CGPoint(x: x, y: y)
+            }
+
+            // Filled area
+            var fill = Path()
+            fill.move(to: CGPoint(x: points[0].x, y: h))
+            for p in points { fill.addLine(to: p) }
+            fill.addLine(to: CGPoint(x: points.last!.x, y: h))
+            fill.closeSubpath()
+            ctx.fill(
+                fill,
+                with: .linearGradient(
+                    Gradient(colors: [
+                        Color.hopAuthTextPrimary.opacity(0.18),
+                        Color.clear
+                    ]),
+                    startPoint: CGPoint(x: 0, y: 0),
+                    endPoint: CGPoint(x: 0, y: h)
+                )
+            )
+            // Line
+            var line = Path()
+            line.move(to: points[0])
+            for i in 1..<points.count { line.addLine(to: points[i]) }
+            ctx.stroke(
+                line,
+                with: .color(Color.hopAuthTextPrimary),
+                style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+            )
+        }
+    }
+}
+
+// MARK: — Become-driver prompt ─────────────────────────────────────────────
+
+private struct BecomeDriverPrompt: View {
+    let status: LicenceStatus?
     let onTap: () -> Void
 
     var body: some View {
-        let (text, color, action): (String, Color, String?) = {
+        let (headline, subtitle, cta): (String, String, String) = {
             switch status {
-            case LicenceStatus.none:     return ("Add your licence to start driving", Color.hopWarning, "Add now")
-            case LicenceStatus.pending:  return ("Licence under review", Color.hopWarning, nil)
-            case LicenceStatus.rejected: return ("Licence rejected — please re-upload", Color.hopError, "Re-upload")
-            default: return ("", .clear, nil)
+            case .some(LicenceStatus.pending):
+                return ("Licence under review",
+                        "We're verifying your details. You'll get an email within 24 hours.",
+                        "")
+            case .some(LicenceStatus.rejected):
+                return ("Licence rejected",
+                        "Please re-upload a clearer photo of your driving licence.",
+                        "Re-upload")
+            default:
+                return ("Save money driving with Hop",
+                        "Set your own route, time, and price. Tap below — we'll walk you through the setup.",
+                        "Become a driver")
             }
         }()
 
-        return Button(action: onTap) {
-            HStack {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundColor(color)
-                Text(text)
-                    .font(HopFont.bodyMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
-                Spacer()
-                if let action {
-                    Text(action)
-                        .font(HopFont.bodySmall(weight: .semibold))
-                        .foregroundColor(color)
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: HopSpacing.xs) {
+                Text(headline)
+                    .font(HopFont.titleMedium(weight: .bold))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+                Text(subtitle)
+                    .font(HopFont.bodySmall())
+                    .foregroundColor(Color.hopAuthTextPrimary.opacity(0.7))
+                if !cta.isEmpty {
+                    HStack(spacing: 4) {
+                        Text(cta)
+                            .font(HopFont.labelMedium(weight: .semibold))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                    }
+                    .padding(.top, HopSpacing.xs)
                 }
             }
-            .padding(HopSpacing.md)
-            .background(color.opacity(0.15))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.vertical, HopSpacing.lg)
+            .background(Color.hopPrimaryLime)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
         .disabled(status == LicenceStatus.pending)
     }
 }
 
-private struct EarningsHero: View {
-    let monthlyOere: Int
-    let estimatedTaxOere: Int
+// MARK: — Repost row ───────────────────────────────────────────────────────
+
+private struct RepostRow: View {
+    let templates: [TripUiModel]
+    let onRepost: (TripUiModel) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: HopSpacing.sm) {
-            Text("This month")
-                .font(HopFont.bodySmall())
-                .foregroundColor(Color.hopSurface.opacity(0.7))
-            Text("DKK \(monthlyOere / 100)")
-                .font(HopFont.displayLarge())
-                .foregroundColor(Color.hopSurface)
-            HStack {
-                Text("Estimated tax")
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color.hopSurface.opacity(0.7))
-                Spacer()
-                Text("DKK \(estimatedTaxOere / 100)")
-                    .font(HopFont.bodySmall(weight: .semibold))
-                    .foregroundColor(Color.hopSurface)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HopSpacing.sm) {
+                ForEach(templates, id: \.id) { t in
+                    Button(action: { onRepost(t) }) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(Color.hopAuthTextSecondary)
+                                Text("Repost")
+                                    .font(HopFont.labelSmall(weight: .semibold))
+                                    .foregroundColor(Color.hopAuthTextSecondary)
+                            }
+                            Text("\(t.trip.originName) → \(t.trip.destName)")
+                                .font(HopFont.labelMedium(weight: .semibold))
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .lineLimit(1)
+                            Text("DKK \(Int(t.priceOerePerSeat) / 100)/seat")
+                                .font(HopFont.bodySmall())
+                                .foregroundColor(Color.hopAuthTextSecondary)
+                        }
+                        .padding(HopSpacing.sm)
+                        .frame(width: 200, alignment: .leading)
+                        .driverCard()
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
-        .padding(HopSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hopPrimaryLime)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
 
-private struct DriverTripRow: View {
+// MARK: — Driver trip card ────────────────────────────────────────────────
+
+private struct DriverTripCard: View {
     let trip: TripUiModel
 
     var body: some View {
-        HStack(spacing: HopSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(trip.trip.originName) → \(trip.trip.destName)")
-                    .font(HopFont.labelMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
-                    .lineLimit(1)
-                Text(trip.trip.departsAt)
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color.hopTextSecondary)
+        VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            HStack(spacing: HopSpacing.xs) {
+                modelBadge
+                statusBadge
+                Spacer()
+                Text("\(trip.seatsBooked)/\(trip.seatsTotal) seats")
+                    .font(HopFont.labelSmall(weight: .semibold))
+                    .foregroundColor(Color(hex: 0x666666))
             }
-            Spacer()
-            Text("\(trip.trip.seatsBooked)/\(trip.trip.seatsTotal) seats")
-                .font(HopFont.bodySmall(weight: .semibold))
-                .foregroundColor(Color.hopPrimaryLime)
+            Divider().background(Color(hex: 0xF0F0F0))
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: HopSpacing.sm) {
+                    Circle().fill(Color.hopPrimaryLime).frame(width: 10, height: 10)
+                    Text(trip.trip.originName)
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .lineLimit(1)
+                }
+                Rectangle()
+                    .fill(Color(hex: 0xD0D0D0))
+                    .frame(width: 2, height: 12)
+                    .padding(.leading, 4)
+                HStack(spacing: HopSpacing.sm) {
+                    Circle().fill(Color.hopAuthTextPrimary).frame(width: 10, height: 10)
+                    Text(trip.trip.destName)
+                        .font(HopFont.bodyMedium(weight: .medium))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .lineLimit(1)
+                }
+            }
+
+            Divider().background(Color(hex: 0xF0F0F0))
+
+            HStack {
+                Text("Departs \(trip.trip.departsAt)")
+                    .font(HopFont.bodySmall())
+                    .foregroundColor(Color(hex: 0x666666))
+                Spacer()
+                Text("DKK \(Int(trip.trip.driverNetOere) / 100)/seat")
+                    .font(HopFont.bodyLarge(weight: .bold))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+            }
         }
         .padding(HopSpacing.md)
-        .background(Color.hopSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity)
+        .driverCard()
+        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+    }
+
+    @ViewBuilder
+    private var modelBadge: some View {
+        let isB = trip.model == .b
+        Text(isB ? "Model B" : "Model A")
+            .font(HopFont.labelSmall(weight: .semibold))
+            .foregroundColor(isB ? Color.hopPrimaryGreen : Color(hex: 0x1976D2))
+            .padding(.horizontal, HopSpacing.xs)
+            .padding(.vertical, 3)
+            .background((isB ? Color.hopPrimaryGreen : Color(hex: 0x1976D2)).opacity(0.12))
+            .clipShape(Capsule())
+    }
+
+    @ViewBuilder
+    private var statusBadge: some View {
+        let (label, color): (String, Color) = {
+            switch trip.trip.status {
+            case TripStatus.active:    return ("Active",    Color.hopPrimaryGreen)
+            case TripStatus.confirmed: return ("Confirmed", Color.hopSuccess)
+            case TripStatus.completed: return ("Completed", Color.hopAuthTextSecondary)
+            case TripStatus.cancelled: return ("Cancelled", Color.hopError)
+            default: return ("Pending", Color.hopWarning)
+            }
+        }()
+        Text(label)
+            .font(HopFont.labelSmall(weight: .semibold))
+            .foregroundColor(color)
+            .padding(.horizontal, HopSpacing.xs)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.12))
+            .clipShape(Capsule())
+    }
+}
+
+// MARK: — Empty / skeleton helpers ─────────────────────────────────────────
+
+private struct EmptyTripsCard: View {
+    let onPostTrip: () -> Void
+
+    var body: some View {
+        VStack(spacing: HopSpacing.md) {
+            ZStack {
+                Circle().fill(Color.hopCardSurfaceMuted).frame(width: 80, height: 80)
+                Image(systemName: "car.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+            }
+            Text("Post your first trip to start earning")
+                .font(HopFont.titleMedium(weight: .semibold))
+                .foregroundColor(Color.hopAuthTextPrimary)
+                .multilineTextAlignment(.center)
+            Text("Set a route, pick a time, and let passengers book seats.")
+                .font(HopFont.bodyMedium())
+                .foregroundColor(Color.hopAuthTextSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, HopSpacing.md)
+            HopButton(text: "Post a trip", variant: .primary, action: onPostTrip)
+                .frame(maxWidth: 240)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, HopSpacing.xl)
+    }
+}
+
+private struct SkeletonCard: View {
+    @State private var pulse: Double = 0.4
+    var body: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color.hopCardSurfaceMuted.opacity(pulse))
+            .frame(height: 120)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                    pulse = 0.8
+                }
+            }
+    }
+}
+
+private struct ToastBubble: View {
+    let message: String
+    var body: some View {
+        Text(message)
+            .font(HopFont.bodySmall())
+            .foregroundColor(.white)
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.vertical, HopSpacing.sm)
+            .background(Color.black.opacity(0.85))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

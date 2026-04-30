@@ -8,7 +8,7 @@ struct PostTripModelBView: View {
     var onNavigateToReview: () -> Void
     var onBack: () -> Void
 
-    @StateObject private var wrapper = DriverViewModelWrapper()
+    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
 
     @State private var origin:       String = ""
     @State private var dest:         String = ""
@@ -32,7 +32,7 @@ struct PostTripModelBView: View {
                 VStack(alignment: .leading, spacing: HopSpacing.md) {
                     Text("One-off Long Distance")
                         .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
 
                     HopTextField(label: "From", placeholder: "Origin", text: $origin)
                     HopTextField(label: "To",   placeholder: "Destination", text: $dest)
@@ -44,26 +44,26 @@ struct PostTripModelBView: View {
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Total seats")
                             .font(HopFont.labelSmall())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                         Stepper("\(seats)", value: $seats, in: 1...4)
                             .padding(HopSpacing.sm)
-                            .background(Color.hopSurfaceElevated)
+                            .background(Color.hopCardSurfaceMuted)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .foregroundColor(Color.hopTextPrimary)
+                            .foregroundColor(Color.hopAuthTextPrimary)
                     }
 
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Minimum confirmed before trip runs")
                             .font(HopFont.labelSmall())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                         Stepper("\(minThreshold)", value: $minThreshold, in: 1...max(1, seats))
                             .padding(HopSpacing.sm)
-                            .background(Color.hopSurfaceElevated)
+                            .background(Color.hopCardSurfaceMuted)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .foregroundColor(Color.hopTextPrimary)
+                            .foregroundColor(Color.hopAuthTextPrimary)
                         Text("If fewer than \(minThreshold) passenger\(minThreshold == 1 ? "" : "s") book, the trip is cancelled and refunded.")
                             .font(HopFont.bodySmall())
-                            .foregroundColor(Color.hopTextSecondary)
+                            .foregroundColor(Color.hopAuthTextSecondary)
                     }
 
                     Spacer().frame(height: HopSpacing.lg)
@@ -88,25 +88,16 @@ struct PostTripModelBView: View {
                 .padding(HopSpacing.md)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Long distance").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            wrapper.startObserving { effect in
+            for await effect in wrapper.effects {
                 if effect is DriverEffectNavigateToPriceReview {
                     onNavigateToReview()
                 }
             }
         }
+    .safeAreaInset(edge: .top, spacing: 0) {
+        DriverTopBar(title: "One-off long trip", onBack: onBack)
+            .background(Color.hopBackground)
+    }
     }
 }
