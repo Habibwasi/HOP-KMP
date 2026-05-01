@@ -89,6 +89,8 @@ let BookingsService = BookingsService_1 = class BookingsService {
         const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
         if (!booking)
             throw new common_1.NotFoundException('Booking not found');
+        if (booking.status === client_1.BookingStatus.CONFIRMED)
+            return booking;
         if (booking.status !== client_1.BookingStatus.PENDING) {
             throw new common_1.BadRequestException('Booking is not pending');
         }

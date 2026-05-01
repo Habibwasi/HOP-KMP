@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -68,6 +69,7 @@ fun HopNavGraph(
 ) {
     val connectivityObserver: ConnectivityObserver = koinInject()
     val isConnected by connectivityObserver.isConnected.collectAsStateWithLifecycle()
+    val uriHandler = LocalUriHandler.current
 
     Box(modifier = modifier.fillMaxSize()) {
         NavHost(
@@ -506,11 +508,11 @@ fun HopNavGraph(
             SettingsRoute(
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToEditProfile = { navController.navigate(HopRoutes.Profile(userId = "")) },
-                onNavigateToChangePassword = { /* TODO: wire to ForgotPassword or dedicated ChangePassword screen */ },
-                onNavigateToHelpCentre = { /* TODO: stub — open web URL */ },
-                onNavigateToContactUs = { /* TODO: stub — open email intent */ },
-                onNavigateToTermsOfService = { /* TODO: stub — open web URL */ },
-                onNavigateToPrivacyPolicy = { /* TODO: stub — open web URL */ },
+                onNavigateToChangePassword = { navController.navigate(HopRoutes.ForgotPassword) },
+                onNavigateToHelpCentre = { uriHandler.openUri("https://hop.dk/help") },
+                onNavigateToContactUs = { uriHandler.openUri("mailto:support@hop.dk") },
+                onNavigateToTermsOfService = { uriHandler.openUri("https://hop.dk/terms") },
+                onNavigateToPrivacyPolicy = { uriHandler.openUri("https://hop.dk/privacy") },
                 onLogout = onLogout,
             )
         }

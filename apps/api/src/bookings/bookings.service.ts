@@ -97,6 +97,8 @@ export class BookingsService {
   async confirm(bookingId: string) {
     const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } })
     if (!booking) throw new NotFoundException('Booking not found')
+    // Idempotent: if already confirmed (e.g. webhook fired before capturePayment), just return.
+    if (booking.status === BookingStatus.CONFIRMED) return booking
     if (booking.status !== BookingStatus.PENDING) {
       throw new BadRequestException('Booking is not pending')
     }

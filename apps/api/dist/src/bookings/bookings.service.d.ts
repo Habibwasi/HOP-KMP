@@ -47,33 +47,33 @@ export declare class BookingsService {
         };
     } & {
         id: string;
-        tripId: string;
-        passengerId: string;
         seats: number;
         totalOere: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
+        passengerId: string;
     }>;
     confirm(bookingId: string): Promise<{
         id: string;
-        tripId: string;
-        passengerId: string;
         seats: number;
         totalOere: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
+        passengerId: string;
     }>;
     cancel(bookingId: string, userId: string): Promise<{
         id: string;
-        tripId: string;
-        passengerId: string;
         seats: number;
         totalOere: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
+        passengerId: string;
     }>;
     findById(id: string): Promise<{
         trip: {
@@ -99,12 +99,6 @@ export declare class BookingsService {
             isRecurring: boolean;
             isActive: boolean;
         };
-        passenger: {
-            id: string;
-            firstName: string;
-            lastName: string;
-            avatarUrl: string | null;
-        };
         payment: {
             id: string;
             status: import("@prisma/client").$Enums.PaymentStatus;
@@ -116,15 +110,21 @@ export declare class BookingsService {
             providerRef: string | null;
             webhookData: import("@prisma/client/runtime/client").JsonValue | null;
         } | null;
+        passenger: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        };
     } & {
         id: string;
-        tripId: string;
-        passengerId: string;
         seats: number;
         totalOere: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
+        passengerId: string;
     }>;
     findActiveForPassenger(passengerId: string): Promise<({
         trip: {
@@ -170,13 +170,13 @@ export declare class BookingsService {
         } | null;
     } & {
         id: string;
-        tripId: string;
-        passengerId: string;
         seats: number;
         totalOere: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
+        passengerId: string;
     }) | null>;
     findByPassenger(passengerId: string): Promise<({
         trip: {
@@ -222,13 +222,13 @@ export declare class BookingsService {
         } | null;
     } & {
         id: string;
-        tripId: string;
-        passengerId: string;
         seats: number;
         totalOere: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         createdAt: Date;
         updatedAt: Date;
+        tripId: string;
+        passengerId: string;
     })[]>;
     checkModelBThreshold(tripId: string): Promise<void>;
 }

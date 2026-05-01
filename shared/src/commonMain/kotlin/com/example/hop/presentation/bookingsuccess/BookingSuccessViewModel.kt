@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.repository.BookingRepository
 import com.example.hop.domain.repository.TripRepository
+import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +44,7 @@ sealed interface BookingSuccessEvent {
 class BookingSuccessViewModel(
     private val bookingRepository: BookingRepository,
     private val tripRepository: TripRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BookingSuccessUiState())
@@ -74,13 +78,20 @@ class BookingSuccessViewModel(
                         }
                         is ApiResponse.Success -> {
                             val trip = tripResponse.data
+                            val driverUser = coroutineScope {
+                                async { userRepository.getUserProfile(trip.driverId) }.await()
+                            }
+                            val driverName = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.fullName
+                                is ApiResponse.Error -> ""
+                            }
                             _state.value = _state.value.copy(
                                 isLoading = false,
                                 tripModel = trip.model,
                                 originName = trip.originName,
                                 destName = trip.destName,
                                 departsAt = trip.departsAt,
-                                driverName = "Driver", // TODO: resolve via UserRepository
+                                driverName = driverName,
                             )
                         }
                     }
