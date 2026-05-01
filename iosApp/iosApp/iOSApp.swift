@@ -13,9 +13,11 @@ struct iOSApp: App {
         WindowGroup {
             ContentView()
                 .onOpenURL { url in
-                    // Handle hop://auth/callback email-confirmation deep links.
                     guard url.scheme == "hop", url.host == "auth" else { return }
                     let vm = KoinIOSKt.getAuthViewModel()
+                    // HandleDeepLink internally detects `type=recovery` and emits
+                    // AuthEffect.NavigateToSetNewPassword so the nav stack can push
+                    // SetNewPasswordView for both email-confirmation and password-reset links.
                     vm.onEvent(event: AuthEventHandleDeepLink(url: url.absoluteString))
                 }
         }

@@ -21,7 +21,7 @@ struct DriverHomeView: View {
 
     var navigate: (HopRoute) -> Void
 
-    @ObservedObject private var wrapper     = DriverViewModelWrapper.shared
+    @StateObject  private var wrapper     = DriverViewModelWrapper.shared
     @StateObject  private var authWrapper   = AuthViewModelWrapper()
     @State        private var toast: String? = nil
 
@@ -266,7 +266,9 @@ private struct Sparkline: View {
             var fill = Path()
             fill.move(to: CGPoint(x: points[0].x, y: h))
             for p in points { fill.addLine(to: p) }
-            fill.addLine(to: CGPoint(x: points.last!.x, y: h))
+            if let lastPoint = points.last {
+                fill.addLine(to: CGPoint(x: lastPoint.x, y: h))
+            }
             fill.closeSubpath()
             ctx.fill(
                 fill,

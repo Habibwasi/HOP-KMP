@@ -11,6 +11,7 @@ struct ChatView: View {
 
     @StateObject private var wrapper = ChatViewModelWrapper()
     @State private var inputText: String = ""
+    @State private var currentUserId: String = ""
 
     var body: some View {
         ZStack {
@@ -24,7 +25,7 @@ struct ChatView: View {
                     ScrollView {
                         LazyVStack(spacing: HopSpacing.xs) {
                             ForEach(wrapper.state.messages, id: \.id) { msg in
-                                MessageBubble(message: msg, isMine: false /* TODO: compare senderId with current user */)
+                                MessageBubble(message: msg, isMine: msg.senderId == currentUserId)
                                     .id(msg.id)
                             }
                         }
@@ -78,6 +79,8 @@ struct ChatView: View {
         .task {
             wrapper.startObserving { _ in }
             let token = (try? await KoinIOSKt.getAccessToken()) ?? ""
+            // Capture current user ID for message ownership detection
+            currentUserId = KoinIOSKt.getAuthViewModel().state.value.currentUser?.id ?? ""
             wrapper.connect(bookingId: bookingId, token: token)
         }
         .onDisappear { wrapper.disconnect() }

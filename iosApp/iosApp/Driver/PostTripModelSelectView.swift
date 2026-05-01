@@ -9,7 +9,7 @@ struct PostTripModelSelectView: View {
     var onNavigateToModelB: () -> Void
     var onBack: () -> Void
 
-    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
+    @StateObject  private var wrapper = DriverViewModelWrapper.shared
 
     var body: some View {
         ZStack {

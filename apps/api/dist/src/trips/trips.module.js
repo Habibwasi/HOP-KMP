@@ -23,6 +23,8 @@ const pricing_service_1 = require("./pricing.service");
 const trips_processor_1 = require("./trips.processor");
 const search_alerts_processor_1 = require("../search-alerts/search-alerts.processor");
 const trips_constants_1 = require("./trips.constants");
+const bookings_module_1 = require("../bookings/bookings.module");
+const payments_module_1 = require("../payments/payments.module");
 var trips_constants_2 = require("./trips.constants");
 Object.defineProperty(exports, "BOOKINGS_QUEUE", { enumerable: true, get: function () { return trips_constants_2.BOOKINGS_QUEUE; } });
 Object.defineProperty(exports, "CHECK_THRESHOLD_JOB", { enumerable: true, get: function () { return trips_constants_2.CHECK_THRESHOLD_JOB; } });
@@ -46,6 +48,8 @@ exports.TripsModule = TripsModule = __decorate([
             bullmq_2.BullModule.registerQueue({ name: search_alerts_processor_1.SEARCH_ALERTS_QUEUE }),
             bullmq_2.BullModule.registerQueue({ name: trips_constants_1.BOOKINGS_QUEUE }),
             bullmq_2.BullModule.registerQueue({ name: trips_processor_1.TRIPS_QUEUE }),
+            (0, common_1.forwardRef)(() => bookings_module_1.BookingsModule),
+            (0, common_1.forwardRef)(() => payments_module_1.PaymentsModule),
         ],
         providers: [trips_service_1.TripsService, pricing_service_1.PricingService, trips_processor_1.TripsProcessor],
         controllers: [trips_controller_1.TripsController],

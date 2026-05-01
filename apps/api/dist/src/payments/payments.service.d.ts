@@ -21,7 +21,7 @@ export declare class PaymentsService {
     private getVippsAccessToken;
     private initiateMobilepay;
     private initiateStripe;
-    capturePayment(bookingId: string): Promise<{
+    capturePayment(bookingId: string, requestingUserId?: string): Promise<{
         captured: boolean;
     }>;
     refundPayment(bookingId: string): Promise<{

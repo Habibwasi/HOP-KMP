@@ -8,7 +8,7 @@ struct PostTripModelBView: View {
     var onNavigateToReview: () -> Void
     var onBack: () -> Void
 
-    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
+    @StateObject  private var wrapper = DriverViewModelWrapper.shared
 
     @State private var origin:       String = ""
     @State private var dest:         String = ""

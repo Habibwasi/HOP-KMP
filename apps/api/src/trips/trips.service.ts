@@ -3,6 +3,9 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  forwardRef,
+  Inject,
+  Logger,
 } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
@@ -10,12 +13,14 @@ import { PrismaService } from '../prisma/prisma.service'
 import { PricingService } from './pricing.service'
 import { CreateTripDto } from './dto/create-trip.dto'
 import { SearchTripsDto } from './dto/search-trips.dto'
-import { TripModel, TripStatus } from '@prisma/client'
+import { BookingStatus, TripModel, TripStatus } from '@prisma/client'
 import {
   SEARCH_ALERTS_QUEUE,
   MATCH_ALERTS_JOB,
 } from '../search-alerts/search-alerts.processor'
 import { BOOKINGS_QUEUE, CHECK_THRESHOLD_JOB } from './trips.constants'
+import { BookingsService } from '../bookings/bookings.service'
+import { PaymentsService } from '../payments/payments.service'
 
 /** Maps ISO day-abbreviation codes to JS getUTCDay() values (0 = Sunday). */
 const DAY_CODE_TO_UTC_DOW: Record<string, number> = {
@@ -66,11 +71,15 @@ function buildRecurringDates(
 
 @Injectable()
 export class TripsService {
+  private readonly logger = new Logger(TripsService.name)
+
   constructor(
     private prisma: PrismaService,
     private pricing: PricingService,
     @InjectQueue(SEARCH_ALERTS_QUEUE) private alertsQueue: Queue,
     @InjectQueue(BOOKINGS_QUEUE) private bookingsQueue: Queue,
+    @Inject(forwardRef(() => BookingsService)) private bookings: BookingsService,
+    @Inject(forwardRef(() => PaymentsService)) private payments: PaymentsService,
   ) {}
 
   async create(driverId: string, dto: CreateTripDto) {
@@ -363,10 +372,50 @@ export class TripsService {
       throw new BadRequestException('Trip already cancelled')
     }
 
-    return this.prisma.trip.update({
+    await this.prisma.trip.update({
       where: { id: tripId },
       data: { status: TripStatus.CANCELLED, isActive: false },
     })
+
+    // Cancel all active bookings and refund passengers
+    await this.bookings.cancelAllForTrip(tripId).catch((err) => {
+      this.logger.error(`[Trips] cancelAllForTrip failed for trip ${tripId}: ${err?.message}`)
+    })
+
+    return { cancelled: true }
+  }
+
+  /**
+   * Mark a trip as COMPLETED and capture held payment for each confirmed booking.
+   * Called by the driver after all passengers have been dropped off.
+   */
+  async complete(tripId: string, userId: string) {
+    const trip = await this.prisma.trip.findUnique({
+      where: { id: tripId },
+      include: { bookings: { where: { status: BookingStatus.CONFIRMED } } },
+    })
+    if (!trip) throw new NotFoundException('Trip not found')
+    if (trip.driverId !== userId) throw new ForbiddenException('Not your trip')
+    if (trip.status === TripStatus.COMPLETED) return { completed: true }
+    if (trip.status !== TripStatus.ACTIVE) {
+      throw new BadRequestException('Trip must be ACTIVE to complete')
+    }
+
+    await this.prisma.trip.update({
+      where: { id: tripId },
+      data: { status: TripStatus.COMPLETED, isActive: false },
+    })
+
+    // Capture payment for every confirmed booking
+    for (const booking of trip.bookings) {
+      await this.payments.capturePayment(booking.id).catch((err) => {
+        this.logger.error(
+          `[Trips] capturePayment failed for booking ${booking.id} on trip complete: ${err?.message}`,
+        )
+      })
+    }
+
+    return { completed: true }
   }
 
   async findByDriver(driverId: string) {

@@ -87,7 +87,17 @@ export class SupabaseGuard implements CanActivate {
       }
     }
 
-    if (user.isBanned) throw new UnauthorizedException('Account banned')
+    if (user.isBanned) {
+      if (user.banExpiresAt && user.banExpiresAt <= new Date()) {
+        // Lift the ban inline so the user can proceed immediately
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { isBanned: false, banExpiresAt: null },
+        })
+      } else {
+        throw new UnauthorizedException('Account banned')
+      }
+    }
 
     request['user'] = user
     return true

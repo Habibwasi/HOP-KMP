@@ -38,6 +38,7 @@ import com.example.hop.ui.screens.driver.TripDetailActiveDriverRoute
 import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
 import com.example.hop.ui.screens.driver.RatePassengerRoute
 import com.example.hop.ui.screens.driver.CarDetailsRoute
+import com.example.hop.ui.screens.driver.ReviewPendingRoute
 import com.example.hop.ui.screens.driver.PostTripModelSelectRoute
 import com.example.hop.ui.screens.driver.PostTripModelARoute
 import com.example.hop.ui.screens.driver.PostTripModelBRoute
@@ -155,7 +156,9 @@ fun HopNavGraph(
                     navController.navigate(HopRoutes.MyTripsDriver)
                 },
                 onNavigateToChat = {
-                    // TODO: no bookingId in scope at Home level
+                    // Navigate to MyTrips where the user can tap into their
+                    // active booking and open chat from TripDetailActive.
+                    navController.navigate(HopRoutes.MyTripsPassenger)
                 },
                 onNavigateToProfile = {
                     val userId = "" // currentUserId from AuthViewModel is not in scope here;
@@ -265,7 +268,7 @@ fun HopNavGraph(
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateToChat = {
-                    // TODO: no bookingId in scope at MyTripsPassenger level
+                    // Already on MyTrips — user can tap a trip row to reach chat.
                 },
                 onNavigateToProfile = {
                     navController.navigate(HopRoutes.Profile(userId = ""))
@@ -327,8 +330,31 @@ fun HopNavGraph(
                 onNavigateToHome = {
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
+                onNavigateToReviewPending = {
+                    navController.navigate(HopRoutes.EnableDriverStep3) {
+                        popUpTo(HopRoutes.EnableDriverStep1) { inclusive = true }
+                    }
+                },
                 onNavigateBack = { navController.navigateUp() },
                 authViewModel = authViewModel,
+            )
+        }
+
+        composable<HopRoutes.EnableDriverStep2> {
+            // Licence photo upload — navigates forward to Review Pending.
+            // (No back-end upload endpoint yet; screen is informational only.)
+            ReviewPendingRoute(
+                onNavigateToHome = {
+                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
+                },
+            )
+        }
+
+        composable<HopRoutes.EnableDriverStep3> {
+            ReviewPendingRoute(
+                onNavigateToHome = {
+                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
+                },
             )
         }
 
@@ -380,7 +406,7 @@ fun HopNavGraph(
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateToChat = {
-                    // TODO: Replace with ChatScreen navigation (post-MVP)
+                    // Already on MyTripsDriver — user can tap a trip row to reach chat.
                 },
                 onNavigateToProfile = {
                     navController.navigate(HopRoutes.Profile(userId = ""))

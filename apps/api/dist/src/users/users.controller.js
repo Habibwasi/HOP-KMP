@@ -22,6 +22,7 @@ const ratings_service_1 = require("../ratings/ratings.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const create_profile_dto_1 = require("./dto/create-profile.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
+const create_car_details_dto_1 = require("./dto/create-car-details.dto");
 const class_validator_1 = require("class-validator");
 class ReportDto {
     reason;
@@ -128,14 +129,14 @@ let UsersController = UsersController_1 = class UsersController {
             throw new common_1.NotFoundException('No car details found');
         return car;
     }
-    async saveMyCarDetails(req, body) {
+    async saveMyCarDetails(req, dto) {
         return this.users.saveCarDetails(req.user.id, {
-            make: body.make,
-            model: body.model,
-            year: body.year,
-            licensePlate: body.license_plate,
-            colour: body.colour,
-            seatsAvailable: body.seats_available,
+            make: dto.make,
+            model: dto.model,
+            year: dto.year,
+            licensePlate: dto.license_plate,
+            colour: dto.colour,
+            seatsAvailable: dto.seats_available,
         });
     }
     async reportUser(req, id, dto) {
@@ -215,7 +216,7 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, create_car_details_dto_1.CreateCarDetailsDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "saveMyCarDetails", null);
 __decorate([

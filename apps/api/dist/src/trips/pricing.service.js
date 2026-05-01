@@ -8,8 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PricingService = void 0;
 const common_1 = require("@nestjs/common");
+const tax_constants_1 = require("../common/tax-constants");
 let PricingService = class PricingService {
-    RATE_PER_KM = 0.27;
+    RATE_PER_KM = tax_constants_1.SKAT_RATE_DKK_PER_KM;
     calculatePricePerSeat(distanceKm, seats) {
         const pricePerSeatDkk = distanceKm * this.RATE_PER_KM;
         const pricePerSeatOere = Math.round(pricePerSeatDkk * 100);

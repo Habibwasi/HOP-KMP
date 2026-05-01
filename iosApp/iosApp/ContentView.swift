@@ -12,6 +12,7 @@ struct ContentView: View {
 
     @State private var isAuthenticated = false
     @State private var showSplash = true
+    @State private var showSetNewPassword = false
     @StateObject private var authWrapper = AuthViewModelWrapper()
 
     var body: some View {
@@ -40,6 +41,17 @@ struct ContentView: View {
         // hopAuth* tokens). Forcing light colour scheme keeps system controls
         // (DatePicker, sheets, alerts) readable on white surfaces.
         .preferredColorScheme(.light)
+        .fullScreenCover(isPresented: $showSetNewPassword) {
+            NavigationStack {
+                SetNewPasswordView(
+                    onPasswordUpdated: {
+                        showSetNewPassword = false
+                        withAnimation(.easeInOut) { isAuthenticated = true }
+                    },
+                    onBack: { showSetNewPassword = false }
+                )
+            }
+        }
         .task { authWrapper.startObserving() }
         .task {
             // Listen for NavigateToHome effects emitted by the silent session
@@ -51,6 +63,10 @@ struct ContentView: View {
                     // Only NavigateToLogin (explicit logout) flips back to auth screens.
                     // SessionExpired no longer forces the user out automatically.
                     withAnimation(.easeInOut) { isAuthenticated = false }
+                } else if effect is AuthEffectNavigateToSetPassword {
+                    // Recovery deep-link received — show the Set New Password screen
+                    // over whatever is currently displayed.
+                    showSetNewPassword = true
                 }
             }
         }

@@ -57,4 +57,10 @@ export class TripsController {
   cancel(@Param('id') id: string, @Req() req: any) {
     return this.trips.cancel(id, req.user.id)
   }
+
+  @Patch(':id/complete')
+  @UseGuards(SupabaseGuard)
+  complete(@Param('id') id: string, @Req() req: any) {
+    return this.trips.complete(id, req.user.id)
+  }
 }

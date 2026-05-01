@@ -123,10 +123,49 @@ export class BookingsService {
       throw new BadRequestException('Already cancelled')
     }
 
-    return this.prisma.booking.update({
+    await this.prisma.booking.update({
       where: { id: bookingId },
       data: { status: BookingStatus.CANCELLED },
     })
+
+    // Refund the held payment if one exists
+    const payment = await this.prisma.payment.findUnique({ where: { bookingId } })
+    if (payment && payment.status === 'HELD') {
+      await this.payments.refundPayment(bookingId).catch((err) => {
+        this.logger.error(`[Bookings] Refund failed for booking ${bookingId}: ${err?.message}`)
+      })
+    }
+
+    return { cancelled: true }
+  }
+
+  /**
+   * Cancel all active bookings for a trip (called when a driver cancels a trip).
+   * Refunds any held payments and notifies passengers.
+   */
+  async cancelAllForTrip(tripId: string) {
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        tripId,
+        status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+      },
+      include: { payment: true },
+    })
+
+    for (const booking of bookings) {
+      await this.prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: BookingStatus.CANCELLED },
+      })
+
+      if (booking.payment && booking.payment.status === 'HELD') {
+        await this.payments.refundPayment(booking.id).catch((err) => {
+          this.logger.error(
+            `[Bookings] Refund failed for booking ${booking.id} on trip cancel: ${err?.message}`,
+          )
+        })
+      }
+    }
   }
 
   async findById(id: string) {

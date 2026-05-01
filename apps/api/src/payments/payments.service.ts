@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { PrismaService } from '../prisma/prisma.service'
 import { BookingsService } from '../bookings/bookings.service'
 import { PaymentProvider, PaymentStatus, BookingStatus } from '@prisma/client'
 import Stripe from 'stripe'
+import { SKAT_RATE_DKK_PER_KM } from '../common/tax-constants'
 
 type StripeEvent = ReturnType<InstanceType<typeof Stripe>['webhooks']['constructEvent']>
 type StripePaymentIntent = StripeEvent['data']['object'] & { metadata: Record<string, string> }
@@ -156,9 +157,22 @@ export class PaymentsService {
 
   // ─── CAPTURE (after trip completes) ─────────────────────────────────────────
 
-  async capturePayment(bookingId: string) {
+  async capturePayment(bookingId: string, requestingUserId?: string) {
     const payment = await this.prisma.payment.findUnique({ where: { bookingId } })
     if (!payment) throw new NotFoundException('Payment not found')
+
+    // Verify the requester is the driver of this booking's trip (or no userId means
+    // the call is internal/from a webhook, which is allowed).
+    if (requestingUserId) {
+      const booking = await this.prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: { trip: { select: { driverId: true } } },
+      })
+      if (!booking) throw new NotFoundException('Booking not found')
+      if (booking.trip.driverId !== requestingUserId) {
+        throw new ForbiddenException('Only the driver of this trip can capture payment')
+      }
+    }
 
     if (payment.provider === PaymentProvider.STRIPE && payment.providerRef) {
       await this.stripe.paymentIntents.capture(payment.providerRef)
@@ -210,7 +224,7 @@ export class PaymentsService {
           bookingId,
           amountOere: booking.totalOere,
           distanceKm: booking.trip.distanceKm ?? 0,
-          ratePerKm: 0.27,
+          ratePerKm: SKAT_RATE_DKK_PER_KM,
         },
         update: {},
       })

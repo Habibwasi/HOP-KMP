@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common'
+import { SKAT_RATE_DKK_PER_KM } from '../common/tax-constants'
 
 @Injectable()
 export class PricingService {
   // Danish tax authority allows DKK 0.27/km per passenger (2024 rate)
-  private readonly RATE_PER_KM = 0.27
+  private readonly RATE_PER_KM = SKAT_RATE_DKK_PER_KM
 
   // Returns price in oere (integer) — never floats
   calculatePricePerSeat(distanceKm: number, seats: number): number {

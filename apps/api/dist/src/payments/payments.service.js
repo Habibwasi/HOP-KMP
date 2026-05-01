@@ -23,6 +23,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const bookings_service_1 = require("../bookings/bookings.service");
 const client_1 = require("@prisma/client");
 const stripe_1 = __importDefault(require("stripe"));
+const tax_constants_1 = require("../common/tax-constants");
 let PaymentsService = class PaymentsService {
     prisma;
     bookings;
@@ -146,10 +147,21 @@ let PaymentsService = class PaymentsService {
             amountOere: booking.totalOere,
         };
     }
-    async capturePayment(bookingId) {
+    async capturePayment(bookingId, requestingUserId) {
         const payment = await this.prisma.payment.findUnique({ where: { bookingId } });
         if (!payment)
             throw new common_1.NotFoundException('Payment not found');
+        if (requestingUserId) {
+            const booking = await this.prisma.booking.findUnique({
+                where: { id: bookingId },
+                include: { trip: { select: { driverId: true } } },
+            });
+            if (!booking)
+                throw new common_1.NotFoundException('Booking not found');
+            if (booking.trip.driverId !== requestingUserId) {
+                throw new common_1.ForbiddenException('Only the driver of this trip can capture payment');
+            }
+        }
         if (payment.provider === client_1.PaymentProvider.STRIPE && payment.providerRef) {
             await this.stripe.paymentIntents.capture(payment.providerRef);
         }
@@ -193,7 +205,7 @@ let PaymentsService = class PaymentsService {
                     bookingId,
                     amountOere: booking.totalOere,
                     distanceKm: booking.trip.distanceKm ?? 0,
-                    ratePerKm: 0.27,
+                    ratePerKm: tax_constants_1.SKAT_RATE_DKK_PER_KM,
                 },
                 update: {},
             });

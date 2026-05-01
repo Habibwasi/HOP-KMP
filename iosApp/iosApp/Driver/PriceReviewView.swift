@@ -8,7 +8,7 @@ struct PriceReviewView: View {
     var onNavigateToMyTrips: () -> Void
     var onBack: () -> Void
 
-    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
+    @StateObject  private var wrapper = DriverViewModelWrapper.shared
     @State private var toast: String? = nil
 
     var body: some View {

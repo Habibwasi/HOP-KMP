@@ -8,7 +8,7 @@ struct CarDetailsView: View {
     var onNavigateBack: () -> Void
     var onNavigateNext: () -> Void  // → DR-03 LicenceUpload
 
-    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
+    @StateObject  private var wrapper = DriverViewModelWrapper.shared
 
     @State private var make:    String = ""
     @State private var model:   String = ""

@@ -29,7 +29,7 @@ export class NotificationsService {
         production: this.config.get('NODE_ENV') === 'production',
       })
     } catch (e) {
-      this.logger.warn('APNs not initialised — check APNS_KEY_PATH')
+      this.logger.error('APNs not initialised — check APNS_KEY_PATH', (e as Error).stack)
     }
   }
 
@@ -46,7 +46,7 @@ export class NotificationsService {
       }
       this.fcmInitialised = true
     } catch (e) {
-      this.logger.warn('FCM not initialised — check Firebase credentials')
+      this.logger.error('FCM not initialised — check Firebase credentials', (e as Error).stack)
     }
   }
 
@@ -82,7 +82,14 @@ export class NotificationsService {
     note.payload = data ?? {}
     const result = await this.apnProvider.send(note, token)
     if (result.failed.length) {
-      this.logger.warn(`APNs failed: ${JSON.stringify(result.failed)}`)
+      this.logger.error(`APNs failed: ${JSON.stringify(result.failed)}`)
+      // Prune unregistered device tokens
+      const unregistered = result.failed
+        .filter((f) => f.response?.reason === 'Unregistered' || f.response?.reason === 'BadDeviceToken')
+        .map((f) => f.device)
+      if (unregistered.length) {
+        await this.prisma.pushToken.deleteMany({ where: { token: { in: unregistered } } })
+      }
     }
   }
 
@@ -100,8 +107,13 @@ export class NotificationsService {
         data: data ?? {},
         android: { priority: 'high' },
       })
-    } catch (e) {
-      this.logger.warn(`FCM failed for token ${token}: ${e}`)
+    } catch (e: any) {
+      this.logger.error(`FCM failed for token ${token}: ${e?.message ?? e}`)
+      // Prune unregistered tokens
+      if (e?.code === 'messaging/registration-token-not-registered' ||
+          e?.code === 'messaging/invalid-registration-token') {
+        await this.prisma.pushToken.deleteMany({ where: { token } })
+      }
     }
   }
 

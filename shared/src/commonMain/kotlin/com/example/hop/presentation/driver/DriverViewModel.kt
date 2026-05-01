@@ -454,7 +454,7 @@ class DriverViewModel(
             when (val response = driverRepository.submitCarDetails(carDetails)) {
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(isSubmittingOnboarding = false)
-                    _effect.send(DriverEffect.NavigateToHome)
+                    _effect.send(DriverEffect.NavigateToReviewPending)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isSubmittingOnboarding = false)

@@ -11,6 +11,7 @@ import { RatingsService } from '../ratings/ratings.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { CreateProfileDto } from './dto/create-profile.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { CreateCarDetailsDto } from './dto/create-car-details.dto'
 import { IsString, MinLength } from 'class-validator'
 
 class ReportDto {
@@ -146,14 +147,14 @@ export class UsersController {
   @Post('me/car-details')
   @UseGuards(SupabaseGuard)
   @HttpCode(HttpStatus.OK)
-  async saveMyCarDetails(@Req() req: any, @Body() body: any) {
+  async saveMyCarDetails(@Req() req: any, @Body() dto: CreateCarDetailsDto) {
     return this.users.saveCarDetails(req.user.id, {
-      make: body.make,
-      model: body.model,
-      year: body.year,
-      licensePlate: body.license_plate,
-      colour: body.colour,
-      seatsAvailable: body.seats_available,
+      make: dto.make,
+      model: dto.model,
+      year: dto.year,
+      licensePlate: dto.license_plate,
+      colour: dto.colour,
+      seatsAvailable: dto.seats_available,
     })
   }
 

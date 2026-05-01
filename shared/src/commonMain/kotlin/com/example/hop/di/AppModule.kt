@@ -26,6 +26,7 @@ fun devAppModules(
     supabaseModule(supabaseUrl, supabaseAnonKey),
     networkModule(baseUrl),
     devRepositoryModule,
+    chatRepositoryModule,
     presentationModule,
     connectivityModule,
 )

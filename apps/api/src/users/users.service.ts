@@ -101,6 +101,9 @@ export class UsersService {
   }
 
   async reportUser(reportedId: string, reporterId: string, reason: string): Promise<void> {
+    await this.prisma.userReport.create({
+      data: { reporterId, reportedId, reason },
+    })
     this.logger.log(`User ${reporterId} reported ${reportedId}: ${reason}`)
   }
 

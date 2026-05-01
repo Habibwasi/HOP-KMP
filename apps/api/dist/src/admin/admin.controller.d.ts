@@ -122,7 +122,6 @@ export declare class AdminController {
             updatedAt: Date;
             model: import("@prisma/client").$Enums.TripModel;
             driverId: string;
-            status: import("@prisma/client").$Enums.TripStatus;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -132,6 +131,7 @@ export declare class AdminController {
             departureAt: Date;
             seats: number;
             pricePerSeat: number;
+            status: import("@prisma/client").$Enums.TripStatus;
             minPassengers: number | null;
             thresholdDeadline: Date | null;
             distanceKm: number | null;

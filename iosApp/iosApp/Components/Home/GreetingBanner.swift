@@ -31,11 +31,15 @@ struct GreetingBanner: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(resolvedName != nil
-                     ? "\(greeting), \(resolvedName!) 👋"
-                     : "\(greeting) 👋")
-                    .font(HopFont.headlineSmall(weight: .semibold))
-                    .foregroundColor(Color.hopAuthTextPrimary)
+                if let name = resolvedName {
+                    Text("\(greeting), \(name) 👋")
+                        .font(HopFont.headlineSmall(weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                } else {
+                    Text("\(greeting) 👋")
+                        .font(HopFont.headlineSmall(weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                }
                 Text(resolvedSubtitle)
                     .font(HopFont.bodyMedium())
                     .foregroundColor(Color.hopAuthTextPrimary.opacity(0.6))

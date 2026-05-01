@@ -73,7 +73,7 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             });
         }
         catch (e) {
-            this.logger.warn('APNs not initialised — check APNS_KEY_PATH');
+            this.logger.error('APNs not initialised — check APNS_KEY_PATH', e.stack);
         }
     }
     initFcm() {
@@ -90,7 +90,7 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             this.fcmInitialised = true;
         }
         catch (e) {
-            this.logger.warn('FCM not initialised — check Firebase credentials');
+            this.logger.error('FCM not initialised — check Firebase credentials', e.stack);
         }
     }
     async sendToUser(userId, title, body, data) {
@@ -114,7 +114,13 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         note.payload = data ?? {};
         const result = await this.apnProvider.send(note, token);
         if (result.failed.length) {
-            this.logger.warn(`APNs failed: ${JSON.stringify(result.failed)}`);
+            this.logger.error(`APNs failed: ${JSON.stringify(result.failed)}`);
+            const unregistered = result.failed
+                .filter((f) => f.response?.reason === 'Unregistered' || f.response?.reason === 'BadDeviceToken')
+                .map((f) => f.device);
+            if (unregistered.length) {
+                await this.prisma.pushToken.deleteMany({ where: { token: { in: unregistered } } });
+            }
         }
     }
     async sendFcm(token, title, body, data) {
@@ -129,7 +135,11 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             });
         }
         catch (e) {
-            this.logger.warn(`FCM failed for token ${token}: ${e}`);
+            this.logger.error(`FCM failed for token ${token}: ${e?.message ?? e}`);
+            if (e?.code === 'messaging/registration-token-not-registered' ||
+                e?.code === 'messaging/invalid-registration-token') {
+                await this.prisma.pushToken.deleteMany({ where: { token } });
+            }
         }
     }
     async registerToken(userId, token, platform) {

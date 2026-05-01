@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var TripsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TripsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -21,6 +22,8 @@ const pricing_service_1 = require("./pricing.service");
 const client_1 = require("@prisma/client");
 const search_alerts_processor_1 = require("../search-alerts/search-alerts.processor");
 const trips_constants_1 = require("./trips.constants");
+const bookings_service_1 = require("../bookings/bookings.service");
+const payments_service_1 = require("../payments/payments.service");
 const DAY_CODE_TO_UTC_DOW = {
     SUN: 0,
     MON: 1,
@@ -44,16 +47,21 @@ function buildRecurringDates(anchorDate, dayCodes, windowDays) {
     }
     return dates;
 }
-let TripsService = class TripsService {
+let TripsService = TripsService_1 = class TripsService {
     prisma;
     pricing;
     alertsQueue;
     bookingsQueue;
-    constructor(prisma, pricing, alertsQueue, bookingsQueue) {
+    bookings;
+    payments;
+    logger = new common_1.Logger(TripsService_1.name);
+    constructor(prisma, pricing, alertsQueue, bookingsQueue, bookings, payments) {
         this.prisma = prisma;
         this.pricing = pricing;
         this.alertsQueue = alertsQueue;
         this.bookingsQueue = bookingsQueue;
+        this.bookings = bookings;
+        this.payments = payments;
     }
     async create(driverId, dto) {
         if (dto.model === client_1.TripModel.B) {
@@ -268,10 +276,39 @@ let TripsService = class TripsService {
         if (trip.status === client_1.TripStatus.CANCELLED) {
             throw new common_1.BadRequestException('Trip already cancelled');
         }
-        return this.prisma.trip.update({
+        await this.prisma.trip.update({
             where: { id: tripId },
             data: { status: client_1.TripStatus.CANCELLED, isActive: false },
         });
+        await this.bookings.cancelAllForTrip(tripId).catch((err) => {
+            this.logger.error(`[Trips] cancelAllForTrip failed for trip ${tripId}: ${err?.message}`);
+        });
+        return { cancelled: true };
+    }
+    async complete(tripId, userId) {
+        const trip = await this.prisma.trip.findUnique({
+            where: { id: tripId },
+            include: { bookings: { where: { status: client_1.BookingStatus.CONFIRMED } } },
+        });
+        if (!trip)
+            throw new common_1.NotFoundException('Trip not found');
+        if (trip.driverId !== userId)
+            throw new common_1.ForbiddenException('Not your trip');
+        if (trip.status === client_1.TripStatus.COMPLETED)
+            return { completed: true };
+        if (trip.status !== client_1.TripStatus.ACTIVE) {
+            throw new common_1.BadRequestException('Trip must be ACTIVE to complete');
+        }
+        await this.prisma.trip.update({
+            where: { id: tripId },
+            data: { status: client_1.TripStatus.COMPLETED, isActive: false },
+        });
+        for (const booking of trip.bookings) {
+            await this.payments.capturePayment(booking.id).catch((err) => {
+                this.logger.error(`[Trips] capturePayment failed for booking ${booking.id} on trip complete: ${err?.message}`);
+            });
+        }
+        return { completed: true };
     }
     async findByDriver(driverId) {
         return this.prisma.trip.findMany({
@@ -299,13 +336,17 @@ let TripsService = class TripsService {
     }
 };
 exports.TripsService = TripsService;
-exports.TripsService = TripsService = __decorate([
+exports.TripsService = TripsService = TripsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(2, (0, bullmq_1.InjectQueue)(search_alerts_processor_1.SEARCH_ALERTS_QUEUE)),
     __param(3, (0, bullmq_1.InjectQueue)(trips_constants_1.BOOKINGS_QUEUE)),
+    __param(4, (0, common_1.Inject)((0, common_1.forwardRef)(() => bookings_service_1.BookingsService))),
+    __param(5, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         pricing_service_1.PricingService,
         bullmq_2.Queue,
-        bullmq_2.Queue])
+        bullmq_2.Queue,
+        bookings_service_1.BookingsService,
+        payments_service_1.PaymentsService])
 ], TripsService);
 //# sourceMappingURL=trips.service.js.map

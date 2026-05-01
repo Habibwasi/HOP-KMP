@@ -8,19 +8,19 @@ export declare class NotificationsController {
     constructor(notifications: NotificationsService);
     register(req: any, dto: RegisterTokenDto): Promise<{
         id: string;
-        createdAt: Date;
-        userId: string;
         token: string;
+        userId: string;
         platform: string;
+        createdAt: Date;
     }>;
     remove(token: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
     getAll(req: any): Promise<{
         id: string;
-        createdAt: Date;
         userId: string;
+        createdAt: Date;
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         body: string;
-        type: import("@prisma/client").$Enums.NotificationType;
         isRead: boolean;
         deepLinkId: string | null;
     }[]>;

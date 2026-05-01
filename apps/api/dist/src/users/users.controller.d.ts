@@ -4,6 +4,7 @@ import { RatingsService } from '../ratings/ratings.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateCarDetailsDto } from './dto/create-car-details.dto';
 declare class ReportDto {
     reason: string;
 }
@@ -20,6 +21,7 @@ export declare class UsersController {
     constructor(users: UsersService, ratings: RatingsService, notifications: NotificationsService, supabase: SupabaseClient);
     createProfile(req: any, dto: CreateProfileDto): Promise<{
         id: string;
+        createdAt: Date;
         phone: string | null;
         email: string | null;
         firstName: string;
@@ -29,12 +31,12 @@ export declare class UsersController {
         isVerified: boolean;
         isBanned: boolean;
         banExpiresAt: Date | null;
-        createdAt: Date;
         updatedAt: Date;
         isAdmin: boolean;
     }>;
     getMe(req: any): Promise<{
         id: string;
+        createdAt: Date;
         phone: string | null;
         email: string | null;
         firstName: string;
@@ -44,7 +46,6 @@ export declare class UsersController {
         isVerified: boolean;
         isBanned: boolean;
         banExpiresAt: Date | null;
-        createdAt: Date;
         updatedAt: Date;
         isAdmin: boolean;
     }>;
@@ -55,6 +56,7 @@ export declare class UsersController {
     }>;
     updateMe(req: any, dto: UpdateUserDto): Promise<{
         id: string;
+        createdAt: Date;
         phone: string | null;
         email: string | null;
         firstName: string;
@@ -64,13 +66,13 @@ export declare class UsersController {
         isVerified: boolean;
         isBanned: boolean;
         banExpiresAt: Date | null;
-        createdAt: Date;
         updatedAt: Date;
         isAdmin: boolean;
     }>;
     savePushToken(req: any, dto: PushTokenDto): Promise<void>;
     getUserById(id: string): Promise<{
         id: string;
+        createdAt: Date;
         phone: string | null;
         email: string | null;
         firstName: string;
@@ -80,7 +82,6 @@ export declare class UsersController {
         isVerified: boolean;
         isBanned: boolean;
         banExpiresAt: Date | null;
-        createdAt: Date;
         updatedAt: Date;
         isAdmin: boolean;
     }>;
@@ -93,9 +94,9 @@ export declare class UsersController {
     }[]>;
     getCarDetails(id: string): Promise<{
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         make: string;
         model: string;
         year: number;
@@ -103,11 +104,11 @@ export declare class UsersController {
         colour: string;
         seatsAvailable: number;
     }>;
-    saveMyCarDetails(req: any, body: any): Promise<{
+    saveMyCarDetails(req: any, dto: CreateCarDetailsDto): Promise<{
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         make: string;
         model: string;
         year: number;

@@ -25,8 +25,8 @@ let PaymentsController = class PaymentsController {
     initiate(dto) {
         return this.payments.initiatePayment(dto.bookingId, dto.provider);
     }
-    capture(bookingId) {
-        return this.payments.capturePayment(bookingId);
+    async capture(bookingId, req) {
+        return this.payments.capturePayment(bookingId, req.user.id);
     }
     refund(bookingId) {
         return this.payments.refundPayment(bookingId);
@@ -52,9 +52,10 @@ __decorate([
     (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     (0, common_1.HttpCode)(200),
     __param(0, (0, common_1.Param)('bookingId')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "capture", null);
 __decorate([
     (0, common_1.Post)('refund/:bookingId'),

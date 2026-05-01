@@ -113,10 +113,37 @@ let BookingsService = BookingsService_1 = class BookingsService {
         if (booking.status === client_1.BookingStatus.CANCELLED) {
             throw new common_1.BadRequestException('Already cancelled');
         }
-        return this.prisma.booking.update({
+        await this.prisma.booking.update({
             where: { id: bookingId },
             data: { status: client_1.BookingStatus.CANCELLED },
         });
+        const payment = await this.prisma.payment.findUnique({ where: { bookingId } });
+        if (payment && payment.status === 'HELD') {
+            await this.payments.refundPayment(bookingId).catch((err) => {
+                this.logger.error(`[Bookings] Refund failed for booking ${bookingId}: ${err?.message}`);
+            });
+        }
+        return { cancelled: true };
+    }
+    async cancelAllForTrip(tripId) {
+        const bookings = await this.prisma.booking.findMany({
+            where: {
+                tripId,
+                status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] },
+            },
+            include: { payment: true },
+        });
+        for (const booking of bookings) {
+            await this.prisma.booking.update({
+                where: { id: booking.id },
+                data: { status: client_1.BookingStatus.CANCELLED },
+            });
+            if (booking.payment && booking.payment.status === 'HELD') {
+                await this.payments.refundPayment(booking.id).catch((err) => {
+                    this.logger.error(`[Bookings] Refund failed for booking ${booking.id} on trip cancel: ${err?.message}`);
+                });
+            }
+        }
     }
     async findById(id) {
         const booking = await this.prisma.booking.findUnique({

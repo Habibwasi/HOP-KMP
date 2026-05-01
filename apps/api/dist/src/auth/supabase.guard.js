@@ -78,8 +78,17 @@ let SupabaseGuard = SupabaseGuard_1 = class SupabaseGuard {
                 throw new common_1.UnauthorizedException('Profile not found. Please register again or contact support.');
             }
         }
-        if (user.isBanned)
-            throw new common_1.UnauthorizedException('Account banned');
+        if (user.isBanned) {
+            if (user.banExpiresAt && user.banExpiresAt <= new Date()) {
+                await this.prisma.user.update({
+                    where: { id: user.id },
+                    data: { isBanned: false, banExpiresAt: null },
+                });
+            }
+            else {
+                throw new common_1.UnauthorizedException('Account banned');
+            }
+        }
         request['user'] = user;
         return true;
     }

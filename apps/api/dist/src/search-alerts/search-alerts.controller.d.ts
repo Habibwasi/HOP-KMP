@@ -5,21 +5,21 @@ export declare class SearchAlertsController {
     constructor(service: SearchAlertsService);
     create(req: any, dto: CreateSearchAlertDto): Promise<{
         id: string;
-        createdAt: Date;
         userId: string;
-        seats: number;
-        isActive: boolean;
+        createdAt: Date;
         origin: string;
         dest: string;
+        seats: number;
+        isActive: boolean;
     }>;
     list(req: any): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
-        createdAt: Date;
         userId: string;
-        seats: number;
-        isActive: boolean;
+        createdAt: Date;
         origin: string;
         dest: string;
+        seats: number;
+        isActive: boolean;
     }[]>;
     remove(req: any, id: string): Promise<{
         ok: boolean;

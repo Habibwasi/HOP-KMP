@@ -1,6 +1,6 @@
 import {
   Controller, Post, Body, Param, UseGuards,
-  Req, Headers, HttpCode,
+  Req, Headers, HttpCode, ForbiddenException,
 } from '@nestjs/common'
 import type { RawBodyRequest } from '@nestjs/common'
 import { SupabaseGuard } from '../auth/supabase.guard'
@@ -20,8 +20,8 @@ export class PaymentsController {
   @Post('capture/:bookingId')
   @UseGuards(SupabaseGuard)
   @HttpCode(200)
-  capture(@Param('bookingId') bookingId: string) {
-    return this.payments.capturePayment(bookingId)
+  async capture(@Param('bookingId') bookingId: string, @Req() req: any) {
+    return this.payments.capturePayment(bookingId, req.user.id)
   }
 
   @Post('refund/:bookingId')

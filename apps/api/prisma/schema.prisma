@@ -52,8 +52,10 @@ model User {
   savedPlaces     SavedPlace[]
   recentSearches  RecentSearch[]
   chatMessages    ChatMessage[]
-  searchAlerts    SearchAlert[]
-  isAdmin         Boolean   @default(false)
+  searchAlerts        SearchAlert[]
+  reportsSubmitted    UserReport[] @relation("ReporterReports")
+  reportsReceived     UserReport[] @relation("ReportedReports")
+  isAdmin             Boolean   @default(false)
 }
 
 model PushToken {
@@ -297,4 +299,21 @@ model SearchAlert {
 
   @@unique([userId, origin, dest])
   @@index([isActive, origin, dest])
+}
+
+/**
+ * User-submitted abuse report against another user.
+ * Stored for admin review; does not auto-ban.
+ */
+model UserReport {
+  id         String   @id @default(uuid())
+  reporterId String
+  reporter   User     @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedId String
+  reported   User     @relation("ReportedReports", fields: [reportedId], references: [id], onDelete: Cascade)
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@index([reportedId])
+  @@index([reporterId])
 }

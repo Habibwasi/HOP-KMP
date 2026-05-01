@@ -75,6 +75,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun CarDetailsRoute(
     onNavigateToHome: () -> Unit,
+    onNavigateToReviewPending: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
@@ -91,6 +92,12 @@ fun CarDetailsRoute(
                     // Refresh the cached user so hasDriverRole flips to true immediately.
                     authViewModel.onEvent(AuthEvent.RefreshProfile)
                     onNavigateToHome()
+                }
+                is DriverEffect.NavigateToReviewPending -> {
+                    // Refresh the cached user so hasDriverRole flips to true immediately,
+                    // then show the Review Pending screen.
+                    authViewModel.onEvent(AuthEvent.RefreshProfile)
+                    onNavigateToReviewPending()
                 }
                 is DriverEffect.ShowSnackbar ->
                     scope.launch { snackbarHostState.showSnackbar(effect.message) }

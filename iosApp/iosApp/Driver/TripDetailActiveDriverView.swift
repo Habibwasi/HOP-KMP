@@ -11,7 +11,7 @@ struct TripDetailActiveDriverView: View {
     var onMessagePassenger: (String) -> Void
     var onBack: () -> Void
 
-    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
+    @StateObject  private var wrapper = DriverViewModelWrapper.shared
 
     var body: some View {
         let detail = wrapper.state.activeTripDetail

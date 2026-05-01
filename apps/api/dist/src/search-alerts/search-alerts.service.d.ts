@@ -7,21 +7,21 @@ export declare class SearchAlertsService {
     constructor(prisma: PrismaService, notifications: NotificationsService);
     create(userId: string, dto: CreateSearchAlertDto): Promise<{
         id: string;
-        createdAt: Date;
         userId: string;
-        seats: number;
-        isActive: boolean;
+        createdAt: Date;
         origin: string;
         dest: string;
+        seats: number;
+        isActive: boolean;
     }>;
     list(userId: string): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
-        createdAt: Date;
         userId: string;
-        seats: number;
-        isActive: boolean;
+        createdAt: Date;
         origin: string;
         dest: string;
+        seats: number;
+        isActive: boolean;
     }[]>;
     remove(userId: string, id: string): Promise<{
         ok: boolean;

@@ -14,7 +14,7 @@ export declare class PaymentsController {
         paymentIntentId: string;
         amountOere: any;
     }>;
-    capture(bookingId: string): Promise<{
+    capture(bookingId: string, req: any): Promise<{
         captured: boolean;
     }>;
     refund(bookingId: string): Promise<{

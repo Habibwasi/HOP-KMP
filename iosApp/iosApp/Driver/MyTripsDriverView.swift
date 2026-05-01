@@ -8,7 +8,7 @@ struct MyTripsDriverView: View {
     var onTripTapped: (String) -> Void
     var onBack: () -> Void
 
-    @ObservedObject private var wrapper = DriverViewModelWrapper.shared
+    @StateObject  private var wrapper = DriverViewModelWrapper.shared
 
     @State private var selectedFilter: Filter = .upcoming
 
