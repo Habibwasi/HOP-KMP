@@ -9,7 +9,7 @@ export declare class CreateTripDto {
     destAddress: string;
     departureAt: string;
     seats: number;
-    recurringDays?: number[];
+    recurringDays?: string[];
     minPassengers?: number;
     thresholdDeadline?: string;
 }

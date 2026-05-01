@@ -1,11 +1,13 @@
 package com.example.hop.data.repository
 
 import com.example.hop.data.dto.ApiEnvelope
+import com.example.hop.data.dto.GeocodeResultDto
 import com.example.hop.data.dto.SavedPlaceDto
 import com.example.hop.data.dto.UpsertPlaceRequest
 import com.example.hop.data.dto.toDomain
 import com.example.hop.domain.model.SavedPlace
 import com.example.hop.domain.model.SavedPlaceKind
+import com.example.hop.domain.repository.GeocodeResult
 import com.example.hop.domain.repository.PlacesRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.network.safeApiCall
@@ -60,6 +62,13 @@ class PlacesRepositoryImpl(
     override suspend fun delete(id: String): ApiResponse<Unit> = safeApiCall {
         httpClient.delete("places/$id")
         Unit
+    }
+
+    override suspend fun geocode(address: String): ApiResponse<GeocodeResult> = safeApiCall {
+        val dto: GeocodeResultDto = httpClient.get("places/geocode") {
+            url.parameters.append("address", address)
+        }.body()
+        dto.toDomain()
     }
 
     private suspend fun <T> safeEnvelopeCall(

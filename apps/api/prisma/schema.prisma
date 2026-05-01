@@ -52,6 +52,7 @@ model User {
   savedPlaces     SavedPlace[]
   recentSearches  RecentSearch[]
   chatMessages    ChatMessage[]
+  searchAlerts    SearchAlert[]
   isAdmin         Boolean   @default(false)
 }
 
@@ -82,7 +83,7 @@ model Trip {
   minPassengers     Int?
   thresholdDeadline DateTime?
   distanceKm        Float?
-  recurringDays     Int[]
+  recurringDays     String[]
   isRecurring       Boolean   @default(false)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -200,6 +201,7 @@ enum NotificationType {
   NEW_RATING
   THRESHOLD_MET
   CHAT_MESSAGE
+  SEARCH_ALERT
   GENERAL
 }
 
@@ -277,4 +279,22 @@ model ChatMessage {
   createdAt DateTime @default(now())
 
   @@index([bookingId, createdAt])
+}
+
+/**
+ * Driver-set alert: notify the driver when a new trip matching their
+ * saved origin/destination appears.
+ */
+model SearchAlert {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  origin    String
+  dest      String
+  seats     Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, origin, dest])
+  @@index([isActive, origin, dest])
 }

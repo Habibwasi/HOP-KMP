@@ -15,6 +15,54 @@ import {
   SEARCH_ALERTS_QUEUE,
   MATCH_ALERTS_JOB,
 } from '../search-alerts/search-alerts.processor'
+import { BOOKINGS_QUEUE, CHECK_THRESHOLD_JOB } from './trips.constants'
+
+/** Maps ISO day-abbreviation codes to JS getUTCDay() values (0 = Sunday). */
+const DAY_CODE_TO_UTC_DOW: Record<string, number> = {
+  SUN: 0,
+  MON: 1,
+  TUE: 2,
+  WED: 3,
+  THU: 4,
+  FRI: 5,
+  SAT: 6,
+}
+
+/** Generate UTC Date objects for every occurrence of the given days-of-week
+ *  within the next `windowDays` days, preserving the time from `anchorDate`. */
+function buildRecurringDates(
+  anchorDate: Date,
+  dayCodes: string[],
+  windowDays: number,
+): Date[] {
+  const targetDows = new Set(
+    dayCodes.map((d) => DAY_CODE_TO_UTC_DOW[d.toUpperCase()]).filter((n) => n !== undefined),
+  )
+  const hours = anchorDate.getUTCHours()
+  const minutes = anchorDate.getUTCMinutes()
+  const dates: Date[] = []
+
+  const cursor = new Date(
+    Date.UTC(
+      anchorDate.getUTCFullYear(),
+      anchorDate.getUTCMonth(),
+      anchorDate.getUTCDate(),
+      hours,
+      minutes,
+      0,
+      0,
+    ),
+  )
+
+  for (let i = 0; i <= windowDays; i++) {
+    if (targetDows.has(cursor.getUTCDay())) {
+      dates.push(new Date(cursor))
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+
+  return dates
+}
 
 @Injectable()
 export class TripsService {
@@ -22,6 +70,7 @@ export class TripsService {
     private prisma: PrismaService,
     private pricing: PricingService,
     @InjectQueue(SEARCH_ALERTS_QUEUE) private alertsQueue: Queue,
+    @InjectQueue(BOOKINGS_QUEUE) private bookingsQueue: Queue,
   ) {}
 
   async create(driverId: string, dto: CreateTripDto) {
@@ -40,6 +89,13 @@ export class TripsService {
       }
     }
 
+    // Model A: validate recurringDays present
+    if (dto.model === TripModel.A) {
+      if (!dto.recurringDays || dto.recurringDays.length === 0) {
+        throw new BadRequestException('recurringDays is required for Model A trips')
+      }
+    }
+
     // Calculate distance and price
     const distanceKm = this.pricing.calculateDistance(
       dto.originLat,
@@ -49,24 +105,69 @@ export class TripsService {
     )
     const pricePerSeat = this.pricing.calculatePricePerSeat(distanceKm, dto.seats)
 
+    const baseData = {
+      driverId,
+      model: dto.model,
+      originLat: dto.originLat,
+      originLng: dto.originLng,
+      originAddress: dto.originAddress,
+      destLat: dto.destLat,
+      destLng: dto.destLng,
+      destAddress: dto.destAddress,
+      seats: dto.seats,
+      pricePerSeat,
+      distanceKm,
+      isRecurring: dto.model === TripModel.A,
+      recurringDays: dto.recurringDays ?? [],
+      minPassengers: dto.minPassengers,
+      thresholdDeadline: dto.thresholdDeadline ? new Date(dto.thresholdDeadline) : null,
+    }
+
+    // ── Model A: generate one trip instance per occurrence in 30-day window ──
+    if (dto.model === TripModel.A) {
+      const anchor = new Date(dto.departureAt)
+      const dates = buildRecurringDates(anchor, dto.recurringDays!, 30)
+
+      if (dates.length === 0) {
+        throw new BadRequestException(
+          'No occurrences found in the next 30 days for the selected days',
+        )
+      }
+
+      const instances = dates.map((d) => ({ ...baseData, departureAt: d }))
+
+      await this.prisma.trip.createMany({ data: instances })
+
+      // Fetch the first created instance to return a consistent response shape
+      const firstTrip = await this.prisma.trip.findFirst({
+        where: {
+          driverId,
+          originAddress: dto.originAddress,
+          destAddress: dto.destAddress,
+          isRecurring: true,
+          departureAt: dates[0],
+        },
+        include: {
+          driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        },
+      })
+
+      if (firstTrip) {
+        await this.alertsQueue.add(MATCH_ALERTS_JOB, {
+          tripId: firstTrip.id,
+          originAddress: firstTrip.originAddress,
+          destAddress: firstTrip.destAddress,
+        })
+      }
+
+      return firstTrip
+    }
+
+    // ── Model B: single trip instance ────────────────────────────────────────
     const trip = await this.prisma.trip.create({
       data: {
-        driverId,
-        model: dto.model,
-        originLat: dto.originLat,
-        originLng: dto.originLng,
-        originAddress: dto.originAddress,
-        destLat: dto.destLat,
-        destLng: dto.destLng,
-        destAddress: dto.destAddress,
+        ...baseData,
         departureAt: new Date(dto.departureAt),
-        seats: dto.seats,
-        pricePerSeat,
-        distanceKm,
-        isRecurring: dto.model === TripModel.A,
-        recurringDays: dto.recurringDays ?? [],
-        minPassengers: dto.minPassengers,
-        thresholdDeadline: dto.thresholdDeadline ? new Date(dto.thresholdDeadline) : null,
       },
       include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
     })
@@ -78,7 +179,90 @@ export class TripsService {
       destAddress: trip.destAddress,
     })
 
+    // For Model B: schedule the threshold check at the deadline.
+    // Uses a stable jobId so subsequent booking-creation attempts
+    // to enqueue the same job are deduplicated by BullMQ.
+    if (trip.thresholdDeadline) {
+      const delay = new Date(trip.thresholdDeadline).getTime() - Date.now()
+      if (delay > 0) {
+        await this.bookingsQueue.add(
+          CHECK_THRESHOLD_JOB,
+          { tripId: trip.id },
+          { delay, jobId: `threshold-${trip.id}`, removeOnComplete: true },
+        )
+      }
+    }
+
     return trip
+  }
+
+  /**
+   * Extends the 30-day instance window for all active recurring (Model A) trips.
+   * Called daily by the trips queue repeatable job.
+   * Finds routes whose latest future instance is within the next 7 days and
+   * creates new instances to bring the window back to 30 days.
+   */
+  async extendRecurringWindow() {
+    const now = new Date()
+    const horizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+    // Fetch all future recurring trips grouped by route key
+    const futureTrips = await this.prisma.trip.findMany({
+      where: {
+        isRecurring: true,
+        departureAt: { gte: now },
+        status: { not: TripStatus.CANCELLED },
+      },
+    })
+
+    // Group by driverId + originAddress + destAddress
+    const groups = new Map<string, typeof futureTrips>()
+    for (const trip of futureTrips) {
+      const key = `${trip.driverId}||${trip.originAddress}||${trip.destAddress}`
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(trip)
+    }
+
+    for (const [, trips] of groups) {
+      const template = trips[0]
+      const maxDate = trips.reduce(
+        (mx, t) => (t.departureAt > mx ? t.departureAt : mx),
+        trips[0].departureAt,
+      )
+
+      // Only extend if window is running short (< 7 days remaining)
+      const daysRemaining = (maxDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
+      if (daysRemaining >= 7) continue
+
+      // Generate new dates from the day after maxDate up to horizon
+      const extendAnchor = new Date(maxDate.getTime() + 24 * 60 * 60 * 1000)
+      const newDates = buildRecurringDates(extendAnchor, template.recurringDays, 30)
+
+      if (newDates.length === 0) continue
+
+      const newInstances = newDates
+        .filter((d) => d <= horizon)
+        .map((d) => ({
+          driverId: template.driverId,
+          model: template.model,
+          originLat: template.originLat,
+          originLng: template.originLng,
+          originAddress: template.originAddress,
+          destLat: template.destLat,
+          destLng: template.destLng,
+          destAddress: template.destAddress,
+          departureAt: d,
+          seats: template.seats,
+          pricePerSeat: template.pricePerSeat,
+          distanceKm: template.distanceKm,
+          isRecurring: true,
+          recurringDays: template.recurringDays,
+        }))
+
+      if (newInstances.length > 0) {
+        await this.prisma.trip.createMany({ data: newInstances, skipDuplicates: true })
+      }
+    }
   }
 
   async search(dto: SearchTripsDto) {

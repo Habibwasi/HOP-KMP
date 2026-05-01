@@ -11,11 +11,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlacesService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
 let PlacesService = class PlacesService {
     prisma;
-    constructor(prisma) {
+    config;
+    constructor(prisma, config) {
         this.prisma = prisma;
+        this.config = config;
     }
     listForUser(userId) {
         return this.prisma.savedPlace.findMany({
@@ -68,10 +71,26 @@ let PlacesService = class PlacesService {
         await this.prisma.savedPlace.delete({ where: { id } });
         return { ok: true };
     }
+    async geocode(address) {
+        const key = this.config.get('GOOGLE_MAPS_API_KEY');
+        if (!key)
+            throw new common_1.BadRequestException('Geocoding is not configured on this server');
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`;
+        const res = await fetch(url);
+        if (!res.ok)
+            throw new common_1.BadRequestException('Geocoding request failed');
+        const json = await res.json();
+        if (json.status !== 'OK' || !json.results.length) {
+            throw new common_1.BadRequestException(`No geocoding result for: ${address}`);
+        }
+        const { lat, lng } = json.results[0].geometry.location;
+        return { lat, lng, formattedAddress: json.results[0].formatted_address };
+    }
 };
 exports.PlacesService = PlacesService;
 exports.PlacesService = PlacesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        config_1.ConfigService])
 ], PlacesService);
 //# sourceMappingURL=places.service.js.map

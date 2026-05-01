@@ -69,7 +69,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayMinSize)(1),
-    (0, class_validator_1.IsInt)({ each: true }),
+    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], CreateTripDto.prototype, "recurringDays", void 0);
 __decorate([

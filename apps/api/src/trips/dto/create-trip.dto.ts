@@ -46,8 +46,8 @@ export class CreateTripDto {
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
-  @IsInt({ each: true })
-  recurringDays?: number[]
+  @IsString({ each: true })
+  recurringDays?: string[]
 
   // Model B only
   @IsOptional()

@@ -135,7 +135,7 @@ export declare class AdminController {
             minPassengers: number | null;
             thresholdDeadline: Date | null;
             distanceKm: number | null;
-            recurringDays: number[];
+            recurringDays: string[];
             isRecurring: boolean;
             isActive: boolean;
         })[];

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { PrismaService } from '../prisma/prisma.service'
@@ -15,7 +15,7 @@ export class PaymentsService {
 
   constructor(
     private prisma: PrismaService,
-    private bookings: BookingsService,
+    @Inject(forwardRef(() => BookingsService)) private bookings: BookingsService,
     private config: ConfigService,
   ) {
     this.stripe = new Stripe(config.getOrThrow('STRIPE_SECRET_KEY'))

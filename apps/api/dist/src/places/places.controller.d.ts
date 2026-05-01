@@ -20,6 +20,11 @@ export declare class PlacesController {
         lng: number | null;
         kind: import("@prisma/client").$Enums.SavedPlaceKind;
     }[]>;
+    geocode(address: string): Promise<{
+        lat: number;
+        lng: number;
+        formattedAddress: string;
+    }>;
     create(req: any, dto: UpsertPlaceDto): import("@prisma/client").Prisma.Prisma__SavedPlaceClient<{
         id: string;
         createdAt: Date;

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common'
 import { IsEnum, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { PlacesService } from './places.service'
@@ -35,6 +35,12 @@ export class PlacesController {
   @Get()
   list(@Req() req: any) {
     return this.places.listForUser(req.user.id)
+  }
+
+  /** GET /places/geocode?address=... — resolve a free-text address to lat/lng. */
+  @Get('geocode')
+  geocode(@Query('address') address: string) {
+    return this.places.geocode(address)
   }
 
   @Post()

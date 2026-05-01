@@ -4,18 +4,27 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  Inject,
+  forwardRef,
+  Logger,
 } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 import { BookingStatus, TripModel, TripStatus } from '@prisma/client'
+import { NotificationsService } from '../notifications/notifications.service'
+import { PaymentsService } from '../payments/payments.service'
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name)
+
   constructor(
     private prisma: PrismaService,
     @InjectQueue('bookings') private bookingsQueue: Queue,
+    private notifications: NotificationsService,
+    @Inject(forwardRef(() => PaymentsService)) private payments: PaymentsService,
   ) {}
 
   async create(passengerId: string, dto: CreateBookingDto) {
@@ -169,7 +178,10 @@ export class BookingsService {
 
   // Called by BullMQ processor
   async checkModelBThreshold(tripId: string) {
-    const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
+    const trip = await this.prisma.trip.findUnique({
+      where: { id: tripId },
+      include: { driver: { select: { id: true, firstName: true, lastName: true } } },
+    })
     if (!trip || trip.status !== TripStatus.ACTIVE) return
 
     const confirmed = await this.prisma.booking.aggregate({
@@ -178,21 +190,67 @@ export class BookingsService {
     })
     const bookedSeats = confirmed._sum.seats ?? 0
 
-    if (bookedSeats < (trip.minPassengers ?? 0)) {
-      // Cancel trip and all pending/confirmed bookings
-      await this.prisma.$transaction([
-        this.prisma.trip.update({
-          where: { id: tripId },
-          data: { status: TripStatus.THRESHOLD_NOT_MET, isActive: false },
-        }),
-        this.prisma.booking.updateMany({
-          where: {
-            tripId,
-            status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
-          },
-          data: { status: BookingStatus.CANCELLED },
-        }),
-      ])
+    if (bookedSeats >= (trip.minPassengers ?? 0)) {
+      // Threshold met — notify the driver and confirmed passengers
+      const confirmedBookings = await this.prisma.booking.findMany({
+        where: { tripId, status: BookingStatus.CONFIRMED },
+        select: { passengerId: true },
+      })
+      const title = 'Trip is a go!'
+      const body = `Your Model B trip from ${trip.originAddress} to ${trip.destAddress} has reached the minimum threshold. It\'s confirmed!`
+      await this.notifications.sendToUser(trip.driverId, title, body, { type: 'THRESHOLD_MET', tripId })
+      await this.prisma.notification.create({
+        data: { userId: trip.driverId, type: 'THRESHOLD_MET', title, body, deepLinkId: tripId },
+      })
+      for (const { passengerId } of confirmedBookings) {
+        await this.notifications.sendToUser(passengerId, title, body, { type: 'THRESHOLD_MET', tripId })
+        await this.prisma.notification.create({
+          data: { userId: passengerId, type: 'THRESHOLD_MET', title, body, deepLinkId: tripId },
+        })
+      }
+      return
+    }
+
+    // Threshold NOT met — cancel trip and all active bookings
+    const activeBookings = await this.prisma.booking.findMany({
+      where: { tripId, status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] } },
+      select: { id: true, passengerId: true },
+    })
+
+    await this.prisma.$transaction([
+      this.prisma.trip.update({
+        where: { id: tripId },
+        data: { status: TripStatus.THRESHOLD_NOT_MET, isActive: false },
+      }),
+      this.prisma.booking.updateMany({
+        where: {
+          tripId,
+          status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+        },
+        data: { status: BookingStatus.CANCELLED },
+      }),
+    ])
+
+    // Refund held payments and send notifications
+    const cancelTitle = 'Trip cancelled — threshold not reached'
+    const cancelBody = `The Model B trip from ${trip.originAddress} to ${trip.destAddress} did not reach the minimum passenger count and has been cancelled.`
+
+    await this.notifications.sendToUser(trip.driverId, cancelTitle, cancelBody, { type: 'GENERAL', tripId })
+    await this.prisma.notification.create({
+      data: { userId: trip.driverId, type: 'GENERAL', title: cancelTitle, body: cancelBody, deepLinkId: tripId },
+    })
+
+    for (const { id: bookingId, passengerId } of activeBookings) {
+      // Best-effort refund — log failures without throwing so all passengers are processed
+      try {
+        await this.payments.refundPayment(bookingId)
+      } catch (e) {
+        this.logger.warn(`Threshold refund failed for booking ${bookingId}: ${e}`)
+      }
+      await this.notifications.sendToUser(passengerId, cancelTitle, cancelBody, { type: 'BOOKING_CANCELLED', tripId })
+      await this.prisma.notification.create({
+        data: { userId: passengerId, type: 'BOOKING_CANCELLED', title: cancelTitle, body: cancelBody, deepLinkId: tripId },
+      })
     }
   }
 }

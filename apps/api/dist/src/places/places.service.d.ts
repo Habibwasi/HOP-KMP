@@ -1,8 +1,10 @@
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertPlaceDto } from './places.controller';
 export declare class PlacesService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly config;
+    constructor(prisma: PrismaService, config: ConfigService);
     listForUser(userId: string): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
         createdAt: Date;
@@ -38,5 +40,10 @@ export declare class PlacesService {
     }>;
     remove(userId: string, id: string): Promise<{
         ok: boolean;
+    }>;
+    geocode(address: string): Promise<{
+        lat: number;
+        lng: number;
+        formattedAddress: string;
     }>;
 }

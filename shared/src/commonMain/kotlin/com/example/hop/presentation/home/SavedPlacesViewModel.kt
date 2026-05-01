@@ -90,7 +90,23 @@ class SavedPlacesViewModel(
         if (_state.value.isMutating) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isMutating = true, error = null)
-            when (val response = placesRepository.upsert(label, address, lat, lng, kind)) {
+
+            // Auto-geocode when the caller didn't supply coordinates.
+            var resolvedLat = lat
+            var resolvedLng = lng
+            if (resolvedLat == null || resolvedLng == null) {
+                when (val geo = placesRepository.geocode(address)) {
+                    is ApiResponse.Success -> {
+                        resolvedLat = geo.data.lat
+                        resolvedLng = geo.data.lng
+                    }
+                    is ApiResponse.Error -> {
+                        // Non-fatal — proceed without coordinates rather than blocking the save.
+                    }
+                }
+            }
+
+            when (val response = placesRepository.upsert(label, address, resolvedLat, resolvedLng, kind)) {
                 is ApiResponse.Success -> {
                     // Optimistically merge — replace existing entry with same id, or append.
                     val merged = _state.value.places.filterNot { it.id == response.data.id } + response.data

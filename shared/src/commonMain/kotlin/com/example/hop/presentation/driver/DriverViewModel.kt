@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 // ─ Post-trip draft models ─────────────────────────────────────────────────────
 
@@ -277,19 +280,24 @@ class DriverViewModel(
         val modelADraft = _state.value.pendingModelADraft
         val modelBDraft = _state.value.pendingModelBDraft
         val request = when {
-            modelADraft != null -> PostTripRequest(
-                model = "A",
-                originName = modelADraft.originName,
-                originLat = 0.0,
-                originLng = 0.0,
-                destName = modelADraft.destName,
-                destLat = 0.0,
-                destLng = 0.0,
-                distanceMetres = modelADraft.distanceMetres,
-                departsAt = "${modelADraft.departureTime}:00Z",
-                seatsTotal = modelADraft.seatsTotal,
-                recurrenceDays = modelADraft.recurrenceDays,
-            )
+            modelADraft != null -> {
+                // Use today's local date + driver's chosen time as the anchor datetime.
+                // The backend generates individual trip instances from this anchor using recurringDays.
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                PostTripRequest(
+                    model = "A",
+                    originName = modelADraft.originName,
+                    originLat = 0.0,
+                    originLng = 0.0,
+                    destName = modelADraft.destName,
+                    destLat = 0.0,
+                    destLng = 0.0,
+                    distanceMetres = modelADraft.distanceMetres,
+                    departsAt = "${today}T${modelADraft.departureTime}:00Z",
+                    seatsTotal = modelADraft.seatsTotal,
+                    recurrenceDays = modelADraft.recurrenceDays,
+                )
+            }
             modelBDraft != null -> PostTripRequest(
                 model = "B",
                 originName = modelBDraft.originName,

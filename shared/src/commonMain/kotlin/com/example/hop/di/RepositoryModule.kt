@@ -5,6 +5,7 @@ import com.example.hop.data.repository.BookingRepositoryImpl
 import com.example.hop.data.repository.DriverRepositoryImpl
 import com.example.hop.data.repository.HomeStatsRepositoryImpl
 import com.example.hop.data.repository.PlacesRepositoryImpl
+import com.example.hop.data.repository.SearchAlertsRepositoryImpl
 import com.example.hop.data.repository.SearchHistoryRepositoryImpl
 import com.example.hop.data.repository.SupabaseAuthRepositoryImpl
 import com.example.hop.data.repository.TaxRepositoryImpl
@@ -15,6 +16,7 @@ import com.example.hop.domain.repository.BookingRepository
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.HomeStatsRepository
 import com.example.hop.domain.repository.PlacesRepository
+import com.example.hop.domain.repository.SearchAlertsRepository
 import com.example.hop.domain.repository.SearchHistoryRepository
 import com.example.hop.data.repository.PaymentRepositoryImpl
 import com.example.hop.domain.repository.PaymentRepository
@@ -80,6 +82,11 @@ val repositoryModule = module {
     }
     single<AggregatesRepository> {
         AggregatesRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<SearchAlertsRepository> {
+        SearchAlertsRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
     }

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -615,6 +616,28 @@ private fun DriverTripCard(
                         fontSize = 16.sp,
                     ),
                 )
+            }
+
+            // ── Row 4: Recurring days (Model A only) ──────────────────────────
+            val days = tripUiModel.recurrenceDays
+            if (tripUiModel.model == TripModel.A && !days.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(HopSpacing.xs))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.Repeat,
+                        contentDescription = null,
+                        tint = HopColors.primaryLime,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = days.joinToString(" · ") { it.take(2) },
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = HopColors.primaryLime,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    )
+                }
             }
         }
     }

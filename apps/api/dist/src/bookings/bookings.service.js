@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var BookingsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BookingsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -18,12 +19,19 @@ const bullmq_1 = require("@nestjs/bullmq");
 const bullmq_2 = require("bullmq");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
-let BookingsService = class BookingsService {
+const notifications_service_1 = require("../notifications/notifications.service");
+const payments_service_1 = require("../payments/payments.service");
+let BookingsService = BookingsService_1 = class BookingsService {
     prisma;
     bookingsQueue;
-    constructor(prisma, bookingsQueue) {
+    notifications;
+    payments;
+    logger = new common_1.Logger(BookingsService_1.name);
+    constructor(prisma, bookingsQueue, notifications, payments) {
         this.prisma = prisma;
         this.bookingsQueue = bookingsQueue;
+        this.notifications = notifications;
+        this.payments = payments;
     }
     async create(passengerId, dto) {
         return this.prisma.$transaction(async (tx) => {
@@ -152,7 +160,10 @@ let BookingsService = class BookingsService {
         });
     }
     async checkModelBThreshold(tripId) {
-        const trip = await this.prisma.trip.findUnique({ where: { id: tripId } });
+        const trip = await this.prisma.trip.findUnique({
+            where: { id: tripId },
+            include: { driver: { select: { id: true, firstName: true, lastName: true } } },
+        });
         if (!trip || trip.status !== client_1.TripStatus.ACTIVE)
             return;
         const confirmed = await this.prisma.booking.aggregate({
@@ -160,28 +171,70 @@ let BookingsService = class BookingsService {
             _sum: { seats: true },
         });
         const bookedSeats = confirmed._sum.seats ?? 0;
-        if (bookedSeats < (trip.minPassengers ?? 0)) {
-            await this.prisma.$transaction([
-                this.prisma.trip.update({
-                    where: { id: tripId },
-                    data: { status: client_1.TripStatus.THRESHOLD_NOT_MET, isActive: false },
-                }),
-                this.prisma.booking.updateMany({
-                    where: {
-                        tripId,
-                        status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] },
-                    },
-                    data: { status: client_1.BookingStatus.CANCELLED },
-                }),
-            ]);
+        if (bookedSeats >= (trip.minPassengers ?? 0)) {
+            const confirmedBookings = await this.prisma.booking.findMany({
+                where: { tripId, status: client_1.BookingStatus.CONFIRMED },
+                select: { passengerId: true },
+            });
+            const title = 'Trip is a go!';
+            const body = `Your Model B trip from ${trip.originAddress} to ${trip.destAddress} has reached the minimum threshold. It\'s confirmed!`;
+            await this.notifications.sendToUser(trip.driverId, title, body, { type: 'THRESHOLD_MET', tripId });
+            await this.prisma.notification.create({
+                data: { userId: trip.driverId, type: 'THRESHOLD_MET', title, body, deepLinkId: tripId },
+            });
+            for (const { passengerId } of confirmedBookings) {
+                await this.notifications.sendToUser(passengerId, title, body, { type: 'THRESHOLD_MET', tripId });
+                await this.prisma.notification.create({
+                    data: { userId: passengerId, type: 'THRESHOLD_MET', title, body, deepLinkId: tripId },
+                });
+            }
+            return;
+        }
+        const activeBookings = await this.prisma.booking.findMany({
+            where: { tripId, status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] } },
+            select: { id: true, passengerId: true },
+        });
+        await this.prisma.$transaction([
+            this.prisma.trip.update({
+                where: { id: tripId },
+                data: { status: client_1.TripStatus.THRESHOLD_NOT_MET, isActive: false },
+            }),
+            this.prisma.booking.updateMany({
+                where: {
+                    tripId,
+                    status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] },
+                },
+                data: { status: client_1.BookingStatus.CANCELLED },
+            }),
+        ]);
+        const cancelTitle = 'Trip cancelled — threshold not reached';
+        const cancelBody = `The Model B trip from ${trip.originAddress} to ${trip.destAddress} did not reach the minimum passenger count and has been cancelled.`;
+        await this.notifications.sendToUser(trip.driverId, cancelTitle, cancelBody, { type: 'GENERAL', tripId });
+        await this.prisma.notification.create({
+            data: { userId: trip.driverId, type: 'GENERAL', title: cancelTitle, body: cancelBody, deepLinkId: tripId },
+        });
+        for (const { id: bookingId, passengerId } of activeBookings) {
+            try {
+                await this.payments.refundPayment(bookingId);
+            }
+            catch (e) {
+                this.logger.warn(`Threshold refund failed for booking ${bookingId}: ${e}`);
+            }
+            await this.notifications.sendToUser(passengerId, cancelTitle, cancelBody, { type: 'BOOKING_CANCELLED', tripId });
+            await this.prisma.notification.create({
+                data: { userId: passengerId, type: 'BOOKING_CANCELLED', title: cancelTitle, body: cancelBody, deepLinkId: tripId },
+            });
         }
     }
 };
 exports.BookingsService = BookingsService;
-exports.BookingsService = BookingsService = __decorate([
+exports.BookingsService = BookingsService = BookingsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, bullmq_1.InjectQueue)('bookings')),
+    __param(3, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        bullmq_2.Queue])
+        bullmq_2.Queue,
+        notifications_service_1.NotificationsService,
+        payments_service_1.PaymentsService])
 ], BookingsService);
 //# sourceMappingURL=bookings.service.js.map

@@ -6,10 +6,10 @@ export declare class RatingsController {
     create(req: any, dto: CreateRatingDto): Promise<{
         id: string;
         createdAt: Date;
-        raterId: string;
         rateeId: string;
         score: number;
         comment: string | null;
+        raterId: string;
     }>;
     getUserRatings(userId: string): Promise<{
         userId: string;
@@ -25,10 +25,10 @@ export declare class RatingsController {
         } & {
             id: string;
             createdAt: Date;
-            raterId: string;
             rateeId: string;
             score: number;
             comment: string | null;
+            raterId: string;
         })[];
     }>;
 }

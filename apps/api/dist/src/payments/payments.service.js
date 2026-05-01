@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -300,6 +303,7 @@ let PaymentsService = class PaymentsService {
 exports.PaymentsService = PaymentsService;
 exports.PaymentsService = PaymentsService = __decorate([
     (0, common_1.Injectable)(),
+    __param(1, (0, common_1.Inject)((0, common_1.forwardRef)(() => bookings_service_1.BookingsService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         bookings_service_1.BookingsService,
         config_1.ConfigService])
