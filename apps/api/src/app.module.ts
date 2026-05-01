@@ -14,6 +14,7 @@ import { AdminModule } from './admin/admin.module'
 import { PlacesModule } from './places/places.module'
 import { SearchHistoryModule } from './search-history/search-history.module'
 import { AggregatesModule } from './aggregates/aggregates.module'
+import { ChatModule } from './chat/chat.module'
 import { HealthController } from './health.controller'
 
 @Module({
@@ -39,6 +40,7 @@ import { HealthController } from './health.controller'
     PlacesModule,
     SearchHistoryModule,
     AggregatesModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

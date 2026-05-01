@@ -42,7 +42,10 @@ export class PaymentsController {
 
   @Post('webhooks/mobilepay')
   @HttpCode(200)
-  mobilepayWebhook(@Body() body: any) {
-    return this.payments.handleMobilepayWebhook(body)
+  mobilepayWebhook(
+    @Req() req: RawBodyRequest<any>,
+    @Headers('authorization') signature: string,
+  ) {
+    return this.payments.handleMobilepayWebhook(req.rawBody, signature ?? '')
   }
 }

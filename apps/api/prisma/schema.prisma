@@ -51,6 +51,7 @@ model User {
   notifications   Notification[]
   savedPlaces     SavedPlace[]
   recentSearches  RecentSearch[]
+  chatMessages    ChatMessage[]
   isAdmin         Boolean   @default(false)
 }
 
@@ -105,6 +106,7 @@ model Booking {
 
   payment     Payment?
   taxRecord   TaxRecord?
+  chatMessages ChatMessage[]
 }
 
 model Rating {
@@ -258,4 +260,21 @@ model RecentSearch {
 
   @@unique([userId, originLabel, destLabel])
   @@index([userId, lastUsedAt])
+}
+
+/**
+ * Real-time chat messages scoped to a booking.
+ * Both the passenger and the driver of the booking's trip can send messages.
+ * Messages are ordered by createdAt for history replay on reconnect.
+ */
+model ChatMessage {
+  id        String   @id @default(uuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
 }

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { PrismaService } from '../prisma/prisma.service'
 import { BookingsService } from '../bookings/bookings.service'
 import { PaymentProvider, PaymentStatus, BookingStatus } from '@prisma/client'
@@ -40,9 +41,28 @@ export class PaymentsService {
 
   // ─── MOBILEPAY ───────────────────────────────────────────────────────────────
 
+  /** Fetch a short-lived Vipps MobilePay access token via client-credentials. */
+  private async getVippsAccessToken(): Promise<string> {
+    const base = this.config.getOrThrow('VIPPS_API_BASE')
+    const res = await fetch(`${base}/accesstoken/get`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'client_id': this.config.getOrThrow('VIPPS_CLIENT_ID'),
+        'client_secret': this.config.getOrThrow('VIPPS_CLIENT_SECRET'),
+        'Ocp-Apim-Subscription-Key': this.config.getOrThrow('VIPPS_SUBSCRIPTION_KEY'),
+        'Merchant-Serial-Number': this.config.getOrThrow('VIPPS_MSN'),
+      },
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new BadRequestException(`Vipps token exchange failed: ${text}`)
+    }
+    const json = await res.json() as { access_token: string }
+    return json.access_token
+  }
+
   private async initiateMobilepay(booking: any) {
-    // MobilePay ePayment — create payment intent
-    // Returns a deeplink/redirect URL for the app to open
     const payment = await this.prisma.payment.upsert({
       where: { bookingId: booking.id },
       create: {
@@ -54,15 +74,50 @@ export class PaymentsService {
       update: { status: PaymentStatus.PENDING },
     })
 
-    // TODO: call MobilePay ePayment API to create payment
-    // POST https://api.mobilepay.dk/v1/payments
-    // Returns { paymentId, mobilePayAppRedirectUri }
-    // Store paymentId as providerRef
+    const token = await this.getVippsAccessToken()
+    const base = this.config.getOrThrow('VIPPS_API_BASE')
+    const msn = this.config.getOrThrow('VIPPS_MSN')
+    const subscriptionKey = this.config.getOrThrow('VIPPS_SUBSCRIPTION_KEY')
+    const returnUrl = this.config.get('VIPPS_RETURN_URL', 'hop://payments/callback')
+
+    const body = {
+      amount: { currency: 'DKK', value: booking.totalOere },
+      merchantSerialNumber: msn,
+      reference: payment.id,
+      userFlow: 'NATIVE_REDIRECT',
+      returnUrl,
+      paymentMethod: { type: 'WALLET' },
+      paymentDescription: `Hop ride booking ${booking.id}`,
+    }
+
+    const res = await fetch(`${base}/epayment/v1/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Ocp-Apim-Subscription-Key': subscriptionKey,
+        'Merchant-Serial-Number': msn,
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new BadRequestException(`Vipps payment creation failed: ${text}`)
+    }
+
+    const json = await res.json() as { reference: string; redirectUrl: string }
+
+    // Persist the Vipps payment reference so we can capture/refund later.
+    await this.prisma.payment.update({
+      where: { bookingId: booking.id },
+      data: { providerRef: json.reference },
+    })
 
     return {
       paymentId: payment.id,
       provider: 'MOBILEPAY',
-      redirectUrl: 'mobilepay://TODO', // replace with actual MobilePay deeplink
+      redirectUrl: json.redirectUrl,
       amountOere: booking.totalOere,
     }
   }
@@ -107,8 +162,31 @@ export class PaymentsService {
 
     if (payment.provider === PaymentProvider.STRIPE && payment.providerRef) {
       await this.stripe.paymentIntents.capture(payment.providerRef)
+    } else if (payment.provider === PaymentProvider.MOBILEPAY && payment.providerRef) {
+      const token = await this.getVippsAccessToken()
+      const base = this.config.getOrThrow('VIPPS_API_BASE')
+      const msn = this.config.getOrThrow('VIPPS_MSN')
+      const subscriptionKey = this.config.getOrThrow('VIPPS_SUBSCRIPTION_KEY')
+      const res = await fetch(
+        `${base}/epayment/v1/payments/${payment.providerRef}/capture`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            'Ocp-Apim-Subscription-Key': subscriptionKey,
+            'Merchant-Serial-Number': msn,
+          },
+          body: JSON.stringify({
+            modificationAmount: { currency: 'DKK', value: payment.amountOere },
+          }),
+        },
+      )
+      if (!res.ok) {
+        const text = await res.text()
+        throw new BadRequestException(`Vipps capture failed: ${text}`)
+      }
     }
-    // TODO: MobilePay capture via API
 
     await this.prisma.payment.update({
       where: { bookingId },
@@ -152,8 +230,31 @@ export class PaymentsService {
 
     if (payment.provider === PaymentProvider.STRIPE && payment.providerRef) {
       await this.stripe.refunds.create({ payment_intent: payment.providerRef })
+    } else if (payment.provider === PaymentProvider.MOBILEPAY && payment.providerRef) {
+      const token = await this.getVippsAccessToken()
+      const base = this.config.getOrThrow('VIPPS_API_BASE')
+      const msn = this.config.getOrThrow('VIPPS_MSN')
+      const subscriptionKey = this.config.getOrThrow('VIPPS_SUBSCRIPTION_KEY')
+      const res = await fetch(
+        `${base}/epayment/v1/payments/${payment.providerRef}/refund`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            'Ocp-Apim-Subscription-Key': subscriptionKey,
+            'Merchant-Serial-Number': msn,
+          },
+          body: JSON.stringify({
+            modificationAmount: { currency: 'DKK', value: payment.amountOere },
+          }),
+        },
+      )
+      if (!res.ok) {
+        const text = await res.text()
+        throw new BadRequestException(`Vipps refund failed: ${text}`)
+      }
     }
-    // TODO: MobilePay refund via API
 
     await this.prisma.payment.update({
       where: { bookingId },
@@ -190,26 +291,43 @@ export class PaymentsService {
     return { received: true }
   }
 
-  async handleMobilepayWebhook(body: any) {
-    // TODO: verify MobilePay webhook signature
-    // Handle events: payment.reserved, payment.cancelled, payment.captured
-    const { eventType, data } = body
-    const bookingId = data?.reference
-
-    if (!bookingId) return { received: true }
-
-    if (eventType === 'payment.reserved') {
-      await this.prisma.payment.update({
-        where: { bookingId },
-        data: { status: PaymentStatus.HELD, providerRef: data.paymentId },
-      })
-      await this.bookings.confirm(bookingId)
+  async handleMobilepayWebhook(rawBody: Buffer, signature: string) {
+    const secret = this.config.getOrThrow('VIPPS_WEBHOOK_SECRET')
+    const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
+    const received = Buffer.from(signature, 'hex')
+    const expectedBuf = Buffer.from(expected, 'hex')
+    if (
+      received.length !== expectedBuf.length ||
+      !timingSafeEqual(received, expectedBuf)
+    ) {
+      throw new BadRequestException('Invalid MobilePay webhook signature')
     }
 
-    if (eventType === 'payment.cancelled') {
+    const body = JSON.parse(rawBody.toString())
+    const { eventType, data } = body as { eventType: string; data: Record<string, string> }
+    // Vipps uses payment.id as the reference, which we stored in providerRef.
+    const providerRef = data?.reference
+    if (!providerRef) return { received: true }
+
+    const payment = await this.prisma.payment.findFirst({ where: { providerRef } })
+    if (!payment) return { received: true }
+    const bookingId = payment.bookingId
+
+    if (eventType === 'epayments.payment.reserved.v1') {
+      await this.prisma.payment.update({
+        where: { bookingId },
+        data: { status: PaymentStatus.HELD },
+      })
+      await this.bookings.confirm(bookingId)
+    } else if (eventType === 'epayments.payment.cancelled.v1') {
       await this.prisma.payment.update({
         where: { bookingId },
         data: { status: PaymentStatus.FAILED },
+      })
+    } else if (eventType === 'epayments.payment.captured.v1') {
+      await this.prisma.payment.update({
+        where: { bookingId },
+        data: { status: PaymentStatus.CAPTURED },
       })
     }
 

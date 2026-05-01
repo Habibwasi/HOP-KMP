@@ -422,7 +422,7 @@ Base: `https://api.hop.dk/v1`
 
 ```
 Auth      POST  /auth/register, /auth/login, /auth/refresh, /auth/logout
-          POST  /auth/otp/send, /auth/otp/verify
+
           POST  /auth/password/reset-request, /auth/password/reset
 
 Trips     GET   /trips/search?origin=&dest=&date=&seats=
@@ -443,9 +443,7 @@ Tax       GET   /tax/summary?year=&month=
           GET   /tax/records?year=
           GET   /tax/report/:year
 
-Admin     GET   /admin/licences
-          POST  /admin/licences/:id/approve
-          POST  /admin/licences/:id/reject
+Admin   
           GET   /admin/users
           POST  /admin/users/:id/ban
           POST  /admin/users/:id/unban
@@ -462,7 +460,7 @@ Every screen must have `@Preview` composables (Android) or `#Preview` (iOS).
 Minimum 2 previews per screen: empty/default state + loading or filled state.
 
 ### Onboarding
-ON-01 Onboarding · ON-02 Sign Up · ON-03 Log In · ON-04 Phone OTP Verification
+ON-01 Onboarding · ON-02 Sign Up · ON-03 Log In ·
 
 ### Passenger
 PA-01 Home · PA-02 Search Results · PA-03 Trip Detail · PA-04 Booking Confirmation ·
@@ -470,8 +468,7 @@ PA-05 MobilePay Handoff · PA-06 Booking Success · PA-07 My Trips · PA-08 Trip
 PA-09 Rate Driver · PA-10 Cancellation Confirmation
 
 ### Driver
-DR-01 Home · DR-02 Car Details (Step 1) · DR-03 Licence Upload (Step 2) ·
-DR-04 Review Pending (Step 3) · DR-05 Post Trip Model Select · DR-06 Post Trip Model A ·
+DR-01 Home · DR-02 Car Details · DR-05 Post Trip Model Select · DR-06 Post Trip Model A ·
 DR-07 Post Trip Model B · DR-08 Price Review & Confirm · DR-09 My Trips ·
 DR-10 Trip Detail Active · DR-11 Mark Trip Complete · DR-12 Rate Passenger ·
 DR-13 Tax Dashboard · DR-14 Annual Tax Report Download
@@ -481,7 +478,7 @@ SH-01 Home Role Toggle · SH-02 Own Profile · SH-03 Other Profile ·
 SH-04 In-App Chat · SH-05 Notifications · SH-06 Settings
 
 ### Admin (web — React + shadcn/ui, not mobile)
-AD-01 Licence Queue · AD-02 Licence Detail · AD-03 User Search ·
+AD-03 User Search ·
 AD-04 Apply Ban · AD-05 Trip & Revenue Export
 
 ---

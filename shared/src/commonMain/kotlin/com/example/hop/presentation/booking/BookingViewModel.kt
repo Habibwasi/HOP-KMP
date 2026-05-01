@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.Booking
 import com.example.hop.domain.repository.BookingRepository
+import com.example.hop.domain.repository.PaymentRepository
 import com.example.hop.network.ApiResponse
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ data class BookingUiState(
     val booking: Booking? = null,
     val error: String? = null,
     val paymentState: PaymentState = PaymentState.IDLE,
+    val redirectUrl: String? = null,
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -66,6 +68,7 @@ sealed interface BookingEffect {
 
 class BookingViewModel(
     private val bookingRepository: BookingRepository,
+    private val paymentRepository: PaymentRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BookingUiState())
@@ -126,6 +129,20 @@ class BookingViewModel(
             paymentState = PaymentState.AWAITING_PAYMENT,
             error = null,
         )
+        viewModelScope.launch {
+            when (val result = paymentRepository.initiatePayment(bookingId, "MOBILEPAY")) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(redirectUrl = result.data.redirectUrl)
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(
+                        paymentState = PaymentState.FAILED,
+                        error = result.message,
+                    )
+                    _effect.send(BookingEffect.ShowSnackbar(result.message))
+                }
+            }
+        }
     }
 
     private fun confirmPaymentSuccess(bookingId: String) {

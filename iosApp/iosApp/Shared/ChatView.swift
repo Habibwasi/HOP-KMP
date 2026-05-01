@@ -77,8 +77,8 @@ struct ChatView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             wrapper.startObserving { _ in }
-            // Token resolution would normally happen via auth; supply empty for now.
-            wrapper.connect(bookingId: bookingId, token: "")
+            let token = (try? await KoinIOSKt.getAccessToken()) ?? ""
+            wrapper.connect(bookingId: bookingId, token: token)
         }
         .onDisappear { wrapper.disconnect() }
     }

@@ -18,6 +18,7 @@ export declare class PaymentsService {
         paymentIntentId: string;
         amountOere: any;
     }>;
+    private getVippsAccessToken;
     private initiateMobilepay;
     private initiateStripe;
     capturePayment(bookingId: string): Promise<{
@@ -29,7 +30,7 @@ export declare class PaymentsService {
     handleStripeWebhook(rawBody: Buffer, signature: string): Promise<{
         received: boolean;
     }>;
-    handleMobilepayWebhook(body: any): Promise<{
+    handleMobilepayWebhook(rawBody: Buffer, signature: string): Promise<{
         received: boolean;
     }>;
 }

@@ -99,19 +99,15 @@ fun MobilePayHandoffRoute(
         bookingViewModel.onEvent(BookingEvent.BeginHandoff(bookingId))
     }
 
-    // Step 2: Launch MobilePay once. Transitions phase to Waiting once the intent fires.
-    // Deep-link scheme: mobilepay://merchant (MobilePay Denmark sandbox URL scheme).
-    // The orderId query parameter links the in-app payment record to the MobilePay transaction.
-    LaunchedEffect(Unit) {
-        val mobilePayUri = Uri.parse("mobilepay://merchant?orderId=$bookingId")
-        val intent = Intent(Intent.ACTION_VIEW, mobilePayUri).apply {
+    // Step 2: Launch MobilePay once the backend redirect URL is available.
+    // Uses the HTTPS universal link returned by /payments/initiate (NATIVE_REDIRECT userFlow).
+    // Falls back gracefully if the URL is not yet ready (still loading from ViewModel).
+    LaunchedEffect(state.redirectUrl) {
+        val url = state.redirectUrl ?: return@LaunchedEffect
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        // Only start if MobilePay is installed; otherwise stay on waiting screen so the user
-        // can retry. In production, fall back to the MobilePay web checkout URL.
-        if (intent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(intent)
-        }
+        context.startActivity(intent)
         hasLaunchedMobilePay = true
         phase = HandoffPhase.Waiting
     }

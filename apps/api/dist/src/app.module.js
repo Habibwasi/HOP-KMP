@@ -23,6 +23,7 @@ const admin_module_1 = require("./admin/admin.module");
 const places_module_1 = require("./places/places.module");
 const search_history_module_1 = require("./search-history/search-history.module");
 const aggregates_module_1 = require("./aggregates/aggregates.module");
+const chat_module_1 = require("./chat/chat.module");
 const health_controller_1 = require("./health.controller");
 let AppModule = class AppModule {
 };
@@ -51,6 +52,7 @@ exports.AppModule = AppModule = __decorate([
             places_module_1.PlacesModule,
             search_history_module_1.SearchHistoryModule,
             aggregates_module_1.AggregatesModule,
+            chat_module_1.ChatModule,
         ],
     })
 ], AppModule);

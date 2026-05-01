@@ -34,8 +34,8 @@ let PaymentsController = class PaymentsController {
     stripeWebhook(req, sig) {
         return this.payments.handleStripeWebhook(req.rawBody, sig);
     }
-    mobilepayWebhook(body) {
-        return this.payments.handleMobilepayWebhook(body);
+    mobilepayWebhook(req, signature) {
+        return this.payments.handleMobilepayWebhook(req.rawBody, signature ?? '');
     }
 };
 exports.PaymentsController = PaymentsController;
@@ -77,9 +77,10 @@ __decorate([
 __decorate([
     (0, common_1.Post)('webhooks/mobilepay'),
     (0, common_1.HttpCode)(200),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Headers)('authorization')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], PaymentsController.prototype, "mobilepayWebhook", null);
 exports.PaymentsController = PaymentsController = __decorate([

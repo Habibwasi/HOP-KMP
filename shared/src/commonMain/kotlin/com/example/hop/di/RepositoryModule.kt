@@ -16,6 +16,8 @@ import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.HomeStatsRepository
 import com.example.hop.domain.repository.PlacesRepository
 import com.example.hop.domain.repository.SearchHistoryRepository
+import com.example.hop.data.repository.PaymentRepositoryImpl
+import com.example.hop.domain.repository.PaymentRepository
 import com.example.hop.data.repository.UserRepositoryImpl
 import com.example.hop.domain.repository.TaxRepository
 import com.example.hop.domain.repository.TripRepository
@@ -38,6 +40,11 @@ val repositoryModule = module {
     }
     single<BookingRepository> {
         BookingRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<PaymentRepository> {
+        PaymentRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
     }

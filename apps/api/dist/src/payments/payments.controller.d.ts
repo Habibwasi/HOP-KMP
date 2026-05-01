@@ -23,7 +23,7 @@ export declare class PaymentsController {
     stripeWebhook(req: RawBodyRequest<any>, sig: string): Promise<{
         received: boolean;
     }>;
-    mobilepayWebhook(body: any): Promise<{
+    mobilepayWebhook(req: RawBodyRequest<any>, signature: string): Promise<{
         received: boolean;
     }>;
 }

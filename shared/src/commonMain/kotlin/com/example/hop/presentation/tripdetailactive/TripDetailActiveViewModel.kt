@@ -4,10 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.BookingStatus
 import com.example.hop.domain.model.TripModel
+import com.example.hop.domain.model.UserRole
 import com.example.hop.domain.repository.BookingRepository
 import com.example.hop.domain.repository.TripRepository
+import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,6 +64,7 @@ sealed interface TripDetailActiveEffect {
 class TripDetailActiveViewModel(
     private val bookingRepository: BookingRepository,
     private val tripRepository: TripRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TripDetailActiveUiState())
@@ -85,16 +90,43 @@ class TripDetailActiveViewModel(
                     when (val tripResponse = tripRepository.getTripById(booking.tripId)) {
                         is ApiResponse.Success -> {
                             val trip = tripResponse.data
-                            val initials = trip.driverId.take(2).uppercase()
+
+                            // Fetch driver profile in parallel — best-effort.
+                            val driverUser = coroutineScope {
+                                async { userRepository.getUserProfile(trip.driverId) }.await()
+                            }
+                            val driverName = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.fullName
+                                is ApiResponse.Error -> ""
+                            }
+                            val driverPhone = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.phone ?: ""
+                                is ApiResponse.Error -> ""
+                            }
+                            val driverRating = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.ratingDriver?.toFloat() ?: 0f
+                                is ApiResponse.Error -> 0f
+                            }
+                            val isDriverVerified = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.roles.contains(UserRole.DRIVER)
+                                is ApiResponse.Error -> false
+                            }
+                            val initials = driverName
+                                .split(" ")
+                                .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                                .take(2)
+                                .joinToString("")
+                                .ifEmpty { trip.driverId.take(2).uppercase() }
+
                             _state.value = _state.value.copy(
                                 isLoading = false,
                                 tripId = trip.id,
                                 bookingStatus = booking.status,
-                                driverName = "Driver",         // TODO: resolve via UserRepository
+                                driverName = driverName,
                                 driverInitials = initials,
-                                driverPhone = "",              // TODO: resolve via UserRepository
-                                driverRating = 4.8f,           // TODO: resolve via UserRepository
-                                isDriverVerified = true,       // TODO: resolve via UserRepository
+                                driverPhone = driverPhone,
+                                driverRating = driverRating,
+                                isDriverVerified = isDriverVerified,
                                 originName = trip.originName,
                                 destName = trip.destName,
                                 departsAt = trip.departsAt,
