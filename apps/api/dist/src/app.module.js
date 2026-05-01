@@ -24,6 +24,7 @@ const places_module_1 = require("./places/places.module");
 const search_history_module_1 = require("./search-history/search-history.module");
 const aggregates_module_1 = require("./aggregates/aggregates.module");
 const chat_module_1 = require("./chat/chat.module");
+const search_alerts_module_1 = require("./search-alerts/search-alerts.module");
 const health_controller_1 = require("./health.controller");
 let AppModule = class AppModule {
 };
@@ -53,6 +54,7 @@ exports.AppModule = AppModule = __decorate([
             search_history_module_1.SearchHistoryModule,
             aggregates_module_1.AggregatesModule,
             chat_module_1.ChatModule,
+            search_alerts_module_1.SearchAlertsModule,
         ],
     })
 ], AppModule);

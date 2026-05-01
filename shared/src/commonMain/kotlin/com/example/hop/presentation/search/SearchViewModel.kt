@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.repository.SearchHistoryRepository
+import com.example.hop.domain.repository.SearchAlertsRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
@@ -37,6 +38,8 @@ data class SearchUiState(
     val date: String = "",
     val seats: Int = 1,
     val activeFilters: Set<SearchFilter> = emptySet(),
+    val isCreatingAlert: Boolean = false,
+    val alertError: String? = null,
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -51,12 +54,15 @@ sealed interface SearchEvent {
     data class ApplyFilter(val filter: SearchFilter) : SearchEvent
     data object ClearFilters : SearchEvent
     data class SelectTrip(val tripId: String) : SearchEvent
+    data object AlertMe : SearchEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
 
 sealed interface SearchEffect {
     data class NavigateToTripDetail(val tripId: String) : SearchEffect
+    data object AlertCreated : SearchEffect
+    data class AlertError(val message: String) : SearchEffect
 }
 
 // ─ ViewModel ──────────────────────────────────────────────────────────────────
@@ -64,6 +70,7 @@ sealed interface SearchEffect {
 class SearchViewModel(
     private val tripRepository: TripRepository,
     private val searchHistoryRepository: SearchHistoryRepository,
+    private val searchAlertsRepository: SearchAlertsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SearchUiState())
@@ -80,6 +87,7 @@ class SearchViewModel(
             is SearchEvent.SelectTrip -> viewModelScope.launch {
                 _effect.send(SearchEffect.NavigateToTripDetail(event.tripId))
             }
+            is SearchEvent.AlertMe -> createAlert()
         }
     }
 
@@ -113,6 +121,25 @@ class SearchViewModel(
                         isLoading = false,
                         error = response.message,
                     )
+                }
+            }
+        }
+    }
+
+    private fun createAlert() {
+        val origin = _state.value.origin
+        val dest = _state.value.dest
+        if (origin.isBlank() || dest.isBlank()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isCreatingAlert = true, alertError = null)
+            when (val result = searchAlertsRepository.create(origin, dest, _state.value.seats)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(isCreatingAlert = false)
+                    _effect.send(SearchEffect.AlertCreated)
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isCreatingAlert = false, alertError = result.message)
+                    _effect.send(SearchEffect.AlertError(result.message))
                 }
             }
         }

@@ -7,6 +7,7 @@ final class SearchViewModelWrapper: ObservableObject {
     let viewModel: SearchViewModel
 
     @Published var state: SearchUiState
+    @Published var alertToast: String? = nil
 
     init() {
         let vm = KoinIOSKt.getSearchViewModel()
@@ -46,5 +47,9 @@ final class SearchViewModelWrapper: ObservableObject {
 
     func selectTrip(tripId: String) {
         viewModel.onEvent(event: SearchEventSelectTrip(tripId: tripId))
+    }
+
+    func createAlert() {
+        viewModel.onEvent(event: SearchEventAlertMe.shared)
     }
 }

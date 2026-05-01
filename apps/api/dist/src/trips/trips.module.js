@@ -8,14 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TripsModule = void 0;
 const common_1 = require("@nestjs/common");
+const bullmq_1 = require("@nestjs/bullmq");
 const trips_service_1 = require("./trips.service");
 const trips_controller_1 = require("./trips.controller");
 const pricing_service_1 = require("./pricing.service");
+const search_alerts_processor_1 = require("../search-alerts/search-alerts.processor");
 let TripsModule = class TripsModule {
 };
 exports.TripsModule = TripsModule;
 exports.TripsModule = TripsModule = __decorate([
     (0, common_1.Module)({
+        imports: [bullmq_1.BullModule.registerQueue({ name: search_alerts_processor_1.SEARCH_ALERTS_QUEUE })],
         providers: [trips_service_1.TripsService, pricing_service_1.PricingService],
         controllers: [trips_controller_1.TripsController],
         exports: [trips_service_1.TripsService],

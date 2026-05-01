@@ -1,3 +1,4 @@
+import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { PricingService } from './pricing.service';
 import { CreateTripDto } from './dto/create-trip.dto';
@@ -5,7 +6,8 @@ import { SearchTripsDto } from './dto/search-trips.dto';
 export declare class TripsService {
     private prisma;
     private pricing;
-    constructor(prisma: PrismaService, pricing: PricingService);
+    private alertsQueue;
+    constructor(prisma: PrismaService, pricing: PricingService, alertsQueue: Queue);
     create(driverId: string, dto: CreateTripDto): Promise<{
         driver: {
             id: string;

@@ -91,6 +91,12 @@ fun SearchResultsRoute(
         searchViewModel.effect.collectLatest { effect ->
             when (effect) {
                 is SearchEffect.NavigateToTripDetail -> onNavigateToTripDetail(effect.tripId)
+                is SearchEffect.AlertCreated -> scope.launch {
+                    snackbarHostState.showSnackbar("Alert set! We'll notify you when a ride appears.")
+                }
+                is SearchEffect.AlertError -> scope.launch {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
             }
         }
     }
@@ -111,8 +117,7 @@ fun SearchResultsRoute(
                 searchViewModel.onEvent(SearchEvent.SelectTrip(tripId))
             },
             onAlertMe = {
-                // Backend alert endpoint is post-MVP; surface feedback so the tap isn't silent.
-                scope.launch { snackbarHostState.showSnackbar("Coming soon") }
+                searchViewModel.onEvent(SearchEvent.AlertMe)
             },
             modifier = Modifier.padding(innerPadding),
         )

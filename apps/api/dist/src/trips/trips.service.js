@@ -8,18 +8,26 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TripsService = void 0;
 const common_1 = require("@nestjs/common");
+const bullmq_1 = require("@nestjs/bullmq");
+const bullmq_2 = require("bullmq");
 const prisma_service_1 = require("../prisma/prisma.service");
 const pricing_service_1 = require("./pricing.service");
 const client_1 = require("@prisma/client");
+const search_alerts_processor_1 = require("../search-alerts/search-alerts.processor");
 let TripsService = class TripsService {
     prisma;
     pricing;
-    constructor(prisma, pricing) {
+    alertsQueue;
+    constructor(prisma, pricing, alertsQueue) {
         this.prisma = prisma;
         this.pricing = pricing;
+        this.alertsQueue = alertsQueue;
     }
     async create(driverId, dto) {
         if (dto.model === client_1.TripModel.B) {
@@ -57,6 +65,11 @@ let TripsService = class TripsService {
                 thresholdDeadline: dto.thresholdDeadline ? new Date(dto.thresholdDeadline) : null,
             },
             include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+        });
+        await this.alertsQueue.add(search_alerts_processor_1.MATCH_ALERTS_JOB, {
+            tripId: trip.id,
+            originAddress: trip.originAddress,
+            destAddress: trip.destAddress,
         });
         return trip;
     }
@@ -169,7 +182,9 @@ let TripsService = class TripsService {
 exports.TripsService = TripsService;
 exports.TripsService = TripsService = __decorate([
     (0, common_1.Injectable)(),
+    __param(2, (0, bullmq_1.InjectQueue)(search_alerts_processor_1.SEARCH_ALERTS_QUEUE)),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        pricing_service_1.PricingService])
+        pricing_service_1.PricingService,
+        bullmq_2.Queue])
 ], TripsService);
 //# sourceMappingURL=trips.service.js.map

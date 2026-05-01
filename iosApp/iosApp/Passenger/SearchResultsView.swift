@@ -17,6 +17,7 @@ struct SearchResultsView: View {
     var seats:  Int    = 1
 
     @StateObject private var wrapper = SearchViewModelWrapper()
+    @State private var toast: String? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -95,16 +96,32 @@ struct SearchResultsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.hopBackground.ignoresSafeArea())
+        .overlay(alignment: .bottom) {
+            if let msg = toast {
+                Text(msg)
+                    .font(HopFont.labelMedium())
+                    .foregroundColor(.white)
+                    .padding(.horizontal, HopSpacing.md)
+                    .padding(.vertical, HopSpacing.sm)
+                    .background(Color.black.opacity(0.75))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.bottom, HopSpacing.xl)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut, value: toast)
         .onAppear {
             wrapper.startObserving { effect in
                 if let n = effect as? SearchEffectNavigateToTripDetail {
                     onNavigateToTripDetail(n.tripId)
+                } else if effect is SearchEffectAlertCreated {
+                    self.toast = "Alert set! We'll notify you when a ride appears."
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.toast = nil }
+                } else if let err = effect as? SearchEffectAlertError {
+                    self.toast = err.message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.toast = nil }
                 }
             }
-            // Run the search owned by this view's VM instance. The home
-            // screen also kicked off a search on its own VM, but since
-            // `SearchViewModel` is a factory in Koin, that result never
-            // reaches us — we have to re-issue against ours.
             if !origin.isEmpty || !dest.isEmpty {
                 wrapper.search(origin: origin, dest: dest, date: date, seats: seats)
             }
@@ -124,7 +141,7 @@ struct SearchResultsView: View {
                 .font(HopFont.headlineSmall(weight: .semibold))
                 .foregroundColor(Color.hopAuthTextPrimary)
             HopButton(text: "Alert me when one appears", variant: .primary) {
-                // Coming soon — backend alert endpoint is post-MVP.
+                wrapper.createAlert()
             }
             .frame(maxWidth: 280)
             Spacer()

@@ -4,17 +4,24 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 import { PrismaService } from '../prisma/prisma.service'
 import { PricingService } from './pricing.service'
 import { CreateTripDto } from './dto/create-trip.dto'
 import { SearchTripsDto } from './dto/search-trips.dto'
 import { TripModel, TripStatus } from '@prisma/client'
+import {
+  SEARCH_ALERTS_QUEUE,
+  MATCH_ALERTS_JOB,
+} from '../search-alerts/search-alerts.processor'
 
 @Injectable()
 export class TripsService {
   constructor(
     private prisma: PrismaService,
     private pricing: PricingService,
+    @InjectQueue(SEARCH_ALERTS_QUEUE) private alertsQueue: Queue,
   ) {}
 
   async create(driverId: string, dto: CreateTripDto) {
@@ -62,6 +69,13 @@ export class TripsService {
         thresholdDeadline: dto.thresholdDeadline ? new Date(dto.thresholdDeadline) : null,
       },
       include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+    })
+
+    // Enqueue alert-matching as a fire-and-forget background job.
+    await this.alertsQueue.add(MATCH_ALERTS_JOB, {
+      tripId: trip.id,
+      originAddress: trip.originAddress,
+      destAddress: trip.destAddress,
     })
 
     return trip
