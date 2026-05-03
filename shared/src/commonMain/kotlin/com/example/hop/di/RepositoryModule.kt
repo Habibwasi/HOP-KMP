@@ -5,6 +5,7 @@ import com.example.hop.data.repository.BookingRepositoryImpl
 import com.example.hop.data.repository.DriverRepositoryImpl
 import com.example.hop.data.repository.HomeStatsRepositoryImpl
 import com.example.hop.data.repository.PlacesRepositoryImpl
+import com.example.hop.data.repository.RoutingRepositoryImpl
 import com.example.hop.data.repository.SearchAlertsRepositoryImpl
 import com.example.hop.data.repository.SearchHistoryRepositoryImpl
 import com.example.hop.data.repository.SupabaseAuthRepositoryImpl
@@ -16,6 +17,7 @@ import com.example.hop.domain.repository.BookingRepository
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.HomeStatsRepository
 import com.example.hop.domain.repository.PlacesRepository
+import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.domain.repository.SearchAlertsRepository
 import com.example.hop.domain.repository.SearchHistoryRepository
 import com.example.hop.data.repository.PaymentRepositoryImpl
@@ -28,7 +30,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.ktor.client.HttpClient
 import org.koin.dsl.module
 
-val repositoryModule = module {
+fun repositoryModule(mapsApiKey: String) = module {
     single<AuthRepository> {
         SupabaseAuthRepositoryImpl(
             supabase = get<SupabaseClient>(),
@@ -89,5 +91,8 @@ val repositoryModule = module {
         SearchAlertsRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
+    }
+    single<RoutingRepository> {
+        RoutingRepositoryImpl(mapsApiKey = mapsApiKey)
     }
 }

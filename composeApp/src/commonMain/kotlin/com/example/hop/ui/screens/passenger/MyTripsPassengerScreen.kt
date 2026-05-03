@@ -447,6 +447,11 @@ private fun TripStatus.toBadgeType(): BadgeType = when (this) {
     TripStatus.CONFIRMED  -> BadgeType.Confirmed
     TripStatus.COMPLETED  -> BadgeType.Completed
     TripStatus.CANCELLED  -> BadgeType.Cancelled
+    TripStatus.THRESHOLD_NOT_MET -> BadgeType.Custom(
+        label = "Threshold not met",
+        background = Color(0xFF332200),
+        contentColor = Color(0xFFFFAA00),
+    )
     TripStatus.UNKNOWN    -> BadgeType.Custom(
         label = "UNKNOWN",
         background = Color(0xFF242424),

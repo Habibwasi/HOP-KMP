@@ -36,9 +36,9 @@ data class PostTripRequest(
     val destName: String,
     val destLat: Double,
     val destLng: Double,
-    val distanceMetres: Int,
     val departsAt: String,
     val seatsTotal: Int,
     val minThreshold: Int? = null,
+    val thresholdDeadline: String? = null,
     val recurrenceDays: List<String>? = null,
 )

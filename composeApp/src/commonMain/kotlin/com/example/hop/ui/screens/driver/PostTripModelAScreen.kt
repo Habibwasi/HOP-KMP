@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -56,14 +57,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.presentation.driver.DriverEffect
 import com.example.hop.presentation.driver.DriverEvent
 import com.example.hop.presentation.driver.DriverUiState
 import com.example.hop.presentation.driver.DriverViewModel
 import com.example.hop.presentation.driver.ModelADraft
+import com.example.hop.pricing.PricingEngine
 import com.example.hop.ui.components.HopButton
-import com.example.hop.ui.components.HopTextField
+import com.example.hop.ui.screens.passenger.LocationPickerOverlay
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
@@ -111,6 +116,9 @@ fun PostTripModelARoute(
         PostTripModelAScreen(
             state = state,
             onSubmit = { draft -> viewModel.onEvent(DriverEvent.SubmitModelADraft(draft)) },
+            onCalculateRoute = { origin, dest ->
+                viewModel.onEvent(DriverEvent.CalculateRouteDistance(origin, dest))
+            },
             onNavigateBack = onNavigateBack,
             modifier = Modifier.padding(innerPadding),
         )
@@ -130,6 +138,7 @@ fun PostTripModelARoute(
 fun PostTripModelAScreen(
     state: DriverUiState,
     onSubmit: (ModelADraft) -> Unit,
+    onCalculateRoute: (String, String) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -139,6 +148,7 @@ fun PostTripModelAScreen(
     val selectedDays = remember { mutableStateListOf<String>() }
     var departureTime by remember { mutableStateOf("08:00") }
     var seatsTotal by remember { mutableIntStateOf(1) }
+    var locationPickerField by remember { mutableStateOf<String?>(null) }
     var showTimePicker by remember { mutableStateOf(false) }
 
     // Validation
@@ -146,11 +156,19 @@ fun PostTripModelAScreen(
     var destError by remember { mutableStateOf<String?>(null) }
     var daysError by remember { mutableStateOf<String?>(null) }
 
+    // Auto-trigger route calculation when both addresses are set
+    LaunchedEffect(originName, destName) {
+        if (originName.isNotBlank() && destName.isNotBlank()) {
+            onCalculateRoute(originName, destName)
+        }
+    }
+
     fun validate(): Boolean {
         originError = if (originName.isBlank()) "Enter a departure location" else null
         destError = if (destName.isBlank()) "Enter a destination" else null
         daysError = if (selectedDays.isEmpty()) "Select at least one day" else null
-        return originError == null && destError == null && daysError == null
+        return originError == null && destError == null && daysError == null &&
+            state.routeDistanceMetres > 0
     }
 
     // ── Time picker dialog ────────────────────────────────────────────────────
@@ -192,29 +210,32 @@ fun PostTripModelAScreen(
 
             // Route section
             FormSection(title = "Route") {
-                HopTextField(
-                    value = originName,
-                    onValueChange = {
-                        originName = it
-                        originError = null
-                    },
+                // From tappable row
+                AddressPickerRow(
                     label = "From",
+                    value = originName,
                     placeholder = "e.g. Aarhus C",
                     errorMessage = originError,
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { locationPickerField = "from" },
                 )
                 Spacer(modifier = Modifier.height(HopSpacing.sm))
-                HopTextField(
-                    value = destName,
-                    onValueChange = {
-                        destName = it
-                        destError = null
-                    },
+                // To tappable row
+                AddressPickerRow(
                     label = "To",
+                    value = destName,
                     placeholder = "e.g. Copenhagen Central",
                     errorMessage = destError,
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { locationPickerField = "to" },
                 )
+                // Route summary: spinner → distance + price preview
+                if (originName.isNotBlank() && destName.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(HopSpacing.sm))
+                    RouteSummaryRow(
+                        isCalculating = state.isCalculatingRoute,
+                        distanceMetres = state.routeDistanceMetres,
+                        seatsTotal = seatsTotal,
+                    )
+                }
             }
 
             // Days section
@@ -280,12 +301,49 @@ fun PostTripModelAScreen(
                                 recurrenceDays = selectedDays.toList(),
                                 departureTime = departureTime,
                                 seatsTotal = seatsTotal,
-                                distanceMetres = 0, // resolved via routing API post-MVP
+                                // distanceMetres and lat/lng are enriched by DriverViewModel.submitModelADraft
+                                distanceMetres = 0,
                             )
                         )
                     }
                 },
+                enabled = !state.isCalculatingRoute,
                 modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+
+    // ── Location picker overlay ───────────────────────────────────────────────
+    locationPickerField?.let { field ->
+        Popup(
+            properties = PopupProperties(focusable = true),
+            onDismissRequest = { locationPickerField = null },
+        ) {
+            BackHandler { locationPickerField = null }
+            LocationPickerOverlay(
+                title = if (field == "from") "Where from?" else "Where to?",
+                initialText = if (field == "from") originName else destName,
+                savedPlaces = emptyList(),
+                recentSearches = emptyList(),
+                onDismiss = { locationPickerField = null },
+                onConfirm = { address ->
+                    if (field == "from") {
+                        originName = address
+                        originError = null
+                    } else {
+                        destName = address
+                        destError = null
+                    }
+                    locationPickerField = null
+                },
+                onRouteConfirm = { origin, dest ->
+                    originName = origin
+                    destName = dest
+                    originError = null
+                    destError = null
+                    locationPickerField = null
+                },
+                onRequestAddPlace = { locationPickerField = null },
             )
         }
     }
@@ -567,6 +625,122 @@ internal fun TimePickerDialog(
     }
 }
 
+// ── Address picker row ────────────────────────────────────────────────────────
+
+@Composable
+internal fun AddressPickerRow(
+    label: String,
+    value: String,
+    placeholder: String,
+    errorMessage: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = HopColors.authTextSecondary,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(HopColors.authInputSurface)
+                .border(
+                    1.dp,
+                    if (errorMessage != null) Color(0xFFE53935)
+                    else HopColors.authTextSecondary.copy(alpha = 0.15f),
+                    RoundedCornerShape(12.dp),
+                )
+                .clickable(onClickLabel = "Select $label address") { onClick() }
+                .padding(horizontal = HopSpacing.md, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = value.ifBlank { placeholder },
+                fontSize = 15.sp,
+                color = if (value.isBlank()) HopColors.authTextSecondary.copy(alpha = 0.5f)
+                        else HopColors.authTextPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "Search",
+                fontSize = 13.sp,
+                color = HopColors.primaryLime,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                fontSize = 12.sp,
+                color = Color(0xFFE53935),
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+            )
+        }
+    }
+}
+
+// ── Route summary row ─────────────────────────────────────────────────────────
+
+@Composable
+internal fun RouteSummaryRow(
+    isCalculating: Boolean,
+    distanceMetres: Int,
+    seatsTotal: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(HopColors.primaryLime.copy(alpha = 0.08f))
+            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isCalculating) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = HopColors.primaryLime,
+            )
+            Spacer(modifier = Modifier.width(HopSpacing.sm))
+            Text(
+                text = "Calculating route…",
+                fontSize = 13.sp,
+                color = HopColors.authTextSecondary,
+            )
+        } else if (distanceMetres > 0) {
+            val priceResult = remember(distanceMetres, seatsTotal) {
+                PricingEngine.calculate(distanceMetres, seatsTotal)
+            }
+            val km = distanceMetres / 1000
+            Text(
+                text = "$km km",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HopColors.authTextPrimary,
+            )
+            Spacer(modifier = Modifier.width(HopSpacing.sm))
+            Text(
+                text = "·",
+                fontSize = 14.sp,
+                color = HopColors.authTextSecondary,
+            )
+            Spacer(modifier = Modifier.width(HopSpacing.sm))
+            Text(
+                text = "DKK ${priceResult.passengerPaysPerSeatOere / 100}/seat",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HopColors.primaryLime,
+            )
+        }
+    }
+}
+
 // ── Preview ───────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
@@ -576,6 +750,7 @@ private fun PostTripModelAScreenPreview() {
         PostTripModelAScreen(
             state = DriverUiState(),
             onSubmit = {},
+            onCalculateRoute = { _, _ -> },
             onNavigateBack = {},
         )
     }

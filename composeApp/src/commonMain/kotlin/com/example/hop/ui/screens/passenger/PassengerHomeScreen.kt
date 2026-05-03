@@ -131,8 +131,6 @@ import com.example.hop.presentation.home.SavedPlacesEvent
 import com.example.hop.presentation.home.SavedPlacesEffect
 import com.example.hop.presentation.home.SavedPlacesViewModel
 import com.example.hop.presentation.model.TripUiModel
-import com.example.hop.presentation.search.SearchEvent
-import com.example.hop.presentation.search.SearchViewModel
 import com.example.hop.presentation.trip.TripEffect
 import com.example.hop.presentation.trip.TripEvent
 import com.example.hop.presentation.trip.TripViewModel
@@ -170,11 +168,10 @@ import androidx.activity.compose.BackHandler
  */
 @Composable
 fun PassengerHomeContent(
-    onNavigateToSearchResults: () -> Unit,
+    onNavigateToSearchResults: (origin: String, dest: String, date: String, seats: Int) -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    searchViewModel: SearchViewModel = koinViewModel(),
     tripViewModel: TripViewModel = koinViewModel(),
     authViewModel: com.example.hop.presentation.auth.AuthViewModel = koinViewModel(),
     savedPlacesViewModel: SavedPlacesViewModel = koinViewModel(),
@@ -245,8 +242,7 @@ fun PassengerHomeContent(
             homeStatsViewModel.onEvent(HomeStatsEvent.Load)
         },
         onFindRides = { origin, dest, date, seats ->
-            searchViewModel.onEvent(SearchEvent.Search(origin, dest, date, seats))
-            onNavigateToSearchResults()
+            onNavigateToSearchResults(origin, dest, date, seats)
         },
         onTripClick = { tripId ->
             tripViewModel.onEvent(TripEvent.SelectTrip(tripId))
@@ -255,16 +251,13 @@ fun PassengerHomeContent(
             savedPlacesViewModel.onEvent(SavedPlacesEvent.Add(label = label, address = address, kind = kind))
         },
         onRecentSearchClick = { recent ->
-            // One-tap re-run: prefill via Search event and navigate to results.
-            searchViewModel.onEvent(
-                SearchEvent.Search(
-                    origin = recent.originLabel,
-                    dest = recent.destLabel,
-                    date = "Today",
-                    seats = 1,
-                )
+            // One-tap re-run: pass search params directly to navigation.
+            onNavigateToSearchResults(
+                recent.originLabel,
+                recent.destLabel,
+                "Today",
+                1,
             )
-            onNavigateToSearchResults()
         },
         onDeleteRecentSearch = { recent ->
             homeStatsViewModel.onEvent(HomeStatsEvent.DeleteRecentSearch(recent.id))
@@ -1088,7 +1081,7 @@ private fun LocationRow(
  * From and To at once.
  */
 @Composable
-private fun LocationPickerOverlay(
+internal fun LocationPickerOverlay(
     title: String,
     initialText: String,
     savedPlaces: List<SavedPlace>,

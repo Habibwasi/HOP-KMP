@@ -50,7 +50,12 @@ sealed interface HopRoutes {
 
     /** PA-02 */
     @Serializable
-    data object SearchResults : HopRoutes
+    data class SearchResults(
+        val origin: String = "",
+        val dest: String = "",
+        val date: String = "",
+        val seats: Int = 1,
+    ) : HopRoutes
 
     /** PA-03 */
     @Serializable

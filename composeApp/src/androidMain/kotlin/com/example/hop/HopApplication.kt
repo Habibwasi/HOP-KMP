@@ -35,8 +35,8 @@ class HopApplication : Application() {
         startKoin {
             androidContext(this@HopApplication)
             modules(
-                if (BuildConfig.DEV_MODE) devAppModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY)
-                else appModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY)
+                if (BuildConfig.DEV_MODE) devAppModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY, BuildConfig.MAPS_API_KEY)
+                else appModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY, BuildConfig.MAPS_API_KEY)
             )
         }
     }

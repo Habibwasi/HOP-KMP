@@ -80,7 +80,7 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun HomeRoute(
-    onNavigateToSearchResults: () -> Unit,
+    onNavigateToSearchResults: (origin: String, dest: String, date: String, seats: Int) -> Unit,
     onNavigateToMyTripsPassenger: () -> Unit,
     onNavigateToMyTripsDriver: () -> Unit,
     onNavigateToChat: () -> Unit,

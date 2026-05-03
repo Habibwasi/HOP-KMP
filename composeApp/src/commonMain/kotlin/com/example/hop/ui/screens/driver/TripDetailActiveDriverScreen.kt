@@ -352,6 +352,11 @@ private fun TripHeaderSection(
                 )
                 TripStatus.COMPLETED -> BadgeType.Completed
                 TripStatus.CANCELLED -> BadgeType.Cancelled
+                TripStatus.THRESHOLD_NOT_MET -> BadgeType.Custom(
+                    label = "Threshold not met",
+                    background = HopColors.warning.copy(alpha = 0.15f),
+                    contentColor = HopColors.warning,
+                )
                 TripStatus.UNKNOWN -> BadgeType.Pending
             }
             StatusBadge(type = badgeType)

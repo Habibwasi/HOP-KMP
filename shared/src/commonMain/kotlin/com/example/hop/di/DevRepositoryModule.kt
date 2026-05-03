@@ -9,6 +9,7 @@ import com.example.hop.data.repository.dev.DevDriverRepository
 import com.example.hop.data.repository.dev.DevHomeStatsRepository
 import com.example.hop.data.repository.dev.DevPaymentRepository
 import com.example.hop.data.repository.dev.DevPlacesRepository
+import com.example.hop.data.repository.dev.DevRoutingRepository
 import com.example.hop.data.repository.dev.DevSearchAlertsRepository
 import com.example.hop.data.repository.dev.DevSearchHistoryRepository
 import com.example.hop.data.repository.dev.DevTaxRepository
@@ -21,6 +22,7 @@ import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.HomeStatsRepository
 import com.example.hop.domain.repository.PaymentRepository
 import com.example.hop.domain.repository.PlacesRepository
+import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.domain.repository.SearchAlertsRepository
 import com.example.hop.domain.repository.SearchHistoryRepository
 import com.example.hop.domain.repository.TaxRepository
@@ -49,4 +51,5 @@ val devRepositoryModule = module {
     single<PlacesRepository> { DevPlacesRepository() }
     single<HomeStatsRepository> { DevHomeStatsRepository() }
     single<AggregatesRepository> { DevAggregatesRepository() }
+    single<RoutingRepository> { DevRoutingRepository() }
 }

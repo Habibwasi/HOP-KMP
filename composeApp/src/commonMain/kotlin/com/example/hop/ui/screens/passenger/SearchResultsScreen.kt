@@ -78,6 +78,10 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun SearchResultsRoute(
+    origin: String,
+    dest: String,
+    date: String,
+    seats: Int,
     onNavigateBack: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -86,6 +90,13 @@ fun SearchResultsRoute(
     val state by searchViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Fire search when the screen mounts with non-empty params.
+    LaunchedEffect(origin, dest, date, seats) {
+        if (origin.isNotBlank() && dest.isNotBlank()) {
+            searchViewModel.onEvent(SearchEvent.Search(origin, dest, date, seats))
+        }
+    }
 
     LaunchedEffect(searchViewModel) {
         searchViewModel.effect.collectLatest { effect ->

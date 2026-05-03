@@ -23,8 +23,8 @@ import com.example.hop.network.TokenStorage
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatform
 
-fun initKoin(supabaseUrl: String, supabaseAnonKey: String) = startKoin {
-    modules(appModules(supabaseUrl = supabaseUrl, supabaseAnonKey = supabaseAnonKey))
+fun initKoin(supabaseUrl: String, supabaseAnonKey: String, mapsApiKey: String = "") = startKoin {
+    modules(appModules(supabaseUrl = supabaseUrl, supabaseAnonKey = supabaseAnonKey, mapsApiKey = mapsApiKey))
 }
 
 fun getAuthViewModel(): AuthViewModel = KoinPlatform.getKoin().get()

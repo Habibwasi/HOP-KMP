@@ -111,6 +111,10 @@ final class DriverViewModelWrapper: ObservableObject {
         viewModel.onEvent(event: DriverEventSubmitModelBDraft(draft: draft))
     }
 
+    func calculateRouteDistance(originName: String, destName: String) {
+        viewModel.onEvent(event: DriverEventCalculateRouteDistance(originName: originName, destName: destName))
+    }
+
     func saveCarDetails(_ carDetails: CarDetails) {
         viewModel.onEvent(event: DriverEventSaveCarDetails(carDetails: carDetails))
     }

@@ -15,6 +15,7 @@ enum class TripStatus {
     CONFIRMED,
     CANCELLED,
     COMPLETED,
+    THRESHOLD_NOT_MET,
     UNKNOWN, // Fallback for version mismatch or API drift
 }
 

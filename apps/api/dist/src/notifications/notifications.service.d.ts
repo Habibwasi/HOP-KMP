@@ -14,19 +14,19 @@ export declare class NotificationsService {
     private sendFcm;
     registerToken(userId: string, token: string, platform: 'ios' | 'android'): Promise<{
         id: string;
-        token: string;
-        userId: string;
-        platform: string;
         createdAt: Date;
+        userId: string;
+        token: string;
+        platform: string;
     }>;
     removeToken(token: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
     getForUser(userId: string): Promise<{
         id: string;
-        userId: string;
         createdAt: Date;
-        type: import("@prisma/client").$Enums.NotificationType;
+        userId: string;
         title: string;
         body: string;
+        type: import("@prisma/client").$Enums.NotificationType;
         isRead: boolean;
         deepLinkId: string | null;
     }[]>;

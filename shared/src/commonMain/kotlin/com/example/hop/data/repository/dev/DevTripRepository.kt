@@ -108,7 +108,7 @@ class DevTripRepository : TripRepository {
             destName = request.destName,
             destLat = request.destLat,
             destLng = request.destLng,
-            distanceMetres = request.distanceMetres,
+            distanceMetres = 45_000, // dev stub — backend calculates from lat/lng
             departsAt = request.departsAt,
             seatsTotal = request.seatsTotal,
             seatsBooked = 0,

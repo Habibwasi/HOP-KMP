@@ -6,7 +6,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.hop.presentation.driver.DriverViewModel
+import org.koin.compose.viewmodel.koinViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -146,8 +149,8 @@ fun HopNavGraph(
 
         composable<HopRoutes.Home> {
             HomeRoute(
-                onNavigateToSearchResults = {
-                    navController.navigate(HopRoutes.SearchResults)
+                onNavigateToSearchResults = { origin, dest, date, seats ->
+                    navController.navigate(HopRoutes.SearchResults(origin, dest, date, seats))
                 },
                 onNavigateToMyTripsPassenger = {
                     navController.navigate(HopRoutes.MyTripsPassenger)
@@ -186,8 +189,13 @@ fun HopNavGraph(
 
         // ── Passenger ─────────────────────────────────────────────────────
 
-        composable<HopRoutes.SearchResults> {
+        composable<HopRoutes.SearchResults> { backStackEntry ->
+            val route: HopRoutes.SearchResults = backStackEntry.toRoute()
             SearchResultsRoute(
+                origin = route.origin,
+                dest = route.dest,
+                date = route.date,
+                seats = route.seats,
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToTripDetail = { tripId ->
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
@@ -274,7 +282,7 @@ fun HopNavGraph(
                     navController.navigate(HopRoutes.Profile(userId = ""))
                 },
                 onNavigateToFindRide = {
-                    navController.navigate(HopRoutes.SearchResults)
+                    navController.navigate(HopRoutes.SearchResults())
                 },
             )
         }
@@ -331,9 +339,7 @@ fun HopNavGraph(
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateToReviewPending = {
-                    navController.navigate(HopRoutes.EnableDriverStep3) {
-                        popUpTo(HopRoutes.EnableDriverStep1) { inclusive = true }
-                    }
+                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateBack = { navController.navigateUp() },
                 authViewModel = authViewModel,
@@ -366,21 +372,32 @@ fun HopNavGraph(
             )
         }
 
-        composable<HopRoutes.PostTripModelA> {
+        composable<HopRoutes.PostTripModelA> { currentEntry ->
+            val parentEntry = remember(currentEntry) {
+                navController.getBackStackEntry<HopRoutes.PostTripModelSelect>()
+            }
             PostTripModelARoute(
                 onNavigateToPriceReview = { navController.navigate(HopRoutes.PriceReview) },
                 onNavigateBack = { navController.navigateUp() },
+                viewModel = koinViewModel(viewModelStoreOwner = parentEntry),
             )
         }
 
-        composable<HopRoutes.PostTripModelB> {
+        composable<HopRoutes.PostTripModelB> { currentEntry ->
+            val parentEntry = remember(currentEntry) {
+                navController.getBackStackEntry<HopRoutes.PostTripModelSelect>()
+            }
             PostTripModelBRoute(
                 onNavigateToPriceReview = { navController.navigate(HopRoutes.PriceReview) },
                 onNavigateBack = { navController.navigateUp() },
+                viewModel = koinViewModel(viewModelStoreOwner = parentEntry),
             )
         }
 
-        composable<HopRoutes.PriceReview> {
+        composable<HopRoutes.PriceReview> { currentEntry ->
+            val parentEntry = remember(currentEntry) {
+                navController.getBackStackEntry<HopRoutes.PostTripModelSelect>()
+            }
             PriceReviewRoute(
                 onNavigateToMyTrips = {
                     navController.navigate(HopRoutes.MyTripsDriver) {
@@ -388,6 +405,7 @@ fun HopNavGraph(
                     }
                 },
                 onNavigateBack = { navController.navigateUp() },
+                viewModel = koinViewModel(viewModelStoreOwner = parentEntry),
             )
         }
 
@@ -526,7 +544,7 @@ fun HopNavGraph(
         composable<HopRoutes.Notifications> {
             NotificationsRoute(
                 onNavigateBack = { navController.navigateUp() },
-                onNavigateToSearch = { navController.navigate(HopRoutes.SearchResults) },
+                onNavigateToSearch = { navController.navigate(HopRoutes.SearchResults()) },
             )
         }
 

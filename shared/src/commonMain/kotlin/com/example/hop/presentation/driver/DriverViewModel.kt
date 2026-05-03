@@ -6,12 +6,15 @@ import com.example.hop.domain.model.CarDetails
 import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.repository.DriverRepository
+import com.example.hop.domain.repository.PlacesRepository
 import com.example.hop.domain.repository.PostTripRequest
+import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.presentation.model.toUiModel
 import com.example.hop.presentation.model.toUiModels
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +22,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlin.time.Duration.Companion.hours
 import kotlinx.datetime.toLocalDateTime
 
 // ─ Post-trip draft models ─────────────────────────────────────────────────────
@@ -30,13 +35,17 @@ import kotlinx.datetime.toLocalDateTime
  */
 data class ModelADraft(
     val originName: String = "",
+    val originLat: Double = 0.0,
+    val originLng: Double = 0.0,
     val destName: String = "",
+    val destLat: Double = 0.0,
+    val destLng: Double = 0.0,
     /** ISO day abbreviations e.g. "MON", "TUE", "WED", "THU", "FRI" */
     val recurrenceDays: List<String> = emptyList(),
     /** "HH:mm" 24-hour format */
     val departureTime: String = "",
     val seatsTotal: Int = 1,
-    /** Metres — populated from a routing API; 0 until resolved. */
+    /** Metres — populated via Google Maps Directions API when the driver picks both addresses. */
     val distanceMetres: Int = 0,
 )
 
@@ -46,14 +55,18 @@ data class ModelADraft(
  */
 data class ModelBDraft(
     val originName: String = "",
+    val originLat: Double = 0.0,
+    val originLng: Double = 0.0,
     val destName: String = "",
+    val destLat: Double = 0.0,
+    val destLng: Double = 0.0,
     /** "YYYY-MM-DD" */
     val date: String = "",
     /** "HH:mm" 24-hour format */
     val departureTime: String = "",
     val seatsTotal: Int = 1,
     val minThreshold: Int = 1,
-    /** Metres — populated from a routing API; 0 until resolved. */
+    /** Metres — populated via Google Maps Directions API when the driver picks both addresses. */
     val distanceMetres: Int = 0,
 )
 
@@ -93,6 +106,14 @@ data class DriverUiState(
     val pendingModelADraft: ModelADraft? = null,
     val pendingModelBDraft: ModelBDraft? = null,
     val isPostingTrip: Boolean = false,
+    /** True while the Google Maps Directions API call is in flight. */
+    val isCalculatingRoute: Boolean = false,
+    /** Driving distance in metres returned by the Directions API. 0 until resolved. */
+    val routeDistanceMetres: Int = 0,
+    val routeOriginLat: Double = 0.0,
+    val routeOriginLng: Double = 0.0,
+    val routeDestLat: Double = 0.0,
+    val routeDestLng: Double = 0.0,
     val activeTripDetail: ActiveTripDetailUiState = ActiveTripDetailUiState(),
 )
 
@@ -107,6 +128,7 @@ sealed interface DriverEvent {
     data class SubmitModelADraft(val draft: ModelADraft) : DriverEvent
     data class SubmitModelBDraft(val draft: ModelBDraft) : DriverEvent
     data object ConfirmAndPostTrip : DriverEvent
+    data class CalculateRouteDistance(val originName: String, val destName: String) : DriverEvent
     data class PostTripModelA(val request: PostTripRequest) : DriverEvent
     data class PostTripModelB(val request: PostTripRequest) : DriverEvent
     data class CompleteTrip(val tripId: String) : DriverEvent
@@ -178,6 +200,8 @@ private fun ApiResponse.Error.toUserMessage(context: String = "completing your r
 class DriverViewModel(
     private val tripRepository: TripRepository,
     private val driverRepository: DriverRepository,
+    private val placesRepository: PlacesRepository,
+    private val routingRepository: RoutingRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DriverUiState())
@@ -199,6 +223,7 @@ class DriverViewModel(
             is DriverEvent.SubmitModelADraft -> submitModelADraft(event.draft)
             is DriverEvent.SubmitModelBDraft -> submitModelBDraft(event.draft)
             is DriverEvent.ConfirmAndPostTrip -> confirmAndPostTrip()
+            is DriverEvent.CalculateRouteDistance -> calculateRouteDistance(event.originName, event.destName)
             is DriverEvent.PostTripModelA -> postTrip(event.request)
             is DriverEvent.PostTripModelB -> postTrip(event.request)
             is DriverEvent.CompleteTrip -> completeTrip(event.tripId)
@@ -260,19 +285,74 @@ class DriverViewModel(
     }
 
     private fun submitModelADraft(draft: ModelADraft) {
+        val enriched = draft.copy(
+            originLat = _state.value.routeOriginLat,
+            originLng = _state.value.routeOriginLng,
+            destLat = _state.value.routeDestLat,
+            destLng = _state.value.routeDestLng,
+            distanceMetres = _state.value.routeDistanceMetres,
+        )
         _state.value = _state.value.copy(
-            pendingModelADraft = draft,
+            pendingModelADraft = enriched,
             pendingModelBDraft = null,
         )
         viewModelScope.launch { _effect.send(DriverEffect.NavigateToPriceReview) }
     }
 
     private fun submitModelBDraft(draft: ModelBDraft) {
+        val enriched = draft.copy(
+            originLat = _state.value.routeOriginLat,
+            originLng = _state.value.routeOriginLng,
+            destLat = _state.value.routeDestLat,
+            destLng = _state.value.routeDestLng,
+            distanceMetres = _state.value.routeDistanceMetres,
+        )
         _state.value = _state.value.copy(
-            pendingModelBDraft = draft,
+            pendingModelBDraft = enriched,
             pendingModelADraft = null,
         )
         viewModelScope.launch { _effect.send(DriverEffect.NavigateToPriceReview) }
+    }
+
+    private fun calculateRouteDistance(originName: String, destName: String) {
+        if (_state.value.isCalculatingRoute) return
+        if (originName.isBlank() || destName.isBlank()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isCalculatingRoute = true,
+                routeDistanceMetres = 0,
+            )
+            // Geocode both addresses in parallel for lat/lng storage.
+            val originGeoDeferred = async { placesRepository.geocode(originName) }
+            val destGeoDeferred = async { placesRepository.geocode(destName) }
+            // Call Directions API for driving distance (uses free-text directly).
+            val distanceDeferred = async { routingRepository.getDistanceMetres(originName, destName) }
+
+            val originGeo = originGeoDeferred.await()
+            val destGeo = destGeoDeferred.await()
+            val distanceResult = distanceDeferred.await()
+
+            when (distanceResult) {
+                is ApiResponse.Success -> {
+                    val originLat = (originGeo as? ApiResponse.Success)?.data?.lat ?: 0.0
+                    val originLng = (originGeo as? ApiResponse.Success)?.data?.lng ?: 0.0
+                    val destLat = (destGeo as? ApiResponse.Success)?.data?.lat ?: 0.0
+                    val destLng = (destGeo as? ApiResponse.Success)?.data?.lng ?: 0.0
+                    _state.value = _state.value.copy(
+                        isCalculatingRoute = false,
+                        routeDistanceMetres = distanceResult.data,
+                        routeOriginLat = originLat,
+                        routeOriginLng = originLng,
+                        routeDestLat = destLat,
+                        routeDestLng = destLng,
+                    )
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isCalculatingRoute = false)
+                    _effect.send(DriverEffect.ShowSnackbar("Couldn't calculate route. Please check the addresses."))
+                }
+            }
+        }
     }
 
     private fun confirmAndPostTrip() {
@@ -287,30 +367,35 @@ class DriverViewModel(
                 PostTripRequest(
                     model = "A",
                     originName = modelADraft.originName,
-                    originLat = 0.0,
-                    originLng = 0.0,
+                    originLat = modelADraft.originLat,
+                    originLng = modelADraft.originLng,
                     destName = modelADraft.destName,
-                    destLat = 0.0,
-                    destLng = 0.0,
-                    distanceMetres = modelADraft.distanceMetres,
+                    destLat = modelADraft.destLat,
+                    destLng = modelADraft.destLng,
                     departsAt = "${today}T${modelADraft.departureTime}:00Z",
                     seatsTotal = modelADraft.seatsTotal,
                     recurrenceDays = modelADraft.recurrenceDays,
                 )
             }
-            modelBDraft != null -> PostTripRequest(
-                model = "B",
-                originName = modelBDraft.originName,
-                originLat = 0.0,
-                originLng = 0.0,
-                destName = modelBDraft.destName,
-                destLat = 0.0,
-                destLng = 0.0,
-                distanceMetres = modelBDraft.distanceMetres,
-                departsAt = "${modelBDraft.date}T${modelBDraft.departureTime}:00Z",
-                seatsTotal = modelBDraft.seatsTotal,
-                minThreshold = modelBDraft.minThreshold,
-            )
+            modelBDraft != null -> {
+                val departsAt = "${modelBDraft.date}T${modelBDraft.departureTime}:00Z"
+                // Backend requires thresholdDeadline < departureAt for Model B.
+                // Default: 6 hours before departure.
+                val thresholdDeadline = (Instant.parse(departsAt) - 6.hours).toString()
+                PostTripRequest(
+                    model = "B",
+                    originName = modelBDraft.originName,
+                    originLat = modelBDraft.originLat,
+                    originLng = modelBDraft.originLng,
+                    destName = modelBDraft.destName,
+                    destLat = modelBDraft.destLat,
+                    destLng = modelBDraft.destLng,
+                    departsAt = departsAt,
+                    seatsTotal = modelBDraft.seatsTotal,
+                    minThreshold = modelBDraft.minThreshold,
+                    thresholdDeadline = thresholdDeadline,
+                )
+            }
             else -> return
         }
         viewModelScope.launch {

@@ -417,6 +417,11 @@ private fun DriverTripCard(
                         TripStatus.CONFIRMED -> BadgeType.Confirmed
                         TripStatus.CANCELLED -> BadgeType.Cancelled
                         TripStatus.COMPLETED -> BadgeType.Completed
+                        TripStatus.THRESHOLD_NOT_MET -> BadgeType.Custom(
+                            label = "Threshold not met",
+                            background = HopColors.warning.copy(alpha = 0.15f),
+                            contentColor = HopColors.warning,
+                        )
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.authInputSurface,

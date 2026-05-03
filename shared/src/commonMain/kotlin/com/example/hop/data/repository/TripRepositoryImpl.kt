@@ -111,11 +111,11 @@ class TripRepositoryImpl(
                         destName = request.destName,
                         destLat = request.destLat,
                         destLng = request.destLng,
-                        distanceMetres = request.distanceMetres,
                         departsAt = request.departsAt,
                         seatsTotal = request.seatsTotal,
                         minThreshold = request.minThreshold,
                         recurrenceDays = request.recurrenceDays,
+                        thresholdDeadline = request.thresholdDeadline,
                     )
                 )
             }.body()
