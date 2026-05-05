@@ -171,6 +171,9 @@ fun HopNavGraph(
                 onNavigateToTripDetail = { tripId ->
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
                 },
+                onNavigateToTripDetailDriver = { tripId ->
+                    navController.navigate(HopRoutes.TripDetailActiveDriver(tripId = tripId))
+                },
                 onNavigateToPostTripModelSelect = {
                     navController.navigate(HopRoutes.PostTripModelSelect)
                 },

@@ -180,6 +180,16 @@ fun SearchResultsScreen(
                     .fillMaxWidth(),
             )
 
+            state.error != null -> EmptyState(
+                headline = "Couldn't load trips",
+                subtext = state.error,
+                ctaLabel = "Alert me when one appears",
+                onCtaClick = onAlertMe,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            )
+
             state.results.isEmpty() -> EmptyState(
                 headline = "No rides on this route yet",
                 ctaLabel = "Alert me when one appears",

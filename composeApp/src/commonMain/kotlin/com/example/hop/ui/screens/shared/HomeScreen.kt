@@ -86,6 +86,7 @@ fun HomeRoute(
     onNavigateToChat: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
+    onNavigateToTripDetailDriver: (tripId: String) -> Unit,
     onNavigateToPostTripModelSelect: () -> Unit,
     onNavigateToTaxDashboard: () -> Unit,
     onNavigateToNotifications: () -> Unit,
@@ -153,7 +154,7 @@ fun HomeRoute(
                     UserRole.DRIVER -> DriverHomeContent(
                         hasDriverRole = hasDriverRole,
                         onNavigateToPostTripModelSelect = onNavigateToPostTripModelSelect,
-                        onNavigateToTripDetail = onNavigateToTripDetail,
+                        onNavigateToTripDetail = onNavigateToTripDetailDriver,
                         onNavigateToTaxDashboard = onNavigateToTaxDashboard,
                         onNavigateToDriverRegistration = onNavigateToDriverRegistration,
                         snackbarHostState = snackbarHostState,

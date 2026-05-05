@@ -298,6 +298,8 @@ fun PassengerHomeScreen(
     var fromLocation by remember { mutableStateOf("") }
     var toLocation by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("Today") }
+    // ISO date string (yyyy-MM-dd) sent to the API. "today" / "tomorrow" resolved in TripRepositoryImpl.
+    var selectedDateIso by remember { mutableStateOf("today") }
     var seats by remember { mutableIntStateOf(1) }
     var showAddPlaceSheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -411,7 +413,7 @@ fun PassengerHomeScreen(
                     onPickSeats = { showSeatPicker = true },
                     onSearch = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onFindRides(fromLocation, toLocation, selectedDate, seats)
+                        onFindRides(fromLocation, toLocation, selectedDateIso, seats)
                     },
                 )
             }
@@ -533,6 +535,7 @@ fun PassengerHomeScreen(
                         val months = listOf("Jan","Feb","Mar","Apr","May","Jun",
                             "Jul","Aug","Sep","Oct","Nov","Dec")
                         selectedDate = "${date.dayOfMonth} ${months[date.monthNumber - 1]}"
+                        selectedDateIso = date.toString() // yyyy-MM-dd
                     }
                     showDatePicker = false
                 }) { Text("OK") }

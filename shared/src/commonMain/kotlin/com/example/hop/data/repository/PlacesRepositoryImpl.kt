@@ -64,11 +64,16 @@ class PlacesRepositoryImpl(
         Unit
     }
 
-    override suspend fun geocode(address: String): ApiResponse<GeocodeResult> = safeApiCall {
-        val dto: GeocodeResultDto = httpClient.get("places/geocode") {
-            url.parameters.append("address", address)
-        }.body()
-        dto.toDomain()
+    override suspend fun geocode(address: String): ApiResponse<GeocodeResult> {
+        val response = safeEnvelopeCall<GeocodeResultDto> {
+            httpClient.get("places/geocode") {
+                url.parameters.append("address", address)
+            }.body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.toDomain())
+            is ApiResponse.Error -> response
+        }
     }
 
     private suspend fun <T> safeEnvelopeCall(
