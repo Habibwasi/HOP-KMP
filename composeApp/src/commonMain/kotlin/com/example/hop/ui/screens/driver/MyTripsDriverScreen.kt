@@ -1,5 +1,6 @@
 package com.example.hop.ui.screens.driver
 
+import kotlin.math.roundToInt
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -497,7 +498,7 @@ private fun DriverTripCard(
                     ),
                 )
                 Text(
-                    text = "DKK ${tripUiModel.trip.driverNetOere / 100}/seat",
+                    text = "DKK ${(tripUiModel.trip.driverNetOere / 100.0).roundToInt()}/seat",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = HopColors.authTextPrimary,

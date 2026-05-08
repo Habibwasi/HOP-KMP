@@ -6,8 +6,8 @@ import com.example.hop.domain.model.CarDetails
 import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.repository.DriverRepository
-import com.example.hop.domain.repository.PlacesRepository
 import com.example.hop.domain.repository.PostTripRequest
+import com.example.hop.domain.repository.RouteInfo
 import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
@@ -200,7 +200,6 @@ private fun ApiResponse.Error.toUserMessage(context: String = "completing your r
 class DriverViewModel(
     private val tripRepository: TripRepository,
     private val driverRepository: DriverRepository,
-    private val placesRepository: PlacesRepository,
     private val routingRepository: RoutingRepository,
 ) : ViewModel() {
 
@@ -322,29 +321,18 @@ class DriverViewModel(
                 isCalculatingRoute = true,
                 routeDistanceMetres = 0,
             )
-            // Geocode both addresses in parallel for lat/lng storage.
-            val originGeoDeferred = async { placesRepository.geocode(originName) }
-            val destGeoDeferred = async { placesRepository.geocode(destName) }
-            // Call Directions API for driving distance (uses free-text directly).
-            val distanceDeferred = async { routingRepository.getDistanceMetres(originName, destName) }
-
-            val originGeo = originGeoDeferred.await()
-            val destGeo = destGeoDeferred.await()
-            val distanceResult = distanceDeferred.await()
-
-            when (distanceResult) {
+            // Single Directions API call returns distance + start/end coordinates.
+            // This replaces the previous pattern of calling the geocoding endpoint
+            // (which required a server-side Google API key) separately.
+            when (val result = routingRepository.getRouteInfo(originName, destName)) {
                 is ApiResponse.Success -> {
-                    val originLat = (originGeo as? ApiResponse.Success)?.data?.lat ?: 0.0
-                    val originLng = (originGeo as? ApiResponse.Success)?.data?.lng ?: 0.0
-                    val destLat = (destGeo as? ApiResponse.Success)?.data?.lat ?: 0.0
-                    val destLng = (destGeo as? ApiResponse.Success)?.data?.lng ?: 0.0
                     _state.value = _state.value.copy(
                         isCalculatingRoute = false,
-                        routeDistanceMetres = distanceResult.data,
-                        routeOriginLat = originLat,
-                        routeOriginLng = originLng,
-                        routeDestLat = destLat,
-                        routeDestLng = destLng,
+                        routeDistanceMetres = result.data.distanceMetres,
+                        routeOriginLat = result.data.originLat,
+                        routeOriginLng = result.data.originLng,
+                        routeDestLat = result.data.destLat,
+                        routeDestLng = result.data.destLng,
                     )
                 }
                 is ApiResponse.Error -> {
@@ -359,6 +347,24 @@ class DriverViewModel(
         if (_state.value.isPostingTrip) return
         val modelADraft = _state.value.pendingModelADraft
         val modelBDraft = _state.value.pendingModelBDraft
+
+        // Reject the post if routing hasn't fully resolved.
+        // distanceMetres comes from the Directions API; lat/lng come from geocoding.
+        // Both must be valid — if either is missing the backend receives (0,0)→(0,0),
+        // Haversine returns 0 km, and the price floor (1 DKK) is applied.
+        val distanceMetres = modelADraft?.distanceMetres ?: modelBDraft?.distanceMetres ?: 0
+        val originLat = modelADraft?.originLat ?: modelBDraft?.originLat ?: 0.0
+        val originLng = modelADraft?.originLng ?: modelBDraft?.originLng ?: 0.0
+        val destLat = modelADraft?.destLat ?: modelBDraft?.destLat ?: 0.0
+        val destLng = modelADraft?.destLng ?: modelBDraft?.destLng ?: 0.0
+        val coordsReady = originLat != 0.0 && originLng != 0.0 && destLat != 0.0 && destLng != 0.0
+        if (distanceMetres == 0 || !coordsReady) {
+            viewModelScope.launch {
+                _effect.send(DriverEffect.ShowSnackbar("Route not yet calculated. Please wait a moment and try again."))
+            }
+            return
+        }
+
         val request = when {
             modelADraft != null -> {
                 // Use today's local date + driver's chosen time as the anchor datetime.

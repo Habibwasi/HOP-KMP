@@ -1,5 +1,6 @@
 package com.example.hop.ui.screens.driver
 
+import kotlin.math.roundToInt
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -614,7 +615,7 @@ private fun DriverTripCard(
                     ),
                 )
                 Text(
-                    text = "DKK ${tripUiModel.trip.driverNetOere / 100}/seat",
+                    text = "DKK ${(tripUiModel.trip.driverNetOere / 100.0).roundToInt()}/seat",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = HopColors.authTextPrimary,

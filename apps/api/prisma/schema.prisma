@@ -21,6 +21,7 @@ enum TripModel {
 
 enum TripStatus {
   ACTIVE
+  CONFIRMED
   CANCELLED
   COMPLETED
   THRESHOLD_NOT_MET

@@ -1,5 +1,6 @@
 package com.example.hop.data.repository
 
+import com.example.hop.domain.repository.RouteInfo
 import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.network.safeApiCall
@@ -27,6 +28,14 @@ private data class DirectionsRoute(
 @Serializable
 private data class DirectionsLeg(
     val distance: DirectionsDistance,
+    @SerialName("start_location") val startLocation: DirectionsLatLng,
+    @SerialName("end_location") val endLocation: DirectionsLatLng,
+)
+
+@Serializable
+private data class DirectionsLatLng(
+    val lat: Double,
+    val lng: Double,
 )
 
 @Serializable
@@ -75,5 +84,31 @@ class RoutingRepositoryImpl(
         val metres = response.routes.firstOrNull()?.legs?.firstOrNull()?.distance?.value
             ?: throw IllegalStateException("No driving route found between the selected addresses")
         metres
+    }
+
+    override suspend fun getRouteInfo(
+        origin: String,
+        destination: String,
+    ): ApiResponse<RouteInfo> = safeApiCall {
+        val response: DirectionsResponse = client.get(
+            "https://maps.googleapis.com/maps/api/directions/json"
+        ) {
+            url {
+                parameters.append("origin", origin)
+                parameters.append("destination", destination)
+                parameters.append("mode", "driving")
+                parameters.append("key", mapsApiKey)
+            }
+        }.body()
+
+        val leg = response.routes.firstOrNull()?.legs?.firstOrNull()
+            ?: throw IllegalStateException("No driving route found between the selected addresses")
+        RouteInfo(
+            distanceMetres = leg.distance.value,
+            originLat = leg.startLocation.lat,
+            originLng = leg.startLocation.lng,
+            destLat = leg.endLocation.lat,
+            destLng = leg.endLocation.lng,
+        )
     }
 }

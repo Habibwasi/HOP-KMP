@@ -192,6 +192,7 @@ fun PriceReviewScreen(
                 text = "Confirm & Post",
                 onClick = onConfirmAndPost,
                 isLoading = state.isPostingTrip,
+                enabled = priceResult != null,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
