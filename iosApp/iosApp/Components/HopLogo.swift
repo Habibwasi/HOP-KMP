@@ -2,98 +2,67 @@ import SwiftUI
 
 // MARK: - HopLogo
 
-/// Hop brand logotype rendered as a Canvas. Mirrors `HopLogo.kt` 1:1.
-///
-/// The logo is drawn from a 315×134 viewBox, scaled uniformly to fit the
-/// declared (width × height), and centered.
+/// Ridly brand lockup: chevron-in-lime-pill icon mark + "ridly" wordmark.
+/// [height] drives all proportions. Variants:
+/// - Dark bg  : `HopLogo(textColor: .white)`
+/// - Light bg : `HopLogo()` (defaults)
+/// - Lime bg  : `HopLogo(markBg: .black, markStroke: Color(hex:0xC5FF45))`
 struct HopLogo: View {
-    var width: CGFloat = 88
     var height: CGFloat = 38
+    var markBg: Color = Color(hex: 0xC5FF45)
+    var markStroke: Color = Color(hex: 0x0B0B0B)
+    var textColor: Color = Color(hex: 0x0B0B0B)
 
     var body: some View {
-        Canvas { context, size in
-            let viewW: CGFloat = 315
-            let viewH: CGFloat = 134
-            let scale = min(size.width / viewW, size.height / viewH)
-            let offsetX = (size.width  - viewW * scale) / 2
-            let offsetY = (size.height - viewH * scale) / 2
-
-            context.translateBy(x: offsetX, y: offsetY)
-            context.scaleBy(x: scale, y: scale)
-
-            let lime   = Color(hex: 0xC8F135)
-            let ink    = Color(hex: 0x1A1A1A)
-            let bgMask = lime
-            let dash   = Color(hex: 0x167A30)
-
-            // Pill background
-            context.fill(
-                Path(roundedRect: CGRect(x: 0, y: 0, width: 315, height: 134), cornerRadius: 36),
-                with: .color(lime)
-            )
-
-            // h — left stem
-            context.fill(
-                Path(roundedRect: CGRect(x: 25, y: 20, width: 15, height: 84), cornerRadius: 7),
-                with: .color(ink)
-            )
-            // h — right stem
-            context.fill(
-                Path(roundedRect: CGRect(x: 88, y: 50, width: 15, height: 54), cornerRadius: 7),
-                with: .color(ink)
-            )
-            // h — crossbar
-            var crossbar = Path()
-            crossbar.move(to: CGPoint(x: 40, y: 74))
-            crossbar.addQuadCurve(to: CGPoint(x: 88, y: 58), control: CGPoint(x: 54, y: 40))
-            context.stroke(crossbar, with: .color(ink), style: StrokeStyle(lineWidth: 15, lineCap: .round))
-
-            // o — ring
-            let ringRect = CGRect(x: 130, y: 49, width: 66, height: 66)
-            context.stroke(Path(ellipseIn: ringRect), with: .color(ink), lineWidth: 15)
-
-            // o — road strip mask
-            var road = Path()
-            road.move(to: CGPoint(x: 131, y: 82))
-            road.addLine(to: CGPoint(x: 196, y: 82))
-            context.stroke(road, with: .color(bgMask), lineWidth: 5)
-
-            // o — center-line dashes
-            for x in stride(from: CGFloat(141), through: 173, by: 16) {
-                var d = Path()
-                d.move(to: CGPoint(x: x, y: 82))
-                d.addLine(to: CGPoint(x: x + 10, y: 82))
-                context.stroke(d, with: .color(dash), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+        HStack(spacing: height * 0.35) {
+            // ── Icon mark: chevron in lime pill ───────────────────────────────
+            Canvas { context, size in
+                // Lime rounded-square background (cornerRadius ≈ 25%)
+                let cr = size.width * 0.25
+                context.fill(
+                    Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: cr),
+                    with: .color(markBg)
+                )
+                // Chevron from 44×44 viewBox: M14 8 L30 22 L14 36
+                let s = size.width / 44
+                var chevron = Path()
+                chevron.move(to: CGPoint(x: 14 * s, y: 8 * s))
+                chevron.addLine(to: CGPoint(x: 30 * s, y: 22 * s))
+                chevron.addLine(to: CGPoint(x: 14 * s, y: 36 * s))
+                context.stroke(
+                    chevron,
+                    with: .color(markStroke),
+                    style: StrokeStyle(lineWidth: 7 * s, lineCap: .round, lineJoin: .round)
+                )
             }
+            .frame(width: height, height: height)
 
-            // p — stem
-            context.fill(
-                Path(roundedRect: CGRect(x: 217, y: 48, width: 15, height: 76), cornerRadius: 7),
-                with: .color(ink)
-            )
-            // p — bowl
-            var bowl = Path()
-            bowl.move(to: CGPoint(x: 232, y: 66))
-            bowl.addQuadCurve(to: CGPoint(x: 263, y: 48), control: CGPoint(x: 232, y: 35))
-            bowl.addQuadCurve(to: CGPoint(x: 279, y: 82), control: CGPoint(x: 290, y: 60))
-            bowl.addQuadCurve(to: CGPoint(x: 232, y: 98), control: CGPoint(x: 268, y: 104))
-            context.stroke(bowl, with: .color(ink), style: StrokeStyle(lineWidth: 15, lineCap: .round, lineJoin: .round))
+            // ── "ridly" wordmark ──────────────────────────────────────────────
+            Text("ridly")
+                .font(.custom("Nunito-Black", size: height * 0.9))
+                .foregroundColor(textColor)
+                .kerning(height * 0.9 * -0.03)
         }
-        .frame(width: width, height: height)
-        .accessibilityLabel("Hop")
+        .accessibilityLabel("Ridly")
     }
 }
 
 // MARK: - Previews
 
-#Preview("HopLogo — default") {
+#Preview("HopLogo — dark bg") {
+    HopLogo(textColor: .white)
+        .padding()
+        .background(Color(hex: 0x0B0B0B))
+}
+
+#Preview("HopLogo — light bg") {
     HopLogo()
         .padding()
         .background(Color.white)
 }
 
-#Preview("HopLogo — large") {
-    HopLogo(width: 200, height: 86)
+#Preview("HopLogo — lime bg") {
+    HopLogo(markBg: Color(hex: 0x0B0B0B), markStroke: Color(hex: 0xC5FF45))
         .padding()
-        .background(Color.white)
+        .background(Color(hex: 0xC5FF45))
 }

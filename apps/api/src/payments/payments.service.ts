@@ -79,7 +79,7 @@ export class PaymentsService {
     const base = this.config.getOrThrow('VIPPS_API_BASE')
     const msn = this.config.getOrThrow('VIPPS_MSN')
     const subscriptionKey = this.config.getOrThrow('VIPPS_SUBSCRIPTION_KEY')
-    const returnUrl = this.config.get('VIPPS_RETURN_URL', 'hop://payments/callback')
+    const returnUrl = this.config.get('VIPPS_RETURN_URL', 'ridly://payments/callback')
 
     const body = {
       amount: { currency: 'DKK', value: booking.totalOere },
@@ -88,7 +88,7 @@ export class PaymentsService {
       userFlow: 'NATIVE_REDIRECT',
       returnUrl,
       paymentMethod: { type: 'WALLET' },
-      paymentDescription: `Hop ride booking ${booking.id}`,
+      paymentDescription: `Ridly ride booking ${booking.id}`,
     }
 
     const res = await fetch(`${base}/epayment/v1/payments`, {

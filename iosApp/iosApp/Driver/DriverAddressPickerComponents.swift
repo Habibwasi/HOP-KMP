@@ -65,7 +65,7 @@ struct RouteSummaryRowView: View {
                     .foregroundColor(Color.hopAuthTextSecondary)
             } else if distanceMetres > 0 {
                 let km = distanceMetres / 1000
-                let priceResult = PricingEngine.companion.calculate(
+                let priceResult = PricingEngine.shared.calculate(
                     distanceMetres: Int32(distanceMetres),
                     seatsTotal: Int32(seatsTotal)
                 )
@@ -88,3 +88,4 @@ struct RouteSummaryRowView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
+

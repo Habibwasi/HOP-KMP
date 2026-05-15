@@ -12,7 +12,7 @@
 	<string>IQuVo2eP1mb/1baclEOCqWI/OAVwsnVZWqIwgYAI5pnBL0COw4qNKyy3zrSGBLm9VyEC8ye/OWP/5QrlkzuvvA==</string>
 	<key>MAPS_API_KEY</key>
 	<string>AIzaSyBbPWEydR5rqW4yYtMov9JJcC5qjsd6dfo</string>	
-	<!-- hop:// deep link for Supabase email-confirmation callbacks -->
+	<!-- ridly:// deep link for Supabase email-confirmation callbacks -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -20,9 +20,13 @@
 			<string>com.example.hop</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>hop</string>
+				<string>ridly</string>
 			</array>
 		</dict>
+	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>nunito_black.ttf</string>
 	</array>
 </dict>
 </plist>

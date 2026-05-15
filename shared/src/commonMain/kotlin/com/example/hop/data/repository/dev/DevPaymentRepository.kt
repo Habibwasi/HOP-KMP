@@ -10,7 +10,7 @@ class DevPaymentRepository : PaymentRepository {
             PaymentInitResult(
                 paymentId = "dev-payment-$bookingId",
                 provider = provider,
-                redirectUrl = "https://dev.hop.dk/payment/redirect",
+                redirectUrl = "https://dev.ridly.dk/payment/redirect",
                 amountOere = 15000,
             )
         )

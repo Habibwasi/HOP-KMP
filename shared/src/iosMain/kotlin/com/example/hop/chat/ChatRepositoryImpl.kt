@@ -38,7 +38,7 @@ import platform.Foundation.setValue
  * The backend accepts auth via the HTTP `Authorization` header sent during
  * the WebSocket upgrade, so no separate auth payload is needed.
  *
- * Expected connection URL:  wss://api.hop.dk/chat/?EIO=4&transport=websocket
+ * Expected connection URL:  wss://api.ridly.dk/chat/?EIO=4&transport=websocket
  */
 internal class IosChatRepositoryImpl : ChatRepository {
 
@@ -63,7 +63,7 @@ internal class IosChatRepositoryImpl : ChatRepository {
         _connectionState.value = ConnectionState.Connecting
 
         // Socket.IO v4 over WebSocket transport
-        val urlString = "wss://api.hop.dk/chat/?EIO=4&transport=websocket"
+        val urlString = "wss://api.ridly.dk/chat/?EIO=4&transport=websocket"
         val url = NSURL.URLWithString(urlString) ?: run {
             _connectionState.value = ConnectionState.Error("Invalid WebSocket URL")
             return

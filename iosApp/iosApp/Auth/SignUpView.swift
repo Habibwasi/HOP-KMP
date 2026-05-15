@@ -50,7 +50,7 @@ struct SignUpView: View {
 
                     Spacer().frame(height: HopSpacing.xs)
 
-                    Text("Start your Hop journey")
+                    Text("Start your Ridly journey")
                         .font(HopFont.bodyMedium())
                         .foregroundColor(Color.hopAuthTextSecondary)
 

@@ -95,7 +95,11 @@ struct PostTripModelBView: View {
                     ) {
                         let draft = ModelBDraft(
                             originName: origin,
+                            originLat: 0.0,
+                            originLng: 0.0,
                             destName: dest,
+                            destLat: 0.0,
+                            destLng: 0.0,
                             date: date,
                             departureTime: time,
                             seatsTotal: Int32(seats),

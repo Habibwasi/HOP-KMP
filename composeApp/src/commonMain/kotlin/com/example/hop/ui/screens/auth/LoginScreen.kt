@@ -161,7 +161,7 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(HopSpacing.xs))
         Text(
-            text = "Log in to your Hop account",
+            text = "Log in to your Ridly account",
             style = MaterialTheme.typography.bodyMedium,
             color = HopColors.authTextSecondary,
         )

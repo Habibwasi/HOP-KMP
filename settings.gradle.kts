@@ -1,4 +1,4 @@
-rootProject.name = "Hop"
+rootProject.name = "Ridly"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

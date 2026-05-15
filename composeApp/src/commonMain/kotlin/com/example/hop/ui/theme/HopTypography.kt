@@ -6,11 +6,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import hop.composeapp.generated.resources.Res
-import hop.composeapp.generated.resources.inter_bold
-import hop.composeapp.generated.resources.inter_regular
-import hop.composeapp.generated.resources.syne_bold
-import hop.composeapp.generated.resources.syne_regular
+import ridly.composeapp.generated.resources.Res
+import ridly.composeapp.generated.resources.inter_bold
+import ridly.composeapp.generated.resources.inter_regular
+import ridly.composeapp.generated.resources.syne_bold
+import ridly.composeapp.generated.resources.syne_regular
 import org.jetbrains.compose.resources.Font
 
 // Display / H1 / H2 → Syne (display sans-serif)

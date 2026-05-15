@@ -1,8 +1,12 @@
 package com.example.hop.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -14,151 +18,113 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.hop.ui.theme.HopTheme
+import org.jetbrains.compose.resources.Font
+import ridly.composeapp.generated.resources.Res
+import ridly.composeapp.generated.resources.nunito_black
 
 // ── HopLogo ───────────────────────────────────────────────────────────────────
 
 /**
- * Renders the Hop brand logo as a Canvas composable.
+ * Renders the Ridly brand lockup: chevron-in-lime-pill icon mark + "ridly" wordmark.
  *
- * The logo is drawn from the SVG viewBox (690 × 150) and scaled uniformly to
- * fit [width] × [height], preserving aspect ratio and centering within the
- * allocated bounds.
+ * [markBg] is the pill background (lime by default), [markStroke] is the chevron
+ * colour (dark by default). [textColor] is the wordmark colour.
  *
- * Usage:
- * ```
- * HopLogo(modifier = Modifier.width(120.dp))
- * HopLogo(width = 200.dp, height = 43.dp)
- * ```
+ * Common variants:
+ * - Dark bg  : `HopLogo(textColor = Color.White)` — lime pill, dark chevron, white text
+ * - Light bg : `HopLogo()` — lime pill, dark chevron, dark text
+ * - Lime bg  : `HopLogo(markBg = Color(0xFF0B0B0B), markStroke = Color(0xFFC5FF45), textColor = Color(0xFF0B0B0B))`
  */
 @Composable
 fun HopLogo(
     modifier: Modifier = Modifier,
-    width: Dp = 88.dp,
     height: Dp = 38.dp,
+    markBg: Color = Color(0xFFC5FF45),
+    markStroke: Color = Color(0xFF0B0B0B),
+    textColor: Color = Color(0xFF0B0B0B),
 ) {
-    Canvas(modifier = modifier.size(width, height)) {
-        drawHopLogo(this)
+    val syneFamily = FontFamily(Font(Res.font.nunito_black, FontWeight.Black))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy((height.value * 0.35f).dp),
+        modifier = modifier,
+    ) {
+        Canvas(modifier = Modifier.size(height)) {
+            drawChevronMark(bg = markBg, stroke = markStroke)
+        }
+        Text(
+            text = "ridly",
+            color = textColor,
+            fontFamily = syneFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = (height.value * 0.9f).sp,
+            letterSpacing = TextUnit(-0.03f, TextUnitType.Em),
+            maxLines = 1,
+        )
     }
 }
 
-// ── Internal drawing ──────────────────────────────────────────────────────────
+// ── R mark drawing ────────────────────────────────────────────────────────────
 
-private fun drawHopLogo(scope: DrawScope) {
-    // Cropped viewBox: original SVG coords offset by (-195, -8) so content
-    // fills the canvas exactly. Original content spanned x:195–510, y:8–142.
-    val viewW = 315f
-    val viewH = 134f
-
-    val scale = minOf(scope.size.width / viewW, scope.size.height / viewH)
-    val offsetX = (scope.size.width - viewW * scale) / 2f
-    val offsetY = (scope.size.height - viewH * scale) / 2f
-
-    scope.withTransform({
-        translate(left = offsetX, top = offsetY)
-        scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
-    }) {
-        val lime     = Color(0xFFC8F135)
-        val ink      = Color(0xFF1A1A1A)
-        val bgMask   = lime
-
-        // ── Pill background ───────────────────────────────────────────────────
-        drawRoundRect(
-            color = lime,
-            topLeft = Offset(0f, 0f),
-            size = Size(315f, 134f),
-            cornerRadius = CornerRadius(36f, 36f),
-        )
-
-        // ── h — left stem ─────────────────────────────────────────────────────
-        drawRoundRect(
-            color = ink,
-            topLeft = Offset(25f, 20f),
-            size = Size(15f, 84f),
-            cornerRadius = CornerRadius(7f, 7f),
-        )
-
-        // ── h — right stem ────────────────────────────────────────────────────
-        drawRoundRect(
-            color = ink,
-            topLeft = Offset(88f, 50f),
-            size = Size(15f, 54f),
-            cornerRadius = CornerRadius(7f, 7f),
-        )
-
-        // ── h — crossbar arc ─────────────────────────────────────────────────
-        val hCrossbar = Path().apply {
-            moveTo(40f, 74f)
-            quadraticTo(54f, 40f, 88f, 58f)
+/**
+ * Draws the Ridly icon mark: a lime rounded-square pill containing a dark chevron.
+ * The chevron is based on a 44×44 SVG viewBox: M14 8 L30 22 L14 36.
+ */
+internal fun DrawScope.drawChevronMark(bg: Color, stroke: Color) {
+    // Rounded-square pill background (cornerRadius ≈ 25% of size)
+    val cr = CornerRadius(size.width * 0.25f, size.width * 0.25f)
+    drawRoundRect(bg, Offset.Zero, size, cr)
+    // Chevron scaled from 44×44 viewBox
+    val scale = size.width / 44f
+    withTransform({ scale(scale, scale, Offset.Zero) }) {
+        val chevron = Path().apply {
+            moveTo(14f, 8f)
+            lineTo(30f, 22f)
+            lineTo(14f, 36f)
         }
-        drawPath(
-            path = hCrossbar,
-            color = ink,
-            style = Stroke(width = 15f, cap = StrokeCap.Round),
-        )
-
-        // ── o — ink ring ──────────────────────────────────────────────────────
-        drawCircle(
-            color = ink,
-            radius = 33f,
-            center = Offset(163f, 82f),
-            style = Stroke(width = 15f),
-        )
-
-        // ── o — road strip (mask with pill color) ─────────────────────────────
-        drawLine(
-            color = bgMask,
-            start = Offset(131f, 82f),
-            end = Offset(196f, 82f),
-            strokeWidth = 5f,
-        )
-
-        // ── o — center-line dashes ────────────────────────────────────────────
-        val dashColor = Color(0xFF167A30)
-        drawLine(color = dashColor, start = Offset(141f, 82f), end = Offset(151f, 82f), strokeWidth = 2.5f, cap = StrokeCap.Round)
-        drawLine(color = dashColor, start = Offset(157f, 82f), end = Offset(167f, 82f), strokeWidth = 2.5f, cap = StrokeCap.Round)
-        drawLine(color = dashColor, start = Offset(173f, 82f), end = Offset(183f, 82f), strokeWidth = 2.5f, cap = StrokeCap.Round)
-
-        // ── p — stem ──────────────────────────────────────────────────────────
-        drawRoundRect(
-            color = ink,
-            topLeft = Offset(217f, 48f),
-            size = Size(15f, 76f),
-            cornerRadius = CornerRadius(7f, 7f),
-        )
-
-        // ── p — bowl ─────────────────────────────────────────────────────────
-        val pBowl = Path().apply {
-            moveTo(232f, 66f)
-            quadraticTo(232f, 35f, 263f, 48f)
-            quadraticTo(290f, 60f, 279f, 82f)
-            quadraticTo(268f, 104f, 232f, 98f)
-        }
-        drawPath(
-            path = pBowl,
-            color = ink,
-            style = Stroke(width = 15f, cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
+        drawPath(chevron, stroke, style = Stroke(7f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-@Preview(name = "HopLogo — default", showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(name = "HopLogo — dark bg", showBackground = true, backgroundColor = 0xFF0B0B0B)
 @Composable
-private fun HopLogoPreview() {
+private fun HopLogoPreviewDark() {
+    HopTheme {
+        HopLogo(textColor = Color.White)
+    }
+}
+
+@Preview(name = "HopLogo — light bg", showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+private fun HopLogoPreviewLight() {
     HopTheme {
         HopLogo()
     }
 }
 
-@Preview(name = "HopLogo — large", showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(name = "HopLogo — large dark", showBackground = true, backgroundColor = 0xFF0B0B0B)
 @Composable
 private fun HopLogoLargePreview() {
     HopTheme {
-        HopLogo(width = 240.dp, height = 52.dp)
+        HopLogo(height = 52.dp, textColor = Color.White)
+    }
+}
+
+@Preview(name = "HopLogo — lime bg", showBackground = true, backgroundColor = 0xFFC5FF45)
+@Composable
+private fun HopLogoLimeBgPreview() {
+    HopTheme {
+        HopLogo(markBg = Color(0xFF0B0B0B), markStroke = Color(0xFFC5FF45))
     }
 }

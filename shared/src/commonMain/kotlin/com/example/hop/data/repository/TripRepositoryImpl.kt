@@ -76,7 +76,7 @@ class TripRepositoryImpl(
                 val month = parts.getOrNull(1)?.lowercase()?.let { monthNames[it] }
                 val year = parts.getOrNull(2)?.toIntOrNull() ?: today.year
                 if (day != null && month != null) {
-                    "%04d-%02d-%02d".format(year, month, day)
+                    "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
                 } else {
                     date // unchanged — let backend report the validation error
                 }

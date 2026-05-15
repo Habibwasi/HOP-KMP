@@ -39,7 +39,7 @@ struct LoginView: View {
 
                     Spacer().frame(height: HopSpacing.xs)
 
-                    Text("Log in to your Hop account")
+                    Text("Log in to your Ridly account")
                         .font(HopFont.bodyMedium())
                         .foregroundColor(Color.hopAuthTextSecondary)
 

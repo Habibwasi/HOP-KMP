@@ -104,7 +104,11 @@ struct PostTripModelAView: View {
                     ) {
                         let draft = ModelADraft(
                             originName: origin,
+                            originLat: 0.0,
+                            originLng: 0.0,
                             destName: dest,
+                            destLat: 0.0,
+                            destLng: 0.0,
                             recurrenceDays: Array(selectedDays).sorted(),
                             departureTime: time,
                             seatsTotal: Int32(seats),

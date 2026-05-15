@@ -38,7 +38,7 @@ class SupabaseAuthRepositoryImpl(
         // Store profile data as Supabase user metadata so the backend guard can
         // auto-create the Prisma profile on first login even if email confirmation
         // delays the initial profile POST.
-        supabase.auth.signUpWith(Email, redirectUrl = "hop://auth/callback") {
+        supabase.auth.signUpWith(Email, redirectUrl = "ridly://auth/callback") {
             this.email = email
             this.password = password
             this.data = buildJsonObject {
@@ -131,8 +131,8 @@ class SupabaseAuthRepositoryImpl(
 
     override suspend fun handleDeepLink(url: String): ApiResponse<User> = safeApiCall {
         // Supabase email-confirmation callbacks come in two flavours:
-        //  • Implicit flow  → hop://auth/callback#access_token=TOKEN&refresh_token=…
-        //  • PKCE / code flow → hop://auth/callback?code=CODE
+        //  • Implicit flow  → ridly://auth/callback#access_token=TOKEN&refresh_token=…
+        //  • PKCE / code flow → ridly://auth/callback?code=CODE
         val parsedUrl = Url(url)
         val code = parsedUrl.parameters["code"]
         if (code != null) {
@@ -178,7 +178,7 @@ class SupabaseAuthRepositoryImpl(
     override suspend fun requestPasswordReset(email: String): ApiResponse<Unit> = safeApiCall {
         supabase.auth.resetPasswordForEmail(
             email = email,
-            redirectUrl = "hop://auth/callback",
+            redirectUrl = "ridly://auth/callback",
         )
     }
 

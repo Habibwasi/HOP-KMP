@@ -177,7 +177,7 @@ fun SignUpScreen(
         )
         Spacer(modifier = Modifier.height(HopSpacing.xs))
         Text(
-            text = "Start your Hop journey",
+            text = "Start your Ridly journey",
             style = MaterialTheme.typography.bodyMedium,
             color = HopColors.authTextSecondary,
         )

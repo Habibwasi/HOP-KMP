@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		C9358075A668AA09AE3BC7F6 /* Hop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hop.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9358075A668AA09AE3BC7F6 /* Ridly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ridly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -50,7 +50,7 @@
 		6BE2FAF0570897FEA9E3984D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C9358075A668AA09AE3BC7F6 /* Hop.app */,
+				C9358075A668AA09AE3BC7F6 /* Ridly.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = C9358075A668AA09AE3BC7F6 /* Hop.app */;
+			productReference = C9358075A668AA09AE3BC7F6 /* Ridly.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

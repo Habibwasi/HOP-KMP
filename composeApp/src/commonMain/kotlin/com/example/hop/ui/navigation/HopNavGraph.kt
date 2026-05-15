@@ -556,10 +556,10 @@ fun HopNavGraph(
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToEditProfile = { navController.navigate(HopRoutes.Profile(userId = "")) },
                 onNavigateToChangePassword = { navController.navigate(HopRoutes.ForgotPassword) },
-                onNavigateToHelpCentre = { uriHandler.openUri("https://hop.dk/help") },
-                onNavigateToContactUs = { uriHandler.openUri("mailto:support@hop.dk") },
-                onNavigateToTermsOfService = { uriHandler.openUri("https://hop.dk/terms") },
-                onNavigateToPrivacyPolicy = { uriHandler.openUri("https://hop.dk/privacy") },
+                onNavigateToHelpCentre = { uriHandler.openUri("https://ridly.dk/help") },
+                onNavigateToContactUs = { uriHandler.openUri("mailto:support@ridly.dk") },
+                onNavigateToTermsOfService = { uriHandler.openUri("https://ridly.dk/terms") },
+                onNavigateToPrivacyPolicy = { uriHandler.openUri("https://ridly.dk/privacy") },
                 onLogout = onLogout,
             )
         }

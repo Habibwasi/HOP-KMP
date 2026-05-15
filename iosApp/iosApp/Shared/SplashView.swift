@@ -427,52 +427,39 @@ struct SplashView: View {
         @inline(__always) func f(_ x: CGFloat) -> CGFloat { x * sx }
         @inline(__always) func g(_ y: CGFloat) -> CGFloat { y * sy }
 
-        let stroke = StrokeStyle(lineWidth: f(9), lineCap: .round, lineJoin: .round)
-        let white  = LogoWhite.opacity(alpha)
-        let accent = LogoAccent.opacity(alpha)
+        let lime  = Color(hex: 0xC5FF45).opacity(alpha)
+        let dark  = Color(hex: 0x0B0B0B).opacity(alpha)
+        let white = LogoWhite.opacity(alpha)
 
-        // ── h ─────────────────────────────────────────────────────────────────
-        context.fill(Path(roundedRect: CGRect(x: f(86),  y: g(508), width: f(9), height: g(48)),
-                          cornerRadius: f(4.5)), with: .color(white))
-        context.fill(Path(roundedRect: CGRect(x: f(122), y: g(525), width: f(9), height: g(31)),
-                          cornerRadius: f(4.5)), with: .color(white))
-        var hArch = Path()
-        hArch.move(to: CGPoint(x: f(95), y: g(539)))
-        hArch.addQuadCurve(to: CGPoint(x: f(122), y: g(529)),
-                           control: CGPoint(x: f(103), y: g(514)))
-        context.stroke(hArch, with: .color(white), style: stroke)
+        // Icon: lime rounded-square pill, 44×44 SVG units at (88, 508)
+        let iconSize = min(f(44), g(44))
+        let iconX    = f(88)
+        let iconY    = g(508)
+        let s        = iconSize / 44
 
-        // ── o ─────────────────────────────────────────────────────────────────
-        let oR = f(20)
-        let oRect = CGRect(x: f(160) - oR, y: g(538) - oR, width: oR * 2, height: oR * 2)
-        context.stroke(Path(ellipseIn: oRect), with: .color(white),
-                       style: StrokeStyle(lineWidth: f(9)))
-        // Erase horizontal through the ring, then draw teal dashes.
-        var eraseLine = Path()
-        eraseLine.move(to: CGPoint(x: f(141), y: g(538)))
-        eraseLine.addLine(to: CGPoint(x: f(180), y: g(538)))
-        context.stroke(eraseLine, with: .color(Overlay.opacity(0.94)),
-                       style: StrokeStyle(lineWidth: f(3.5)))
-        let dashStyle = StrokeStyle(lineWidth: f(2), lineCap: .round)
-        for (x1, x2) in [(146.0, 154.0), (158.0, 166.0), (170.0, 177.0)] {
-            var dash = Path()
-            dash.move(to: CGPoint(x: f(CGFloat(x1)), y: g(538)))
-            dash.addLine(to: CGPoint(x: f(CGFloat(x2)), y: g(538)))
-            context.stroke(dash, with: .color(accent), style: dashStyle)
-        }
+        // Lime pill background
+        let cr = iconSize * 0.25
+        context.fill(
+            Path(roundedRect: CGRect(x: iconX, y: iconY, width: iconSize, height: iconSize), cornerRadius: cr),
+            with: .color(lime)
+        )
 
-        // ── p ─────────────────────────────────────────────────────────────────
-        context.fill(Path(roundedRect: CGRect(x: f(192), y: g(526), width: f(9), height: g(42)),
-                          cornerRadius: f(4.5)), with: .color(white))
-        var pBump = Path()
-        pBump.move(to: CGPoint(x: f(201), y: g(534)))
-        pBump.addQuadCurve(to: CGPoint(x: f(220), y: g(524)),
-                           control: CGPoint(x: f(201), y: g(514)))
-        pBump.addQuadCurve(to: CGPoint(x: f(228), y: g(546)),
-                           control: CGPoint(x: f(235), y: g(532)))
-        pBump.addQuadCurve(to: CGPoint(x: f(201), y: g(552)),
-                           control: CGPoint(x: f(221), y: g(560)))
-        context.stroke(pBump, with: .color(white), style: stroke)
+        // Chevron: M14 8 L30 22 L14 36
+        var chevron = Path()
+        chevron.move(to:    CGPoint(x: iconX + 14 * s, y: iconY + 8  * s))
+        chevron.addLine(to: CGPoint(x: iconX + 30 * s, y: iconY + 22 * s))
+        chevron.addLine(to: CGPoint(x: iconX + 14 * s, y: iconY + 36 * s))
+        context.stroke(chevron, with: .color(dark),
+                       style: StrokeStyle(lineWidth: 7 * s, lineCap: .round, lineJoin: .round))
+
+        // "ridly" wordmark — Syne Bold, vertically centred to icon
+        let fontSize = iconSize * 0.9
+        let wordmark = Text("ridly")
+            .font(.custom("Nunito-Black", size: fontSize))
+            .foregroundStyle(white)
+        let textX = iconX + iconSize + f(10)
+        let textY = iconY + iconSize / 2
+        context.draw(wordmark, at: CGPoint(x: textX, y: textY), anchor: .leading)
     }
 }
 
