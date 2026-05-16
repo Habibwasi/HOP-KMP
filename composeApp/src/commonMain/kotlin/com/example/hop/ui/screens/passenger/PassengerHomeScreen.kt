@@ -1232,13 +1232,10 @@ internal fun LocationPickerOverlay(
             }
 
             // ── Quick-action chips (saved places + current location) ─────────
-            // Visible only when the text field is empty
-            if (searchText.isEmpty()) {
+            // Visible only when the text field is empty and there are real saved places
+            val chipData = remember(savedPlaces) { savedPlaces.map { it.toChipData() } }
+            if (searchText.isEmpty() && (chipData.isNotEmpty() || pinnedAddress.isNotEmpty())) {
                 Spacer(modifier = Modifier.height(4.dp))
-                val chipData = remember(savedPlaces) {
-                    if (savedPlaces.isEmpty()) com.example.hop.ui.components.home.DefaultSavedPlaces
-                    else savedPlaces.map { it.toChipData() }
-                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1278,12 +1275,13 @@ internal fun LocationPickerOverlay(
                     }
                     // Saved place chips
                     chipData.take(3).forEach { place ->
+                        val address = place.address ?: return@forEach
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(HopColors.cardSurfaceMuted)
                                 .border(1.dp, HopColors.cardBorder, RoundedCornerShape(20.dp))
-                                .clickable { onConfirm(place.address ?: place.label) }
+                                .clickable { onConfirm(address) }
                                 .padding(horizontal = HopSpacing.sm, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
