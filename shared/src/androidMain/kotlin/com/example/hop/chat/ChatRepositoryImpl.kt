@@ -46,7 +46,7 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
             auth = hashMapOf("token" to token)
         }
 
-        socket = IO.socket(URI.create("https://api.ridly.dk"), opts).also { s ->
+        socket = IO.socket(URI.create("https://hop.ridly.dk"), opts).also { s ->
             s.on(Socket.EVENT_CONNECT) {
                 _connectionState.value = ConnectionState.Connected
                 // Join the booking-specific room
