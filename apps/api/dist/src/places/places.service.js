@@ -72,7 +72,7 @@ let PlacesService = class PlacesService {
         return { ok: true };
     }
     async geocode(address) {
-        const key = this.config.get('GOOGLE_MAPS_API_KEY');
+        const key = this.googleMapsKey();
         if (!key)
             throw new common_1.BadRequestException('Geocoding is not configured on this server');
         const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`;
@@ -85,6 +85,39 @@ let PlacesService = class PlacesService {
         }
         const { lat, lng } = json.results[0].geometry.location;
         return { lat, lng, formattedAddress: json.results[0].formatted_address };
+    }
+    async route(origin, dest) {
+        const key = this.googleMapsKey();
+        if (!key)
+            throw new common_1.BadRequestException('Route calculation is not configured on this server');
+        const cleanOrigin = origin?.trim();
+        const cleanDest = dest?.trim();
+        if (!cleanOrigin || !cleanDest) {
+            throw new common_1.BadRequestException('origin and dest are required');
+        }
+        const url = new URL('https://maps.googleapis.com/maps/api/directions/json');
+        url.searchParams.set('origin', cleanOrigin);
+        url.searchParams.set('destination', cleanDest);
+        url.searchParams.set('mode', 'driving');
+        url.searchParams.set('key', key);
+        const res = await fetch(url);
+        if (!res.ok)
+            throw new common_1.BadRequestException('Route calculation request failed');
+        const json = await res.json();
+        const leg = json.routes[0]?.legs[0];
+        if (json.status !== 'OK' || !leg) {
+            throw new common_1.BadRequestException(json.error_message ?? 'No driving route found between the selected addresses');
+        }
+        return {
+            distanceMetres: leg.distance.value,
+            originLat: leg.start_location.lat,
+            originLng: leg.start_location.lng,
+            destLat: leg.end_location.lat,
+            destLng: leg.end_location.lng,
+        };
+    }
+    googleMapsKey() {
+        return this.config.get('GOOGLE_MAPS_API_KEY') ?? this.config.get('MAPS_API_KEY');
     }
 };
 exports.PlacesService = PlacesService;

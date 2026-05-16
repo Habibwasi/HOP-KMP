@@ -1,3 +1,4 @@
 export declare class UpdateUserDto {
-    fullName: string;
+    fullName?: string;
+    mobilepayNumber?: string;
 }

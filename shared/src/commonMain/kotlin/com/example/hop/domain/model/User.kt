@@ -20,4 +20,5 @@ data class User(
     val isBanned: Boolean,
     val ratingDriver: Double?,
     val ratingPassenger: Double?,
+    val mobilepayNumber: String? = null,
 )

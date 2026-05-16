@@ -68,6 +68,9 @@ enum HopRoute: Hashable {
     /// screen flips the user's role to DRIVER and returns home.
     case enableDriverStep1
 
+    /// DR-03 MobilePay Number (replaces defunct licence-upload step)
+    case enableDriverStep2
+
     /// DR-05 Post Trip – Model Select
     case postTripModelSelect
 
@@ -114,4 +117,12 @@ enum HopRoute: Hashable {
 
     /// SH-06 Settings
     case settings
+
+    // MARK: — Settlement ──────────────────────────────────────────────────────
+
+    /// SE-01 Passenger Settlement (pay driver via MobilePay)
+    case passengerSettlement(bookingId: String)
+
+    /// SE-02 Driver Settlement (confirm received / dispute)
+    case driverSettlement(bookingId: String)
 }

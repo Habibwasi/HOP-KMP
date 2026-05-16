@@ -149,6 +149,7 @@ sealed interface DriverEffect {
     data object NavigateToMyTrips : DriverEffect
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
     data class NavigateToRatePassenger(val bookingId: String) : DriverEffect
+    data class NavigateToDriverSettlement(val bookingId: String) : DriverEffect
     data class NavigateToMarkTripComplete(val tripId: String, val driverNetOere: Int) : DriverEffect
     data class ShowSnackbar(val message: String) : DriverEffect
     data object NavigateToTaxDashboard : DriverEffect
@@ -378,6 +379,7 @@ class DriverViewModel(
                     destName = modelADraft.destName,
                     destLat = modelADraft.destLat,
                     destLng = modelADraft.destLng,
+                    distanceMetres = modelADraft.distanceMetres,
                     departsAt = "${today}T${modelADraft.departureTime}:00Z",
                     seatsTotal = modelADraft.seatsTotal,
                     recurrenceDays = modelADraft.recurrenceDays,
@@ -396,6 +398,7 @@ class DriverViewModel(
                     destName = modelBDraft.destName,
                     destLat = modelBDraft.destLat,
                     destLng = modelBDraft.destLng,
+                    distanceMetres = modelBDraft.distanceMetres,
                     departsAt = departsAt,
                     seatsTotal = modelBDraft.seatsTotal,
                     minThreshold = modelBDraft.minThreshold,
@@ -455,7 +458,7 @@ class DriverViewModel(
                         trips = _state.value.trips.filterNot { it.id == tripId },
                     )
                     if (firstBookingId != null) {
-                        _effect.send(DriverEffect.NavigateToRatePassenger(firstBookingId))
+                        _effect.send(DriverEffect.NavigateToDriverSettlement(firstBookingId))
                     } else {
                         _effect.send(DriverEffect.NavigateToMyTrips)
                     }

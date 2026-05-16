@@ -62,6 +62,8 @@ struct OwnProfileView: View {
 
                             carSection
 
+                            mobilepaySection
+
                             Spacer().frame(height: HopSpacing.xl)
                         }
                     }
@@ -317,6 +319,96 @@ struct OwnProfileView: View {
                     .background(Color.hopAuthInputSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(.horizontal, HopSpacing.md)
+                }
+            }
+        }
+    }
+    @ViewBuilder
+    private var mobilepaySection: some View {
+        let isDriver = wrapper.state.user?.roles.contains(where: { ($0 as? UserRole) == UserRole.driver }) ?? false
+        if isDriver {
+            ProfileSectionDividerBlock {
+                HStack {
+                    ProfileSectionTitle("MobilePay number")
+                    Spacer()
+                    Button(action: wrapper.startEditMobilepay) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 16))
+                            .foregroundColor(Color.hopPrimaryLime)
+                            .frame(width: 32, height: 32)
+                    }
+                    .accessibilityLabel("Edit MobilePay number")
+                    .padding(.trailing, HopSpacing.md)
+                }
+
+                if wrapper.state.isEditingMobilepay {
+                    VStack(alignment: .leading, spacing: HopSpacing.sm) {
+                        HopTextField(
+                            label: "8-digit number",
+                            placeholder: "e.g. 20123456",
+                            text: Binding(
+                                get: { wrapper.state.mobilepayDraft },
+                                set: { new in
+                                    let digits = new.filter { $0.isNumber }
+                                    if digits.count <= 8 {
+                                        wrapper.mobilepayDraftChanged(digits)
+                                    }
+                                }
+                            ),
+                            keyboardType: .numberPad,
+                            isEnabled: !wrapper.state.isSavingMobilepay,
+                            lightSurface: true
+                        )
+                        .padding(.horizontal, HopSpacing.md)
+
+                        Text("Passengers will send money here after the ride")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                            .padding(.horizontal, HopSpacing.md)
+
+                        HStack {
+                            Spacer()
+                            Button(action: wrapper.cancelEditMobilepay) {
+                                Text("Cancel")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.hopAuthTextSecondary)
+                            }
+                            .disabled(wrapper.state.isSavingMobilepay)
+
+                            Spacer().frame(width: HopSpacing.sm)
+
+                            Button(action: wrapper.saveMobilepay) {
+                                if wrapper.state.isSavingMobilepay {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                                        .scaleEffect(0.8)
+                                        .frame(width: 16, height: 16)
+                                } else {
+                                    Text("Save")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(Color.hopPrimaryLime)
+                                }
+                            }
+                            .disabled(wrapper.state.isSavingMobilepay || wrapper.state.mobilepayDraft.count != 8)
+                        }
+                        .padding(.horizontal, HopSpacing.md)
+                    }
+                    .padding(.bottom, HopSpacing.sm)
+                } else {
+                    let number = wrapper.state.user?.mobilepayNumber
+                    if let num = number, !num.isEmpty {
+                        Text(num)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                            .padding(.horizontal, HopSpacing.md)
+                            .padding(.bottom, HopSpacing.sm)
+                    } else {
+                        Text("Not set — passengers pay you via MobilePay")
+                            .font(.system(size: 13))
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                            .padding(.horizontal, HopSpacing.md)
+                            .padding(.bottom, HopSpacing.sm)
+                    }
                 }
             }
         }

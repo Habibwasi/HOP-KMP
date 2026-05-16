@@ -43,6 +43,12 @@ export class PlacesController {
     return this.places.geocode(address)
   }
 
+  /** GET /places/route?origin=...&dest=... — driving distance + endpoint coordinates. */
+  @Get('route')
+  route(@Query('origin') origin: string, @Query('dest') dest: string) {
+    return this.places.route(origin, dest)
+  }
+
   @Post()
   create(@Req() req: any, @Body() dto: UpsertPlaceDto) {
     return this.places.create(req.user.id, dto)

@@ -14,6 +14,7 @@ import com.example.hop.presentation.notifications.NotificationsViewModel
 import com.example.hop.presentation.profile.OtherProfileViewModel
 import com.example.hop.presentation.profile.OwnProfileViewModel
 import com.example.hop.presentation.settings.SettingsViewModel
+import com.example.hop.presentation.settlement.SettlementViewModel
 import com.example.hop.presentation.tax.TaxViewModel
 import com.example.hop.presentation.trip.TripViewModel
 import com.example.hop.presentation.tripdetail.TripDetailViewModel
@@ -64,6 +65,8 @@ fun getTaxViewModel(): TaxViewModel = KoinPlatform.getKoin().get()
 fun getSavedPlacesViewModel(): SavedPlacesViewModel = KoinPlatform.getKoin().get()
 
 fun getSearchViewModel(): SearchViewModel = KoinPlatform.getKoin().get()
+
+fun getSettlementViewModel(): SettlementViewModel = KoinPlatform.getKoin().get()
 
 /** Returns the stored Supabase access token from the iOS Keychain. Used by ChatView. */
 suspend fun getAccessToken(): String? = KoinPlatform.getKoin().get<TokenStorage>().getAccessToken()

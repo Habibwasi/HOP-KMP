@@ -34,6 +34,11 @@ export class CreateTripDto {
   @IsString()
   destAddress: string
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  distanceMetres?: number
+
   @IsDateString()
   departureAt: string
 

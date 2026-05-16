@@ -20,8 +20,8 @@ import com.example.hop.domain.repository.PlacesRepository
 import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.domain.repository.SearchAlertsRepository
 import com.example.hop.domain.repository.SearchHistoryRepository
-import com.example.hop.data.repository.PaymentRepositoryImpl
-import com.example.hop.domain.repository.PaymentRepository
+import com.example.hop.data.repository.SettlementRepositoryImpl
+import com.example.hop.domain.repository.SettlementRepository
 import com.example.hop.data.repository.UserRepositoryImpl
 import com.example.hop.domain.repository.TaxRepository
 import com.example.hop.domain.repository.TripRepository
@@ -47,8 +47,8 @@ fun repositoryModule(mapsApiKey: String) = module {
             httpClient = get<HttpClient>(),
         )
     }
-    single<PaymentRepository> {
-        PaymentRepositoryImpl(
+    single<SettlementRepository> {
+        SettlementRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
     }
@@ -93,6 +93,6 @@ fun repositoryModule(mapsApiKey: String) = module {
         )
     }
     single<RoutingRepository> {
-        RoutingRepositoryImpl(mapsApiKey = mapsApiKey)
+        RoutingRepositoryImpl(httpClient = get<HttpClient>())
     }
 }

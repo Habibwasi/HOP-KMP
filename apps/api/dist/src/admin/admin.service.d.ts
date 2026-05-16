@@ -33,6 +33,7 @@ export declare class AdminService {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     unbanUser(userId: string): Promise<{
@@ -48,6 +49,7 @@ export declare class AdminService {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     makeAdmin(userId: string): Promise<{
@@ -63,6 +65,7 @@ export declare class AdminService {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     getPendingLicences(): Promise<({

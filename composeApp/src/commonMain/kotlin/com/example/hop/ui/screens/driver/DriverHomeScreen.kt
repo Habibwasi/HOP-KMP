@@ -154,6 +154,7 @@ fun DriverHomeContent(
                 // Post-trip flow effects owned by their own route VMs.
                 is DriverEffect.NavigateToMyTrips -> Unit
                 is DriverEffect.NavigateToRatePassenger -> Unit
+                is DriverEffect.NavigateToDriverSettlement -> Unit
                 is DriverEffect.NavigateToMarkTripComplete -> Unit
                 // Onboarding effects handled by EnableDriverStep1 route.
                 is DriverEffect.NavigateToModelAForm -> Unit

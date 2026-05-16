@@ -63,6 +63,9 @@ let PlacesController = class PlacesController {
     geocode(address) {
         return this.places.geocode(address);
     }
+    route(origin, dest) {
+        return this.places.route(origin, dest);
+    }
     create(req, dto) {
         return this.places.create(req.user.id, dto);
     }
@@ -88,6 +91,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PlacesController.prototype, "geocode", null);
+__decorate([
+    (0, common_1.Get)('route'),
+    __param(0, (0, common_1.Query)('origin')),
+    __param(1, (0, common_1.Query)('dest')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], PlacesController.prototype, "route", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Req)()),

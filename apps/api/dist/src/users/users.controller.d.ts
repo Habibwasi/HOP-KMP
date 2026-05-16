@@ -32,6 +32,7 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     getMe(req: any): Promise<{
@@ -47,6 +48,7 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     getMyStats(req: any): Promise<{
@@ -67,6 +69,7 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     savePushToken(req: any, dto: PushTokenDto): Promise<void>;
@@ -83,6 +86,7 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     getUserReviews(id: string): Promise<{

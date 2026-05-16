@@ -388,21 +388,15 @@ private fun PriceBreakdownCard(
                 isAmount = false,
             )
             PriceRow(
-                label = "Passenger pays / seat",
-                value = formatDkk(priceResult.passengerPaysPerSeatOere),
+                label = "Passengers pay / seat",
+                value = formatDkk(priceResult.pricePerSeatOere),
                 isAmount = true,
                 highlight = true,
-            )
-            PriceRow(
-                label = "Platform fee",
-                value = "– ${formatDkk(priceResult.platformFeeOere)}",
-                isAmount = true,
-                valueColor = HopColors.authTextSecondary,
             )
             HorizontalDivider(color = HopColors.primaryLime.copy(alpha = 0.2f))
             PriceRow(
                 label = "You receive / seat",
-                value = formatDkk(priceResult.driverNetPerSeatOere),
+                value = formatDkk(priceResult.pricePerSeatOere),
                 isAmount = true,
                 highlight = true,
                 labelWeight = FontWeight.Bold,
@@ -411,7 +405,7 @@ private fun PriceBreakdownCard(
             if (seatsTotal > 1) {
                 PriceRow(
                     label = "Max. total earnings",
-                    value = formatDkk(priceResult.driverNetPerSeatOere * seatsTotal),
+                    value = formatDkk(priceResult.pricePerSeatOere * seatsTotal),
                     isAmount = true,
                     valueColor = HopColors.success,
                 )

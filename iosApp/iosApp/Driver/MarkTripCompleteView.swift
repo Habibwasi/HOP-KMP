@@ -9,6 +9,7 @@ struct MarkTripCompleteView: View {
     let driverNetOere: Int
 
     var onCompleted: (_ bookingId: String, _ passengerName: String, _ passengerInitials: String) -> Void
+    var onSettlementRequired: (_ bookingId: String) -> Void
     var onBack: () -> Void
 
     @StateObject  private var wrapper = DriverViewModelWrapper.shared
@@ -70,6 +71,8 @@ struct MarkTripCompleteView: View {
                         passenger?.fullName ?? "Passenger",
                         passenger?.initials ?? "P"
                     )
+                case let nav as DriverEffectNavigateToDriverSettlement:
+                    onSettlementRequired(nav.bookingId)
                 case let snack as DriverEffectShowSnackbar:
                     toast = snack.message
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { withAnimation { toast = nil } }

@@ -35,7 +35,6 @@ data class TripDetailUiState(
     val minThreshold: Int? = null,
     val model: TripModel = TripModel.A,
     val priceOerePerSeat: Int = 0,
-    val platformFeeOere: Int = 0,
 ) {
     val seatsAvailable: Int
         get() = (seatsTotal - seatsBooked).coerceAtLeast(0)
@@ -93,8 +92,6 @@ class TripDetailViewModel(
             when (val response = tripRepository.getTripById(tripId)) {
                 is ApiResponse.Success -> {
                     val trip = response.data
-                    val platformFeeOere = (trip.priceOerePerSeat - trip.driverNetOere).coerceAtLeast(0)
-
                     // Fetch driver profile in parallel — best-effort; failures degrade gracefully.
                     val driverUser = coroutineScope {
                         async { userRepository.getUserProfile(trip.driverId) }.await()
@@ -137,7 +134,6 @@ class TripDetailViewModel(
                         minThreshold = trip.minThreshold,
                         model = trip.model,
                         priceOerePerSeat = trip.priceOerePerSeat,
-                        platformFeeOere = platformFeeOere,
                     )
                 }
 

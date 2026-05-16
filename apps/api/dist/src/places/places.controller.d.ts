@@ -25,6 +25,13 @@ export declare class PlacesController {
         lng: number;
         formattedAddress: string;
     }>;
+    route(origin: string, dest: string): Promise<{
+        distanceMetres: number;
+        originLat: number;
+        originLng: number;
+        destLat: number;
+        destLng: number;
+    }>;
     create(req: any, dto: UpsertPlaceDto): import("@prisma/client").Prisma.Prisma__SavedPlaceClient<{
         id: string;
         createdAt: Date;

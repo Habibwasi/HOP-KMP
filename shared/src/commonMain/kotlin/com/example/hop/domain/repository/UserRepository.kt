@@ -17,6 +17,8 @@ interface UserRepository {
     suspend fun getUserCarDetails(userId: String): ApiResponse<CarDetails?>
     /** PATCH /users/me — updates the current user's full name. */
     suspend fun updateFullName(name: String): ApiResponse<User>
+    /** PATCH /users/me — updates the driver's MobilePay number (8-digit DK phone). */
+    suspend fun updateMobilepayNumber(number: String): ApiResponse<User>
     /** POST /users/:id/report — files a report against another user. */
     suspend fun reportUser(userId: String, reason: String): ApiResponse<Unit>
     /** POST /users/push-token — registers or refreshes an FCM push token. */

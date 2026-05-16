@@ -18,6 +18,7 @@ data class PostTripRequestDto(
     val destLat: Double,
     val destLng: Double,
     @SerialName("destAddress") val destName: String,
+    val distanceMetres: Int? = null,
     @SerialName("departureAt") val departsAt: String,
     @SerialName("seats") val seatsTotal: Int,
     @SerialName("minPassengers") val minThreshold: Int? = null,
@@ -65,8 +66,6 @@ data class TripDto(
 
 // ── Mapping ───────────────────────────────────────────────────────────────────
 
-private const val PLATFORM_FEE_RATE = 0.15
-
 fun TripDto.toDomain(): Trip = Trip(
     id = id,
     driverId = driverId,
@@ -83,8 +82,8 @@ fun TripDto.toDomain(): Trip = Trip(
     seatsBooked = bookings?.sumOf { it.seats } ?: 0,
     minThreshold = minThreshold,
     priceOerePerSeat = priceOerePerSeat,
-    // Backend doesn't return driverNet separately — derive from passenger price minus platform fee.
-    driverNetOere = (priceOerePerSeat * (1.0 - PLATFORM_FEE_RATE)).toInt(),
+    // No platform fee — driverNet equals passenger price (P2P MobilePay model).
+    driverNetOere = priceOerePerSeat,
     status = TripStatus.entries.firstOrNull { it.name == status } ?: TripStatus.UNKNOWN,
     recurrenceDays = recurrenceDays,
     bookingId = bookingId,

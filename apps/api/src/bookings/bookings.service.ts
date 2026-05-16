@@ -4,8 +4,6 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
-  Inject,
-  forwardRef,
   Logger,
 } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
@@ -14,7 +12,6 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 import { BookingStatus, TripModel, TripStatus } from '@prisma/client'
 import { NotificationsService } from '../notifications/notifications.service'
-import { PaymentsService } from '../payments/payments.service'
 
 @Injectable()
 export class BookingsService {
@@ -24,7 +21,6 @@ export class BookingsService {
     private prisma: PrismaService,
     @InjectQueue('bookings') private bookingsQueue: Queue,
     private notifications: NotificationsService,
-    @Inject(forwardRef(() => PaymentsService)) private payments: PaymentsService,
   ) {}
 
   async create(passengerId: string, dto: CreateBookingDto) {
@@ -97,7 +93,7 @@ export class BookingsService {
   async confirm(bookingId: string) {
     const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } })
     if (!booking) throw new NotFoundException('Booking not found')
-    // Idempotent: if already confirmed (e.g. webhook fired before capturePayment), just return.
+    // Idempotent: if already confirmed, just return.
     if (booking.status === BookingStatus.CONFIRMED) return booking
     if (booking.status !== BookingStatus.PENDING) {
       throw new BadRequestException('Booking is not pending')
@@ -128,44 +124,20 @@ export class BookingsService {
       data: { status: BookingStatus.CANCELLED },
     })
 
-    // Refund the held payment if one exists
-    const payment = await this.prisma.payment.findUnique({ where: { bookingId } })
-    if (payment && payment.status === 'HELD') {
-      await this.payments.refundPayment(bookingId).catch((err) => {
-        this.logger.error(`[Bookings] Refund failed for booking ${bookingId}: ${err?.message}`)
-      })
-    }
-
     return { cancelled: true }
   }
 
   /**
    * Cancel all active bookings for a trip (called when a driver cancels a trip).
-   * Refunds any held payments and notifies passengers.
    */
   async cancelAllForTrip(tripId: string) {
-    const bookings = await this.prisma.booking.findMany({
+    await this.prisma.booking.updateMany({
       where: {
         tripId,
         status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
       },
-      include: { payment: true },
+      data: { status: BookingStatus.CANCELLED },
     })
-
-    for (const booking of bookings) {
-      await this.prisma.booking.update({
-        where: { id: booking.id },
-        data: { status: BookingStatus.CANCELLED },
-      })
-
-      if (booking.payment && booking.payment.status === 'HELD') {
-        await this.payments.refundPayment(booking.id).catch((err) => {
-          this.logger.error(
-            `[Bookings] Refund failed for booking ${booking.id} on trip cancel: ${err?.message}`,
-          )
-        })
-      }
-    }
   }
 
   async findById(id: string) {
@@ -174,7 +146,6 @@ export class BookingsService {
       include: {
         trip: true,
         passenger: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-        payment: true,
       },
     })
     if (!booking) throw new NotFoundException('Booking not found')
@@ -199,7 +170,6 @@ export class BookingsService {
             driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
           },
         },
-        payment: true,
       },
     })
   }
@@ -212,7 +182,6 @@ export class BookingsService {
         trip: {
           include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
         },
-        payment: true,
       },
     })
   }
@@ -255,7 +224,7 @@ export class BookingsService {
     // Threshold NOT met — cancel trip and all active bookings
     const activeBookings = await this.prisma.booking.findMany({
       where: { tripId, status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] } },
-      select: { id: true, passengerId: true },
+      select: { passengerId: true },
     })
 
     await this.prisma.$transaction([
@@ -272,7 +241,7 @@ export class BookingsService {
       }),
     ])
 
-    // Refund held payments and send notifications
+    // Notify passengers and send notifications
     const cancelTitle = 'Trip cancelled — threshold not reached'
     const cancelBody = `The Model B trip from ${trip.originAddress} to ${trip.destAddress} did not reach the minimum passenger count and has been cancelled.`
 
@@ -281,13 +250,7 @@ export class BookingsService {
       data: { userId: trip.driverId, type: 'GENERAL', title: cancelTitle, body: cancelBody, deepLinkId: tripId },
     })
 
-    for (const { id: bookingId, passengerId } of activeBookings) {
-      // Best-effort refund — log failures without throwing so all passengers are processed
-      try {
-        await this.payments.refundPayment(bookingId)
-      } catch (e) {
-        this.logger.warn(`Threshold refund failed for booking ${bookingId}: ${e}`)
-      }
+    for (const { passengerId } of activeBookings) {
       await this.notifications.sendToUser(passengerId, cancelTitle, cancelBody, { type: 'BOOKING_CANCELLED', tripId })
       await this.prisma.notification.create({
         data: { userId: passengerId, type: 'BOOKING_CANCELLED', title: cancelTitle, body: cancelBody, deepLinkId: tripId },

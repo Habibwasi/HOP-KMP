@@ -10,14 +10,11 @@ import Shared
 //   BookingEvent.CreateBooking         → BookingEventCreateBooking
 //   BookingEvent.CancelBooking         → BookingEventCancelBooking
 //   BookingEvent.SubmitRating          → BookingEventSubmitRating
-//   BookingEvent.BeginHandoff          → BookingEventBeginHandoff
-//   BookingEvent.ConfirmPaymentSuccess → BookingEventConfirmPaymentSuccess
 //
 // SKIE flat names for BookingEffect:
-//   BookingEffect.NavigateToMobilePay              → BookingEffectNavigateToMobilePay
 //   BookingEffect.NavigateToSuccess                → BookingEffectNavigateToSuccess
 //   BookingEffect.NavigateToCancellationConfirmation → BookingEffectNavigateToCancellationConfirmation
-//   BookingEffect.NavigateToMyTripsPassenger       → BookingEffectNavigateToMyTripsPassenger (data object → .shared)
+//   BookingEffect.NavigateToMyTripsPassenger       → BookingEffectNavigateToMyTripsPassenger
 //   BookingEffect.ShowSnackbar                     → BookingEffectShowSnackbar
 
 @MainActor
@@ -62,13 +59,5 @@ final class BookingViewModelWrapper: ObservableObject {
             stars: Int32(stars),
             comment: comment
         ))
-    }
-
-    func beginHandoff(bookingId: String) {
-        viewModel.onEvent(event: BookingEventBeginHandoff(bookingId: bookingId))
-    }
-
-    func confirmPaymentSuccess(bookingId: String) {
-        viewModel.onEvent(event: BookingEventConfirmPaymentSuccess(bookingId: bookingId))
     }
 }

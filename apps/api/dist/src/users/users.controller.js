@@ -99,9 +99,16 @@ let UsersController = UsersController_1 = class UsersController {
         };
     }
     async updateMe(req, dto) {
-        const [firstName, ...rest] = dto.fullName.trim().split(' ');
-        const lastName = rest.join(' ') || '.';
-        return this.users.updateProfile(req.user.id, { firstName, lastName });
+        const data = {};
+        if (dto.fullName?.trim()) {
+            const [firstName, ...rest] = dto.fullName.trim().split(' ');
+            data.firstName = firstName;
+            data.lastName = rest.join(' ') || '.';
+        }
+        if (dto.mobilepayNumber !== undefined) {
+            data.mobilepayNumber = dto.mobilepayNumber;
+        }
+        return this.users.updateProfile(req.user.id, data);
     }
     async savePushToken(req, dto) {
         const platform = dto.platform === 'ios' ? 'ios' : 'android';

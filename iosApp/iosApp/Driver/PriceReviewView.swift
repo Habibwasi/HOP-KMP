@@ -83,9 +83,7 @@ struct PriceReviewView: View {
                 seats:    seats,
                 distanceKm: dist / 1000,
                 threshold: nil,
-                passengerPaysPerSeatOere: Int(price.passengerPaysPerSeatOere),
-                platformFeeOere:          Int(price.platformFeeOere),
-                driverNetPerSeatOere:     Int(price.driverNetPerSeatOere)
+                pricePerSeatOere: Int(price.pricePerSeatOere)
             )
         }
         if let b = state.pendingModelBDraft {
@@ -100,9 +98,7 @@ struct PriceReviewView: View {
                 seats:    seats,
                 distanceKm: dist / 1000,
                 threshold: Int(b.minThreshold),
-                passengerPaysPerSeatOere: Int(price.passengerPaysPerSeatOere),
-                platformFeeOere:          Int(price.platformFeeOere),
-                driverNetPerSeatOere:     Int(price.driverNetPerSeatOere)
+                pricePerSeatOere: Int(price.pricePerSeatOere)
             )
         }
         return nil
@@ -116,9 +112,7 @@ private struct TripSummary {
     let seats:    Int
     let distanceKm: Int
     let threshold: Int?
-    let passengerPaysPerSeatOere: Int
-    let platformFeeOere: Int
-    let driverNetPerSeatOere: Int
+    let pricePerSeatOere: Int
 }
 
 private struct TripSummaryCard: View {
@@ -176,10 +170,9 @@ private struct PriceBreakdownCard: View {
                 .font(HopFont.labelMedium(weight: .semibold))
                 .foregroundColor(Color.hopAuthTextSecondary)
 
-            row(label: "Passenger pays", oere: summary.passengerPaysPerSeatOere, highlight: false)
-            row(label: "Platform fee (15%)", oere: summary.platformFeeOere, highlight: false)
+            row(label: "Passengers pay / seat (SKAT rate)", oere: summary.pricePerSeatOere, highlight: false)
             Divider().background(Color.hopAuthTextSecondary.opacity(0.2))
-            row(label: "You receive", oere: summary.driverNetPerSeatOere, highlight: true)
+            row(label: "You receive / seat", oere: summary.pricePerSeatOere, highlight: true)
         }
         .padding(HopSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)

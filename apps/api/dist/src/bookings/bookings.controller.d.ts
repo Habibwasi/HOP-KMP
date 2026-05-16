@@ -79,17 +79,6 @@ export declare class BookingsController {
             isRecurring: boolean;
             isActive: boolean;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
     } & {
         id: string;
         createdAt: Date;
@@ -131,17 +120,6 @@ export declare class BookingsController {
             isRecurring: boolean;
             isActive: boolean;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
     } & {
         id: string;
         createdAt: Date;
@@ -176,17 +154,6 @@ export declare class BookingsController {
             isRecurring: boolean;
             isActive: boolean;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
         passenger: {
             id: string;
             firstName: string;

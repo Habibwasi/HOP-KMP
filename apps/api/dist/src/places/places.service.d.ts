@@ -46,4 +46,12 @@ export declare class PlacesService {
         lng: number;
         formattedAddress: string;
     }>;
+    route(origin: string, dest: string): Promise<{
+        distanceMetres: number;
+        originLat: number;
+        originLng: number;
+        destLat: number;
+        destLng: number;
+    }>;
+    private googleMapsKey;
 }

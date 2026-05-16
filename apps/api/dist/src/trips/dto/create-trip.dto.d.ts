@@ -7,6 +7,7 @@ export declare class CreateTripDto {
     destLat: number;
     destLng: number;
     destAddress: string;
+    distanceMetres?: number;
     departureAt: string;
     seats: number;
     recurringDays?: string[];

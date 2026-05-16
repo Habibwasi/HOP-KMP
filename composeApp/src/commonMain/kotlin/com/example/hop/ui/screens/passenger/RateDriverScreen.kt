@@ -93,7 +93,6 @@ fun RateDriverRoute(
                 is BookingEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
-                is BookingEffect.NavigateToMobilePay -> Unit          // not reachable here
                 is BookingEffect.NavigateToSuccess -> Unit            // not reachable here
                 is BookingEffect.NavigateToCancellationConfirmation -> Unit // not reachable here
             }

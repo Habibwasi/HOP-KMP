@@ -20,7 +20,7 @@ import {
 } from '../search-alerts/search-alerts.processor'
 import { BOOKINGS_QUEUE, CHECK_THRESHOLD_JOB } from './trips.constants'
 import { BookingsService } from '../bookings/bookings.service'
-import { PaymentsService } from '../payments/payments.service'
+import { NotificationsService } from '../notifications/notifications.service'
 
 /** Maps ISO day-abbreviation codes to JS getUTCDay() values (0 = Sunday). */
 const DAY_CODE_TO_UTC_DOW: Record<string, number> = {
@@ -31,6 +31,43 @@ const DAY_CODE_TO_UTC_DOW: Record<string, number> = {
   THU: 4,
   FRI: 5,
   SAT: 6,
+}
+
+const expandAddressToken = (token: string): string[] => {
+  const aliases: Record<string, string[]> = {
+    copenhagen: ['kobenhavn', 'kbh'],
+    kobenhavn: ['copenhagen', 'kbh'],
+    kbh: ['kobenhavn', 'copenhagen'],
+    aarhus: ['arhus'],
+    arhus: ['aarhus'],
+  }
+  return [token, ...(aliases[token] ?? [])]
+}
+
+const normalizeSearchText = (value?: string): string[] => {
+  const tokens = (value ?? '')
+    .toLowerCase()
+    .replace(/æ/g, 'ae')
+    .replace(/ø/g, 'o')
+    .replace(/å/g, 'a')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter((part) => part.length >= 2)
+
+  return [...new Set(tokens.flatMap(expandAddressToken))]
+}
+
+const addressMatches = (address: string, query?: string): boolean => {
+  const queryTokens = normalizeSearchText(query)
+  if (queryTokens.length === 0) return true
+
+  const addressTokens = normalizeSearchText(address)
+  const addressText = addressTokens.join(' ')
+  return queryTokens.some((token) =>
+    addressText.includes(token) ||
+      addressTokens.some((addressToken) => addressToken.includes(token) || token.includes(addressToken)),
+  )
 }
 
 /** Generate UTC Date objects for every occurrence of the given days-of-week
@@ -79,10 +116,18 @@ export class TripsService {
     @InjectQueue(SEARCH_ALERTS_QUEUE) private alertsQueue: Queue,
     @InjectQueue(BOOKINGS_QUEUE) private bookingsQueue: Queue,
     @Inject(forwardRef(() => BookingsService)) private bookings: BookingsService,
-    @Inject(forwardRef(() => PaymentsService)) private payments: PaymentsService,
+    private notifications: NotificationsService,
   ) {}
 
   async create(driverId: string, dto: CreateTripDto) {
+    // Ensure driver has a MobilePay number before publishing any trip
+    const driver = await this.prisma.user.findUnique({ where: { id: driverId } })
+    if (!driver?.mobilepayNumber) {
+      throw new BadRequestException(
+        'Please add your MobilePay number in your profile before creating a trip',
+      )
+    }
+
     // Validate Model B requirements
     if (dto.model === TripModel.B) {
       if (!dto.minPassengers) {
@@ -105,13 +150,16 @@ export class TripsService {
       }
     }
 
-    // Calculate distance and price
-    const distanceKm = this.pricing.calculateDistance(
-      dto.originLat,
-      dto.originLng,
-      dto.destLat,
-      dto.destLng,
-    )
+    // Prefer the client-provided driving route distance so the stored price
+    // matches the driver review screen. Fall back to haversine for older clients.
+    const distanceKm = dto.distanceMetres
+      ? dto.distanceMetres / 1000
+      : this.pricing.calculateDistance(
+          dto.originLat,
+          dto.originLng,
+          dto.destLat,
+          dto.destLng,
+        )
     const pricePerSeat = this.pricing.calculatePricePerSeat(distanceKm, dto.seats)
 
     const baseData = {
@@ -297,16 +345,9 @@ export class TripsService {
       seats: { gte: seats },
     }
 
-    if (!useCoordinates) {
-      if (dto.origin) {
-        where.originAddress = { contains: dto.origin, mode: 'insensitive' }
-      }
-      if (dto.dest) {
-        where.destAddress = { contains: dto.dest, mode: 'insensitive' }
-      }
-    }
-
-    // Fetch active trips on requested date
+    // Fetch active trips on requested date. Text route matching is applied
+    // in memory below so Danish character folding and city aliases work
+    // consistently across database collations.
     const trips = await this.prisma.trip.findMany({
       where,
       include: {
@@ -337,7 +378,9 @@ export class TripsService {
           return originDist <= radiusKm && destDist <= radiusKm && availableSeats >= seats
         }
 
-        return availableSeats >= seats
+        return availableSeats >= seats &&
+          addressMatches(trip.originAddress, dto.origin) &&
+          addressMatches(trip.destAddress, dto.dest)
       })
       .map((trip) => {
         const bookedSeats = trip.bookings.reduce((sum, b) => sum + b.seats, 0)
@@ -392,10 +435,17 @@ export class TripsService {
   async complete(tripId: string, userId: string) {
     const trip = await this.prisma.trip.findUnique({
       where: { id: tripId },
-      include: { bookings: { where: { status: BookingStatus.CONFIRMED } } },
+      include: {
+        driver: { select: { mobilepayNumber: true } },
+        bookings: { where: { status: BookingStatus.CONFIRMED } },
+      },
     })
     if (!trip) throw new NotFoundException('Trip not found')
     if (trip.driverId !== userId) throw new ForbiddenException('Not your trip')
+    if (!trip.driver.mobilepayNumber) {
+      throw new BadRequestException('Add your MobilePay number before completing a trip')
+    }
+    const driver = trip.driver
     if (trip.status === TripStatus.COMPLETED) return { completed: true }
     if (trip.status !== TripStatus.ACTIVE) {
       throw new BadRequestException('Trip must be ACTIVE to complete')
@@ -406,13 +456,44 @@ export class TripsService {
       data: { status: TripStatus.COMPLETED, isActive: false },
     })
 
-    // Capture payment for every confirmed booking
+    // Create RideSettlement for each confirmed booking and transition to AWAITING_PAYMENT
     for (const booking of trip.bookings) {
-      await this.payments.capturePayment(booking.id).catch((err) => {
+      try {
+        await this.prisma.$transaction([
+          this.prisma.rideSettlement.create({
+            data: {
+              bookingId: booking.id,
+              suggestedAmountOere: booking.totalOere,
+              mobilepayNumber: driver.mobilepayNumber!,
+            },
+          }),
+          this.prisma.booking.update({
+            where: { id: booking.id },
+            data: { status: BookingStatus.AWAITING_PAYMENT },
+          }),
+        ])
+
+        // Notify passenger
+        await this.notifications.sendToUser(
+          booking.passengerId,
+          'Time to pay your driver',
+          `Please send DKK ${Math.round(booking.totalOere / 100)} to your driver via MobilePay.`,
+          { type: 'RIDE_AWAITING_PAYMENT', bookingId: booking.id },
+        ).catch(() => {/* non-fatal */})
+        await this.prisma.notification.create({
+          data: {
+            userId: booking.passengerId,
+            type: 'RIDE_AWAITING_PAYMENT',
+            title: 'Time to pay your driver',
+            body: `Please send DKK ${Math.round(booking.totalOere / 100)} to your driver via MobilePay.`,
+            deepLinkId: booking.id,
+          },
+        })
+      } catch (err) {
         this.logger.error(
-          `[Trips] capturePayment failed for booking ${booking.id} on trip complete: ${err?.message}`,
+          `[Trips] Failed to create settlement for booking ${booking.id}: ${err?.message}`,
         )
-      })
+      }
     }
 
     return { completed: true }

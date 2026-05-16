@@ -6,8 +6,10 @@ import kotlinx.serialization.Serializable
 enum class BookingStatus {
     PENDING,
     CONFIRMED,
+    AWAITING_PAYMENT,
     CANCELLED,
     COMPLETED,
+    DISPUTED,
     UNKNOWN, // Fallback for version mismatch or API drift
 }
 

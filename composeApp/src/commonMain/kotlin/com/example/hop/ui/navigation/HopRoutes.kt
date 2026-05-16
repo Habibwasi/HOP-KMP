@@ -99,7 +99,7 @@ sealed interface HopRoutes {
     @Serializable
     data object EnableDriverStep1 : HopRoutes
 
-    /** DR-03 Licence Upload */
+    /** DR-03 MobilePay Number (replaces defunct licence upload step) */
     @Serializable
     data object EnableDriverStep2 : HopRoutes
 
@@ -172,4 +172,12 @@ sealed interface HopRoutes {
     /** SH-06 */
     @Serializable
     data object Settings : HopRoutes
+
+    /** SE-01 — Passenger settlement (pay driver via MobilePay) */
+    @Serializable
+    data class PassengerSettlement(val bookingId: String) : HopRoutes
+
+    /** SE-02 — Driver settlement (confirm received / dispute) */
+    @Serializable
+    data class DriverSettlement(val bookingId: String) : HopRoutes
 }

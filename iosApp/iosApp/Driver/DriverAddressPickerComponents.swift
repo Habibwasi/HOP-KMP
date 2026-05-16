@@ -69,7 +69,7 @@ struct RouteSummaryRowView: View {
                     distanceMetres: Int32(distanceMetres),
                     seatsTotal: Int32(seatsTotal)
                 )
-                let pricePerSeat = Int(priceResult.passengerPaysPerSeatOere) / 100
+                let pricePerSeat = Int(priceResult.pricePerSeatOere) / 100
                 Text("\(km) km")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.hopAuthTextPrimary)

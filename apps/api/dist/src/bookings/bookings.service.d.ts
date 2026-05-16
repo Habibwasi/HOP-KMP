@@ -2,14 +2,12 @@ import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { PaymentsService } from '../payments/payments.service';
 export declare class BookingsService {
     private prisma;
     private bookingsQueue;
     private notifications;
-    private payments;
     private readonly logger;
-    constructor(prisma: PrismaService, bookingsQueue: Queue, notifications: NotificationsService, payments: PaymentsService);
+    constructor(prisma: PrismaService, bookingsQueue: Queue, notifications: NotificationsService);
     create(passengerId: string, dto: CreateBookingDto): Promise<{
         trip: {
             driver: {
@@ -93,17 +91,6 @@ export declare class BookingsService {
             isRecurring: boolean;
             isActive: boolean;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
         passenger: {
             id: string;
             firstName: string;
@@ -151,17 +138,6 @@ export declare class BookingsService {
             isRecurring: boolean;
             isActive: boolean;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
     } & {
         id: string;
         createdAt: Date;
@@ -203,17 +179,6 @@ export declare class BookingsService {
             isRecurring: boolean;
             isActive: boolean;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
     } & {
         id: string;
         createdAt: Date;

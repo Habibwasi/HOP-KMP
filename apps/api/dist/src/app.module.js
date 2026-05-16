@@ -16,10 +16,9 @@ const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const trips_module_1 = require("./trips/trips.module");
 const bookings_module_1 = require("./bookings/bookings.module");
-const payments_module_1 = require("./payments/payments.module");
+const settlements_module_1 = require("./settlements/settlements.module");
 const ratings_module_1 = require("./ratings/ratings.module");
 const notifications_module_1 = require("./notifications/notifications.module");
-const tax_module_1 = require("./tax/tax.module");
 const admin_module_1 = require("./admin/admin.module");
 const places_module_1 = require("./places/places.module");
 const search_history_module_1 = require("./search-history/search-history.module");
@@ -36,20 +35,31 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             schedule_1.ScheduleModule.forRoot(),
             bullmq_1.BullModule.forRoot({
-                connection: {
-                    host: process.env.REDIS_HOST ?? 'localhost',
-                    port: parseInt(process.env.REDIS_PORT ?? '6379'),
-                },
+                connection: process.env.REDIS_URL
+                    ? (() => {
+                        const u = new URL(process.env.REDIS_URL);
+                        return {
+                            host: u.hostname,
+                            port: parseInt(u.port || '6379'),
+                            username: u.username ? decodeURIComponent(u.username) : undefined,
+                            password: u.password ? decodeURIComponent(u.password) : undefined,
+                            tls: u.protocol === 'rediss:' ? {} : undefined,
+                        };
+                    })()
+                    : {
+                        host: process.env.REDIS_HOST ?? 'localhost',
+                        port: parseInt(process.env.REDIS_PORT ?? '6379'),
+                        password: process.env.REDIS_PASSWORD || undefined,
+                    },
             }),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             trips_module_1.TripsModule,
             bookings_module_1.BookingsModule,
-            payments_module_1.PaymentsModule,
+            settlements_module_1.SettlementsModule,
             ratings_module_1.RatingsModule,
             notifications_module_1.NotificationsModule,
-            tax_module_1.TaxModule,
             admin_module_1.AdminModule,
             places_module_1.PlacesModule,
             search_history_module_1.SearchHistoryModule,

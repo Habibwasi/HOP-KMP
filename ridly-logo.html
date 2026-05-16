@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ridly — Brand</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@900&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root { --ink:#0B0B0B; --lime:#C5FF45; --off:#F1F0EC; --s1:#141414; --s2:#1C1C1C; --rule:rgba(255,255,255,0.06); }
+html,body { background:var(--ink); }
+body { font-family:'DM Sans',sans-serif; font-weight:300; color:#fff; max-width:1080px; margin:0 auto; padding:0 0 120px; }
+
+/* wordmark */
+.wm { font-family:'Nunito',sans-serif; font-weight:900; letter-spacing:-.03em; line-height:1; display:inline-block; }
+
+/* animations */
+@keyframes in  { 0%{opacity:0;transform:translateY(28px)} 65%{transform:translateY(-3px)} 100%{opacity:1;transform:translateY(0)} }
+@keyframes fin { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes rot { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(8deg)} }
+
+.al { display:inline-block; opacity:0; animation: in .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+.fade { opacity:0; animation: fin .4s ease forwards .9s; }
+
+/* layout */
+.meta { display:flex; justify-content:space-between; font-size:10px; letter-spacing:.18em; text-transform:uppercase; opacity:.25; padding:44px 64px 0; margin-bottom:56px; }
+.lbl  { font-size:10px; letter-spacing:.16em; text-transform:uppercase; opacity:.25; display:block; margin-bottom:18px; padding:0 64px; }
+.tile { display:flex; align-items:center; justify-content:center; }
+.gap2 { display:grid; gap:2px; }
+.col21 { grid-template-columns:2fr 1fr; }
+.col12 { grid-template-columns:1fr 2fr; }
+.col3  { grid-template-columns:1fr 1fr 1fr; }
+</style>
+</head>
+<body>
+
+<div class="meta"><span>Ridly — Brand identity</span><span>2026</span></div>
+
+<!-- ══════════════════ HERO ══════════════════ -->
+<div style="margin:0 64px 80px; padding:88px 64px 76px; border:1px solid var(--rule); display:flex; flex-direction:column; align-items:center; gap:36px; position:relative; overflow:hidden; background:var(--s1)">
+
+  <!-- subtle dot grid -->
+  <div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.04) 1px,transparent 1px);background-size:24px 24px;pointer-events:none"></div>
+
+  <!-- LOCKUP -->
+  <div style="display:flex; align-items:center; gap:22px; position:relative; z-index:1">
+
+    <!-- ICON MARK — bold chevron in a rounded square -->
+    <div class="al" style="animation-delay:.02s; width:88px; height:88px; background:var(--lime); border-radius:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <path d="M14 8 L30 22 L14 36" stroke="#0B0B0B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- WORDMARK -->
+    <div class="wm" style="font-size:96px; color:#fff">
+      <span class="al" style="animation-delay:.10s">r</span><span class="al" style="animation-delay:.17s">i</span><span class="al" style="animation-delay:.24s">d</span><span class="al" style="animation-delay:.31s">l</span><span class="al" style="animation-delay:.38s">y</span>
+    </div>
+
+  </div>
+
+  <p class="fade" style="font-size:11px; letter-spacing:.24em; text-transform:uppercase; opacity:.3; position:relative; z-index:1">Samkørsel gjort enkelt</p>
+</div>
+
+<!-- ══════════════════ ICON MARK CLOSE-UP ══════════════════ -->
+<span class="lbl">Icon mark</span>
+<div class="gap2 col3" style="margin:0 64px 2px">
+  <!-- dark bg -->
+  <div class="tile" style="background:var(--s2); padding:56px">
+    <div style="width:80px;height:80px;background:var(--lime);border-radius:20px;display:flex;align-items:center;justify-content:center">
+      <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
+        <path d="M14 8 L30 22 L14 36" stroke="#0B0B0B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+  <!-- light bg -->
+  <div class="tile" style="background:var(--off); padding:56px">
+    <div style="width:80px;height:80px;background:#0B0B0B;border-radius:20px;display:flex;align-items:center;justify-content:center">
+      <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
+        <path d="M14 8 L30 22 L14 36" stroke="#C5FF45" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+  <!-- lime bg -->
+  <div class="tile" style="background:var(--lime); padding:56px">
+    <div style="width:80px;height:80px;background:#0B0B0B;border-radius:20px;display:flex;align-items:center;justify-content:center">
+      <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
+        <path d="M14 8 L30 22 L14 36" stroke="#C5FF45" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ COLOUR CONTEXTS ══════════════════ -->
+<span class="lbl" style="margin-top:72px">Lockup on every background</span>
+<div class="gap2 col21" style="margin:0 64px 2px">
+  <div class="tile" style="background:var(--s2); padding:72px; gap:16px">
+    <div style="width:54px;height:54px;background:var(--lime);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="26" height="26" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#0B0B0B" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="wm" style="font-size:58px;color:#fff">ridly</span>
+  </div>
+  <div class="tile" style="background:var(--off); padding:48px; gap:12px">
+    <div style="width:40px;height:40px;background:#0B0B0B;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="20" height="20" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#C5FF45" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="wm" style="font-size:40px;color:#0B0B0B">ridly</span>
+  </div>
+</div>
+<div class="gap2 col12" style="margin:0 64px 80px">
+  <div class="tile" style="background:var(--lime); padding:48px; gap:12px">
+    <div style="width:40px;height:40px;background:#0B0B0B;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="20" height="20" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#C5FF45" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="wm" style="font-size:40px;color:#0B0B0B">ridly</span>
+  </div>
+  <div class="tile" style="background:#fff; padding:60px; gap:14px">
+    <div style="width:52px;height:52px;background:var(--lime);border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="26" height="26" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#0B0B0B" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="wm" style="font-size:54px;color:#0B0B0B">ridly</span>
+  </div>
+</div>
+
+<!-- ══════════════════ APP ICON ══════════════════ -->
+<span class="lbl">App icon</span>
+<div style="display:flex;align-items:flex-end;gap:28px;padding:60px 64px;background:var(--s1);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:80px">
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div style="width:120px;height:120px;border-radius:28px;background:var(--lime);display:flex;align-items:center;justify-content:center">
+      <svg width="60" height="60" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#0B0B0B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.25">120 — Lime</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div style="width:120px;height:120px;border-radius:28px;background:var(--ink);border:1px solid rgba(255,255,255,0.09);display:flex;align-items:center;justify-content:center">
+      <svg width="60" height="60" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#C5FF45" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.25">120 — Dark</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-left:8px">
+    <div style="width:76px;height:76px;border-radius:18px;background:var(--lime);display:flex;align-items:center;justify-content:center">
+      <svg width="38" height="38" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#0B0B0B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.25">76</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div style="width:48px;height:48px;border-radius:12px;background:var(--lime);display:flex;align-items:center;justify-content:center">
+      <svg width="24" height="24" viewBox="0 0 44 44" fill="none"><path d="M14 8 L30 22 L14 36" stroke="#0B0B0B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.25">48</span>
+  </div>
+
+</div>
+
+<!-- ══════════════════ WORDMARK SCALE ══════════════════ -->
+<span class="lbl">Wordmark scale</span>
+<div style="display:flex;align-items:flex-end;gap:40px;padding:52px 64px;background:var(--s1);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:80px">
+  <div style="display:flex;flex-direction:column;gap:12px"><span class="wm" style="font-size:13px">ridly</span><span style="font-size:9px;opacity:.22;letter-spacing:.1em;text-transform:uppercase">13</span></div>
+  <div style="display:flex;flex-direction:column;gap:12px"><span class="wm" style="font-size:20px">ridly</span><span style="font-size:9px;opacity:.22;letter-spacing:.1em;text-transform:uppercase">20</span></div>
+  <div style="display:flex;flex-direction:column;gap:12px"><span class="wm" style="font-size:32px">ridly</span><span style="font-size:9px;opacity:.22;letter-spacing:.1em;text-transform:uppercase">32</span></div>
+  <div style="display:flex;flex-direction:column;gap:12px"><span class="wm" style="font-size:48px">ridly</span><span style="font-size:9px;opacity:.22;letter-spacing:.1em;text-transform:uppercase">48</span></div>
+  <div style="display:flex;flex-direction:column;gap:12px"><span class="wm" style="font-size:72px">ridly</span><span style="font-size:9px;opacity:.22;letter-spacing:.1em;text-transform:uppercase">72</span></div>
+</div>
+
+<!-- ══════════════════ COLOURS ══════════════════ -->
+<span class="lbl">Colours</span>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:0 64px">
+  <div style="height:110px;background:var(--lime);display:flex;flex-direction:column;justify-content:flex-end;padding:20px">
+    <span class="wm" style="font-size:18px;color:#0B0B0B;margin-bottom:4px">Lime</span>
+    <span style="font-size:11px;font-family:monospace;color:#0B0B0B;opacity:.5">#C5FF45</span>
+  </div>
+  <div style="height:110px;background:var(--ink);border:1px solid var(--rule);display:flex;flex-direction:column;justify-content:flex-end;padding:20px">
+    <span class="wm" style="font-size:18px;margin-bottom:4px">Ink</span>
+    <span style="font-size:11px;font-family:monospace;opacity:.35">#0B0B0B</span>
+  </div>
+  <div style="height:110px;background:var(--off);display:flex;flex-direction:column;justify-content:flex-end;padding:20px">
+    <span class="wm" style="font-size:18px;color:#0B0B0B;margin-bottom:4px">Off-white</span>
+    <span style="font-size:11px;font-family:monospace;color:#0B0B0B;opacity:.5">#F1F0EC</span>
+  </div>
+</div>
+
+</body>
+</html>

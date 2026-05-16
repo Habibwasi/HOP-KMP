@@ -28,6 +28,7 @@ data class UserDto(
     val isBanned: Boolean = false,
     val ratingDriver: Double? = null,
     val ratingPassenger: Double? = null,
+    val mobilepayNumber: String? = null,
 )
 
 // ── Envelope ──────────────────────────────────────────────────────────────────
@@ -59,4 +60,5 @@ fun UserDto.toDomain(): User = User(
     isBanned = isBanned,
     ratingDriver = ratingDriver,
     ratingPassenger = ratingPassenger,
+    mobilepayNumber = mobilepayNumber,
 )

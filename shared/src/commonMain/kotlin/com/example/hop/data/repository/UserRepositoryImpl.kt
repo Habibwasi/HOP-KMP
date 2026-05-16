@@ -5,6 +5,7 @@ import com.example.hop.data.dto.CarDetailsDto
 import com.example.hop.data.dto.HopNotificationDto
 import com.example.hop.data.dto.PushTokenRequest
 import com.example.hop.data.dto.ReportUserRequest
+import com.example.hop.data.dto.UpdateMobilepayRequest
 import com.example.hop.data.dto.UpdateNameRequest
 import com.example.hop.data.dto.UserDto
 import com.example.hop.data.dto.UserReviewDto
@@ -80,6 +81,18 @@ class UserRepositoryImpl(
         val response = safeEnvelopeCall<UserDto> {
             httpClient.patch("users/me") {
                 setBody(UpdateNameRequest(fullName = name))
+            }.body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.toDomain())
+            is ApiResponse.Error -> response
+        }
+    }
+
+    override suspend fun updateMobilepayNumber(number: String): ApiResponse<User> {
+        val response = safeEnvelopeCall<UserDto> {
+            httpClient.patch("users/me") {
+                setBody(UpdateMobilepayRequest(mobilepayNumber = number))
             }.body()
         }
         return when (response) {

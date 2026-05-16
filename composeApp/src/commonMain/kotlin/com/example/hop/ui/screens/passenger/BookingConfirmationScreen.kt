@@ -51,7 +51,6 @@ import com.example.hop.domain.model.TripModel
 import com.example.hop.presentation.booking.BookingEffect
 import com.example.hop.presentation.booking.BookingEvent
 import com.example.hop.presentation.booking.BookingViewModel
-import com.example.hop.presentation.booking.PaymentState
 import com.example.hop.presentation.tripdetail.TripDetailEvent
 import com.example.hop.presentation.tripdetail.TripDetailUiState
 import com.example.hop.presentation.tripdetail.TripDetailViewModel
@@ -76,7 +75,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun BookingConfirmationRoute(
     tripId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToMobilePayHandoff: (bookingId: String) -> Unit,
+    onNavigateToSuccess: (bookingId: String) -> Unit,
     modifier: Modifier = Modifier,
     tripDetailViewModel: TripDetailViewModel = koinViewModel(),
     bookingViewModel: BookingViewModel = koinViewModel(),
@@ -92,11 +91,10 @@ fun BookingConfirmationRoute(
     LaunchedEffect(bookingViewModel) {
         bookingViewModel.effect.collectLatest { effect ->
             when (effect) {
-                is BookingEffect.NavigateToMobilePay ->
-                    onNavigateToMobilePayHandoff(effect.bookingId)
-                is BookingEffect.NavigateToSuccess -> Unit // handled downstream
-                is BookingEffect.NavigateToCancellationConfirmation -> Unit // not reachable here
-                is BookingEffect.NavigateToMyTripsPassenger -> Unit     // not reachable here
+                is BookingEffect.NavigateToSuccess ->
+                    onNavigateToSuccess(effect.bookingId)
+                is BookingEffect.NavigateToCancellationConfirmation -> Unit
+                is BookingEffect.NavigateToMyTripsPassenger -> Unit
                 is BookingEffect.ShowSnackbar ->
                     snackbarHostState.showSnackbar(effect.message)
             }
@@ -110,9 +108,9 @@ fun BookingConfirmationRoute(
     ) { innerPadding ->
         BookingConfirmationScreen(
             tripState = tripState,
-            isProcessing = bookingState.paymentState == PaymentState.PROCESSING,
+            isProcessing = bookingState.isLoading,
             onBack = onNavigateBack,
-            onPay = {
+            onConfirm = {
                 bookingViewModel.onEvent(
                     BookingEvent.CreateBooking(tripId = tripId, seats = 1),
                 )
@@ -142,7 +140,7 @@ fun BookingConfirmationScreen(
     tripState: TripDetailUiState,
     isProcessing: Boolean,
     onBack: () -> Unit,
-    onPay: () -> Unit,
+    onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -179,7 +177,6 @@ fun BookingConfirmationScreen(
                         Spacer(modifier = Modifier.height(HopSpacing.md))
                         PriceSummaryCard(
                             priceOerePerSeat = tripState.priceOerePerSeat,
-                            platformFeeOere = tripState.platformFeeOere,
                             seats = 1,
                             modifier = Modifier.padding(horizontal = HopSpacing.md),
                         )
@@ -210,13 +207,12 @@ fun BookingConfirmationScreen(
                         .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                 ) {
                     HopButton(
-                        text = "Pay with MobilePay",
-                        onClick = onPay,
+                        text = "Confirm Booking",
+                        onClick = onConfirm,
                         isLoading = isProcessing,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .semantics { contentDescription = "Pay with MobilePay" },
-                        leadingIcon = { MobilePayLogo() },
+                            .semantics { contentDescription = "Confirm Booking" },
                     )
                 }
             }
@@ -360,12 +356,10 @@ private fun SummaryMetaItem(label: String, value: String) {
 @Composable
 private fun PriceSummaryCard(
     priceOerePerSeat: Int,
-    platformFeeOere: Int,
     seats: Int,
     modifier: Modifier = Modifier,
 ) {
     val totalOere = priceOerePerSeat * seats
-    val seatCostOere = priceOerePerSeat - platformFeeOere
 
     Column(
         modifier = modifier
@@ -411,12 +405,12 @@ private fun PriceSummaryCard(
 
         // Breakdown
         PriceBreakdownRow(
-            label = "${seats}× seat cost",
-            valueOere = seatCostOere * seats,
+            label = "${seats}× SKAT-rate per seat",
+            valueOere = priceOerePerSeat * seats,
         )
         PriceBreakdownRow(
-            label = "Platform fee",
-            valueOere = platformFeeOere * seats,
+            label = "Pay driver via MobilePay after ride",
+            valueOere = 0,
         )
     }
 }
@@ -588,8 +582,7 @@ private fun previewTripState(
     seatsBooked = seatsBooked,
     minThreshold = minThreshold,
     model = model,
-    priceOerePerSeat = 20_386,
-    platformFeeOere = 3_058,
+    priceOerePerSeat = 17_328,
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
@@ -600,7 +593,7 @@ private fun BookingConfirmationModelAPreview() {
             tripState = previewTripState(model = TripModel.A),
             isProcessing = false,
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -617,7 +610,7 @@ private fun BookingConfirmationModelBPreview() {
             ),
             isProcessing = false,
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -634,7 +627,7 @@ private fun BookingConfirmationModelBThresholdMetPreview() {
             ),
             isProcessing = false,
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -647,7 +640,7 @@ private fun BookingConfirmationProcessingPreview() {
             tripState = previewTripState(model = TripModel.A),
             isProcessing = true,
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -660,7 +653,7 @@ private fun BookingConfirmationLoadingPreview() {
             tripState = previewTripState(isLoading = true),
             isProcessing = false,
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }

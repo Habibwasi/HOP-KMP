@@ -11,12 +11,10 @@ const common_1 = require("@nestjs/common");
 const tax_constants_1 = require("../common/tax-constants");
 let PricingService = class PricingService {
     RATE_PER_KM = tax_constants_1.SKAT_RATE_DKK_PER_KM;
-    PLATFORM_FEE_RATE = 0.15;
     calculatePricePerSeat(distanceKm, seats) {
         const totalTripCostOere = Math.round(distanceKm * this.RATE_PER_KM * 100);
-        const driverNetPerSeatOere = Math.floor(totalTripCostOere / seats);
-        const passengerPaysPerSeatOere = Math.round(driverNetPerSeatOere / (1 - this.PLATFORM_FEE_RATE));
-        return Math.max(passengerPaysPerSeatOere, 100);
+        const pricePerSeatOere = Math.floor(totalTripCostOere / seats);
+        return Math.max(pricePerSeatOere, 100);
     }
     calculateDistance(originLat, originLng, destLat, destLng) {
         const R = 6371;

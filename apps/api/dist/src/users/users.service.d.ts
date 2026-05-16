@@ -15,8 +15,9 @@ export declare class UsersService {
     }): Promise<User>;
     markVerified(userId: string): Promise<User>;
     updateProfile(userId: string, data: {
-        firstName: string;
-        lastName: string;
+        firstName?: string;
+        lastName?: string;
+        mobilepayNumber?: string;
     }): Promise<User>;
     reportUser(reportedId: string, reporterId: string, reason: string): Promise<void>;
     getCarDetails(userId: string): Promise<{

@@ -5,15 +5,13 @@ import { SKAT_RATE_DKK_PER_KM } from '../common/tax-constants'
 export class PricingService {
   // SKAT 2024 rate: DKK 2.28/km total trip cost
   private readonly RATE_PER_KM = SKAT_RATE_DKK_PER_KM
-  private readonly PLATFORM_FEE_RATE = 0.15
 
-  // Returns passenger-pays price per seat in oere (integer) — never floats.
-  // Formula: (distanceKm × 2.28 DKK/km) / seats, then add 15% platform fee.
+  // Returns suggested price per seat in oere (integer) — SKAT rate only, no platform fee.
+  // Formula: (distanceKm × 2.28 DKK/km) / seats. Driver receives full amount.
   calculatePricePerSeat(distanceKm: number, seats: number): number {
     const totalTripCostOere = Math.round(distanceKm * this.RATE_PER_KM * 100)
-    const driverNetPerSeatOere = Math.floor(totalTripCostOere / seats)
-    const passengerPaysPerSeatOere = Math.round(driverNetPerSeatOere / (1 - this.PLATFORM_FEE_RATE))
-    return Math.max(passengerPaysPerSeatOere, 100) // minimum 1 DKK
+    const pricePerSeatOere = Math.floor(totalTripCostOere / seats)
+    return Math.max(pricePerSeatOere, 100) // minimum 1 DKK
   }
 
   // Haversine formula — distance between two lat/lng points in km

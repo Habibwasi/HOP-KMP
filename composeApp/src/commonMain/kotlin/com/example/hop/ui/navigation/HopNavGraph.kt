@@ -28,11 +28,12 @@ import com.example.hop.ui.screens.auth.SignUpRoute
 import com.example.hop.ui.screens.passenger.BookingConfirmationRoute
 import com.example.hop.ui.screens.passenger.BookingSuccessRoute
 import com.example.hop.ui.screens.passenger.CancellationConfirmationRoute
-import com.example.hop.ui.screens.passenger.MobilePayHandoffRoute
 import com.example.hop.ui.screens.passenger.MyTripsPassengerRoute
 import com.example.hop.ui.screens.shared.HomeRoute
 import com.example.hop.ui.screens.shared.SplashRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
+import com.example.hop.ui.screens.settlement.PassengerSettlementRoute
+import com.example.hop.ui.screens.settlement.DriverSettlementRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
 import com.example.hop.ui.screens.passenger.RateDriverRoute
@@ -41,6 +42,7 @@ import com.example.hop.ui.screens.driver.TripDetailActiveDriverRoute
 import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
 import com.example.hop.ui.screens.driver.RatePassengerRoute
 import com.example.hop.ui.screens.driver.CarDetailsRoute
+import com.example.hop.ui.screens.driver.EnableDriverMobilepayRoute
 import com.example.hop.ui.screens.driver.ReviewPendingRoute
 import com.example.hop.ui.screens.driver.PostTripModelSelectRoute
 import com.example.hop.ui.screens.driver.PostTripModelARoute
@@ -225,23 +227,10 @@ fun HopNavGraph(
             BookingConfirmationRoute(
                 tripId = route.tripId,
                 onNavigateBack = { navController.navigateUp() },
-                onNavigateToMobilePayHandoff = { bookingId ->
-                    navController.navigate(HopRoutes.MobilePayHandoff(bookingId = bookingId))
-                },
-            )
-        }
-
-        composable<HopRoutes.MobilePayHandoff> { backStackEntry ->
-            val route: HopRoutes.MobilePayHandoff = backStackEntry.toRoute()
-            MobilePayHandoffRoute(
-                bookingId = route.bookingId,
                 onNavigateToSuccess = { bookingId ->
                     navController.navigate(HopRoutes.BookingSuccess(bookingId = bookingId)) {
                         popUpTo(HopRoutes.BookingConfirmation(tripId = "")) { inclusive = true }
                     }
-                },
-                onNavigateBackToBookingConfirmation = {
-                    navController.navigateUp()
                 },
             )
         }
@@ -303,6 +292,9 @@ fun HopNavGraph(
                         popUpTo(HopRoutes.TripDetailActive(bookingId = bookingId)) { inclusive = true }
                     }
                 },
+                onNavigateToPassengerSettlement = { bookingId ->
+                    navController.navigate(HopRoutes.PassengerSettlement(bookingId = bookingId))
+                },
             )
         }
 
@@ -339,10 +331,11 @@ fun HopNavGraph(
         composable<HopRoutes.EnableDriverStep1> {
             CarDetailsRoute(
                 onNavigateToHome = {
-                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
+                    // Proceed to MobilePay step (step 2) instead of going directly home.
+                    navController.navigate(HopRoutes.EnableDriverStep2)
                 },
                 onNavigateToReviewPending = {
-                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
+                    navController.navigate(HopRoutes.EnableDriverStep2)
                 },
                 onNavigateBack = { navController.navigateUp() },
                 authViewModel = authViewModel,
@@ -350,12 +343,12 @@ fun HopNavGraph(
         }
 
         composable<HopRoutes.EnableDriverStep2> {
-            // Licence photo upload — navigates forward to Review Pending.
-            // (No back-end upload endpoint yet; screen is informational only.)
-            ReviewPendingRoute(
+            // DR-03 — MobilePay number step (replaces defunct licence upload).
+            EnableDriverMobilepayRoute(
                 onNavigateToHome = {
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
+                onNavigateBack = { navController.navigateUp() },
             )
         }
 
@@ -477,6 +470,9 @@ fun HopNavGraph(
                         popUpTo(HopRoutes.MyTripsDriver) { inclusive = false }
                     }
                 },
+                onNavigateToDriverSettlement = { bookingId ->
+                    navController.navigate(HopRoutes.DriverSettlement(bookingId = bookingId))
+                },
                 onNavigateToMyTrips = {
                     navController.navigate(HopRoutes.MyTripsDriver) {
                         popUpTo(HopRoutes.MyTripsDriver) { inclusive = true }
@@ -561,6 +557,34 @@ fun HopNavGraph(
                 onNavigateToTermsOfService = { uriHandler.openUri("https://ridly.dk/terms") },
                 onNavigateToPrivacyPolicy = { uriHandler.openUri("https://ridly.dk/privacy") },
                 onLogout = onLogout,
+            )
+        }
+
+        // ── Settlement ────────────────────────────────────────────────────
+
+        composable<HopRoutes.PassengerSettlement> { backStackEntry ->
+            val route: HopRoutes.PassengerSettlement = backStackEntry.toRoute()
+            PassengerSettlementRoute(
+                bookingId = route.bookingId,
+                onNavigateBack = { navController.navigateUp() },
+                onSettlementComplete = {
+                    navController.navigate(HopRoutes.MyTripsPassenger) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    }
+                },
+            )
+        }
+
+        composable<HopRoutes.DriverSettlement> { backStackEntry ->
+            val route: HopRoutes.DriverSettlement = backStackEntry.toRoute()
+            DriverSettlementRoute(
+                bookingId = route.bookingId,
+                onNavigateBack = { navController.navigateUp() },
+                onSettlementComplete = {
+                    navController.navigate(HopRoutes.MyTripsDriver) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    }
+                },
             )
         }
     }

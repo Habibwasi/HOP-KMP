@@ -181,7 +181,6 @@ private struct PriceBreakdownCard: View {
 
     var body: some View {
         let perSeat = Int(state.priceOerePerSeat)
-        let fee = Int(state.platformFeeOere)
         VStack(alignment: .leading, spacing: HopSpacing.sm) {
             Text("Price")
                 .font(HopFont.titleSmall())
@@ -193,7 +192,7 @@ private struct PriceBreakdownCard: View {
                     .font(HopFont.mono(size: 18, weight: .bold))
                     .foregroundColor(Color.hopAuthTextPrimary)
             }
-            Text("Includes platform fee \(dkk(fee))")
+            Text("SKAT-suggested rate · pay driver via MobilePay after the ride")
                 .font(HopFont.labelSmall())
                 .foregroundColor(Color.hopAuthTextSecondary)
 

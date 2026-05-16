@@ -4,16 +4,16 @@ import { PricingService } from './pricing.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { SearchTripsDto } from './dto/search-trips.dto';
 import { BookingsService } from '../bookings/bookings.service';
-import { PaymentsService } from '../payments/payments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class TripsService {
     private prisma;
     private pricing;
     private alertsQueue;
     private bookingsQueue;
     private bookings;
-    private payments;
+    private notifications;
     private readonly logger;
-    constructor(prisma: PrismaService, pricing: PricingService, alertsQueue: Queue, bookingsQueue: Queue, bookings: BookingsService, payments: PaymentsService);
+    constructor(prisma: PrismaService, pricing: PricingService, alertsQueue: Queue, bookingsQueue: Queue, bookings: BookingsService, notifications: NotificationsService);
     create(driverId: string, dto: CreateTripDto): Promise<({
         driver: {
             id: string;

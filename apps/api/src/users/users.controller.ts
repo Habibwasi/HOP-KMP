@@ -104,9 +104,19 @@ export class UsersController {
   @Patch('me')
   @UseGuards(SupabaseGuard)
   async updateMe(@Req() req: any, @Body() dto: UpdateUserDto) {
-    const [firstName, ...rest] = dto.fullName.trim().split(' ')
-    const lastName = rest.join(' ') || '.'
-    return this.users.updateProfile(req.user.id, { firstName, lastName })
+    const data: { firstName?: string; lastName?: string; mobilepayNumber?: string } = {}
+
+    if (dto.fullName?.trim()) {
+      const [firstName, ...rest] = dto.fullName.trim().split(' ')
+      data.firstName = firstName
+      data.lastName = rest.join(' ') || '.'
+    }
+
+    if (dto.mobilepayNumber !== undefined) {
+      data.mobilepayNumber = dto.mobilepayNumber
+    }
+
+    return this.users.updateProfile(req.user.id, data)
   }
 
   @Post('push-token')

@@ -69,6 +69,7 @@ fun MarkTripCompleteRoute(
     driverNetOere: Int,
     onNavigateBack: () -> Unit,
     onNavigateToRatePassenger: (bookingId: String, passengerName: String, passengerInitials: String) -> Unit,
+    onNavigateToDriverSettlement: (bookingId: String) -> Unit,
     onNavigateToMyTrips: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
@@ -94,6 +95,7 @@ fun MarkTripCompleteRoute(
                         passenger?.initials ?: "",
                     )
                 }
+                is DriverEffect.NavigateToDriverSettlement -> onNavigateToDriverSettlement(effect.bookingId)
                 is DriverEffect.NavigateToMyTrips -> onNavigateToMyTrips()
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)

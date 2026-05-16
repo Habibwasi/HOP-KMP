@@ -732,7 +732,7 @@ internal fun RouteSummaryRow(
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
-                text = "DKK ${priceResult.passengerPaysPerSeatOere / 100}/seat",
+                text = "DKK ${priceResult.pricePerSeatOere / 100}/seat",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = HopColors.primaryLime,

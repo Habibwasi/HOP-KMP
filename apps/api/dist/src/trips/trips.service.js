@@ -23,7 +23,7 @@ const client_1 = require("@prisma/client");
 const search_alerts_processor_1 = require("../search-alerts/search-alerts.processor");
 const trips_constants_1 = require("./trips.constants");
 const bookings_service_1 = require("../bookings/bookings.service");
-const payments_service_1 = require("../payments/payments.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 const DAY_CODE_TO_UTC_DOW = {
     SUN: 0,
     MON: 1,
@@ -32,6 +32,37 @@ const DAY_CODE_TO_UTC_DOW = {
     THU: 4,
     FRI: 5,
     SAT: 6,
+};
+const expandAddressToken = (token) => {
+    const aliases = {
+        copenhagen: ['kobenhavn', 'kbh'],
+        kobenhavn: ['copenhagen', 'kbh'],
+        kbh: ['kobenhavn', 'copenhagen'],
+        aarhus: ['arhus'],
+        arhus: ['aarhus'],
+    };
+    return [token, ...(aliases[token] ?? [])];
+};
+const normalizeSearchText = (value) => {
+    const tokens = (value ?? '')
+        .toLowerCase()
+        .replace(/æ/g, 'ae')
+        .replace(/ø/g, 'o')
+        .replace(/å/g, 'a')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .split(/[^a-z0-9]+/)
+        .filter((part) => part.length >= 2);
+    return [...new Set(tokens.flatMap(expandAddressToken))];
+};
+const addressMatches = (address, query) => {
+    const queryTokens = normalizeSearchText(query);
+    if (queryTokens.length === 0)
+        return true;
+    const addressTokens = normalizeSearchText(address);
+    const addressText = addressTokens.join(' ');
+    return queryTokens.some((token) => addressText.includes(token) ||
+        addressTokens.some((addressToken) => addressToken.includes(token) || token.includes(addressToken)));
 };
 function buildRecurringDates(anchorDate, dayCodes, windowDays) {
     const targetDows = new Set(dayCodes.map((d) => DAY_CODE_TO_UTC_DOW[d.toUpperCase()]).filter((n) => n !== undefined));
@@ -53,17 +84,21 @@ let TripsService = TripsService_1 = class TripsService {
     alertsQueue;
     bookingsQueue;
     bookings;
-    payments;
+    notifications;
     logger = new common_1.Logger(TripsService_1.name);
-    constructor(prisma, pricing, alertsQueue, bookingsQueue, bookings, payments) {
+    constructor(prisma, pricing, alertsQueue, bookingsQueue, bookings, notifications) {
         this.prisma = prisma;
         this.pricing = pricing;
         this.alertsQueue = alertsQueue;
         this.bookingsQueue = bookingsQueue;
         this.bookings = bookings;
-        this.payments = payments;
+        this.notifications = notifications;
     }
     async create(driverId, dto) {
+        const driver = await this.prisma.user.findUnique({ where: { id: driverId } });
+        if (!driver?.mobilepayNumber) {
+            throw new common_1.BadRequestException('Please add your MobilePay number in your profile before creating a trip');
+        }
         if (dto.model === client_1.TripModel.B) {
             if (!dto.minPassengers) {
                 throw new common_1.BadRequestException('minPassengers is required for Model B trips');
@@ -82,7 +117,9 @@ let TripsService = TripsService_1 = class TripsService {
                 throw new common_1.BadRequestException('recurringDays is required for Model A trips');
             }
         }
-        const distanceKm = this.pricing.calculateDistance(dto.originLat, dto.originLng, dto.destLat, dto.destLng);
+        const distanceKm = dto.distanceMetres
+            ? dto.distanceMetres / 1000
+            : this.pricing.calculateDistance(dto.originLat, dto.originLng, dto.destLat, dto.destLng);
         const pricePerSeat = this.pricing.calculatePricePerSeat(distanceKm, dto.seats);
         const baseData = {
             driverId,
@@ -217,14 +254,6 @@ let TripsService = TripsService_1 = class TripsService {
             departureAt: { gte: dayStart, lte: dayEnd },
             seats: { gte: seats },
         };
-        if (!useCoordinates) {
-            if (dto.origin) {
-                where.originAddress = { contains: dto.origin, mode: 'insensitive' };
-            }
-            if (dto.dest) {
-                where.destAddress = { contains: dto.dest, mode: 'insensitive' };
-            }
-        }
         const trips = await this.prisma.trip.findMany({
             where,
             include: {
@@ -241,7 +270,9 @@ let TripsService = TripsService_1 = class TripsService {
                 const destDist = this.pricing.calculateDistance(dto.destLat, dto.destLng, trip.destLat, trip.destLng);
                 return originDist <= radiusKm && destDist <= radiusKm && availableSeats >= seats;
             }
-            return availableSeats >= seats;
+            return availableSeats >= seats &&
+                addressMatches(trip.originAddress, dto.origin) &&
+                addressMatches(trip.destAddress, dto.dest);
         })
             .map((trip) => {
             const bookedSeats = trip.bookings.reduce((sum, b) => sum + b.seats, 0);
@@ -288,12 +319,19 @@ let TripsService = TripsService_1 = class TripsService {
     async complete(tripId, userId) {
         const trip = await this.prisma.trip.findUnique({
             where: { id: tripId },
-            include: { bookings: { where: { status: client_1.BookingStatus.CONFIRMED } } },
+            include: {
+                driver: { select: { mobilepayNumber: true } },
+                bookings: { where: { status: client_1.BookingStatus.CONFIRMED } },
+            },
         });
         if (!trip)
             throw new common_1.NotFoundException('Trip not found');
         if (trip.driverId !== userId)
             throw new common_1.ForbiddenException('Not your trip');
+        if (!trip.driver.mobilepayNumber) {
+            throw new common_1.BadRequestException('Add your MobilePay number before completing a trip');
+        }
+        const driver = trip.driver;
         if (trip.status === client_1.TripStatus.COMPLETED)
             return { completed: true };
         if (trip.status !== client_1.TripStatus.ACTIVE) {
@@ -304,9 +342,34 @@ let TripsService = TripsService_1 = class TripsService {
             data: { status: client_1.TripStatus.COMPLETED, isActive: false },
         });
         for (const booking of trip.bookings) {
-            await this.payments.capturePayment(booking.id).catch((err) => {
-                this.logger.error(`[Trips] capturePayment failed for booking ${booking.id} on trip complete: ${err?.message}`);
-            });
+            try {
+                await this.prisma.$transaction([
+                    this.prisma.rideSettlement.create({
+                        data: {
+                            bookingId: booking.id,
+                            suggestedAmountOere: booking.totalOere,
+                            mobilepayNumber: driver.mobilepayNumber,
+                        },
+                    }),
+                    this.prisma.booking.update({
+                        where: { id: booking.id },
+                        data: { status: client_1.BookingStatus.AWAITING_PAYMENT },
+                    }),
+                ]);
+                await this.notifications.sendToUser(booking.passengerId, 'Time to pay your driver', `Please send DKK ${Math.round(booking.totalOere / 100)} to your driver via MobilePay.`, { type: 'RIDE_AWAITING_PAYMENT', bookingId: booking.id }).catch(() => { });
+                await this.prisma.notification.create({
+                    data: {
+                        userId: booking.passengerId,
+                        type: 'RIDE_AWAITING_PAYMENT',
+                        title: 'Time to pay your driver',
+                        body: `Please send DKK ${Math.round(booking.totalOere / 100)} to your driver via MobilePay.`,
+                        deepLinkId: booking.id,
+                    },
+                });
+            }
+            catch (err) {
+                this.logger.error(`[Trips] Failed to create settlement for booking ${booking.id}: ${err?.message}`);
+            }
         }
         return { completed: true };
     }
@@ -341,12 +404,11 @@ exports.TripsService = TripsService = TripsService_1 = __decorate([
     __param(2, (0, bullmq_1.InjectQueue)(search_alerts_processor_1.SEARCH_ALERTS_QUEUE)),
     __param(3, (0, bullmq_1.InjectQueue)(trips_constants_1.BOOKINGS_QUEUE)),
     __param(4, (0, common_1.Inject)((0, common_1.forwardRef)(() => bookings_service_1.BookingsService))),
-    __param(5, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         pricing_service_1.PricingService,
         bullmq_2.Queue,
         bullmq_2.Queue,
         bookings_service_1.BookingsService,
-        payments_service_1.PaymentsService])
+        notifications_service_1.NotificationsService])
 ], TripsService);
 //# sourceMappingURL=trips.service.js.map

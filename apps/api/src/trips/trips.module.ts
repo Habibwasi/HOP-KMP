@@ -9,7 +9,7 @@ import { TripsProcessor, TRIPS_QUEUE, EXTEND_RECURRING_JOB } from './trips.proce
 import { SEARCH_ALERTS_QUEUE } from '../search-alerts/search-alerts.processor'
 import { BOOKINGS_QUEUE } from './trips.constants'
 import { BookingsModule } from '../bookings/bookings.module'
-import { PaymentsModule } from '../payments/payments.module'
+import { NotificationsModule } from '../notifications/notifications.module'
 
 export { BOOKINGS_QUEUE, CHECK_THRESHOLD_JOB } from './trips.constants'
 
@@ -19,7 +19,7 @@ export { BOOKINGS_QUEUE, CHECK_THRESHOLD_JOB } from './trips.constants'
     BullModule.registerQueue({ name: BOOKINGS_QUEUE }),
     BullModule.registerQueue({ name: TRIPS_QUEUE }),
     forwardRef(() => BookingsModule),
-    forwardRef(() => PaymentsModule),
+    NotificationsModule,
   ],
   providers: [TripsService, PricingService, TripsProcessor],
   controllers: [TripsController],

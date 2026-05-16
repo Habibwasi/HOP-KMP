@@ -37,4 +37,12 @@ final class OwnProfileViewModelWrapper: ObservableObject {
     func nameDraftChanged(_ name: String) {
         viewModel.onEvent(event: OwnProfileEventNameDraftChanged(name: name))
     }
+
+    func startEditMobilepay()  { viewModel.onEvent(event: OwnProfileEventStartEditMobilepay.shared) }
+    func saveMobilepay()       { viewModel.onEvent(event: OwnProfileEventSaveMobilepay.shared) }
+    func cancelEditMobilepay() { viewModel.onEvent(event: OwnProfileEventCancelEditMobilepay.shared) }
+
+    func mobilepayDraftChanged(_ number: String) {
+        viewModel.onEvent(event: OwnProfileEventMobilepayDraftChanged(number: number))
+    }
 }

@@ -7,6 +7,7 @@ struct TripDetailActiveView: View {
     let onBack: () -> Void
     let onNavigateToChat: (_ bookingId: String) -> Void
     let onNavigateToCancellationConfirmation: (_ bookingId: String) -> Void
+    let onNavigateToPassengerSettlement: (_ bookingId: String) -> Void
 
     @StateObject private var wrapper = TripDetailActiveViewModelWrapper()
     @StateObject private var bookingWrapper = BookingViewModelWrapper()
@@ -64,12 +65,18 @@ struct TripDetailActiveView: View {
                 HopButton(text: "Message Driver", variant: .ghost, lightSurface: true) {
                     wrapper.messageDriver()
                 }
-                HopButton(
-                    text: "Cancel Booking",
-                    variant: .destructive,
-                    isLoading: bookingWrapper.state.isLoading
-                ) {
-                    showCancelDialog = true
+                if wrapper.state.bookingStatus == .awaitingPayment {
+                    HopButton(text: "Pay Driver", variant: .primary) {
+                        onNavigateToPassengerSettlement(bookingId)
+                    }
+                } else {
+                    HopButton(
+                        text: "Cancel Booking",
+                        variant: .destructive,
+                        isLoading: bookingWrapper.state.isLoading
+                    ) {
+                        showCancelDialog = true
+                    }
                 }
             }
             .padding(HopSpacing.md)
@@ -161,7 +168,10 @@ private struct BookingStatusBadge: View {
             switch status {
             case .confirmed: return ("Confirmed", Color.hopSuccess)
             case .pending: return ("Pending", Color.hopWarning)
+            case .awaitingPayment: return ("Awaiting payment", Color.hopWarning)
             case .cancelled: return ("Cancelled", Color.hopError)
+            case .completed: return ("Completed", Color.hopSuccess)
+            case .disputed: return ("Disputed", Color.hopError)
             default: return ("Unknown", Color.hopAuthTextSecondary)
             }
         }()

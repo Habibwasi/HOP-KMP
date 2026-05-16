@@ -66,7 +66,7 @@ export class PlacesService {
    * Returns { lat, lng, formattedAddress } or throws if nothing found.
    */
   async geocode(address: string): Promise<{ lat: number; lng: number; formattedAddress: string }> {
-    const key = this.config.get<string>('GOOGLE_MAPS_API_KEY')
+    const key = this.googleMapsKey()
     if (!key) throw new BadRequestException('Geocoding is not configured on this server')
 
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`
@@ -87,5 +87,61 @@ export class PlacesService {
 
     const { lat, lng } = json.results[0].geometry.location
     return { lat, lng, formattedAddress: json.results[0].formatted_address }
+  }
+
+  /** Resolve a driving route via Google Directions using the server-side API key. */
+  async route(origin: string, dest: string): Promise<{
+    distanceMetres: number
+    originLat: number
+    originLng: number
+    destLat: number
+    destLng: number
+  }> {
+    const key = this.googleMapsKey()
+    if (!key) throw new BadRequestException('Route calculation is not configured on this server')
+
+    const cleanOrigin = origin?.trim()
+    const cleanDest = dest?.trim()
+    if (!cleanOrigin || !cleanDest) {
+      throw new BadRequestException('origin and dest are required')
+    }
+
+    const url = new URL('https://maps.googleapis.com/maps/api/directions/json')
+    url.searchParams.set('origin', cleanOrigin)
+    url.searchParams.set('destination', cleanDest)
+    url.searchParams.set('mode', 'driving')
+    url.searchParams.set('key', key)
+
+    const res = await fetch(url)
+    if (!res.ok) throw new BadRequestException('Route calculation request failed')
+
+    const json = await res.json() as {
+      status: string
+      error_message?: string
+      routes: Array<{
+        legs: Array<{
+          distance: { value: number }
+          start_location: { lat: number; lng: number }
+          end_location: { lat: number; lng: number }
+        }>
+      }>
+    }
+
+    const leg = json.routes[0]?.legs[0]
+    if (json.status !== 'OK' || !leg) {
+      throw new BadRequestException(json.error_message ?? 'No driving route found between the selected addresses')
+    }
+
+    return {
+      distanceMetres: leg.distance.value,
+      originLat: leg.start_location.lat,
+      originLng: leg.start_location.lng,
+      destLat: leg.end_location.lat,
+      destLng: leg.end_location.lng,
+    }
+  }
+
+  private googleMapsKey(): string | undefined {
+    return this.config.get<string>('GOOGLE_MAPS_API_KEY') ?? this.config.get<string>('MAPS_API_KEY')
   }
 }

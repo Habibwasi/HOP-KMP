@@ -1,114 +1,74 @@
 package com.example.hop.data.repository
 
+import com.example.hop.data.dto.ApiEnvelope
 import com.example.hop.domain.repository.RouteInfo
 import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.network.ApiResponse
-import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.SerialName
+import io.ktor.client.request.parameter
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-
-// ── Google Directions API DTOs ────────────────────────────────────────────────
-
-@Serializable
-private data class DirectionsResponse(
-    val routes: List<DirectionsRoute> = emptyList(),
-)
-
-@Serializable
-private data class DirectionsRoute(
-    val legs: List<DirectionsLeg> = emptyList(),
-)
-
-@Serializable
-private data class DirectionsLeg(
-    val distance: DirectionsDistance,
-    @SerialName("start_location") val startLocation: DirectionsLatLng,
-    @SerialName("end_location") val endLocation: DirectionsLatLng,
-)
-
-@Serializable
-private data class DirectionsLatLng(
-    val lat: Double,
-    val lng: Double,
-)
-
-@Serializable
-private data class DirectionsDistance(
-    val value: Int,     // metres
-    val text: String,   // e.g. "45.2 km"
-)
 
 // ── Repository implementation ─────────────────────────────────────────────────
 
 /**
- * Calls the Google Maps Directions REST API to obtain the real driving distance
- * between two free-text addresses.
- *
- * A dedicated lightweight [HttpClient] is created internally so that the app's
- * auth interceptor (which adds the Supabase JWT) is NOT sent to Google's servers.
+ * Calls Hop API route calculation so Google Maps credentials stay server-side
+ * and route pricing behaves the same on Android and iOS.
  */
 class RoutingRepositoryImpl(
-    private val mapsApiKey: String,
+    private val httpClient: HttpClient,
 ) : RoutingRepository {
-
-    private val client = HttpClient {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
-        }
-    }
 
     override suspend fun getDistanceMetres(
         origin: String,
         destination: String,
-    ): ApiResponse<Int> = safeApiCall {
-        val response: DirectionsResponse = client.get(
-            "https://maps.googleapis.com/maps/api/directions/json"
-        ) {
-            url {
-                parameters.append("origin", origin)
-                parameters.append("destination", destination)
-                parameters.append("mode", "driving")
-                parameters.append("key", mapsApiKey)
-            }
-        }.body()
-
-        val metres = response.routes.firstOrNull()?.legs?.firstOrNull()?.distance?.value
-            ?: throw IllegalStateException("No driving route found between the selected addresses")
-        metres
+    ): ApiResponse<Int> = when (val result = getRouteInfo(origin, destination)) {
+        is ApiResponse.Success -> ApiResponse.Success(result.data.distanceMetres)
+        is ApiResponse.Error -> result
     }
 
     override suspend fun getRouteInfo(
         origin: String,
         destination: String,
-    ): ApiResponse<RouteInfo> = safeApiCall {
-        val response: DirectionsResponse = client.get(
-            "https://maps.googleapis.com/maps/api/directions/json"
-        ) {
-            url {
-                parameters.append("origin", origin)
-                parameters.append("destination", destination)
-                parameters.append("mode", "driving")
-                parameters.append("key", mapsApiKey)
-            }
-        }.body()
+    ): ApiResponse<RouteInfo> {
+        val response = safeEnvelopeCall<RouteInfoDto> {
+            httpClient.get("places/route") {
+                parameter("origin", origin)
+                parameter("dest", destination)
+            }.body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.toDomain())
+            is ApiResponse.Error -> response
+        }
+    }
 
-        val leg = response.routes.firstOrNull()?.legs?.firstOrNull()
-            ?: throw IllegalStateException("No driving route found between the selected addresses")
-        RouteInfo(
-            distanceMetres = leg.distance.value,
-            originLat = leg.startLocation.lat,
-            originLng = leg.startLocation.lng,
-            destLat = leg.endLocation.lat,
-            destLng = leg.endLocation.lng,
-        )
+    private suspend fun <T> safeEnvelopeCall(
+        block: suspend () -> ApiEnvelope<T>,
+    ): ApiResponse<T> = try {
+        val envelope = block()
+        val error = envelope.error
+        if (error != null) return ApiResponse.Error(error.code, error.message)
+        ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
+    } catch (e: Exception) {
+        ApiResponse.Error(-1, e.message ?: "Unknown error")
     }
 }
+
+@Serializable
+private data class RouteInfoDto(
+    val distanceMetres: Int,
+    val originLat: Double,
+    val originLng: Double,
+    val destLat: Double,
+    val destLng: Double,
+)
+
+private fun RouteInfoDto.toDomain(): RouteInfo = RouteInfo(
+    distanceMetres = distanceMetres,
+    originLat = originLat,
+    originLng = originLng,
+    destLat = destLat,
+    destLng = destLng,
+)

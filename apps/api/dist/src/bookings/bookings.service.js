@@ -20,18 +20,15 @@ const bullmq_2 = require("bullmq");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const notifications_service_1 = require("../notifications/notifications.service");
-const payments_service_1 = require("../payments/payments.service");
 let BookingsService = BookingsService_1 = class BookingsService {
     prisma;
     bookingsQueue;
     notifications;
-    payments;
     logger = new common_1.Logger(BookingsService_1.name);
-    constructor(prisma, bookingsQueue, notifications, payments) {
+    constructor(prisma, bookingsQueue, notifications) {
         this.prisma = prisma;
         this.bookingsQueue = bookingsQueue;
         this.notifications = notifications;
-        this.payments = payments;
     }
     async create(passengerId, dto) {
         return this.prisma.$transaction(async (tx) => {
@@ -117,33 +114,16 @@ let BookingsService = BookingsService_1 = class BookingsService {
             where: { id: bookingId },
             data: { status: client_1.BookingStatus.CANCELLED },
         });
-        const payment = await this.prisma.payment.findUnique({ where: { bookingId } });
-        if (payment && payment.status === 'HELD') {
-            await this.payments.refundPayment(bookingId).catch((err) => {
-                this.logger.error(`[Bookings] Refund failed for booking ${bookingId}: ${err?.message}`);
-            });
-        }
         return { cancelled: true };
     }
     async cancelAllForTrip(tripId) {
-        const bookings = await this.prisma.booking.findMany({
+        await this.prisma.booking.updateMany({
             where: {
                 tripId,
                 status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] },
             },
-            include: { payment: true },
+            data: { status: client_1.BookingStatus.CANCELLED },
         });
-        for (const booking of bookings) {
-            await this.prisma.booking.update({
-                where: { id: booking.id },
-                data: { status: client_1.BookingStatus.CANCELLED },
-            });
-            if (booking.payment && booking.payment.status === 'HELD') {
-                await this.payments.refundPayment(booking.id).catch((err) => {
-                    this.logger.error(`[Bookings] Refund failed for booking ${booking.id} on trip cancel: ${err?.message}`);
-                });
-            }
-        }
     }
     async findById(id) {
         const booking = await this.prisma.booking.findUnique({
@@ -151,7 +131,6 @@ let BookingsService = BookingsService_1 = class BookingsService {
             include: {
                 trip: true,
                 passenger: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-                payment: true,
             },
         });
         if (!booking)
@@ -172,7 +151,6 @@ let BookingsService = BookingsService_1 = class BookingsService {
                         driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
                     },
                 },
-                payment: true,
             },
         });
     }
@@ -184,7 +162,6 @@ let BookingsService = BookingsService_1 = class BookingsService {
                 trip: {
                     include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
                 },
-                payment: true,
             },
         });
     }
@@ -221,7 +198,7 @@ let BookingsService = BookingsService_1 = class BookingsService {
         }
         const activeBookings = await this.prisma.booking.findMany({
             where: { tripId, status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] } },
-            select: { id: true, passengerId: true },
+            select: { passengerId: true },
         });
         await this.prisma.$transaction([
             this.prisma.trip.update({
@@ -242,13 +219,7 @@ let BookingsService = BookingsService_1 = class BookingsService {
         await this.prisma.notification.create({
             data: { userId: trip.driverId, type: 'GENERAL', title: cancelTitle, body: cancelBody, deepLinkId: tripId },
         });
-        for (const { id: bookingId, passengerId } of activeBookings) {
-            try {
-                await this.payments.refundPayment(bookingId);
-            }
-            catch (e) {
-                this.logger.warn(`Threshold refund failed for booking ${bookingId}: ${e}`);
-            }
+        for (const { passengerId } of activeBookings) {
             await this.notifications.sendToUser(passengerId, cancelTitle, cancelBody, { type: 'BOOKING_CANCELLED', tripId });
             await this.prisma.notification.create({
                 data: { userId: passengerId, type: 'BOOKING_CANCELLED', title: cancelTitle, body: cancelBody, deepLinkId: tripId },
@@ -260,10 +231,8 @@ exports.BookingsService = BookingsService;
 exports.BookingsService = BookingsService = BookingsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, bullmq_1.InjectQueue)('bookings')),
-    __param(3, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         bullmq_2.Queue,
-        notifications_service_1.NotificationsService,
-        payments_service_1.PaymentsService])
+        notifications_service_1.NotificationsService])
 ], BookingsService);
 //# sourceMappingURL=bookings.service.js.map

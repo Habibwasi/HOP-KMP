@@ -5,7 +5,7 @@ import Shared
 struct BookingConfirmationView: View {
     let tripId: String
     let onBack: () -> Void
-    let onNavigateToMobilePay: (_ bookingId: String) -> Void
+    let onNavigateToSuccess: (_ bookingId: String) -> Void
 
     @StateObject private var tripWrapper = TripDetailViewModelWrapper()
     @StateObject private var bookingWrapper = BookingViewModelWrapper()
@@ -52,9 +52,9 @@ struct BookingConfirmationView: View {
             }
 
             HopButton(
-                text: "Pay with MobilePay",
+                text: "Confirm Booking",
                 variant: .primary,
-                isLoading: bookingWrapper.state.paymentState == .processing
+                isLoading: bookingWrapper.state.isLoading
             ) {
                 bookingWrapper.createBooking(tripId: tripId, seats: 1)
             }
@@ -66,8 +66,8 @@ struct BookingConfirmationView: View {
             tripWrapper.startObserving { _ in }
             tripWrapper.loadTrip(tripId: tripId)
             bookingWrapper.startObserving { effect in
-                if let nav = effect as? BookingEffectNavigateToMobilePay {
-                    onNavigateToMobilePay(nav.bookingId)
+                if let nav = effect as? BookingEffectNavigateToSuccess {
+                    onNavigateToSuccess(nav.bookingId)
                 }
             }
         }
@@ -109,12 +109,11 @@ private struct PriceSummaryCard: View {
 
     var body: some View {
         let perSeat = Int(state.priceOerePerSeat)
-        let fee = Int(state.platformFeeOere)
         let seats = 1
         let total = perSeat * seats
         VStack(spacing: HopSpacing.sm) {
-            row(label: "Per seat × \(seats)", value: dkk(perSeat * seats))
-            row(label: "Platform fee", value: dkk(fee))
+            row(label: "\(seats)× SKAT-rate per seat", value: dkk(perSeat * seats))
+            row(label: "Pay driver via MobilePay after ride", value: "")
             Divider()
             HStack {
                 Text("Total").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopAuthTextPrimary)

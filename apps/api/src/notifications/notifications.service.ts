@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
+import { existsSync } from 'node:fs'
 import * as apn from 'apn'
 import * as admin from 'firebase-admin'
 
@@ -19,34 +20,52 @@ export class NotificationsService {
   }
 
   private initApn() {
+    const keyPath = this.config.get<string>('APNS_KEY_PATH')
+    const keyId = this.config.get<string>('APNS_KEY_ID')
+    const teamId = this.config.get<string>('APNS_TEAM_ID')
+
+    if (!keyPath || !keyId || !teamId || !existsSync(keyPath)) {
+      this.logger.warn('APNs not initialised - credentials are missing in this environment')
+      return
+    }
+
     try {
       this.apnProvider = new apn.Provider({
         token: {
-          key: this.config.getOrThrow('APNS_KEY_PATH'),
-          keyId: this.config.getOrThrow('APNS_KEY_ID'),
-          teamId: this.config.getOrThrow('APNS_TEAM_ID'),
+          key: keyPath,
+          keyId,
+          teamId,
         },
         production: this.config.get('NODE_ENV') === 'production',
       })
     } catch (e) {
-      this.logger.error('APNs not initialised — check APNS_KEY_PATH', (e as Error).stack)
+      this.logger.error(`APNs not initialised - ${(e as Error).message}`)
     }
   }
 
   private initFcm() {
+    const projectId = this.config.get<string>('FIREBASE_PROJECT_ID')
+    const clientEmail = this.config.get<string>('FIREBASE_CLIENT_EMAIL')
+    const privateKey = this.config.get<string>('FIREBASE_PRIVATE_KEY')
+
+    if (!projectId || !clientEmail || !privateKey || privateKey === 'your_private_key') {
+      this.logger.warn('FCM not initialised - credentials are missing in this environment')
+      return
+    }
+
     try {
       if (!admin.apps.length) {
         admin.initializeApp({
           credential: admin.credential.cert({
-            projectId: this.config.getOrThrow('FIREBASE_PROJECT_ID'),
-            clientEmail: this.config.getOrThrow('FIREBASE_CLIENT_EMAIL'),
-            privateKey: this.config.getOrThrow('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, '\n'),
           }),
         })
       }
       this.fcmInitialised = true
     } catch (e) {
-      this.logger.error('FCM not initialised — check Firebase credentials', (e as Error).stack)
+      this.logger.error(`FCM not initialised - ${(e as Error).message}`)
     }
   }
 

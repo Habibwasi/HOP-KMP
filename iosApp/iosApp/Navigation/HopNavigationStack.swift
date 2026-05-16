@@ -108,16 +108,16 @@ struct HopNavigationStack: View {
             BookingConfirmationView(
                 tripId: tripId,
                 onBack: popBack,
-                onNavigateToMobilePay: { bookingId in
-                    navigate(.mobilePayHandoff(bookingId: bookingId))
+                onNavigateToSuccess: { bookingId in
+                    navigate(.bookingSuccess(bookingId: bookingId))
                 }
             )
 
         case .mobilePayHandoff(let bookingId):
-            MobilePayHandoffView(
+            PassengerSettlementView(
                 bookingId: bookingId,
-                onSuccess: { bid in navigate(.bookingSuccess(bookingId: bid)) },
-                onBack: popBack
+                onBack: popBack,
+                onSettlementComplete: { navigate(.myTripsPassenger) }
             )
 
         case .bookingSuccess(let bookingId):
@@ -143,7 +143,8 @@ struct HopNavigationStack: View {
                 bookingId: bookingId,
                 onBack: popBack,
                 onNavigateToChat: { bid in navigate(.chat(bookingId: bid)) },
-                onNavigateToCancellationConfirmation: { bid in navigate(.cancellationConfirmation(bookingId: bid)) }
+                onNavigateToCancellationConfirmation: { bid in navigate(.cancellationConfirmation(bookingId: bid)) },
+                onNavigateToPassengerSettlement: { bid in navigate(.passengerSettlement(bookingId: bid)) }
             )
 
         case .rateDriver(let bookingId, let driverName, let driverInitials):
@@ -165,14 +166,20 @@ struct HopNavigationStack: View {
         case .enableDriverStep1:
             // Single-step onboarding (matches Android): saving car details
             // fires DriverEffect.NavigateToHome, which the view forwards as
-            // `onNavigateNext` — we refresh the auth profile so the DRIVER
-            // role flips immediately, then pop the entire stack back to home.
+            // `onNavigateNext` — navigate to step 2 (MobilePay) so the new
+            // driver sets their number before their first ride.
             CarDetailsView(
                 onNavigateBack: popBack,
                 onNavigateNext: {
                     KoinIOSKt.getAuthViewModel().onEvent(event: AuthEventRefreshProfile.shared)
-                    goHome()
+                    navigate(.enableDriverStep2)
                 }
+            )
+
+        case .enableDriverStep2:
+            MobilepayOnboardingView(
+                onNavigateBack: popBack,
+                onNavigateNext: goHome
             )
 
         case .postTripModelSelect:
@@ -221,6 +228,9 @@ struct HopNavigationStack: View {
                 onCompleted: { bookingId, name, initials in
                     navigate(.ratePassenger(bookingId: bookingId, passengerName: name, passengerInitials: initials))
                 },
+                onSettlementRequired: { bookingId in
+                    navigate(.driverSettlement(bookingId: bookingId))
+                },
                 onBack: popBack
             )
 
@@ -241,6 +251,21 @@ struct HopNavigationStack: View {
 
         case .taxReportDownload:
             TaxReportDownloadView(onBack: popBack)
+
+        // ── Settlement ────────────────────────────────────────────────────────
+        case .passengerSettlement(let bookingId):
+            PassengerSettlementView(
+                bookingId: bookingId,
+                onBack: popBack,
+                onSettlementComplete: { navigate(.myTripsPassenger) }
+            )
+
+        case .driverSettlement(let bookingId):
+            DriverSettlementView(
+                bookingId: bookingId,
+                onBack: popBack,
+                onSettlementComplete: { navigate(.myTripsDriver) }
+            )
 
         // ── Shared ────────────────────────────────────────────────────────────
         case .profile(_):

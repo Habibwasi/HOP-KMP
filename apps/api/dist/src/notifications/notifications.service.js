@@ -47,6 +47,7 @@ exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
+const node_fs_1 = require("node:fs");
 const apn = __importStar(require("apn"));
 const admin = __importStar(require("firebase-admin"));
 let NotificationsService = NotificationsService_1 = class NotificationsService {
@@ -62,35 +63,49 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         this.initFcm();
     }
     initApn() {
+        const keyPath = this.config.get('APNS_KEY_PATH');
+        const keyId = this.config.get('APNS_KEY_ID');
+        const teamId = this.config.get('APNS_TEAM_ID');
+        if (!keyPath || !keyId || !teamId || !(0, node_fs_1.existsSync)(keyPath)) {
+            this.logger.warn('APNs not initialised - credentials are missing in this environment');
+            return;
+        }
         try {
             this.apnProvider = new apn.Provider({
                 token: {
-                    key: this.config.getOrThrow('APNS_KEY_PATH'),
-                    keyId: this.config.getOrThrow('APNS_KEY_ID'),
-                    teamId: this.config.getOrThrow('APNS_TEAM_ID'),
+                    key: keyPath,
+                    keyId,
+                    teamId,
                 },
                 production: this.config.get('NODE_ENV') === 'production',
             });
         }
         catch (e) {
-            this.logger.error('APNs not initialised — check APNS_KEY_PATH', e.stack);
+            this.logger.error(`APNs not initialised - ${e.message}`);
         }
     }
     initFcm() {
+        const projectId = this.config.get('FIREBASE_PROJECT_ID');
+        const clientEmail = this.config.get('FIREBASE_CLIENT_EMAIL');
+        const privateKey = this.config.get('FIREBASE_PRIVATE_KEY');
+        if (!projectId || !clientEmail || !privateKey || privateKey === 'your_private_key') {
+            this.logger.warn('FCM not initialised - credentials are missing in this environment');
+            return;
+        }
         try {
             if (!admin.apps.length) {
                 admin.initializeApp({
                     credential: admin.credential.cert({
-                        projectId: this.config.getOrThrow('FIREBASE_PROJECT_ID'),
-                        clientEmail: this.config.getOrThrow('FIREBASE_CLIENT_EMAIL'),
-                        privateKey: this.config.getOrThrow('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
+                        projectId,
+                        clientEmail,
+                        privateKey: privateKey.replace(/\\n/g, '\n'),
                     }),
                 });
             }
             this.fcmInitialised = true;
         }
         catch (e) {
-            this.logger.error('FCM not initialised — check Firebase credentials', e.stack);
+            this.logger.error(`FCM not initialised - ${e.message}`);
         }
     }
     async sendToUser(userId, title, body, data) {

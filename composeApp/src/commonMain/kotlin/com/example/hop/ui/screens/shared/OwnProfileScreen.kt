@@ -251,6 +251,27 @@ fun OwnProfileScreen(
                         onEditClick = { onEvent(OwnProfileEvent.EditCarTapped) },
                     )
                 }
+
+                // ── MobilePay number (drivers only) ──────────────────────────
+                item {
+                    Spacer(modifier = Modifier.height(HopSpacing.lg))
+                    SectionDivider()
+                    Spacer(modifier = Modifier.height(HopSpacing.lg))
+                    if (state.isEditingMobilepay) {
+                        InlineMobilepayEditor(
+                            draft = state.mobilepayDraft,
+                            isSaving = state.isSavingMobilepay,
+                            onDraftChanged = { onEvent(OwnProfileEvent.MobilepayDraftChanged(it)) },
+                            onSave = { onEvent(OwnProfileEvent.SaveMobilepay) },
+                            onCancel = { onEvent(OwnProfileEvent.CancelEditMobilepay) },
+                        )
+                    } else {
+                        MobilepayRow(
+                            number = state.user?.mobilepayNumber,
+                            onEditClick = { onEvent(OwnProfileEvent.StartEditMobilepay) },
+                        )
+                    }
+                }
             }
         }
     }
@@ -666,6 +687,129 @@ private fun CarDetailRow(
             color = HopColors.authTextPrimary,
             fontWeight = FontWeight.Medium,
         )
+    }
+}
+
+// ── MobilePay row (view) ──────────────────────────────────────────────────────
+
+@Composable
+private fun MobilepayRow(
+    number: String?,
+    onEditClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = HopSpacing.md),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            SectionTitle("MobilePay number", modifier = Modifier.weight(1f).padding(horizontal = 0.dp))
+            IconButton(
+                onClick = onEditClick,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = "Edit MobilePay number",
+                    tint = HopColors.primaryLime,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(HopSpacing.xs))
+        if (number.isNullOrBlank()) {
+            Text(
+                text = "Not set — passengers pay you via MobilePay",
+                style = MaterialTheme.typography.bodySmall,
+                color = HopColors.authTextSecondary,
+            )
+        } else {
+            Text(
+                text = number,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = HopColors.authTextPrimary,
+            )
+        }
+    }
+}
+
+// ── Inline MobilePay editor ───────────────────────────────────────────────────
+
+@Composable
+private fun InlineMobilepayEditor(
+    draft: String,
+    isSaving: Boolean,
+    onDraftChanged: (String) -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = HopSpacing.md),
+    ) {
+        SectionTitle("MobilePay number", modifier = Modifier.padding(horizontal = 0.dp))
+        Spacer(modifier = Modifier.height(HopSpacing.sm))
+        OutlinedTextField(
+            value = draft,
+            onValueChange = { if (it.length <= 8) onDraftChanged(it.filter { c -> c.isDigit() }) },
+            label = { Text("8-digit number") },
+            placeholder = { Text("e.g. 20123456") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = KeyboardActions(onDone = { onSave() }),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = HopColors.primaryLime,
+                unfocusedBorderColor = HopColors.authTextSecondary,
+                focusedLabelColor = HopColors.primaryLime,
+                unfocusedLabelColor = HopColors.authTextSecondary,
+                focusedTextColor = HopColors.authTextPrimary,
+                unfocusedTextColor = HopColors.authTextPrimary,
+                cursorColor = HopColors.primaryLime,
+                focusedContainerColor = HopColors.authInputSurface,
+                unfocusedContainerColor = HopColors.authInputSurface,
+            ),
+        )
+        Text(
+            text = "Passengers will send money here after the ride",
+            style = MaterialTheme.typography.bodySmall,
+            color = HopColors.authTextSecondary,
+            modifier = Modifier.padding(top = HopSpacing.xs),
+        )
+        Spacer(modifier = Modifier.height(HopSpacing.sm))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel, enabled = !isSaving) {
+                Text("Cancel", color = HopColors.authTextSecondary)
+            }
+            Spacer(modifier = Modifier.width(HopSpacing.sm))
+            TextButton(
+                onClick = onSave,
+                enabled = !isSaving && draft.length == 8,
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = HopColors.primaryLime,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text("Save", color = HopColors.primaryLime, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
     }
 }
 
