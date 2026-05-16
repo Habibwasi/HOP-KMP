@@ -1,0 +1,17 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/api/Dockerfile",
+    "buildArgs": {
+      "DATABASE_URL": "postgresql://x:x@localhost:5432/x"
+    }
+  },
+  "deploy": {
+    "startCommand": "sh -c 'DATABASE_URL=\"${DIRECT_URL:-$DATABASE_URL}\" npx prisma migrate deploy && node dist/src/main'",
+    "healthcheckPath": "/api/v1/health",
+    "healthcheckTimeout": 30,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}

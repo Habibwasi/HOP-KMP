@@ -7,10 +7,9 @@ import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { TripsModule } from './trips/trips.module'
 import { BookingsModule } from './bookings/bookings.module'
-import { PaymentsModule } from './payments/payments.module'
+import { SettlementsModule } from './settlements/settlements.module'
 import { RatingsModule } from './ratings/ratings.module'
 import { NotificationsModule } from './notifications/notifications.module'
-import { TaxModule } from './tax/tax.module'
 import { AdminModule } from './admin/admin.module'
 import { PlacesModule } from './places/places.module'
 import { SearchHistoryModule } from './search-history/search-history.module'
@@ -24,20 +23,31 @@ import { HealthController } from './health.controller'
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST ?? 'localhost',
-        port: parseInt(process.env.REDIS_PORT ?? '6379'),
-      },
+      connection: process.env.REDIS_URL
+        ? (() => {
+            const u = new URL(process.env.REDIS_URL as string)
+            return {
+              host: u.hostname,
+              port: parseInt(u.port || '6379'),
+              username: u.username ? decodeURIComponent(u.username) : undefined,
+              password: u.password ? decodeURIComponent(u.password) : undefined,
+              tls: u.protocol === 'rediss:' ? {} : undefined,
+            }
+          })()
+        : {
+            host: process.env.REDIS_HOST ?? 'localhost',
+            port: parseInt(process.env.REDIS_PORT ?? '6379'),
+            password: process.env.REDIS_PASSWORD || undefined,
+          },
     }),
     PrismaModule,
     AuthModule,
     UsersModule,
     TripsModule,
     BookingsModule,
-    PaymentsModule,
+    SettlementsModule,
     RatingsModule,
     NotificationsModule,
-    TaxModule,
     AdminModule,
     PlacesModule,
     SearchHistoryModule,

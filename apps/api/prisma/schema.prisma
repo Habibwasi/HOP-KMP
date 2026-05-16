@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-
 }
 
 enum Role {
@@ -41,12 +40,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  mobilepayNumber String?
   pushTokens      PushToken[]
   tripsAsDriver   Trip[]    @relation("DriverTrips")
   bookings        Booking[]
   ratingsGiven    Rating[]  @relation("RaterRatings")
   ratingsReceived Rating[]  @relation("RateeRatings")
-  taxRecords      TaxRecord[]
   licence         DriverLicence?
   carDetails      CarDetails?
   notifications   Notification[]
@@ -93,7 +92,6 @@ model Trip {
   updatedAt     DateTime @updatedAt
 
   bookings   Booking[]
-  taxRecords TaxRecord[]
 }
 
 model Booking {
@@ -108,8 +106,7 @@ model Booking {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  payment     Payment?
-  taxRecord   TaxRecord?
+  settlement   RideSettlement?
   chatMessages ChatMessage[]
 }
 
@@ -129,46 +126,21 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   REFUNDED
+  AWAITING_PAYMENT
+  COMPLETED
+  DISPUTED
 }
 
-enum PaymentProvider {
-  MOBILEPAY
-  STRIPE
-}
-
-enum PaymentStatus {
-  PENDING
-  HELD
-  CAPTURED
-  REFUNDED
-  FAILED
-}
-
-model Payment {
-  id          String          @id @default(uuid())
-  bookingId   String          @unique
-  booking     Booking         @relation(fields: [bookingId], references: [id])
-  amountOere  Int
-  provider    PaymentProvider
-  status      PaymentStatus   @default(PENDING)
-  providerRef String?
-  webhookData Json?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-}
-
-model TaxRecord {
-  id          String   @id @default(uuid())
-  driverId    String
-  driver      User     @relation(fields: [driverId], references: [id])
-  tripId      String
-  trip        Trip     @relation(fields: [tripId], references: [id])
-  bookingId   String   @unique
-  booking     Booking  @relation(fields: [bookingId], references: [id])
-  amountOere  Int
-  distanceKm  Float
-  ratePerKm   Float
-  recordedAt  DateTime @default(now())
+model RideSettlement {
+  bookingId          String    @id
+  booking            Booking   @relation(fields: [bookingId], references: [id])
+  suggestedAmountOere Int
+  mobilepayNumber    String
+  passengerPaidAt    DateTime?
+  driverConfirmedAt  DateTime?
+  disputedAt         DateTime?
+  disputeReason      String?
+  createdAt          DateTime  @default(now())
 }
 
 model DriverLicence {
@@ -205,6 +177,9 @@ enum NotificationType {
   THRESHOLD_MET
   CHAT_MESSAGE
   SEARCH_ALERT
+  RIDE_AWAITING_PAYMENT
+  PAYMENT_MARKED_PAID
+  PAYMENT_CONFIRMED
   GENERAL
 }
 

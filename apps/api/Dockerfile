@@ -1,17 +1,17 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY prisma.config.ts ./
+COPY apps/api/package*.json ./
+COPY apps/api/tsconfig*.json ./
+COPY apps/api/prisma.config.ts ./
 RUN npm ci
-COPY . .
+COPY apps/api/ .
 RUN DATABASE_URL="postgresql://x:x@localhost:5432/x" npx prisma generate
 RUN npm run build
 RUN ls -la dist/
 
 FROM node:24-alpine AS production
 WORKDIR /app
-COPY package*.json ./
+COPY apps/api/package*.json ./
 RUN npm ci --only=production && npm install -g ts-node typescript
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma

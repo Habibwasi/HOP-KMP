@@ -548,8 +548,8 @@ shared/src/iosMain/kotlin/com/example/hop/
 
 ## Backend (Separate — Do Not Generate Unless Asked)
 
-NestJS 10, TypeScript 5, Prisma 5, PostgreSQL 16, Redis 7, BullMQ
-AWS ECS Fargate, eu-west-1, RDS + ElastiCache
+NestJS 10, TypeScript 5, Prisma 7, PostgreSQL 16, Redis 7, BullMQ
+Railway (Docker, auto-deploy on push), Supabase Postgres + Auth, Railway Redis plugin
 Modular monolith: Auth, Trips, Payments, Ratings, Chat, Notifications, Tax, Admin modules
 Do not suggest microservices.
 
