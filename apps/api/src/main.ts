@@ -37,6 +37,9 @@ async function resolvePort(preferredPort: number): Promise<number> {
 }
 
 async function bootstrap() {
+  logger.log(
+    `Redis config — URL=${process.env.REDIS_URL ? '[SET]' : '[UNSET]'} HOST=${process.env.REDIS_HOST ?? '[UNSET]'} PORT=${process.env.REDIS_PORT ?? '[UNSET]'} PASSWORD=${process.env.REDIS_PASSWORD ? '[SET]' : '[UNSET]'}`,
+  )
   const app = await NestFactory.create(AppModule, { rawBody: true })
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
   app.useGlobalFilters(new HttpExceptionFilter())
