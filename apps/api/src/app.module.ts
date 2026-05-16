@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { BullModule } from '@nestjs/bullmq'
 import { ScheduleModule } from '@nestjs/schedule'
+import Redis from 'ioredis'
 import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
@@ -23,22 +24,10 @@ import { HealthController } from './health.controller'
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     BullModule.forRoot({
-      connection: process.env.REDIS_URL
-        ? (() => {
-            const u = new URL(process.env.REDIS_URL as string)
-            return {
-              host: u.hostname,
-              port: parseInt(u.port || '6379'),
-              username: u.username ? decodeURIComponent(u.username) : undefined,
-              password: u.password ? decodeURIComponent(u.password) : undefined,
-              tls: u.protocol === 'rediss:' ? {} : undefined,
-            }
-          })()
-        : {
-            host: process.env.REDIS_HOST ?? 'localhost',
-            port: parseInt(process.env.REDIS_PORT ?? '6379'),
-            password: process.env.REDIS_PASSWORD || undefined,
-          },
+      connection: new Redis(
+        process.env.REDIS_URL ?? `redis://${process.env.REDIS_HOST ?? 'localhost'}:${process.env.REDIS_PORT ?? '6379'}`,
+        { maxRetriesPerRequest: null },
+      ),
     }),
     PrismaModule,
     AuthModule,
