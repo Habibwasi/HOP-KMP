@@ -25,7 +25,8 @@ import { HealthController } from './health.controller'
     ScheduleModule.forRoot(),
     BullModule.forRoot({
       connection: new Redis(
-        process.env.REDIS_URL ?? `redis://${process.env.REDIS_HOST ?? 'localhost'}:${process.env.REDIS_PORT ?? '6379'}`,
+        process.env.REDIS_URL ??
+          `redis://${process.env.REDIS_HOST ?? 'localhost'}:${process.env.REDIS_PORT ?? '6379'}`,
         {
           maxRetriesPerRequest: null,
           enableReadyCheck: false,
