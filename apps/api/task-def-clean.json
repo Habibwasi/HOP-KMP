@@ -1,0 +1,92 @@
+{
+  "family": "hop-api-staging",
+  "executionRoleArn": "arn:aws:iam::712242348131:role/hop-staging-TaskExecutionRole-tMVGztADSTZ1",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "hop-api",
+      "image": "712242348131.dkr.ecr.eu-west-1.amazonaws.com/hop-api:latest",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "command": [
+        "node",
+        "dist/src/main"
+      ],
+      "environment": [
+        {
+          "name": "REDIS_HOST",
+          "value": "hop-staging-redis.vkam89.0001.euw1.cache.amazonaws.com"
+        },
+        {
+          "name": "JWT_ACCESS_SECRET",
+          "value": "hop_access_secret_change_in_production_32"
+        },
+        {
+          "name": "JWT_REFRESH_SECRET",
+          "value": "hop_refresh_secret_change_in_production_32"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://hop:Ha8801712014742@hop-staging-db.czckaqcosg7x.eu-west-1.rds.amazonaws.com:5432/hop_db?sslmode=no-verify"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "JWT_REFRESH_EXPIRES_IN",
+          "value": "30d"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "staging"
+        },
+        {
+          "name": "TWILIO_AUTH_TOKEN",
+          "value": "1a72165ea259302c8860bff6829ed512"
+        },
+        {
+          "name": "TWILIO_VERIFY_SERVICE_SID",
+          "value": "VA7bdba24f17d897d5d28c432fedc94ca2"
+        },
+        {
+          "name": "JWT_ACCESS_EXPIRES_IN",
+          "value": "15m"
+        },
+        {
+          "name": "TWILIO_ACCOUNT_SID",
+          "value": "AC0e1caf1a0fd6e23445a9a4b12e058128"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/hop/staging/api",
+          "awslogs-region": "eu-west-1",
+          "awslogs-stream-prefix": "api"
+        }
+      },
+      "systemControls": []
+    }
+  ],
+  "volumes": [],
+  "placementConstraints": [],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024"
+}
