@@ -129,7 +129,8 @@ export class PlacesService {
 
     const leg = json.routes[0]?.legs[0]
     if (json.status !== 'OK' || !leg) {
-      throw new BadRequestException(json.error_message ?? 'No driving route found between the selected addresses')
+      const msg = json.error_message ?? `No driving route found (Google status: ${json.status})`
+      throw new BadRequestException(msg)
     }
 
     return {
