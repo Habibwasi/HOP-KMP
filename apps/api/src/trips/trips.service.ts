@@ -522,6 +522,6 @@ export class TripsService {
       },
       orderBy: { createdAt: 'desc' },
     })
-    return bookings.map((b) => b.trip)
+    return bookings.map((b) => ({ ...b.trip, bookingId: b.id }))
   }
 }
