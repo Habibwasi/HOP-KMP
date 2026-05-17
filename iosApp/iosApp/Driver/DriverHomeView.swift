@@ -378,6 +378,16 @@ private struct DriverTripCard: View {
                 modelBadge
                 statusBadge
                 Spacer()
+                if trip.hasRecentBooking {
+                    Text("New booking")
+                        .font(HopFont.labelSmall(weight: .semibold))
+                        .foregroundColor(Color.hopPrimaryGreen)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.hopPrimaryGreen.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    Spacer().frame(width: HopSpacing.xs)
+                }
                 Text("\(trip.seatsBooked)/\(trip.seatsTotal) seats")
                     .font(HopFont.labelSmall(weight: .semibold))
                     .foregroundColor(Color(hex: 0x666666))

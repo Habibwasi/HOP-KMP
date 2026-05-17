@@ -437,6 +437,21 @@ private fun DriverTripCard(
                     },
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                // "New booking" badge — shown when any booking was created in last 24 h
+                if (tripUiModel.hasRecentBooking) {
+                    Text(
+                        text = "New booking",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = HopColors.primaryGreen,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(HopColors.primaryGreen.copy(alpha = 0.12f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                    Spacer(modifier = Modifier.width(HopSpacing.xs))
+                }
                 Text(
                     text = "${tripUiModel.seatsBooked}/${tripUiModel.seatsTotal} seats",
                     style = MaterialTheme.typography.labelSmall.copy(

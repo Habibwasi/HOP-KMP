@@ -543,8 +543,8 @@ export class TripsService {
       orderBy: { departureAt: 'desc' },
       include: {
         bookings: {
-          where: { status: { in: ['PENDING', 'CONFIRMED', 'AWAITING_PAYMENT'] } },
-          select: { id: true, seats: true, status: true },
+          where: { status: { in: ['PENDING', 'CONFIRMED', 'AWAITING_PAYMENT', 'COMPLETED'] } },
+          select: { id: true, seats: true, status: true, createdAt: true },
         },
       },
     })

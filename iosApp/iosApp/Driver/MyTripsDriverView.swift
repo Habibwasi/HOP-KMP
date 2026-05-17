@@ -118,6 +118,16 @@ private struct DriverTripDetailRow: View {
                     .font(HopFont.bodySmall())
                     .foregroundColor(Color.hopAuthTextSecondary)
                 Spacer()
+                if trip.hasRecentBooking {
+                    Text("New booking")
+                        .font(HopFont.labelSmall(weight: .semibold))
+                        .foregroundColor(Color.hopPrimaryGreen)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.hopPrimaryGreen.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    Spacer().frame(width: 4)
+                }
                 Text("\(trip.trip.seatsBooked)/\(trip.trip.seatsTotal) seats")
                     .font(HopFont.bodySmall(weight: .semibold))
                     .foregroundColor(Color.hopPrimaryLime)

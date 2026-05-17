@@ -33,6 +33,8 @@ data class TripUiModel(
     // Non-null only on driver-scoped trip lists. The first AWAITING_PAYMENT booking ID, if any.
     val awaitingPaymentBookingId: String? get() = trip.awaitingPaymentBookingId
     val recurrenceDays: List<String>? get() = trip.recurrenceDays
+    // True when any booking was created in the last 24 h — used for the driver "new booking" badge.
+    val hasRecentBooking: Boolean get() = trip.hasRecentBooking
 }
 
 /**

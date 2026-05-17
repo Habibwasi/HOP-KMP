@@ -7,6 +7,8 @@ import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.model.TripStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 // ── Request bodies ────────────────────────────────────────────────────────────
 
@@ -35,6 +37,7 @@ data class BookingRefDto(
     val id: String? = null,
     val seats: Int = 1,
     val status: String = "CONFIRMED",
+    val createdAt: String? = null,
 )
 
 @Serializable
@@ -93,6 +96,14 @@ fun TripDto.toDomain(): Trip = Trip(
     bookingId = bookingId,
     bookingStatus = bookingStatus?.let { s -> BookingStatus.entries.firstOrNull { it.name == s } },
     awaitingPaymentBookingId = bookings?.firstOrNull { it.status == "AWAITING_PAYMENT" }?.id,
+    hasRecentBooking = bookings?.any { b ->
+        val createdAt = b.createdAt ?: return@any false
+        try {
+            val epochMs = Instant.parse(createdAt).toEpochMilliseconds()
+            val nowMs = Clock.System.now().toEpochMilliseconds()
+            (nowMs - epochMs) < 24L * 60 * 60 * 1000
+        } catch (_: Exception) { false }
+    } ?: false,
 )
 
 fun PassengerSummaryDto.toDomain(): PassengerSummary = PassengerSummary(

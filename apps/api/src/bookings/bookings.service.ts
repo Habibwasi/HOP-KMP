@@ -88,6 +88,19 @@ export class BookingsService {
 
       return booking
     })
+
+    // Notify the driver — fire-and-forget, never block the response
+    const passengerName = booking.passenger.firstName
+    this.notifications
+      .sendToUser(
+        booking.trip.driverId,
+        'New booking 🎉',
+        `${passengerName} booked ${dto.seats} seat(s) on your trip`,
+        { type: 'NEW_BOOKING', tripId: dto.tripId, bookingId: booking.id },
+      )
+      .catch(() => {/* ignore push errors */})
+
+    return booking
   }
 
   async confirm(bookingId: string) {

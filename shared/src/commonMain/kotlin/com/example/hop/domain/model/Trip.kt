@@ -46,6 +46,8 @@ data class Trip(
     val bookingStatus: BookingStatus? = null,
     // For driver-scoped endpoints: the ID of the first AWAITING_PAYMENT booking, if any.
     val awaitingPaymentBookingId: String? = null,
+    // True if any booking on this trip was created within the last 24 hours (driver-scoped only).
+    val hasRecentBooking: Boolean = false,
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
