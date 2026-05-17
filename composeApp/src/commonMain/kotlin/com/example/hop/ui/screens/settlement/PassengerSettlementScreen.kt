@@ -53,6 +53,7 @@ import com.example.hop.presentation.settlement.SettlementEvent
 import com.example.hop.presentation.settlement.SettlementUiState
 import com.example.hop.presentation.settlement.SettlementViewModel
 import com.example.hop.ui.components.HopButton
+import com.example.hop.ui.components.HopButtonVariant
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
 import com.example.hop.ui.theme.HopSpacing
@@ -276,6 +277,7 @@ private fun PassengerSettlementScreen(
                         HopButton(
                             text = "I Have Paid",
                             onClick = { onEvent(SettlementEvent.MarkPaid) },
+                            variant = HopButtonVariant.Ghost,
                             isLoading = state.isMarkingPaid,
                             modifier = Modifier.fillMaxWidth(),
                         )
