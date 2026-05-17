@@ -196,20 +196,13 @@ class SettlementViewModel(
     }
 
     private fun openMobilepay() {
-        val s = _state.value.settlement ?: return
-        // Build a pre-populated send URL: mobilepay://send?phone=XXXXXXXX&amount=XX&comment=...
-        // Strip non-digits and take the last 8 characters to get the Danish 8-digit number
-        // (handles stored formats like "+4512345678", "004512345678", or "12345678").
-        val phone = s.mobilepayNumber.filter { it.isDigit() }.takeLast(8)
-        val amountDkk = s.suggestedAmountOere / 100
-        val uri = if (phone.length == 8) {
-            "mobilepay://send?phone=$phone&amount=$amountDkk&comment=Hop%20ride"
-        } else {
-            // Fallback: open MobilePay home screen if the phone number cannot be parsed.
-            "mobilepay://"
-        }
+        _state.value.settlement ?: return
+        // Just open the MobilePay app home screen. The UI shows the phone number
+        // with a copy button so the passenger can paste it inside the app.
+        // Personal-number deep-link schemes (mobilepay://send?phone=…) are not
+        // supported by the MobilePay ePayment SDK for P2P transfers.
         suppressNextConfirmEffect = true
-        viewModelScope.launch { _effect.send(SettlementEffect.OpenMobilepayDeeplink(uri)) }
+        viewModelScope.launch { _effect.send(SettlementEffect.OpenMobilepayDeeplink("mobilepay://")) }
     }
 
     private fun markPaid() {

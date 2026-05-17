@@ -1,6 +1,7 @@
 package com.example.hop.ui.screens.settlement
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,14 +28,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -177,25 +186,66 @@ private fun PassengerSettlementScreen(
                         )
                     }
 
-                    // MobilePay number info
+                    // MobilePay number card with copy button
+                    val clipboardManager = LocalClipboardManager.current
+                    val scope = rememberCoroutineScope()
+                    var copied by remember { mutableStateOf(false) }
+
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
                             .background(HopColors.authInputSurface)
+                            .clickable {
+                                clipboardManager.setText(AnnotatedString(settlement.mobilepayNumber))
+                                scope.launch {
+                                    copied = true
+                                    delay(2000)
+                                    copied = false
+                                }
+                            }
                             .padding(HopSpacing.md),
                         verticalArrangement = Arrangement.spacedBy(HopSpacing.xs),
                     ) {
                         Text("Driver MobilePay", style = MaterialTheme.typography.labelMedium, color = HopColors.authTextSecondary)
-                        Text(
-                            settlement.mobilepayNumber,
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = HopMonoFontFamily,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                            color = HopColors.authTextPrimary,
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                settlement.mobilepayNumber,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = HopMonoFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = HopColors.authTextPrimary,
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(
+                                    Icons.Outlined.ContentCopy,
+                                    contentDescription = if (copied) "Copied" else "Copy number",
+                                    tint = if (copied) HopColors.primaryLime else HopColors.authTextSecondary,
+                                )
+                                Text(
+                                    if (copied) "Copied!" else "Copy",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (copied) HopColors.primaryLime else HopColors.authTextSecondary,
+                                )
+                            }
+                        }
                     }
+
+                    // Instruction hint
+                    Text(
+                        "Open MobilePay → paste the number → send DKK ${settlement.suggestedAmountOere / 100}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = HopColors.authTextSecondary,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
 
                     if (settlement.passengerPaidAt != null) {
                         Text(

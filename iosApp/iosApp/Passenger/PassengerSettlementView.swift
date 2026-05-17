@@ -16,6 +16,7 @@ struct PassengerSettlementView: View {
     @StateObject private var wrapper = SettlementViewModelWrapper()
     @State private var toast: String? = nil
     @State private var isOpeningMobilepay = false
+    @State private var copied = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -69,19 +70,45 @@ struct PassengerSettlementView: View {
                             .background(Color.hopAuthInputSurface)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                            // MobilePay number
-                            VStack(alignment: .leading, spacing: HopSpacing.xs) {
-                                Text("Driver MobilePay")
-                                    .font(HopFont.labelSmall())
-                                    .foregroundColor(Color.hopAuthTextSecondary)
-                                Text(settlement.mobilepayNumber)
-                                    .font(.system(size: 22, weight: .bold, design: .monospaced))
-                                    .foregroundColor(Color.hopAuthTextPrimary)
+                            // MobilePay number card with copy button
+                            Button(action: {
+                                UIPasteboard.general.string = settlement.mobilepayNumber
+                                withAnimation { copied = true }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    withAnimation { copied = false }
+                                }
+                            }) {
+                                VStack(alignment: .leading, spacing: HopSpacing.xs) {
+                                    Text("Driver MobilePay")
+                                        .font(HopFont.labelSmall())
+                                        .foregroundColor(Color.hopAuthTextSecondary)
+                                    HStack {
+                                        Text(settlement.mobilepayNumber)
+                                            .font(.system(size: 22, weight: .bold, design: .monospaced))
+                                            .foregroundColor(Color.hopAuthTextPrimary)
+                                        Spacer()
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(copied ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                                            Text(copied ? "Copied!" : "Copy")
+                                                .font(HopFont.labelSmall())
+                                                .foregroundColor(copied ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(HopSpacing.md)
+                                .background(Color.hopAuthInputSurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(HopSpacing.md)
-                            .background(Color.hopAuthInputSurface)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .buttonStyle(.plain)
+
+                            // Instruction hint
+                            Text("Open MobilePay → paste the number → send DKK \(settlement.suggestedAmountOere / 100)")
+                                .font(HopFont.bodySmall())
+                                .foregroundColor(Color.hopAuthTextSecondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
                             if settlement.passengerPaidAt != nil {
                                 HStack(spacing: HopSpacing.sm) {
