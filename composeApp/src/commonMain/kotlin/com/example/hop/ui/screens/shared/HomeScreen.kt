@@ -86,6 +86,7 @@ fun HomeRoute(
     onNavigateToChat: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
+    onNavigateToTripDetailActive: (bookingId: String) -> Unit,
     onNavigateToTripDetailDriver: (tripId: String) -> Unit,
     onNavigateToPostTripModelSelect: () -> Unit,
     onNavigateToTaxDashboard: () -> Unit,
@@ -162,6 +163,7 @@ fun HomeRoute(
                     else -> PassengerHomeContent(
                         onNavigateToSearchResults = onNavigateToSearchResults,
                         onNavigateToTripDetail = onNavigateToTripDetail,
+                        onNavigateToTripDetailActive = onNavigateToTripDetailActive,
                         snackbarHostState = snackbarHostState,
                     )
                 }

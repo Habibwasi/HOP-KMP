@@ -162,6 +162,7 @@ import androidx.activity.compose.BackHandler
 fun PassengerHomeContent(
     onNavigateToSearchResults: (origin: String, dest: String, date: String, seats: Int) -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
+    onNavigateToTripDetailActive: (bookingId: String) -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     tripViewModel: TripViewModel = koinViewModel(),
@@ -237,7 +238,14 @@ fun PassengerHomeContent(
             onNavigateToSearchResults(origin, dest, date, seats)
         },
         onTripClick = { tripId ->
-            tripViewModel.onEvent(TripEvent.SelectTrip(tripId))
+            // These trips are from LoadMyTripsPassenger — already booked.
+            // Navigate to the active booking detail when bookingId is available.
+            val bookingId = tripState.trips.firstOrNull { it.id == tripId }?.bookingId
+            if (bookingId != null) {
+                onNavigateToTripDetailActive(bookingId)
+            } else {
+                tripViewModel.onEvent(TripEvent.SelectTrip(tripId))
+            }
         },
         onAddSavedPlace = { label, address, kind ->
             savedPlacesViewModel.onEvent(SavedPlacesEvent.Add(label = label, address = address, kind = kind))

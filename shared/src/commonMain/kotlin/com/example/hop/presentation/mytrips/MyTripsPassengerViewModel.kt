@@ -106,7 +106,14 @@ private fun selectUpcomingTrip(bookingId: String) {
 
     private fun selectPastTrip(tripId: String) {
         viewModelScope.launch {
-            _effect.send(MyTripsPassengerEffect.NavigateToTripDetail(tripId))
+            // Past trips have a bookingId (passenger-scoped list). Navigate to
+            // the booking detail — not TripDetail which is the "Book Seat" page.
+            val bookingId = _state.value.pastTrips.firstOrNull { it.id == tripId }?.bookingId
+            if (bookingId != null) {
+                _effect.send(MyTripsPassengerEffect.NavigateToTripDetailActive(bookingId))
+            } else {
+                _effect.send(MyTripsPassengerEffect.NavigateToTripDetail(tripId))
+            }
         }
     }
 }
