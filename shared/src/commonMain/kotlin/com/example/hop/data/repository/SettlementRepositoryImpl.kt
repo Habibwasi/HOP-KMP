@@ -23,7 +23,7 @@ class SettlementRepositoryImpl(
         safeEnvelopeCall { httpClient.get("settlements/$bookingId").body() }
 
     override suspend fun getSettlementsForTrip(tripId: String): ApiResponse<List<TripSettlementEntry>> =
-        safeListCall { httpClient.get("settlements/trip/$tripId").body() }
+        safeEnvelopeCall { httpClient.get("settlements/trip/$tripId").body() }
 
     override suspend fun markPaid(bookingId: String): ApiResponse<RideSettlement> =
         safeEnvelopeCall { httpClient.post("settlements/$bookingId/mark-paid").body() }
@@ -47,18 +47,6 @@ class SettlementRepositoryImpl(
         val envelope = block()
         if (envelope.data != null) ApiResponse.Success(envelope.data)
         else ApiResponse.Error(envelope.error?.code ?: -1, envelope.error?.message ?: "Unknown error")
-    } catch (e: Exception) {
-        ApiResponse.Error(-1, e.message ?: "Unknown error")
-    }
-
-    /**
-     * The trip-settlements endpoint returns a raw JSON array (not wrapped in an envelope).
-     * This helper handles that directly.
-     */
-    private suspend fun <T> safeListCall(
-        block: suspend () -> List<T>,
-    ): ApiResponse<List<T>> = try {
-        ApiResponse.Success(block())
     } catch (e: Exception) {
         ApiResponse.Error(-1, e.message ?: "Unknown error")
     }

@@ -72,7 +72,7 @@ struct MarkTripCompleteView: View {
                         passenger?.initials ?? "P"
                     )
                 case let nav as DriverEffectNavigateToDriverSettlement:
-                    onSettlementRequired(nav.bookingId)
+                    onSettlementRequired(nav.tripId)
                 case let snack as DriverEffectShowSnackbar:
                     toast = snack.message
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { withAnimation { toast = nil } }
