@@ -12,8 +12,8 @@ import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 
@@ -44,7 +44,7 @@ class BookingRepositoryImpl(
     }
 
     override suspend fun cancelBooking(id: String): ApiResponse<Unit> = safeApiCall {
-        httpClient.delete("bookings/$id")
+        httpClient.patch("bookings/$id/cancel")
         Unit
     }
 
