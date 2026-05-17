@@ -475,7 +475,7 @@ export class TripsService {
       where: { id: tripId },
       include: {
         driver: { select: { mobilepayNumber: true } },
-        bookings: { where: { status: BookingStatus.CONFIRMED } },
+        bookings: { where: { status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] } } },
       },
     })
     if (!trip) throw new NotFoundException('Trip not found')
