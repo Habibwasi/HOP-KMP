@@ -12,7 +12,7 @@ let DefaultHomeTips: [HomeTip] = [
         body: "Tap Add above the search bar to one-tap your daily destinations."
     ),
     HomeTip(
-        title: "Travel greener with Hop",
+        title: "Travel greener with Ridly",
         body: "Carpooling 100 km saves about 12 kg of CO₂ per seat."
     ),
 ]
