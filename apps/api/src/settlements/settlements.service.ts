@@ -31,7 +31,8 @@ export class SettlementsService {
     await this.assertParty(bookingId, userId)
     const settlement = await this.prisma.rideSettlement.findUnique({ where: { bookingId } })
     if (!settlement) throw new NotFoundException('Settlement not available yet')
-    return settlement
+    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId }, select: { tripId: true } })
+    return { ...settlement, tripId: booking?.tripId ?? null }
   }
 
   async markPassengerPaid(bookingId: string, userId: string) {
@@ -113,6 +114,55 @@ export class SettlementsService {
     })
 
     return updatedSettlement
+  }
+
+  async unmarkPaid(bookingId: string, userId: string) {
+    const { booking, isPassenger } = await this.assertParty(bookingId, userId)
+    if (!isPassenger) throw new ForbiddenException('Only the passenger can unmark payment')
+
+    const settlement = await this.prisma.rideSettlement.findUnique({ where: { bookingId } })
+    if (!settlement) throw new NotFoundException('Settlement not found')
+    if (!settlement.passengerPaidAt) throw new BadRequestException('Payment has not been marked')
+    if (settlement.driverConfirmedAt) throw new BadRequestException('Driver has already confirmed — cannot undo')
+
+    return this.prisma.rideSettlement.update({
+      where: { bookingId },
+      data: { passengerPaidAt: null },
+    })
+  }
+
+  async getSettlementsForTrip(tripId: string, userId: string) {
+    const trip = await this.prisma.trip.findUnique({
+      where: { id: tripId },
+      select: { driverId: true },
+    })
+    if (!trip) throw new NotFoundException('Trip not found')
+    if (trip.driverId !== userId) throw new ForbiddenException('Only the driver can view trip settlements')
+
+    const bookings = await this.prisma.booking.findMany({
+      where: { tripId, status: { not: 'CANCELLED' } },
+      include: {
+        passenger: { select: { firstName: true, lastName: true } },
+        settlement: {
+          select: {
+            passengerPaidAt: true,
+            driverConfirmedAt: true,
+            suggestedAmountOere: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    return bookings.map((b) => ({
+      bookingId: b.id,
+      passengerFirstName: b.passenger.firstName,
+      passengerLastName: b.passenger.lastName,
+      suggestedAmountOere: b.settlement?.suggestedAmountOere ?? 0,
+      passengerPaidAt: b.settlement?.passengerPaidAt ?? null,
+      driverConfirmedAt: b.settlement?.driverConfirmedAt ?? null,
+      bookingStatus: b.status,
+    }))
   }
 
   async dispute(bookingId: string, userId: string, reason: string) {

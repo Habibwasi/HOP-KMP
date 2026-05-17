@@ -61,6 +61,8 @@ sealed interface AuthEffect {
     data object NavigateToSetPassword : AuthEffect
     /** Emitted after the user successfully updates their password. */
     data object PasswordUpdated : AuthEffect
+    /** Emitted when a push-notification deep link targets the driver settlement screen. */
+    data class NavigateToDriverSettlement(val bookingId: String) : AuthEffect
 }
 
 class AuthViewModel(
@@ -123,6 +125,12 @@ class AuthViewModel(
     }
 
     private fun handleDeepLink(url: String) {
+        // Route push-notification deep links without hitting the auth callback logic.
+        if (url.startsWith("hop://driver-settlement/")) {
+            val bookingId = url.removePrefix("hop://driver-settlement/")
+            if (bookingId.isNotBlank()) _effect.tryEmit(AuthEffect.NavigateToDriverSettlement(bookingId))
+            return
+        }
         viewModelScope.launch {
             val urlIndicatesRecovery = url.contains("type=recovery")
             val storedPending = tokenStorage.getRecoveryPending()

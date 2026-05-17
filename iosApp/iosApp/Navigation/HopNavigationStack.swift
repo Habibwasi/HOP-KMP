@@ -211,7 +211,8 @@ struct HopNavigationStack: View {
         case .myTripsDriver:
             MyTripsDriverView(
                 onTripTapped: { tid in navigate(.tripDetailActiveDriver(tripId: tid)) },
-                onSettlementTapped: { bookingId in navigate(.driverSettlement(bookingId: bookingId)) },
+                onSettlementTapped: { tripId in navigate(.driverSettlement(tripId: tripId)) },
+                onPastTripTapped: { tripId in navigate(.pastTripDetailDriver(tripId: tripId)) },
                 onBack: popBack
             )
 
@@ -230,11 +231,11 @@ struct HopNavigationStack: View {
                 onCompleted: { bookingId, name, initials in
                     navigate(.ratePassenger(bookingId: bookingId, passengerName: name, passengerInitials: initials))
                 },
-                onSettlementRequired: { bookingId in
+                onSettlementRequired: { tripId in
                     // Pop markTripComplete before pushing settlement so the driver
                     // cannot go back and re-complete the trip.
                     if !path.isEmpty { path.removeLast() }
-                    navigate(.driverSettlement(bookingId: bookingId))
+                    navigate(.driverSettlement(tripId: tripId))
                 },
                 onBack: popBack
             )
@@ -265,11 +266,25 @@ struct HopNavigationStack: View {
                 onSettlementComplete: { navigate(.myTripsPassenger) }
             )
 
-        case .driverSettlement(let bookingId):
+        case .driverSettlement(let tripId):
             DriverSettlementView(
-                bookingId: bookingId,
+                tripId: tripId,
                 onBack: popBack,
                 onSettlementComplete: { navigate(.myTripsDriver) }
+            )
+
+        case .driverSettlementByBooking(let bookingId):
+            DriverSettlementView(
+                tripId: "",
+                bookingIdForResolution: bookingId,
+                onBack: popBack,
+                onSettlementComplete: { navigate(.myTripsDriver) }
+            )
+
+        case .pastTripDetailDriver(let tripId):
+            PastTripDetailDriverView(
+                tripId: tripId,
+                onBack: popBack
             )
 
         // ── Shared ────────────────────────────────────────────────────────────

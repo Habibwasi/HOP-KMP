@@ -116,6 +116,15 @@ struct PassengerSettlementView: View {
                                 .foregroundColor(Color.hopAuthTextSecondary)
                                 .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity)
+                            if settlement.driverConfirmedAt == nil {
+                                HopButton(
+                                    text: "I Haven't Paid Yet",
+                                    variant: .ghost,
+                                    isLoading: wrapper.state.isUnmarkingPaid
+                                ) {
+                                    wrapper.unmarkPaid()
+                                }
+                            }
                         }
                     }
                     .padding(HopSpacing.md)
@@ -146,6 +155,11 @@ struct PassengerSettlementView: View {
                     }
                 case is SettlementEffectPaymentMarkedSuccess:
                     withAnimation { toast = "Marked as paid — waiting for driver confirmation" }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                        withAnimation { toast = nil }
+                    }
+                case is SettlementEffectUnmarkPaidSuccess:
+                    withAnimation { toast = "Unmarked — you can re-send payment when ready" }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                         withAnimation { toast = nil }
                     }

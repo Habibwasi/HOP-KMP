@@ -27,7 +27,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,16 +37,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.domain.model.TripSettlementEntry
 import com.example.hop.presentation.settlement.SettlementEffect
 import com.example.hop.presentation.settlement.SettlementEvent
 import com.example.hop.presentation.settlement.SettlementUiState
 import com.example.hop.presentation.settlement.SettlementViewModel
-import com.example.hop.ui.components.HopButton
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
 import com.example.hop.ui.theme.HopSpacing
@@ -56,45 +51,22 @@ import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun DriverSettlementRoute(
+fun PastTripDetailDriverRoute(
     tripId: String,
     onNavigateBack: () -> Unit,
-    onSettlementComplete: () -> Unit,
-    /** When non-null, the screen resolves tripId from this bookingId first (notification deep link). */
-    bookingIdForResolution: String? = null,
     modifier: Modifier = Modifier,
     viewModel: SettlementViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(tripId, bookingIdForResolution) {
-        if (bookingIdForResolution != null) {
-            viewModel.onEvent(SettlementEvent.LoadForTripByBooking(bookingIdForResolution))
-        } else {
-            viewModel.onEvent(SettlementEvent.LoadForTrip(tripId))
-        }
-    }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.onEvent(SettlementEvent.Refresh)
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    LaunchedEffect(tripId) {
+        viewModel.onEvent(SettlementEvent.LoadForTrip(tripId))
     }
 
     LaunchedEffect(viewModel) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is SettlementEffect.ConfirmReceivedSuccess -> onSettlementComplete()
-                is SettlementEffect.DisputeSubmittedSuccess -> {
-                    snackbarHostState.showSnackbar("Dispute submitted")
-                    onSettlementComplete()
-                }
                 is SettlementEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 else -> Unit
             }
@@ -106,9 +78,8 @@ fun DriverSettlementRoute(
         containerColor = HopColors.surface,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
-        DriverSettlementScreen(
+        PastTripDetailDriverScreen(
             state = state,
-            onEvent = viewModel::onEvent,
             onNavigateBack = onNavigateBack,
             modifier = Modifier.padding(innerPadding),
         )
@@ -116,9 +87,8 @@ fun DriverSettlementRoute(
 }
 
 @Composable
-private fun DriverSettlementScreen(
+private fun PastTripDetailDriverScreen(
     state: SettlementUiState,
-    onEvent: (SettlementEvent) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -141,7 +111,7 @@ private fun DriverSettlementScreen(
                 )
             }
             Text(
-                "Payment Confirmation",
+                "Trip Details",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = HopColors.authTextPrimary,
             )
@@ -160,7 +130,7 @@ private fun DriverSettlementScreen(
             state.entries.isEmpty() -> {
                 Spacer(Modifier.weight(1f))
                 Text(
-                    "No passengers found for this trip.",
+                    "No passenger data for this trip.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = HopColors.authTextSecondary,
                     modifier = Modifier
@@ -171,36 +141,38 @@ private fun DriverSettlementScreen(
             }
 
             else -> {
+                // Earnings summary
+                val totalOere = state.entries.sumOf { it.suggestedAmountOere }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Total earnings",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = HopColors.authTextSecondary,
+                    )
+                    Text(
+                        "DKK ${totalOere / 100}",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = HopMonoFontFamily,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = HopColors.primaryLime,
+                    )
+                }
+
                 LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
+                    modifier = Modifier.weight(1f).navigationBarsPadding(),
+                    verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(HopSpacing.md),
                 ) {
                     items(state.entries, key = { it.bookingId }) { entry ->
-                        PassengerSettlementCard(
-                            entry = entry,
-                            isConfirming = state.confirmingBookingId == entry.bookingId,
-                            onConfirm = { onEvent(SettlementEvent.ConfirmReceivedForBooking(entry.bookingId)) },
-                        )
+                        PastPassengerRow(entry = entry)
                     }
-                }
-
-                // Summary footer
-                val allPaid = state.entries.all { it.paymentStatus != TripSettlementEntry.PaymentStatus.WAITING }
-                val waitingCount = state.entries.count { it.paymentStatus == TripSettlementEntry.PaymentStatus.WAITING }
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(HopColors.background)
-                        .navigationBarsPadding()
-                        .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
-                ) {
-                    Text(
-                        text = if (waitingCount == 0) "All passengers have marked as paid"
-                               else "$waitingCount passenger${if (waitingCount > 1) "s" else ""} still to pay",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (allPaid) HopColors.primaryLime else HopColors.authTextSecondary,
-                    )
                 }
             }
         }
@@ -208,15 +180,13 @@ private fun DriverSettlementScreen(
 }
 
 @Composable
-private fun PassengerSettlementCard(
+private fun PastPassengerRow(
     entry: TripSettlementEntry,
-    isConfirming: Boolean,
-    onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val statusColor = when (entry.paymentStatus) {
         TripSettlementEntry.PaymentStatus.CONFIRMED -> HopColors.primaryLime
-        TripSettlementEntry.PaymentStatus.PAID -> Color(0xFFFFA726)   // amber
+        TripSettlementEntry.PaymentStatus.PAID -> Color(0xFFFFA726)
         TripSettlementEntry.PaymentStatus.WAITING -> HopColors.authTextSecondary
     }
     val statusLabel = when (entry.paymentStatus) {
@@ -225,68 +195,53 @@ private fun PassengerSettlementCard(
         TripSettlementEntry.PaymentStatus.WAITING -> "Waiting"
     }
 
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(HopColors.authInputSurface)
             .padding(HopSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(HopColors.primaryLime.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center,
             ) {
-                // Initials avatar
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(HopColors.primaryLime.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = entry.passengerInitials,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = HopColors.primaryLime,
-                    )
-                }
-                Column {
-                    Text(
-                        text = entry.passengerName,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = HopColors.authTextPrimary,
-                    )
-                    Text(
-                        text = statusLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = statusColor,
-                    )
-                }
+                Text(
+                    text = entry.passengerInitials,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = HopColors.primaryLime,
+                )
             }
-            Text(
-                text = "DKK ${entry.suggestedAmountOere / 100}",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = HopMonoFontFamily,
-                    fontWeight = FontWeight.Bold,
-                ),
-                color = HopColors.authTextPrimary,
-            )
+            Column {
+                Text(
+                    text = entry.passengerName,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = HopColors.authTextPrimary,
+                )
+                Text(
+                    text = statusLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = statusColor,
+                )
+            }
         }
-
-        if (entry.paymentStatus == TripSettlementEntry.PaymentStatus.PAID) {
-            HopButton(
-                text = "Confirm Received",
-                onClick = onConfirm,
-                isLoading = isConfirming,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        Text(
+            text = "DKK ${entry.suggestedAmountOere / 100}",
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = HopMonoFontFamily,
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = HopColors.authTextPrimary,
+        )
     }
 }
 
@@ -299,8 +254,8 @@ private val previewEntries = listOf(
         passengerLastName = "Nielsen",
         suggestedAmountOere = 17_300,
         passengerPaidAt = "2026-05-17T09:00:00Z",
-        driverConfirmedAt = null,
-        bookingStatus = "AWAITING_PAYMENT",
+        driverConfirmedAt = "2026-05-17T09:30:00Z",
+        bookingStatus = "COMPLETED",
     ),
     TripSettlementEntry(
         bookingId = "bk-02",
@@ -311,50 +266,25 @@ private val previewEntries = listOf(
         driverConfirmedAt = null,
         bookingStatus = "AWAITING_PAYMENT",
     ),
-    TripSettlementEntry(
-        bookingId = "bk-03",
-        passengerFirstName = "Mia",
-        passengerLastName = "Hansen",
-        suggestedAmountOere = 17_300,
-        passengerPaidAt = "2026-05-17T08:50:00Z",
-        driverConfirmedAt = "2026-05-17T09:30:00Z",
-        bookingStatus = "COMPLETED",
-    ),
 )
 
-@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-SE-02 - Mixed payment status")
+@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-09b - Past Trip Detail Driver")
 @Composable
-private fun PreviewDriverSettlementMixed() {
+private fun PreviewPastTripDetailDriver() {
     HopTheme {
-        DriverSettlementScreen(
+        PastTripDetailDriverScreen(
             state = SettlementUiState(entries = previewEntries),
-            onEvent = {},
             onNavigateBack = {},
         )
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-SE-02 - All waiting")
+@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-09b - Loading")
 @Composable
-private fun PreviewDriverSettlementAllWaiting() {
+private fun PreviewPastTripDetailDriverLoading() {
     HopTheme {
-        DriverSettlementScreen(
-            state = SettlementUiState(
-                entries = previewEntries.map { it.copy(passengerPaidAt = null, driverConfirmedAt = null) },
-            ),
-            onEvent = {},
-            onNavigateBack = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-SE-02 - Loading")
-@Composable
-private fun PreviewDriverSettlementLoading() {
-    HopTheme {
-        DriverSettlementScreen(
+        PastTripDetailDriverScreen(
             state = SettlementUiState(isLoading = true),
-            onEvent = {},
             onNavigateBack = {},
         )
     }

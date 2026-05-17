@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.CarDetails
 import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.domain.model.PassengerSummary
+import com.example.hop.domain.model.TripStatus
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.PostTripRequest
 import com.example.hop.domain.repository.RouteInfo
@@ -149,7 +150,9 @@ sealed interface DriverEffect {
     data object NavigateToMyTrips : DriverEffect
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
     data class NavigateToRatePassenger(val bookingId: String) : DriverEffect
-    data class NavigateToDriverSettlement(val bookingId: String) : DriverEffect
+    /** Navigates to the trip-level settlement screen (shows all passengers). */
+    data class NavigateToDriverSettlement(val tripId: String) : DriverEffect
+    data class NavigateToPastTripDetail(val tripId: String) : DriverEffect
     data class NavigateToMarkTripComplete(val tripId: String, val driverNetOere: Int) : DriverEffect
     data class ShowSnackbar(val message: String) : DriverEffect
     data object NavigateToTaxDashboard : DriverEffect
@@ -530,13 +533,14 @@ class DriverViewModel(
         if (isNavigating) return
         isNavigating = true
         viewModelScope.launch {
-            // If the trip has an AWAITING_PAYMENT booking, go directly to the driver settlement screen.
             val trip = _state.value.trips.firstOrNull { it.id == tripId }
-            val awaitingBookingId = trip?.awaitingPaymentBookingId
-            if (awaitingBookingId != null) {
-                _effect.send(DriverEffect.NavigateToDriverSettlement(awaitingBookingId))
-            } else {
-                _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+            when {
+                trip?.awaitingPaymentBookingId != null ->
+                    _effect.send(DriverEffect.NavigateToDriverSettlement(tripId))
+                trip?.status == TripStatus.COMPLETED || trip?.status == TripStatus.CANCELLED ->
+                    _effect.send(DriverEffect.NavigateToPastTripDetail(tripId))
+                else ->
+                    _effect.send(DriverEffect.NavigateToTripDetail(tripId))
             }
             isNavigating = false
         }

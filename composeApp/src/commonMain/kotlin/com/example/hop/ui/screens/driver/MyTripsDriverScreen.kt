@@ -102,7 +102,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun MyTripsDriverRoute(
     onNavigateBack: () -> Unit,
     onNavigateToTripDetailActiveDriver: (tripId: String) -> Unit,
-    onNavigateToDriverSettlement: (bookingId: String) -> Unit,
+    onNavigateToDriverSettlement: (tripId: String) -> Unit,
+    onNavigateToPastTripDetail: (tripId: String) -> Unit,
     onNavigateToPostTrip: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToChat: () -> Unit,
@@ -122,7 +123,8 @@ fun MyTripsDriverRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is DriverEffect.NavigateToTripDetail -> onNavigateToTripDetailActiveDriver(effect.tripId)
-                is DriverEffect.NavigateToDriverSettlement -> onNavigateToDriverSettlement(effect.bookingId)
+                is DriverEffect.NavigateToDriverSettlement -> onNavigateToDriverSettlement(effect.tripId)
+                is DriverEffect.NavigateToPastTripDetail -> onNavigateToPastTripDetail(effect.tripId)
                 is DriverEffect.NavigateToPostTrip -> onNavigateToPostTrip()
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
@@ -234,6 +236,7 @@ fun MyTripsDriverScreen(
                 )
                 else -> PastDriverTripsContent(
                     trips = pastTrips,
+                    onTripClick = { tripId -> onEvent(DriverEvent.SelectTrip(tripId)) },
                     onPostTrip = { onEvent(DriverEvent.RequestPostTrip) },
                 )
             }
@@ -326,6 +329,7 @@ private fun UpcomingDriverTripsContent(
 @Composable
 private fun PastDriverTripsContent(
     trips: List<TripUiModel>,
+    onTripClick: (String) -> Unit,
     onPostTrip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -341,7 +345,7 @@ private fun PastDriverTripsContent(
         DriverTripList(
             trips = trips,
             showThresholdBar = false,
-            onTripClick = {},
+            onTripClick = onTripClick,
             modifier = modifier,
         )
     }

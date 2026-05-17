@@ -7,6 +7,7 @@ struct MyTripsDriverView: View {
 
     var onTripTapped: (String) -> Void
     var onSettlementTapped: (String) -> Void
+    var onPastTripTapped: (String) -> Void
     var onBack: () -> Void
 
     @StateObject  private var wrapper = DriverViewModelWrapper.shared
@@ -72,8 +73,10 @@ struct MyTripsDriverView: View {
                         LazyVStack(spacing: HopSpacing.sm) {
                             ForEach(displayed, id: \.id) { trip in
                                 Button {
-                                    if let awaitingBookingId = trip.trip.awaitingPaymentBookingId {
-                                        onSettlementTapped(awaitingBookingId)
+                                    if trip.trip.awaitingPaymentBookingId != nil {
+                                        onSettlementTapped(trip.id)
+                                    } else if trip.trip.status == TripStatus.completed || trip.trip.status == TripStatus.cancelled {
+                                        onPastTripTapped(trip.id)
                                     } else {
                                         onTripTapped(trip.id)
                                     }

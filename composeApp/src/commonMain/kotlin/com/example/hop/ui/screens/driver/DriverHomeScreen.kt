@@ -163,6 +163,7 @@ fun DriverHomeContent(
                 is DriverEffect.NavigateToLicenceUpload -> Unit
                 is DriverEffect.NavigateToReviewPending -> Unit
                 is DriverEffect.NavigateToHome -> Unit
+                is DriverEffect.NavigateToPastTripDetail -> Unit
             }
         }
     }

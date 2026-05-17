@@ -90,6 +90,8 @@ fun PassengerSettlementRoute(
                 is SettlementEffect.ConfirmReceivedSuccess -> onSettlementComplete()
                 is SettlementEffect.DisputeSubmittedSuccess ->
                     snackbarHostState.showSnackbar("Dispute submitted")
+                is SettlementEffect.UnmarkPaidSuccess ->
+                    snackbarHostState.showSnackbar("Payment unmarked — you can retry MobilePay")
                 is SettlementEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
             }
         }
@@ -234,6 +236,16 @@ private fun PassengerSettlementScreen(
                             color = HopColors.authTextSecondary,
                             modifier = Modifier.fillMaxWidth(),
                         )
+                        // Only show undo if driver hasn't confirmed yet
+                        if (settlement.driverConfirmedAt == null) {
+                            Spacer(Modifier.height(4.dp))
+                            HopButton(
+                                text = "I Haven't Paid Yet",
+                                onClick = { onEvent(SettlementEvent.UnmarkPaid) },
+                                isLoading = state.isUnmarkingPaid,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                 }
             }
@@ -245,6 +257,7 @@ private fun PassengerSettlementScreen(
 
 private val previewSettlement = RideSettlement(
     bookingId = "bk-preview-01",
+    tripId = null,
     suggestedAmountOere = 17_300,
     mobilepayNumber = "12345678",
     passengerPaidAt = null,

@@ -31,6 +31,14 @@ final class SettlementViewModelWrapper: ObservableObject {
         viewModel.onEvent(event: SettlementEventLoad(bookingId: bookingId))
     }
 
+    func loadForTrip(tripId: String) {
+        viewModel.onEvent(event: SettlementEventLoadForTrip(tripId: tripId))
+    }
+
+    func loadForTripByBooking(bookingId: String) {
+        viewModel.onEvent(event: SettlementEventLoadForTripByBooking(bookingId: bookingId))
+    }
+
     func refresh() {
         viewModel.onEvent(event: SettlementEventRefresh.shared)
     }
@@ -43,8 +51,16 @@ final class SettlementViewModelWrapper: ObservableObject {
         viewModel.onEvent(event: SettlementEventMarkPaid.shared)
     }
 
+    func unmarkPaid() {
+        viewModel.onEvent(event: SettlementEventUnmarkPaid.shared)
+    }
+
     func confirmReceived() {
         viewModel.onEvent(event: SettlementEventConfirmReceived.shared)
+    }
+
+    func confirmReceivedForBooking(bookingId: String) {
+        viewModel.onEvent(event: SettlementEventConfirmReceivedForBooking(bookingId: bookingId))
     }
 
     func submitDispute() {

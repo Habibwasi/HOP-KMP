@@ -8,6 +8,11 @@ import { DisputeDto } from './dto/dispute.dto'
 export class SettlementsController {
   constructor(private settlements: SettlementsService) {}
 
+  @Get('trip/:tripId')
+  getForTrip(@Param('tripId') tripId: string, @Req() req: any) {
+    return this.settlements.getSettlementsForTrip(tripId, req.user.id)
+  }
+
   @Get(':bookingId')
   get(@Param('bookingId') bookingId: string, @Req() req: any) {
     return this.settlements.getSettlement(bookingId, req.user.id)
@@ -17,6 +22,12 @@ export class SettlementsController {
   @HttpCode(200)
   markPaid(@Param('bookingId') bookingId: string, @Req() req: any) {
     return this.settlements.markPassengerPaid(bookingId, req.user.id)
+  }
+
+  @Post(':bookingId/unmark-paid')
+  @HttpCode(200)
+  unmarkPaid(@Param('bookingId') bookingId: string, @Req() req: any) {
+    return this.settlements.unmarkPaid(bookingId, req.user.id)
   }
 
   @Post(':bookingId/confirm-received')

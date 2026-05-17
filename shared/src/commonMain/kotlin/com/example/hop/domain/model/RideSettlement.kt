@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RideSettlement(
     val bookingId: String,
+    val tripId: String?,
     val suggestedAmountOere: Int,
     val mobilepayNumber: String,
     val passengerPaidAt: String?,

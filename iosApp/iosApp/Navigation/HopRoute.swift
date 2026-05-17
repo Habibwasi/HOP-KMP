@@ -123,6 +123,12 @@ enum HopRoute: Hashable {
     /// SE-01 Passenger Settlement (pay driver via MobilePay)
     case passengerSettlement(bookingId: String)
 
-    /// SE-02 Driver Settlement (confirm received / dispute)
-    case driverSettlement(bookingId: String)
+    /// SE-02 Driver Settlement (all passengers for a trip)
+    case driverSettlement(tripId: String)
+
+    /// SE-02b Driver Settlement entry via notification deep-link (resolves tripId from bookingId)
+    case driverSettlementByBooking(bookingId: String)
+
+    /// DR-09b Past trip detail (driver read-only view)
+    case pastTripDetailDriver(tripId: String)
 }

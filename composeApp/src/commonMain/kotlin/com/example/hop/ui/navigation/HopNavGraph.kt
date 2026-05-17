@@ -34,6 +34,7 @@ import com.example.hop.ui.screens.shared.SplashRoute
 import com.example.hop.ui.screens.passenger.SearchResultsRoute
 import com.example.hop.ui.screens.settlement.PassengerSettlementRoute
 import com.example.hop.ui.screens.settlement.DriverSettlementRoute
+import com.example.hop.ui.screens.settlement.PastTripDetailDriverRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
 import com.example.hop.ui.screens.passenger.RateDriverRoute
@@ -414,8 +415,11 @@ fun HopNavGraph(
                 onNavigateToTripDetailActiveDriver = { tripId ->
                     navController.navigate(HopRoutes.TripDetailActiveDriver(tripId = tripId))
                 },
-                onNavigateToDriverSettlement = { bookingId ->
-                    navController.navigate(HopRoutes.DriverSettlement(bookingId = bookingId))
+                onNavigateToDriverSettlement = { tripId ->
+                    navController.navigate(HopRoutes.DriverSettlement(tripId = tripId))
+                },
+                onNavigateToPastTripDetail = { tripId ->
+                    navController.navigate(HopRoutes.PastTripDetailDriver(tripId = tripId))
                 },
                 onNavigateToPostTrip = {
                     navController.navigate(HopRoutes.PostTripModelSelect)
@@ -476,8 +480,8 @@ fun HopNavGraph(
                         popUpTo(HopRoutes.MyTripsDriver) { inclusive = false }
                     }
                 },
-                onNavigateToDriverSettlement = { bookingId ->
-                    navController.navigate(HopRoutes.DriverSettlement(bookingId = bookingId)) {
+                onNavigateToDriverSettlement = { tripId ->
+                    navController.navigate(HopRoutes.DriverSettlement(tripId = tripId)) {
                         popUpTo<HopRoutes.MarkTripComplete> { inclusive = true }
                     }
                 },
@@ -586,13 +590,35 @@ fun HopNavGraph(
         composable<HopRoutes.DriverSettlement> { backStackEntry ->
             val route: HopRoutes.DriverSettlement = backStackEntry.toRoute()
             DriverSettlementRoute(
-                bookingId = route.bookingId,
+                tripId = route.tripId,
                 onNavigateBack = { navController.navigateUp() },
                 onSettlementComplete = {
                     navController.navigate(HopRoutes.MyTripsDriver) {
                         popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
+            )
+        }
+
+        composable<HopRoutes.DriverSettlementByBooking> { backStackEntry ->
+            val route: HopRoutes.DriverSettlementByBooking = backStackEntry.toRoute()
+            DriverSettlementRoute(
+                tripId = "",
+                bookingIdForResolution = route.bookingId,
+                onNavigateBack = { navController.navigateUp() },
+                onSettlementComplete = {
+                    navController.navigate(HopRoutes.MyTripsDriver) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    }
+                },
+            )
+        }
+
+        composable<HopRoutes.PastTripDetailDriver> { backStackEntry ->
+            val route: HopRoutes.PastTripDetailDriver = backStackEntry.toRoute()
+            PastTripDetailDriverRoute(
+                tripId = route.tripId,
+                onNavigateBack = { navController.navigateUp() },
             )
         }
     }

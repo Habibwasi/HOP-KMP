@@ -177,7 +177,15 @@ sealed interface HopRoutes {
     @Serializable
     data class PassengerSettlement(val bookingId: String) : HopRoutes
 
-    /** SE-02 — Driver settlement (confirm received / dispute) */
+    /** SE-02 — Driver settlement (all passengers for a trip — confirm / dispute per booking) */
     @Serializable
-    data class DriverSettlement(val bookingId: String) : HopRoutes
+    data class DriverSettlement(val tripId: String) : HopRoutes
+
+    /** SE-02b — Driver settlement entry via notification deep-link (resolves tripId from bookingId) */
+    @Serializable
+    data class DriverSettlementByBooking(val bookingId: String) : HopRoutes
+
+    /** DR-09b — Past trip detail (driver view: route summary + per-passenger settlement status) */
+    @Serializable
+    data class PastTripDetailDriver(val tripId: String) : HopRoutes
 }
