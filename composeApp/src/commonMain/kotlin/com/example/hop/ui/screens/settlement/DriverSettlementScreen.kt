@@ -38,13 +38,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.hop.domain.model.RideSettlement
 import com.example.hop.presentation.settlement.SettlementEffect
 import com.example.hop.presentation.settlement.SettlementEvent
+import com.example.hop.presentation.settlement.SettlementUiState
 import com.example.hop.presentation.settlement.SettlementViewModel
 import com.example.hop.ui.components.HopButton
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
 import com.example.hop.ui.theme.HopSpacing
+import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -58,7 +62,6 @@ fun DriverSettlementRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showDisputeSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(bookingId) {
         viewModel.onEvent(SettlementEvent.Load(bookingId))
@@ -94,41 +97,92 @@ fun DriverSettlementRoute(
         containerColor = HopColors.surface,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(HopColors.background)
-                .statusBarsPadding()
-                .padding(innerPadding),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(end = HopSpacing.md),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = HopColors.authTextPrimary)
-                }
-                Text(
-                    "Payment Confirmation",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = HopColors.authTextPrimary,
-                )
-            }
+        DriverSettlementScreen(
+            state = state,
+            onEvent = viewModel::onEvent,
+            onNavigateBack = onNavigateBack,
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
+}
 
-            if (state.isLoading) {
-                Spacer(Modifier.weight(1f))
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = HopColors.primaryLime)
-                Spacer(Modifier.weight(1f))
-            } else {
-                val settlement = state.settlement
-                if (settlement != null) {
+@Composable
+private fun DriverSettlementScreen(
+    state: SettlementUiState,
+    onEvent: (SettlementEvent) -> Unit,
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDisputeSheet by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(HopColors.background)
+            .statusBarsPadding(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(end = HopSpacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onNavigateBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = HopColors.authTextPrimary)
+            }
+            Text(
+                "Payment Confirmation",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = HopColors.authTextPrimary,
+            )
+        }
+
+        if (state.isLoading) {
+            Spacer(Modifier.weight(1f))
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = HopColors.primaryLime)
+            Spacer(Modifier.weight(1f))
+        } else {
+            val settlement = state.settlement
+            if (settlement != null) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(HopSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
+                ) {
+                    // Amount card
                     Column(
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(HopColors.authInputSurface)
                             .padding(HopSpacing.md),
-                        verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
+                        verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
                     ) {
-                        // Amount card
+                        Text("Expected payment", style = MaterialTheme.typography.labelMedium, color = HopColors.authTextSecondary)
+                        Text(
+                            "DKK ${settlement.suggestedAmountOere / 100}",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontFamily = HopMonoFontFamily,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = HopColors.primaryLime,
+                        )
+                    }
+
+                    if (settlement.passengerPaidAt != null) {
+                        Text(
+                            "Passenger has marked this as paid",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = HopColors.primaryLime,
+                        )
+                    } else {
+                        Text(
+                            "Waiting for passenger to send payment via MobilePay...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = HopColors.authTextSecondary,
+                        )
+                    }
+
+                    if (showDisputeSheet) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -137,82 +191,98 @@ fun DriverSettlementRoute(
                                 .padding(HopSpacing.md),
                             verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
                         ) {
-                            Text("Expected payment", style = MaterialTheme.typography.labelMedium, color = HopColors.authTextSecondary)
-                            Text(
-                                "DKK ${settlement.suggestedAmountOere / 100}",
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontFamily = HopMonoFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                color = HopColors.primaryLime,
-                            )
-                        }
-
-                        if (settlement.passengerPaidAt != null) {
-                            Text(
-                                "Passenger has marked this as paid",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                color = HopColors.primaryLime,
-                            )
-                        } else {
-                            Text(
-                                "Waiting for passenger to send payment via MobilePay…",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = HopColors.authTextSecondary,
-                            )
-                        }
-
-                        if (showDisputeSheet) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(HopColors.authInputSurface)
-                                    .padding(HopSpacing.md),
-                                verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
-                            ) {
-                                Text("Dispute reason", style = MaterialTheme.typography.labelMedium, color = HopColors.authTextSecondary)
-                                OutlinedTextField(
-                                    value = state.disputeReason,
-                                    onValueChange = { viewModel.onEvent(SettlementEvent.DisputeReasonChanged(it)) },
-                                    placeholder = { Text("Describe the issue (min 10 characters)…") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    minLines = 3,
-                                )
-                                HopButton(
-                                    text = "Submit Dispute",
-                                    onClick = { viewModel.onEvent(SettlementEvent.SubmitDispute) },
-                                    isLoading = state.isDisputing,
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                            }
-                        }
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(HopColors.background)
-                            .navigationBarsPadding()
-                            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
-                        verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
-                    ) {
-                        if (settlement.passengerPaidAt != null && settlement.driverConfirmedAt == null) {
-                            HopButton(
-                                text = "Confirm Received",
-                                onClick = { viewModel.onEvent(SettlementEvent.ConfirmReceived) },
-                                isLoading = state.isConfirming,
+                            Text("Dispute reason", style = MaterialTheme.typography.labelMedium, color = HopColors.authTextSecondary)
+                            OutlinedTextField(
+                                value = state.disputeReason,
+                                onValueChange = { onEvent(SettlementEvent.DisputeReasonChanged(it)) },
+                                placeholder = { Text("Describe the issue (min 10 characters)...") },
                                 modifier = Modifier.fillMaxWidth(),
+                                minLines = 3,
                             )
                             HopButton(
-                                text = "Dispute",
-                                onClick = { showDisputeSheet = !showDisputeSheet },
+                                text = "Submit Dispute",
+                                onClick = { onEvent(SettlementEvent.SubmitDispute) },
+                                isLoading = state.isDisputing,
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
                 }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(HopColors.background)
+                        .navigationBarsPadding()
+                        .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
+                ) {
+                    if (settlement.passengerPaidAt != null && settlement.driverConfirmedAt == null) {
+                        HopButton(
+                            text = "Confirm Received",
+                            onClick = { onEvent(SettlementEvent.ConfirmReceived) },
+                            isLoading = state.isConfirming,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        HopButton(
+                            text = "Dispute",
+                            onClick = { showDisputeSheet = !showDisputeSheet },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+// Previews
+
+private val previewDriverSettlement = RideSettlement(
+    bookingId = "bk-preview-01",
+    suggestedAmountOere = 21_600,
+    mobilepayNumber = "87654321",
+    passengerPaidAt = null,
+    driverConfirmedAt = null,
+    disputedAt = null,
+    disputeReason = null,
+    createdAt = "2026-05-17T08:00:00Z",
+)
+
+@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-SE-02 - Waiting for payment")
+@Composable
+private fun PreviewDriverSettlementWaiting() {
+    HopTheme {
+        DriverSettlementScreen(
+            state = SettlementUiState(settlement = previewDriverSettlement),
+            onEvent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-SE-02 - Passenger paid, confirm pending")
+@Composable
+private fun PreviewDriverSettlementConfirmPending() {
+    HopTheme {
+        DriverSettlementScreen(
+            state = SettlementUiState(
+                settlement = previewDriverSettlement.copy(passengerPaidAt = "2026-05-17T09:05:00Z"),
+            ),
+            onEvent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "DR-SE-02 - Loading")
+@Composable
+private fun PreviewDriverSettlementLoading() {
+    HopTheme {
+        DriverSettlementScreen(
+            state = SettlementUiState(isLoading = true),
+            onEvent = {},
+            onNavigateBack = {},
+        )
     }
 }
