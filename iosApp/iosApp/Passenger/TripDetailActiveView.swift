@@ -70,7 +70,8 @@ struct TripDetailActiveView: View {
                     HopButton(text: "Pay Driver", variant: .primary) {
                         onNavigateToPassengerSettlement(bookingId)
                     }
-                } else {
+                } else if wrapper.state.bookingStatus == .pending ||
+                            wrapper.state.bookingStatus == .confirmed {
                     HopButton(
                         text: "Cancel Booking",
                         variant: .destructive,
@@ -79,6 +80,7 @@ struct TripDetailActiveView: View {
                         showCancelDialog = true
                     }
                 }
+                // .completed / .cancelled / .disputed — no action button
             }
             .padding(HopSpacing.md)
         }

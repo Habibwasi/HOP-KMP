@@ -512,7 +512,8 @@ private fun ActionButtonsSection(
                 text = "Pay Driver",
                 onClick = onPayDriver,
             )
-        } else {
+        } else if (bookingStatus == BookingStatus.PENDING ||
+                   bookingStatus == BookingStatus.CONFIRMED) {
             HopButton(
                 text = "Cancel Booking",
                 onClick = onCancelBooking,
@@ -520,6 +521,7 @@ private fun ActionButtonsSection(
                 isLoading = isCancelling,
             )
         }
+        // COMPLETED / CANCELLED / DISPUTED — no action button
     }
 }
 
