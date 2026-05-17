@@ -1,5 +1,6 @@
 package com.example.hop.data.dto
 
+import com.example.hop.domain.model.BookingStatus
 import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.model.Trip
 import com.example.hop.domain.model.TripModel
@@ -33,6 +34,7 @@ data class PostTripRequestDto(
 data class BookingRefDto(
     val id: String? = null,
     val seats: Int = 1,
+    val status: String = "CONFIRMED",
 )
 
 @Serializable
@@ -59,6 +61,8 @@ data class TripDto(
     @SerialName("recurringDays") val recurrenceDays: List<String>? = null,
     // Populated by /trips/me/passenger — absent on driver/search endpoints.
     val bookingId: String? = null,
+    // Populated by /trips/me/passenger — the booking status for this passenger's booking.
+    val bookingStatus: String? = null,
 )
 
 // Note: Trips endpoints return list directly in ApiEnvelope.data field,
@@ -87,6 +91,8 @@ fun TripDto.toDomain(): Trip = Trip(
     status = TripStatus.entries.firstOrNull { it.name == status } ?: TripStatus.UNKNOWN,
     recurrenceDays = recurrenceDays,
     bookingId = bookingId,
+    bookingStatus = bookingStatus?.let { s -> BookingStatus.entries.firstOrNull { it.name == s } },
+    awaitingPaymentBookingId = bookings?.firstOrNull { it.status == "AWAITING_PAYMENT" }?.id,
 )
 
 fun PassengerSummaryDto.toDomain(): PassengerSummary = PassengerSummary(

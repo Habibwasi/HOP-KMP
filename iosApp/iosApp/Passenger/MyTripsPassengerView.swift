@@ -13,6 +13,7 @@ struct MyTripsPassengerView: View {
     let onNavigateBack: () -> Void
     let onNavigateToTripDetailActive: (_ bookingId: String) -> Void
     let onNavigateToTripDetail: (_ tripId: String) -> Void
+    let onNavigateToPassengerSettlement: (_ bookingId: String) -> Void
     let onNavigateToHome: () -> Void
     let onNavigateToChat: () -> Void
     let onNavigateToProfile: () -> Void
@@ -102,6 +103,8 @@ struct MyTripsPassengerView: View {
             wrapper.startObserving { effect in
                 if let n = effect as? MyTripsPassengerEffectNavigateToTripDetailActive {
                     onNavigateToTripDetailActive(n.bookingId)
+                } else if let n = effect as? MyTripsPassengerEffectNavigateToPassengerSettlement {
+                    onNavigateToPassengerSettlement(n.bookingId)
                 } else if let n = effect as? MyTripsPassengerEffectNavigateToTripDetail {
                     onNavigateToTripDetail(n.tripId)
                 }

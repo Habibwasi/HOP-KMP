@@ -261,6 +261,9 @@ fun HopNavGraph(
                 onNavigateToTripDetail = { tripId ->
                     navController.navigate(HopRoutes.TripDetail(id = tripId))
                 },
+                onNavigateToPassengerSettlement = { bookingId ->
+                    navController.navigate(HopRoutes.PassengerSettlement(bookingId = bookingId))
+                },
                 onNavigateToHome = {
                     // popBackStack restores the existing Home entry, preserving
                     // the selectedRole in rememberSaveable (e.g. DRIVER tab).
@@ -410,6 +413,9 @@ fun HopNavGraph(
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToTripDetailActiveDriver = { tripId ->
                     navController.navigate(HopRoutes.TripDetailActiveDriver(tripId = tripId))
+                },
+                onNavigateToDriverSettlement = { bookingId ->
+                    navController.navigate(HopRoutes.DriverSettlement(bookingId = bookingId))
                 },
                 onNavigateToPostTrip = {
                     navController.navigate(HopRoutes.PostTripModelSelect)

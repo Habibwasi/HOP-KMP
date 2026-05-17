@@ -102,6 +102,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun MyTripsDriverRoute(
     onNavigateBack: () -> Unit,
     onNavigateToTripDetailActiveDriver: (tripId: String) -> Unit,
+    onNavigateToDriverSettlement: (bookingId: String) -> Unit,
     onNavigateToPostTrip: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToChat: () -> Unit,
@@ -121,6 +122,7 @@ fun MyTripsDriverRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is DriverEffect.NavigateToTripDetail -> onNavigateToTripDetailActiveDriver(effect.tripId)
+                is DriverEffect.NavigateToDriverSettlement -> onNavigateToDriverSettlement(effect.bookingId)
                 is DriverEffect.NavigateToPostTrip -> onNavigateToPostTrip()
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)

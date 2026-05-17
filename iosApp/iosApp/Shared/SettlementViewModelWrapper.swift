@@ -31,6 +31,10 @@ final class SettlementViewModelWrapper: ObservableObject {
         viewModel.onEvent(event: SettlementEventLoad(bookingId: bookingId))
     }
 
+    func refresh() {
+        viewModel.onEvent(event: SettlementEventRefresh.shared)
+    }
+
     func openMobilepay() {
         viewModel.onEvent(event: SettlementEventOpenMobilepay.shared)
     }

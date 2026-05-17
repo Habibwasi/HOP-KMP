@@ -530,7 +530,14 @@ class DriverViewModel(
         if (isNavigating) return
         isNavigating = true
         viewModelScope.launch {
-            _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+            // If the trip has an AWAITING_PAYMENT booking, go directly to the driver settlement screen.
+            val trip = _state.value.trips.firstOrNull { it.id == tripId }
+            val awaitingBookingId = trip?.awaitingPaymentBookingId
+            if (awaitingBookingId != null) {
+                _effect.send(DriverEffect.NavigateToDriverSettlement(awaitingBookingId))
+            } else {
+                _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+            }
             isNavigating = false
         }
     }

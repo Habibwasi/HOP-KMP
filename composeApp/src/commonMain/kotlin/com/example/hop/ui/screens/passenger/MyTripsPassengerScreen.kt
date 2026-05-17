@@ -84,6 +84,7 @@ fun MyTripsPassengerRoute(
     onNavigateBack: () -> Unit,
     onNavigateToTripDetailActive: (tripId: String) -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
+    onNavigateToPassengerSettlement: (bookingId: String) -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToChat: () -> Unit,
     onNavigateToProfile: () -> Unit,
@@ -104,6 +105,8 @@ fun MyTripsPassengerRoute(
             when (effect) {
                 is MyTripsPassengerEffect.NavigateToTripDetailActive ->
                     onNavigateToTripDetailActive(effect.bookingId)
+                is MyTripsPassengerEffect.NavigateToPassengerSettlement ->
+                    onNavigateToPassengerSettlement(effect.bookingId)
                 is MyTripsPassengerEffect.NavigateToTripDetail ->
                     onNavigateToTripDetail(effect.tripId)
                 is MyTripsPassengerEffect.ShowSnackbar -> scope.launch {

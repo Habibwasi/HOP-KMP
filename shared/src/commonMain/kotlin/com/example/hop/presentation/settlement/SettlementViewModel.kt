@@ -28,6 +28,8 @@ data class SettlementUiState(
 
 sealed interface SettlementEvent {
     data class Load(val bookingId: String) : SettlementEvent
+    /** Silent background re-fetch (e.g. on resume) — does not show loading indicator. */
+    data object Refresh : SettlementEvent
     /** Passenger taps "Open MobilePay" — triggers deeplink effect, no backend call. */
     data object OpenMobilepay : SettlementEvent
     /** Passenger taps "I have paid". */
@@ -68,6 +70,7 @@ class SettlementViewModel(
     fun onEvent(event: SettlementEvent) {
         when (event) {
             is SettlementEvent.Load -> load(event.bookingId)
+            is SettlementEvent.Refresh -> refresh()
             is SettlementEvent.OpenMobilepay -> openMobilepay()
             is SettlementEvent.MarkPaid -> markPaid()
             is SettlementEvent.ConfirmReceived -> confirmReceived()
@@ -89,6 +92,25 @@ class SettlementViewModel(
                     _state.value = _state.value.copy(isLoading = false, error = response.message)
                     _effect.send(SettlementEffect.ShowSnackbar(response.message))
                 }
+            }
+        }
+    }
+
+    /** Background refresh — does not toggle isLoading so the UI doesn't flash. */
+    private fun refresh() {
+        val bookingId = currentBookingId.ifEmpty { return }
+        viewModelScope.launch {
+            when (val response = settlementRepository.getSettlement(bookingId)) {
+                is ApiResponse.Success -> {
+                    val prev = _state.value.settlement
+                    val updated = response.data
+                    _state.value = _state.value.copy(settlement = updated)
+                    // Auto-complete passenger screen when driver has confirmed.
+                    if (prev?.driverConfirmedAt == null && updated.driverConfirmedAt != null) {
+                        _effect.send(SettlementEffect.ConfirmReceivedSuccess)
+                    }
+                }
+                is ApiResponse.Error -> { /* silently ignore background refresh failures */ }
             }
         }
     }

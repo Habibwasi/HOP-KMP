@@ -542,7 +542,10 @@ export class TripsService {
       where: { driverId },
       orderBy: { departureAt: 'desc' },
       include: {
-        bookings: { where: { status: 'CONFIRMED' } },
+        bookings: {
+          where: { status: { in: ['CONFIRMED', 'AWAITING_PAYMENT'] } },
+          select: { id: true, seats: true, status: true },
+        },
       },
     })
   }
@@ -554,12 +557,15 @@ export class TripsService {
         trip: {
           include: {
             driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-            bookings: { where: { status: 'CONFIRMED' } },
+            bookings: {
+              where: { status: { in: ['CONFIRMED', 'AWAITING_PAYMENT'] } },
+              select: { id: true, seats: true, status: true },
+            },
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     })
-    return bookings.map((b) => ({ ...b.trip, bookingId: b.id }))
+    return bookings.map((b) => ({ ...b.trip, bookingId: b.id, bookingStatus: b.status }))
   }
 }

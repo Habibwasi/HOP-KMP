@@ -132,6 +132,7 @@ struct HopNavigationStack: View {
                 onNavigateBack: popBack,
                 onNavigateToTripDetailActive: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
                 onNavigateToTripDetail: { tripId in navigate(.tripDetail(id: tripId)) },
+                onNavigateToPassengerSettlement: { bookingId in navigate(.passengerSettlement(bookingId: bookingId)) },
                 onNavigateToHome: goHome,
                 onNavigateToChat: { /* handled by tab bar */ },
                 onNavigateToProfile: { /* tab-bar Profile */ },
@@ -210,6 +211,7 @@ struct HopNavigationStack: View {
         case .myTripsDriver:
             MyTripsDriverView(
                 onTripTapped: { tid in navigate(.tripDetailActiveDriver(tripId: tid)) },
+                onSettlementTapped: { bookingId in navigate(.driverSettlement(bookingId: bookingId)) },
                 onBack: popBack
             )
 

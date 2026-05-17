@@ -6,6 +6,7 @@ import Shared
 struct MyTripsDriverView: View {
 
     var onTripTapped: (String) -> Void
+    var onSettlementTapped: (String) -> Void
     var onBack: () -> Void
 
     @StateObject  private var wrapper = DriverViewModelWrapper.shared
@@ -21,9 +22,9 @@ struct MyTripsDriverView: View {
         let trips = wrapper.state.trips
         switch selectedFilter {
         case .upcoming:
-            return trips.filter { $0.trip.status == TripStatus.active || $0.trip.status == TripStatus.confirmed }
+            return trips.filter { $0.trip.status == TripStatus.active || $0.trip.status == TripStatus.confirmed || $0.trip.awaitingPaymentBookingId != nil }
         case .past:
-            return trips.filter { $0.trip.status == TripStatus.completed || $0.trip.status == TripStatus.cancelled }
+            return trips.filter { ($0.trip.status == TripStatus.completed || $0.trip.status == TripStatus.cancelled) && $0.trip.awaitingPaymentBookingId == nil }
         }
     }
 
@@ -70,7 +71,13 @@ struct MyTripsDriverView: View {
                     ScrollView {
                         LazyVStack(spacing: HopSpacing.sm) {
                             ForEach(displayed, id: \.id) { trip in
-                                Button { onTripTapped(trip.id) } label: {
+                                Button {
+                                    if let awaitingBookingId = trip.trip.awaitingPaymentBookingId {
+                                        onSettlementTapped(awaitingBookingId)
+                                    } else {
+                                        onTripTapped(trip.id)
+                                    }
+                                } label: {
                                     DriverTripDetailRow(trip: trip)
                                 }
                                 .buttonStyle(.plain)

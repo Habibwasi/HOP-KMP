@@ -16,6 +16,7 @@ struct DriverSettlementView: View {
     @StateObject private var wrapper = SettlementViewModelWrapper()
     @State private var showDisputeInput: Bool = false
     @State private var toast: String? = nil
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -154,6 +155,11 @@ struct DriverSettlementView: View {
             }
         }
         .navigationBarHidden(true)
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                wrapper.refresh()
+            }
+        }
         .task {
             wrapper.startObserving { effect in
                 switch effect {
