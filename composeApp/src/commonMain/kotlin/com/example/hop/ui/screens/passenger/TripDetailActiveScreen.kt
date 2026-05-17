@@ -34,6 +34,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -100,6 +104,26 @@ fun TripDetailActiveRoute(
 
     LaunchedEffect(bookingId) {
         viewModel.onEvent(TripDetailActiveEvent.Load(bookingId))
+    }
+
+    // Re-fetch booking status when the screen resumes (e.g. user returns from
+    // background after the driver completes the trip).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(TripDetailActiveEvent.Load(bookingId))
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Auto-navigate to settlement as soon as status becomes AWAITING_PAYMENT.
+    LaunchedEffect(state.bookingStatus) {
+        if (state.bookingStatus == BookingStatus.AWAITING_PAYMENT) {
+            onNavigateToPassengerSettlement(bookingId)
+        }
     }
 
     LaunchedEffect(viewModel) {

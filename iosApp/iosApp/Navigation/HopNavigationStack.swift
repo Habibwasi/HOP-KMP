@@ -229,6 +229,9 @@ struct HopNavigationStack: View {
                     navigate(.ratePassenger(bookingId: bookingId, passengerName: name, passengerInitials: initials))
                 },
                 onSettlementRequired: { bookingId in
+                    // Pop markTripComplete before pushing settlement so the driver
+                    // cannot go back and re-complete the trip.
+                    if !path.isEmpty { path.removeLast() }
                     navigate(.driverSettlement(bookingId: bookingId))
                 },
                 onBack: popBack

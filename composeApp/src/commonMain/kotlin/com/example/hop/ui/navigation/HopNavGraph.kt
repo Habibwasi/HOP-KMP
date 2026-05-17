@@ -471,7 +471,9 @@ fun HopNavGraph(
                     }
                 },
                 onNavigateToDriverSettlement = { bookingId ->
-                    navController.navigate(HopRoutes.DriverSettlement(bookingId = bookingId))
+                    navController.navigate(HopRoutes.DriverSettlement(bookingId = bookingId)) {
+                        popUpTo<HopRoutes.MarkTripComplete> { inclusive = true }
+                    }
                 },
                 onNavigateToMyTrips = {
                     navController.navigate(HopRoutes.MyTripsDriver) {

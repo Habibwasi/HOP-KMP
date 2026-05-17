@@ -12,6 +12,7 @@ struct TripDetailActiveView: View {
     @StateObject private var wrapper = TripDetailActiveViewModelWrapper()
     @StateObject private var bookingWrapper = BookingViewModelWrapper()
     @State private var showCancelDialog: Bool = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
@@ -103,6 +104,16 @@ struct TripDetailActiveView: View {
                 }
             }
             wrapper.load(bookingId: bookingId)
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                wrapper.load(bookingId: bookingId)
+            }
+        }
+        .onChange(of: wrapper.state.bookingStatus) { status in
+            if status == .awaitingPayment {
+                onNavigateToPassengerSettlement(bookingId)
+            }
         }
     }
 }
