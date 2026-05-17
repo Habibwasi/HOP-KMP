@@ -398,7 +398,7 @@ export class TripsService {
       include: {
         driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
         bookings: {
-          where: { status: 'CONFIRMED' },
+          where: { status: { in: ['PENDING', 'CONFIRMED'] } },
           include: { passenger: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
         },
       },
