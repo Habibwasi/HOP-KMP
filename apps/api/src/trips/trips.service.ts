@@ -540,7 +540,7 @@ export class TripsService {
   async findByDriver(driverId: string) {
     return this.prisma.trip.findMany({
       where: { driverId },
-      orderBy: { departureAt: 'desc' },
+      orderBy: { departureAt: 'asc' },
       include: {
         bookings: {
           where: { status: { in: ['PENDING', 'CONFIRMED', 'AWAITING_PAYMENT', 'COMPLETED'] } },
