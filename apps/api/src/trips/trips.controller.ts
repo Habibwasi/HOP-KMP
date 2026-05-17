@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -58,13 +59,13 @@ export class TripsController {
     return this.trips.findById(id)
   }
 
-  @Patch(':id/cancel')
+  @Delete(':id')
   @UseGuards(SupabaseGuard)
   cancel(@Param('id') id: string, @Req() req: any) {
     return this.trips.cancel(id, req.user.id)
   }
 
-  @Patch(':id/complete')
+  @Post(':id/complete')
   @UseGuards(SupabaseGuard)
   complete(@Param('id') id: string, @Req() req: any) {
     return this.trips.complete(id, req.user.id)
