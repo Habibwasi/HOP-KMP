@@ -47,6 +47,12 @@ export class TripsController {
     return this.trips.findByDriver(req.user.id)
   }
 
+  @Get(':id/bookings')
+  @UseGuards(SupabaseGuard)
+  getTripPassengers(@Param('id') id: string, @Req() req: any) {
+    return this.trips.getTripPassengers(id, req.user.id)
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.trips.findById(id)

@@ -407,6 +407,44 @@ export class TripsService {
     return trip
   }
 
+  async getTripPassengers(tripId: string, driverId: string) {
+    const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
+    if (!trip) throw new NotFoundException('Trip not found')
+    if (trip.driverId !== driverId) throw new ForbiddenException('Not your trip')
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        tripId,
+        status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+      },
+      include: {
+        passenger: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            ratingsReceived: { select: { score: true } },
+          },
+        },
+      },
+    })
+
+    return bookings.map((b) => {
+      const scores = b.passenger.ratingsReceived.map((r) => r.score)
+      const avgRating =
+        scores.length > 0
+          ? Math.round((scores.reduce((s, r) => s + r, 0) / scores.length) * 10) / 10
+          : 0
+      return {
+        bookingId: b.id,
+        passengerId: b.passenger.id,
+        fullName: `${b.passenger.firstName} ${b.passenger.lastName}`.trim(),
+        rating: avgRating,
+        seats: b.seats,
+      }
+    })
+  }
+
   async cancel(tripId: string, userId: string) {
     const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
     if (!trip) throw new NotFoundException('Trip not found')
