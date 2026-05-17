@@ -294,6 +294,7 @@ private fun PassengerSettlementScreen(
                             HopButton(
                                 text = "I Haven't Paid Yet",
                                 onClick = { onEvent(SettlementEvent.UnmarkPaid) },
+                                variant = HopButtonVariant.Ghost,
                                 isLoading = state.isUnmarkingPaid,
                                 modifier = Modifier.fillMaxWidth(),
                             )

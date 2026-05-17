@@ -149,7 +149,8 @@ struct PassengerSettlementView: View {
                                 HopButton(
                                     text: "I Haven't Paid Yet",
                                     variant: .ghost,
-                                    isLoading: wrapper.state.isUnmarkingPaid
+                                    isLoading: wrapper.state.isUnmarkingPaid,
+                                    lightSurface: true
                                 ) {
                                     wrapper.unmarkPaid()
                                 }
