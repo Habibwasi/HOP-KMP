@@ -82,7 +82,7 @@ struct DriverHomeView: View {
                                 SkeletonCard()
                             }
                         }
-                    } else if wrapper.state.trips.isEmpty {
+                    } else if wrapper.state.trips.filter({ $0.trip.status == TripStatus.active || $0.trip.status == TripStatus.confirmed }).isEmpty {
                         EmptyTripsCard(
                             onPostTrip: {
                                 if hasDriverRole {
@@ -93,8 +93,9 @@ struct DriverHomeView: View {
                             }
                         )
                     } else {
+                        let upcomingTrips = wrapper.state.trips.filter { $0.trip.status == TripStatus.active || $0.trip.status == TripStatus.confirmed }
                         VStack(spacing: HopSpacing.sm) {
-                            ForEach(wrapper.state.trips, id: \.id) { trip in
+                            ForEach(upcomingTrips, id: \.id) { trip in
                                 Button {
                                     navigate(.tripDetailActiveDriver(tripId: trip.id))
                                 } label: {

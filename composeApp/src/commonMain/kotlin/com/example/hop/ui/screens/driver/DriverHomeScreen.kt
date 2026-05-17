@@ -357,7 +357,7 @@ fun DriverHomeScreen(
                     items(3) {
                         SkeletonBox(height = 120.dp, cornerRadius = 12.dp)
                     }
-                } else if (state.trips.isEmpty()) {
+                } else if (state.trips.none { it.status == TripStatus.ACTIVE || it.status == TripStatus.CONFIRMED }) {
                     item {
                         EmptyState(
                             headline = "Post your first trip to start earning",
@@ -367,7 +367,10 @@ fun DriverHomeScreen(
                         )
                     }
                 } else {
-                    items(state.trips, key = { it.id }) { tripUiModel ->
+                    items(
+                        state.trips.filter { it.status == TripStatus.ACTIVE || it.status == TripStatus.CONFIRMED },
+                        key = { it.id },
+                    ) { tripUiModel ->
                         DriverTripCard(
                             tripUiModel = tripUiModel,
                             onClick = { onTripClick(tripUiModel.id) },
