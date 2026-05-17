@@ -543,7 +543,7 @@ export class TripsService {
       orderBy: { departureAt: 'desc' },
       include: {
         bookings: {
-          where: { status: { in: ['CONFIRMED', 'AWAITING_PAYMENT'] } },
+          where: { status: { in: ['PENDING', 'CONFIRMED', 'AWAITING_PAYMENT'] } },
           select: { id: true, seats: true, status: true },
         },
       },
@@ -558,7 +558,7 @@ export class TripsService {
           include: {
             driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
             bookings: {
-              where: { status: { in: ['CONFIRMED', 'AWAITING_PAYMENT'] } },
+              where: { status: { in: ['PENDING', 'CONFIRMED', 'AWAITING_PAYMENT'] } },
               select: { id: true, seats: true, status: true },
             },
           },
