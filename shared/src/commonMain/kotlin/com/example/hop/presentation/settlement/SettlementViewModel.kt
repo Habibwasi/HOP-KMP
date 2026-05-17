@@ -82,6 +82,9 @@ class SettlementViewModel(
 
     private var currentBookingId: String = ""
     private var currentTripId: String = ""
+    /** Set when the passenger opens MobilePay; suppresses the very next Refresh from
+     *  closing the screen (ON_RESUME fires immediately when returning from external app). */
+    private var suppressNextConfirmEffect = false
 
     fun onEvent(event: SettlementEvent) {
         when (event) {
@@ -167,7 +170,13 @@ class SettlementViewModel(
                         val updated = response.data
                         _state.value = _state.value.copy(settlement = updated)
                         if (prev?.driverConfirmedAt == null && updated.driverConfirmedAt != null) {
-                            _effect.send(SettlementEffect.ConfirmReceivedSuccess)
+                            if (suppressNextConfirmEffect) {
+                                suppressNextConfirmEffect = false
+                            } else {
+                                _effect.send(SettlementEffect.ConfirmReceivedSuccess)
+                            }
+                        } else {
+                            suppressNextConfirmEffect = false
                         }
                     }
                     is ApiResponse.Error -> { /* silently ignore */ }
@@ -188,8 +197,18 @@ class SettlementViewModel(
 
     private fun openMobilepay() {
         val s = _state.value.settlement ?: return
+        // Build a pre-populated send URL: mobilepay://send?phone=XXXXXXXX&amount=XX&comment=...
+        // Strip non-digits and take the last 8 characters to get the Danish 8-digit number
+        // (handles stored formats like "+4512345678", "004512345678", or "12345678").
+        val phone = s.mobilepayNumber.filter { it.isDigit() }.takeLast(8)
         val amountDkk = s.suggestedAmountOere / 100
-        val uri = "mobilepay://send?phone=${s.mobilepayNumber}&amount=$amountDkk&comment=Ridly%20${s.bookingId}"
+        val uri = if (phone.length == 8) {
+            "mobilepay://send?phone=$phone&amount=$amountDkk&comment=Hop%20ride"
+        } else {
+            // Fallback: open MobilePay home screen if the phone number cannot be parsed.
+            "mobilepay://"
+        }
+        suppressNextConfirmEffect = true
         viewModelScope.launch { _effect.send(SettlementEffect.OpenMobilepayDeeplink(uri)) }
     }
 

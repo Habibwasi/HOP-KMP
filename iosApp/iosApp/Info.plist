@@ -24,6 +24,12 @@
 			</array>
 		</dict>
 	</array>
+	<!-- URL schemes the app is allowed to query (required for canOpenURL on iOS 9+) -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mobilepay</string>
+		<string>vipps</string>
+	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>nunito_black.ttf</string>

@@ -15,6 +15,7 @@ struct PassengerSettlementView: View {
 
     @StateObject private var wrapper = SettlementViewModelWrapper()
     @State private var toast: String? = nil
+    @State private var isOpeningMobilepay = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -140,9 +141,14 @@ struct PassengerSettlementView: View {
             }
         }
         .navigationBarHidden(true)
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                wrapper.refresh()
+                if isOpeningMobilepay {
+                    // Returning from MobilePay — skip this refresh and clear the flag.
+                    isOpeningMobilepay = false
+                } else {
+                    wrapper.refresh()
+                }
             }
         }
         .task {
@@ -151,7 +157,15 @@ struct PassengerSettlementView: View {
                 case is SettlementEffectOpenMobilepayDeeplink:
                     let deeplink = effect as! SettlementEffectOpenMobilepayDeeplink
                     if let url = URL(string: deeplink.uri) {
-                        UIApplication.shared.open(url)
+                        if UIApplication.shared.canOpenURL(url) {
+                            isOpeningMobilepay = true
+                            UIApplication.shared.open(url)
+                        } else {
+                            withAnimation { toast = "MobilePay is not installed" }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                                withAnimation { toast = nil }
+                            }
+                        }
                     }
                 case is SettlementEffectPaymentMarkedSuccess:
                     withAnimation { toast = "Marked as paid — waiting for driver confirmation" }
