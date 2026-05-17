@@ -25,7 +25,7 @@ export class BookingsService {
 
   async create(passengerId: string, dto: CreateBookingDto) {
     // Use interactive transaction for SELECT FOR UPDATE atomicity
-    return this.prisma.$transaction(async (tx) => {
+    const booking = await this.prisma.$transaction(async (tx) => {
       const trip = await tx.trip.findUnique({ where: { id: dto.tripId } })
 
       if (!trip) throw new NotFoundException('Trip not found')
