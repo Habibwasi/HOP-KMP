@@ -72,22 +72,22 @@ let PlacesService = class PlacesService {
         return { ok: true };
     }
     async geocode(address) {
-        const key = this.googleMapsKey();
+        const key = this.mapboxKey();
         if (!key)
             throw new common_1.BadRequestException('Geocoding is not configured on this server');
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`;
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${key}&limit=1`;
         const res = await fetch(url);
         if (!res.ok)
             throw new common_1.BadRequestException('Geocoding request failed');
         const json = await res.json();
-        if (json.status !== 'OK' || !json.results.length) {
+        if (!json.features.length) {
             throw new common_1.BadRequestException(`No geocoding result for: ${address}`);
         }
-        const { lat, lng } = json.results[0].geometry.location;
-        return { lat, lng, formattedAddress: json.results[0].formatted_address };
+        const [lng, lat] = json.features[0].center;
+        return { lat, lng, formattedAddress: json.features[0].place_name };
     }
     async route(origin, dest) {
-        const key = this.googleMapsKey();
+        const key = this.mapboxKey();
         if (!key)
             throw new common_1.BadRequestException('Route calculation is not configured on this server');
         const cleanOrigin = origin?.trim();
@@ -95,29 +95,53 @@ let PlacesService = class PlacesService {
         if (!cleanOrigin || !cleanDest) {
             throw new common_1.BadRequestException('origin and dest are required');
         }
-        const url = new URL('https://maps.googleapis.com/maps/api/directions/json');
-        url.searchParams.set('origin', cleanOrigin);
-        url.searchParams.set('destination', cleanDest);
-        url.searchParams.set('mode', 'driving');
-        url.searchParams.set('key', key);
+        const [originGeo, destGeo] = await Promise.all([
+            this.geocode(cleanOrigin),
+            this.geocode(cleanDest),
+        ]);
+        const coords = `${originGeo.lng},${originGeo.lat};${destGeo.lng},${destGeo.lat}`;
+        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?access_token=${key}&overview=false`;
         const res = await fetch(url);
         if (!res.ok)
             throw new common_1.BadRequestException('Route calculation request failed');
         const json = await res.json();
-        const leg = json.routes[0]?.legs[0];
-        if (json.status !== 'OK' || !leg) {
-            throw new common_1.BadRequestException(json.error_message ?? 'No driving route found between the selected addresses');
+        if (json.code !== 'Ok' || !json.routes.length) {
+            throw new common_1.BadRequestException(json.message ?? `No driving route found (Mapbox code: ${json.code})`);
         }
         return {
-            distanceMetres: leg.distance.value,
-            originLat: leg.start_location.lat,
-            originLng: leg.start_location.lng,
-            destLat: leg.end_location.lat,
-            destLng: leg.end_location.lng,
+            distanceMetres: Math.round(json.routes[0].distance),
+            originLat: originGeo.lat,
+            originLng: originGeo.lng,
+            destLat: destGeo.lat,
+            destLng: destGeo.lng,
         };
     }
-    googleMapsKey() {
-        return this.config.get('GOOGLE_MAPS_API_KEY') ?? this.config.get('MAPS_API_KEY');
+    async autocomplete(query) {
+        const key = this.mapboxKey();
+        if (!key)
+            return { suggestions: [] };
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
+            `?access_token=${key}&limit=5&types=place,locality,district,address`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok)
+                return { suggestions: [] };
+            const json = await res.json();
+            return {
+                suggestions: json.features.map((f) => ({
+                    name: f.text,
+                    fullAddress: f.place_name,
+                    lat: f.center[1],
+                    lng: f.center[0],
+                })),
+            };
+        }
+        catch {
+            return { suggestions: [] };
+        }
+    }
+    mapboxKey() {
+        return this.config.get('MAPBOX_ACCESS_TOKEN');
     }
 };
 exports.PlacesService = PlacesService;

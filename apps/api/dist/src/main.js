@@ -33,6 +33,7 @@ async function resolvePort(preferredPort) {
     throw new Error(`No available port found between ${preferredPort} and ${preferredPort + 20}`);
 }
 async function bootstrap() {
+    logger.log(`Redis config — URL=${process.env.REDIS_URL ? '[SET]' : '[UNSET]'} HOST=${process.env.REDIS_HOST ?? '[UNSET]'} PORT=${process.env.REDIS_PORT ?? '[UNSET]'} PASSWORD=${process.env.REDIS_PASSWORD ? '[SET]' : '[UNSET]'}`);
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { rawBody: true });
     app.useGlobalPipes(new common_1.ValidationPipe({ whitelist: true, transform: true }));
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());

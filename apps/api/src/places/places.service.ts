@@ -62,33 +62,34 @@ export class PlacesService {
   }
 
   /**
-   * Geocode a free-text address via Mapbox Geocoding API.
+   * Geocode a free-text address via Google Maps Geocoding API.
    * Returns { lat, lng, formattedAddress } or throws if nothing found.
    */
   async geocode(address: string): Promise<{ lat: number; lng: number; formattedAddress: string }> {
-    const key = this.mapboxKey()
+    const key = this.googleMapsKey()
     if (!key) throw new BadRequestException('Geocoding is not configured on this server')
 
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${key}&limit=1`
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`
     const res = await fetch(url)
     if (!res.ok) throw new BadRequestException('Geocoding request failed')
 
     const json = await res.json() as {
-      features: Array<{
-        place_name: string
-        center: [number, number] // [lng, lat]
+      status: string
+      results: Array<{
+        formatted_address: string
+        geometry: { location: { lat: number; lng: number } }
       }>
     }
 
-    if (!json.features.length) {
+    if (json.status !== 'OK' || !json.results.length) {
       throw new BadRequestException(`No geocoding result for: ${address}`)
     }
 
-    const [lng, lat] = json.features[0].center
-    return { lat, lng, formattedAddress: json.features[0].place_name }
+    const { lat, lng } = json.results[0].geometry.location
+    return { lat, lng, formattedAddress: json.results[0].formatted_address }
   }
 
-  /** Resolve a driving route via Mapbox Directions API. */
+  /** Resolve a driving route via Google Directions using the server-side API key. */
   async route(origin: string, dest: string): Promise<{
     distanceMetres: number
     originLat: number
@@ -96,7 +97,7 @@ export class PlacesService {
     destLat: number
     destLng: number
   }> {
-    const key = this.mapboxKey()
+    const key = this.googleMapsKey()
     if (!key) throw new BadRequestException('Route calculation is not configured on this server')
 
     const cleanOrigin = origin?.trim()
@@ -105,39 +106,42 @@ export class PlacesService {
       throw new BadRequestException('origin and dest are required')
     }
 
-    // Geocode both addresses first
-    const [originGeo, destGeo] = await Promise.all([
-      this.geocode(cleanOrigin),
-      this.geocode(cleanDest),
-    ])
-
-    // Mapbox Directions: coordinates as "lng,lat;lng,lat"
-    const coords = `${originGeo.lng},${originGeo.lat};${destGeo.lng},${destGeo.lat}`
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?access_token=${key}&overview=false`
+    const url = new URL('https://maps.googleapis.com/maps/api/directions/json')
+    url.searchParams.set('origin', cleanOrigin)
+    url.searchParams.set('destination', cleanDest)
+    url.searchParams.set('mode', 'driving')
+    url.searchParams.set('key', key)
 
     const res = await fetch(url)
     if (!res.ok) throw new BadRequestException('Route calculation request failed')
 
     const json = await res.json() as {
-      code: string
-      message?: string
-      routes: Array<{ distance: number }>
+      status: string
+      error_message?: string
+      routes: Array<{
+        legs: Array<{
+          distance: { value: number }
+          start_location: { lat: number; lng: number }
+          end_location: { lat: number; lng: number }
+        }>
+      }>
     }
 
-    if (json.code !== 'Ok' || !json.routes.length) {
-      throw new BadRequestException(json.message ?? `No driving route found (Mapbox code: ${json.code})`)
+    const leg = json.routes[0]?.legs[0]
+    if (json.status !== 'OK' || !leg) {
+      throw new BadRequestException(json.error_message ?? 'No driving route found between the selected addresses')
     }
 
     return {
-      distanceMetres: Math.round(json.routes[0].distance),
-      originLat: originGeo.lat,
-      originLng: originGeo.lng,
-      destLat: destGeo.lat,
-      destLng: destGeo.lng,
+      distanceMetres: leg.distance.value,
+      originLat: leg.start_location.lat,
+      originLng: leg.start_location.lng,
+      destLat: leg.end_location.lat,
+      destLng: leg.end_location.lng,
     }
   }
 
-  private mapboxKey(): string | undefined {
-    return this.config.get<string>('MAPBOX_ACCESS_TOKEN')
+  private googleMapsKey(): string | undefined {
+    return this.config.get<string>('GOOGLE_MAPS_API_KEY') ?? this.config.get<string>('MAPS_API_KEY')
   }
 }

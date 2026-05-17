@@ -27,9 +27,7 @@ kotlin {
             // Firebase (Android only — no KMP artifact)
             implementation(libs.firebase.messaging)
             implementation(libs.sentry.android)
-            // Google Maps + Places (Android only)
-            implementation(libs.maps.compose)
-            implementation(libs.play.services.maps)
+            // Google Places (Android only — still used for nothing now; kept for future)
             implementation(libs.google.places)
         }
         commonMain.dependencies {
@@ -43,6 +41,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
+            // Google Maps Compose — composeApp only targets Android so safe in commonMain
+            implementation(libs.maps.compose)
+            implementation(libs.play.services.maps)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.material.icons.extended)

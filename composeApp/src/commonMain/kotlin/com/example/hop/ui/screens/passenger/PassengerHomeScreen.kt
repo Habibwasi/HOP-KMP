@@ -100,20 +100,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-// Google Maps
+import android.location.Geocoder
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.rememberCameraPositionState
-// Google Places autocomplete
-import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.AutocompletePrediction
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
-import com.google.android.libraries.places.api.net.PlacesClient
-import kotlin.coroutines.resume
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.suspendCancellableCoroutine
 // Date
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -145,10 +141,6 @@ import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
-import android.location.Geocoder
-import java.util.Locale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.window.Popup
@@ -945,141 +937,11 @@ private fun SeatPickerSheet(
     }
 }
 
-// ── Location row (autocomplete inline helper used by LocationPickerOverlay) ────
-
-@Composable
-private fun LocationRow(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onSuggestionSelected: (String) -> Unit,
-    placeholder: String,
-    icon: ImageVector,
-    iconTint: Color,
-    iconDescription: String,
-    placesClient: PlacesClient?,
-    modifier: Modifier = Modifier,
-) {
-    var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
-
-    // Fetch autocomplete suggestions with 350 ms debounce.
-    // LaunchedEffect cancels the previous coroutine whenever `value` changes,
-    // giving us debounce for free.
-    LaunchedEffect(value) {
-        if (value.length >= 2 && placesClient != null) {
-            delay(350L)
-            try {
-                val request = FindAutocompletePredictionsRequest.builder()
-                    .setQuery(value)
-                    .build()
-                val result = suspendCancellableCoroutine { cont ->
-                    placesClient
-                        .findAutocompletePredictions(request)
-                        .addOnSuccessListener { cont.resume(it.autocompletePredictions) }
-                        .addOnFailureListener { cont.resume(emptyList()) }
-                }
-                suggestions = result
-            } catch (_: Exception) {
-                suggestions = emptyList()
-            }
-        } else {
-            suggestions = emptyList()
-        }
-    }
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = HopSpacing.sm, bottom = HopSpacing.sm, end = 44.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = iconDescription,
-                tint = iconTint,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(modifier = Modifier.width(HopSpacing.sm))
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.weight(1f),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF1A1A1A),
-                    fontWeight = FontWeight.Normal,
-                ),
-                cursorBrush = SolidColor(HopColors.primaryGreen),
-                singleLine = true,
-                decorationBox = { innerTextField ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        if (value.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = Color(0xFFB0B0B0),
-                                    fontWeight = FontWeight.Normal,
-                                ),
-                            )
-                        }
-                        innerTextField()
-                    }
-                },
-            )
-        }
-
-        // Suggestions dropdown
-        if (suggestions.isNotEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
-                    .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(8.dp)),
-            ) {
-                suggestions.take(4).forEachIndexed { index, prediction ->
-                    val label = prediction.getFullText(null).toString()
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onSuggestionSelected(label)
-                                suggestions = emptyList()
-                            }
-                            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.LocationOn,
-                            contentDescription = null,
-                            tint = Color(0xFFB0B0B0),
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(HopSpacing.sm))
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF1A1A1A)),
-                            maxLines = 1,
-                        )
-                    }
-                    if (index < suggestions.size - 1 && index < 3) {
-                        HorizontalDivider(color = Color(0xFFF5F5F5), thickness = 0.5.dp)
-                    }
-                }
-            }
-        }
-    }
-}
-
 // ── Location picker overlay ───────────────────────────────────────────────────
 
 /**
- * Full-screen map overlay that appears when the user taps From or To.
- * Supports both text search (with autocomplete) and pin-on-map.
- * Tapping a suggestion confirms immediately; dragging the map and pressing
- * "Confirm pin" reverse-geocodes the crosshair center.
- *
- * When the search field is empty, a quick-action chip row (current location +
- * saved places) and a recent-searches list are shown for one-tap fills.
+ * Full-screen overlay that appears when the user taps From or To.
+ * Shows a text search field with saved places chips and recent-searches.
  * Tapping a recent-search row calls [onRouteConfirm] which sets both
  * From and To at once.
  */
@@ -1095,12 +957,10 @@ internal fun LocationPickerOverlay(
     onRequestAddPlace: () -> Unit,
 ) {
     val context = LocalContext.current
-    val placesClient = remember(context) {
-        if (Places.isInitialized()) Places.createClient(context) else null
-    }
 
     var searchText by remember { mutableStateOf(initialText) }
-    var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+    // Suggestions are plain strings derived from Android Geocoder (mirrors iOS MKLocalSearchCompleter)
+    var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     var pinnedAddress by remember { mutableStateOf("") }
 
     val cameraPositionState = rememberCameraPositionState {
@@ -1128,21 +988,27 @@ internal fun LocationPickerOverlay(
         }
     }
 
-    // Autocomplete with 350 ms debounce
+    // Forward geocode (autocomplete) with 350 ms debounce — mirrors iOS MKLocalSearchCompleter
     LaunchedEffect(searchText) {
-        if (searchText.length >= 2 && placesClient != null) {
+        if (searchText.length >= 2) {
             delay(350L)
-            suggestions = try {
-                val request = FindAutocompletePredictionsRequest.builder()
-                    .setQuery(searchText)
-                    .build()
-                suspendCancellableCoroutine { cont ->
-                    placesClient
-                        .findAutocompletePredictions(request)
-                        .addOnSuccessListener { cont.resume(it.autocompletePredictions) }
-                        .addOnFailureListener { cont.resume(emptyList()) }
-                }
-            } catch (_: Exception) { emptyList() }
+            suggestions = withContext(Dispatchers.IO) {
+                runCatching {
+                    @Suppress("DEPRECATION")
+                    Geocoder(context, Locale.getDefault())
+                        .getFromLocationName(searchText, 5)
+                        ?.map { addr ->
+                            listOfNotNull(
+                                addr.featureName?.takeIf { it != addr.locality },
+                                addr.thoroughfare,
+                                addr.locality,
+                                addr.countryName,
+                            ).distinct().joinToString(", ").ifEmpty { searchText }
+                        }
+                        ?.filter { it.isNotEmpty() }
+                        ?: emptyList()
+                }.getOrElse { emptyList() }
+            }
         } else {
             suggestions = emptyList()
         }
@@ -1171,7 +1037,7 @@ internal fun LocationPickerOverlay(
                 .offset(y = (-20).dp),
         )
 
-        // ── Search bar (top) ──────────────────────────────────────────────────
+        // ── Search bar + chips/suggestions column ─────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1179,6 +1045,7 @@ internal fun LocationPickerOverlay(
                 .statusBarsPadding()
                 .padding(HopSpacing.md),
         ) {
+            // Search bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1231,11 +1098,13 @@ internal fun LocationPickerOverlay(
                 }
             }
 
-            // ── Quick-action chips (saved places + current location) ─────────
-            // Visible only when the text field is empty and there are real saved places
-            val chipData = remember(savedPlaces) { savedPlaces.map { it.toChipData() } }
-            if (searchText.isEmpty() && (chipData.isNotEmpty() || pinnedAddress.isNotEmpty())) {
+            // ── Quick-action chips + recent searches (when field is empty) ────
+            if (searchText.isEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
+                val chipData = remember(savedPlaces) {
+                    if (savedPlaces.isEmpty()) com.example.hop.ui.components.home.DefaultSavedPlaces
+                    else savedPlaces.map { it.toChipData() }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1245,7 +1114,7 @@ internal fun LocationPickerOverlay(
                         .padding(horizontal = HopSpacing.sm, vertical = HopSpacing.sm),
                     horizontalArrangement = Arrangement.spacedBy(HopSpacing.xs),
                 ) {
-                    // Current location chip
+                    // Current location chip — reverse-geocoded crosshair address
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
@@ -1275,13 +1144,12 @@ internal fun LocationPickerOverlay(
                     }
                     // Saved place chips
                     chipData.take(3).forEach { place ->
-                        val address = place.address ?: return@forEach
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(HopColors.cardSurfaceMuted)
                                 .border(1.dp, HopColors.cardBorder, RoundedCornerShape(20.dp))
-                                .clickable { onConfirm(address) }
+                                .clickable { onConfirm(place.address ?: place.label) }
                                 .padding(horizontal = HopSpacing.sm, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -1372,7 +1240,7 @@ internal fun LocationPickerOverlay(
                 }
             }
 
-            // Autocomplete suggestions dropdown
+            // ── Autocomplete suggestions dropdown (when typing) ───────────────
             if (suggestions.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Column(
@@ -1382,8 +1250,7 @@ internal fun LocationPickerOverlay(
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.White),
                 ) {
-                    suggestions.take(5).forEachIndexed { index, prediction ->
-                        val label = prediction.getFullText(null).toString()
+                    suggestions.take(5).forEachIndexed { index, label ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1423,6 +1290,7 @@ internal fun LocationPickerOverlay(
                 .padding(HopSpacing.md),
         ) {
             val confirmLabel = when {
+                searchText.isNotEmpty() -> "Use: ${searchText.trim()}"
                 pinnedAddress.isNotEmpty() -> "Use: $pinnedAddress"
                 else -> "Confirm pin location"
             }

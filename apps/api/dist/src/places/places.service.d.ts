@@ -7,36 +7,36 @@ export declare class PlacesService {
     constructor(prisma: PrismaService, config: ConfigService);
     listForUser(userId: string): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         label: string;
         address: string;
         lat: number | null;
         lng: number | null;
         kind: import("@prisma/client").$Enums.SavedPlaceKind;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     create(userId: string, dto: UpsertPlaceDto): import("@prisma/client").Prisma.Prisma__SavedPlaceClient<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         label: string;
         address: string;
         lat: number | null;
         lng: number | null;
         kind: import("@prisma/client").$Enums.SavedPlaceKind;
+        createdAt: Date;
+        updatedAt: Date;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     update(userId: string, id: string, dto: UpsertPlaceDto): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         label: string;
         address: string;
         lat: number | null;
         lng: number | null;
         kind: import("@prisma/client").$Enums.SavedPlaceKind;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     remove(userId: string, id: string): Promise<{
         ok: boolean;
@@ -53,5 +53,13 @@ export declare class PlacesService {
         destLat: number;
         destLng: number;
     }>;
-    private googleMapsKey;
+    autocomplete(query: string): Promise<{
+        suggestions: {
+            name: string;
+            fullAddress: string;
+            lat: number;
+            lng: number;
+        }[];
+    }>;
+    private mapboxKey;
 }

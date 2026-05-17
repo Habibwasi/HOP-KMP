@@ -11,14 +11,14 @@ export declare class PlacesController {
     constructor(places: PlacesService);
     list(req: any): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         label: string;
         address: string;
         lat: number | null;
         lng: number | null;
         kind: import("@prisma/client").$Enums.SavedPlaceKind;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     geocode(address: string): Promise<{
         lat: number;
@@ -32,27 +32,35 @@ export declare class PlacesController {
         destLat: number;
         destLng: number;
     }>;
+    autocomplete(q: string): Promise<{
+        suggestions: {
+            name: string;
+            fullAddress: string;
+            lat: number;
+            lng: number;
+        }[];
+    }>;
     create(req: any, dto: UpsertPlaceDto): import("@prisma/client").Prisma.Prisma__SavedPlaceClient<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         label: string;
         address: string;
         lat: number | null;
         lng: number | null;
         kind: import("@prisma/client").$Enums.SavedPlaceKind;
+        createdAt: Date;
+        updatedAt: Date;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     update(req: any, id: string, dto: UpsertPlaceDto): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
         label: string;
         address: string;
         lat: number | null;
         lng: number | null;
         kind: import("@prisma/client").$Enums.SavedPlaceKind;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     remove(req: any, id: string): Promise<{
         ok: boolean;
