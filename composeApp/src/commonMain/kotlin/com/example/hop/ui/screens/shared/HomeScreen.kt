@@ -430,6 +430,7 @@ private fun HomeScreenPassengerOnlyPreview() {
                 isLoading = false,
                 onFindRides = { _, _, _, _ -> },
                 onTripClick = {},
+                onNavigateToTripDetailActive = {},
             )
         }
     }
@@ -452,6 +453,7 @@ private fun HomeScreenDriverRolePassengerPreview() {
                 isLoading = false,
                 onFindRides = { _, _, _, _ -> },
                 onTripClick = {},
+                onNavigateToTripDetailActive = {},
             )
         }
     }
