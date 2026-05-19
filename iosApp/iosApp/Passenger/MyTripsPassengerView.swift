@@ -156,8 +156,8 @@ private struct TripList: View {
     private func badgeFor(_ trip: TripUiModel) -> HopBadgeStatus {
         switch trip.status {
         case .confirmed: return .confirmed
-        case .active: return .confirmed
-        case .completed: return .confirmed
+        case .active:    return .active
+        case .completed: return .completed
         case .cancelled: return .cancelled
         default:
             return trip.model == .a ? .modelA : .modelB

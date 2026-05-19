@@ -5,8 +5,10 @@ import SwiftUI
 /// Unified badge status — covers both booking states and trip model types.
 enum HopBadgeStatus {
     case confirmed
+    case active
     case pending
     case cancelled
+    case completed
     /// Model A — daily commute (recurring)
     case modelA
     /// Model B — one-off long distance (threshold-gated)
@@ -15,8 +17,10 @@ enum HopBadgeStatus {
     var label: String {
         switch self {
         case .confirmed: return "Confirmed"
+        case .active:    return "Active"
         case .pending:   return "Pending"
         case .cancelled: return "Cancelled"
+        case .completed: return "Completed"
         case .modelA:    return "Commute"
         case .modelB:    return "Long Trip"
         }
@@ -25,15 +29,20 @@ enum HopBadgeStatus {
     var foregroundColor: Color {
         switch self {
         case .confirmed: return Color.hopSuccess
+        case .active:    return Color(hex: 0x1A1A1A)
         case .pending:   return Color.hopWarning
         case .cancelled: return Color.hopError
+        case .completed: return Color.hopAuthTextSecondary
         case .modelA:    return Color.hopPrimaryLime
         case .modelB:    return Color.hopPrimaryGreen
         }
     }
 
     var backgroundColor: Color {
-        foregroundColor.opacity(0.15)
+        switch self {
+        case .active: return Color.hopPrimaryLime.opacity(0.20)
+        default:      return foregroundColor.opacity(0.15)
+        }
     }
 }
 

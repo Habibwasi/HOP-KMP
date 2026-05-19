@@ -446,7 +446,11 @@ private fun MyTripsBottomNavBar(
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 private fun TripStatus.toBadgeType(): BadgeType = when (this) {
-    TripStatus.ACTIVE     -> BadgeType.Confirmed
+    TripStatus.ACTIVE     -> BadgeType.Custom(
+        label = "Active",
+        background = HopColors.primaryLime.copy(alpha = 0.20f),
+        contentColor = Color(0xFF1A1A1A),
+    )
     TripStatus.CONFIRMED  -> BadgeType.Confirmed
     TripStatus.COMPLETED  -> BadgeType.Completed
     TripStatus.CANCELLED  -> BadgeType.Cancelled
