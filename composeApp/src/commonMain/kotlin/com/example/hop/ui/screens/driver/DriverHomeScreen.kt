@@ -566,7 +566,11 @@ private fun DriverTripCard(
                 Spacer(modifier = Modifier.width(HopSpacing.sm))
                 StatusBadge(
                     type = when (tripUiModel.status) {
-                        TripStatus.ACTIVE -> BadgeType.Confirmed
+                        TripStatus.ACTIVE -> BadgeType.Custom(
+                            label = "Active",
+                            background = HopColors.primaryLime.copy(alpha = 0.20f),
+                            contentColor = Color(0xFF1A1A1A),
+                        )
                         TripStatus.CONFIRMED -> BadgeType.Confirmed
                         TripStatus.CANCELLED -> BadgeType.Cancelled
                         TripStatus.COMPLETED -> BadgeType.Completed
