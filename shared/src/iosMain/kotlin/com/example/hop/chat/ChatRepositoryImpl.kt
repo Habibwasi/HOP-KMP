@@ -45,7 +45,7 @@ import platform.Foundation.setValue
  * Engine.IO path: /socket.io  (NestJS default; /chat is the SIO namespace,
  * not the HTTP path)
  *
- * Expected connection URL:  wss://api.ridly.dk/socket.io/?EIO=4&transport=websocket
+ * Expected connection URL:  wss://hop.ridly.dk/socket.io/?EIO=4&transport=websocket
  */
 internal class IosChatRepositoryImpl : ChatRepository {
 
@@ -72,7 +72,7 @@ internal class IosChatRepositoryImpl : ChatRepository {
         // Socket.IO v4 over WebSocket transport.
         // The Engine.IO path is /socket.io (NestJS default).
         // The /chat segment is the Socket.IO namespace, NOT the HTTP path.
-        val urlString = "wss://api.ridly.dk/socket.io/?EIO=4&transport=websocket"
+        val urlString = "wss://hop.ridly.dk/socket.io/?EIO=4&transport=websocket"
         val url = NSURL.URLWithString(urlString) ?: run {
             _connectionState.value = ConnectionState.Error("Invalid WebSocket URL")
             return

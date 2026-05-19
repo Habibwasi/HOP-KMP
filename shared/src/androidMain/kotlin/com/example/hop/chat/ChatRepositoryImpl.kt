@@ -49,7 +49,7 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
         }
 
         // Connect to the /chat namespace on the API host
-        socket = IO.socket(URI.create("https://api.ridly.dk/chat"), opts).also { s ->
+        socket = IO.socket(URI.create("https://hop.ridly.dk/chat"), opts).also { s ->
             s.on(Socket.EVENT_CONNECT) {
                 _connectionState.value = ConnectionState.Connected
                 // Join the booking-specific room — gateway expects { bookingId: string }
