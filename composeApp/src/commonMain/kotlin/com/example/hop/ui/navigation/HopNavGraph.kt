@@ -161,12 +161,11 @@ fun HopNavGraph(
                 onNavigateToMyTripsDriver = {
                     navController.navigate(HopRoutes.MyTripsDriver)
                 },
-                onNavigateToChat = { bookingId ->
-                    if (bookingId != null) {
-                        navController.navigate(HopRoutes.Chat(bookingId = bookingId))
-                    } else {
-                        // No active booking — show My Trips so the user can find one.
-                        navController.navigate(HopRoutes.MyTripsPassenger)
+                onNavigateToChat = { bookingId, isDriverRole ->
+                    when {
+                        isDriverRole -> navController.navigate(HopRoutes.MyTripsDriver)
+                        bookingId != null -> navController.navigate(HopRoutes.Chat(bookingId = bookingId))
+                        else -> navController.navigate(HopRoutes.MyTripsPassenger)
                     }
                 },
                 onNavigateToProfile = {

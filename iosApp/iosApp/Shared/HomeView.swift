@@ -21,7 +21,10 @@ struct HomeView: View {
     /// the Chat tab and push Chat(bookingId) directly.
     @Binding var activeBookingId: String?
 
-    @State private var selectedRole: HopRole = .passenger
+    /// Surfaced to HopTabView so the Chat tab can navigate to MyTripsDriver
+    /// when the user is in driver role (drivers pick a passenger from their trip).
+    @Binding var selectedRole: HopRole
+
     @StateObject private var statsWrapper = HomeStatsViewModelWrapper()
 
     var body: some View {
@@ -101,5 +104,7 @@ private struct HomeTopBar: View {
 }
 
 #Preview {
-    HomeView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {}, activeBookingId: .constant(nil))
+    @Previewable @State var activeBookingId: String? = nil
+    @Previewable @State var selectedRole: HopRole = .passenger
+    HomeView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {}, activeBookingId: $activeBookingId, selectedRole: $selectedRole)
 }

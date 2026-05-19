@@ -30,6 +30,10 @@ struct HopNavigationStack: View {
     /// directly to Chat(bookingId) instead of showing My Trips.
     @State private var activeBookingId: String? = nil
 
+    /// Current home role — surfaced by HomeView so the Chat tab can route
+    /// drivers to MyTripsDriver rather than a direct chat screen.
+    @State private var selectedRole: HopRole = .passenger
+
     private func navigate(_ route: HopRoute) { path.append(route) }
     private func popBack() { if !path.isEmpty { path.removeLast() } }
     private func goHome() { path.removeAll() }
@@ -47,6 +51,7 @@ struct HopNavigationStack: View {
             } onLogout: {
                 // Logout flips back to auth via AuthEffectNavigateToLogin in ContentView
             } activeBookingId: $activeBookingId
+            selectedRole: $selectedRole
             .navigationDestination(for: HopRoute.self) { route in
                 destinationView(for: route)
                     // All detail screens render their own custom top bar

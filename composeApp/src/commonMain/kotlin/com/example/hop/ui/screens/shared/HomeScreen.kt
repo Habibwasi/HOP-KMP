@@ -83,7 +83,7 @@ fun HomeRoute(
     onNavigateToSearchResults: (origin: String, dest: String, date: String, seats: Int) -> Unit,
     onNavigateToMyTripsPassenger: () -> Unit,
     onNavigateToMyTripsDriver: () -> Unit,
-    onNavigateToChat: (bookingId: String?) -> Unit,
+    onNavigateToChat: (bookingId: String?, isDriverRole: Boolean) -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
     onNavigateToTripDetailActive: (bookingId: String) -> Unit,
@@ -146,7 +146,7 @@ fun HomeRoute(
                 if (selectedRole == UserRole.DRIVER) onNavigateToMyTripsDriver()
                 else onNavigateToMyTripsPassenger()
             },
-            onChat = { onNavigateToChat(homeStatsState.activeBooking?.id) },
+            onChat = { onNavigateToChat(homeStatsState.activeBooking?.id, selectedRole == UserRole.DRIVER) },
             onProfile = onNavigateToProfile,
             onNotifications = onNavigateToNotifications,
             modifier = Modifier.padding(innerPadding),

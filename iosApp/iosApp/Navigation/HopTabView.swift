@@ -55,6 +55,10 @@ struct HopTabView: View {
     /// straight to Chat(bookingId) when the user has a live booking.
     @Binding var activeBookingId: String?
 
+    /// Current role (passenger/driver) from HomeView so the Chat tab routes
+    /// drivers to MyTripsDriver instead of a direct chat screen.
+    @Binding var selectedRole: HopRole
+
     @State private var selectedTab: HopTab = .home
 
     var body: some View {
@@ -65,7 +69,8 @@ struct HopTabView: View {
                 navigate: navigate,
                 onSearch: onSearch,
                 onLogout: onLogout,
-                activeBookingId: $activeBookingId
+                activeBookingId: $activeBookingId,
+                selectedRole: $selectedRole
             )
             .tabItem { Label(HopTab.home.label, systemImage: HopTab.home.icon) }
             .tag(HopTab.home)
@@ -103,12 +108,16 @@ struct HopTabView: View {
         }
         .onChange(of: selectedTab) { _, newTab in
             guard newTab == .chat else { return }
-            if let bookingId = activeBookingId {
-                // Navigate directly to the active booking's chat screen.
+            if selectedRole == .driver {
+                // Drivers pick a passenger to chat with from their trip detail.
+                selectedTab = .myTrips
+                navigate(.myTripsDriver)
+            } else if let bookingId = activeBookingId {
+                // Passenger with an active booking — go straight to chat.
                 selectedTab = .home
                 navigate(.chat(bookingId: bookingId))
             }
-            // No active booking — fall through; NotificationsView shows as-is.
+            // Passenger with no active booking — fall through to notifications tab.
         }
         .tint(Color.hopPrimaryLime)
         // Dark tab-bar background to match the app's surface colour
