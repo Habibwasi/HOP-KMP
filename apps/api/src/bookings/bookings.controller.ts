@@ -1,11 +1,19 @@
 import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req, HttpCode } from '@nestjs/common'
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { BookingsService } from './bookings.service'
 import { RatingsService } from '../ratings/ratings.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 
 class RateBookingDto {
+  @IsInt()
+  @Min(1)
+  @Max(5)
   stars: number
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   comment?: string
 }
 
