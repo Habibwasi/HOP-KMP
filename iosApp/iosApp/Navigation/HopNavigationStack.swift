@@ -40,18 +40,21 @@ struct HopNavigationStack: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            HopTabView { route in
-                path.append(route)
-            } onSearch: { origin, dest, date, seats in
-                lastSearchOrigin = origin
-                lastSearchDest   = dest
-                lastSearchDate   = date   // String ISO date from PassengerHomeView
-                lastSearchSeats  = seats
-                path.append(.searchResults)
-            } onLogout: {
-                // Logout flips back to auth via AuthEffectNavigateToLogin in ContentView
-            } activeBookingId: $activeBookingId
-            selectedRole: $selectedRole
+            HopTabView(
+                navigate: { route in path.append(route) },
+                onSearch: { origin, dest, date, seats in
+                    lastSearchOrigin = origin
+                    lastSearchDest   = dest
+                    lastSearchDate   = date   // String ISO date from PassengerHomeView
+                    lastSearchSeats  = seats
+                    path.append(.searchResults)
+                },
+                onLogout: {
+                    // Logout flips back to auth via AuthEffectNavigateToLogin in ContentView
+                },
+                activeBookingId: $activeBookingId,
+                selectedRole: $selectedRole
+            )
             .navigationDestination(for: HopRoute.self) { route in
                 destinationView(for: route)
                     // All detail screens render their own custom top bar
