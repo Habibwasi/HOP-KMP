@@ -1,12 +1,21 @@
 import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req, HttpCode } from '@nestjs/common'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { BookingsService } from './bookings.service'
+import { RatingsService } from '../ratings/ratings.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
+
+class RateBookingDto {
+  stars: number
+  comment?: string
+}
 
 @Controller('bookings')
 @UseGuards(SupabaseGuard)
 export class BookingsController {
-  constructor(private bookings: BookingsService) {}
+  constructor(
+    private bookings: BookingsService,
+    private ratings: RatingsService,
+  ) {}
 
   @Post()
   create(@Req() req: any, @Body() dto: CreateBookingDto) {
@@ -32,5 +41,25 @@ export class BookingsController {
   @HttpCode(200)
   cancel(@Param('id') id: string, @Req() req: any) {
     return this.bookings.cancel(id, req.user.id)
+  }
+
+  @Post(':id/rate')
+  @HttpCode(201)
+  async rate(
+    @Param('id') bookingId: string,
+    @Req() req: any,
+    @Body() body: RateBookingDto,
+  ) {
+    const booking = await this.bookings.findById(bookingId)
+    const raterId: string = req.user.id
+    // Passenger rates the driver; driver rates the passenger
+    const rateeId: string =
+      raterId === booking.passengerId ? booking.trip.driverId : booking.passengerId
+    return this.ratings.create(raterId, {
+      rateeId,
+      tripId: booking.tripId,
+      score: body.stars,
+      comment: body.comment,
+    })
   }
 }
