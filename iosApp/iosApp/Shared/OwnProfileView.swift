@@ -341,6 +341,8 @@ struct OwnProfileView: View {
                     .padding(.trailing, HopSpacing.md)
                 }
 
+                Spacer().frame(height: HopSpacing.sm)
+
                 if wrapper.state.isEditingMobilepay {
                     VStack(alignment: .leading, spacing: HopSpacing.sm) {
                         HopTextField(
