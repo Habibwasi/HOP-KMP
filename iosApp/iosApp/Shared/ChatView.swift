@@ -78,7 +78,7 @@ struct ChatView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             wrapper.startObserving { _ in }
-            let token = (try? await KoinIOSKt.getAccessToken()) ?? ""
+            let token = KoinIOSKt.getAccessToken() ?? ""
             // Capture current user ID for message ownership detection
             currentUserId = KoinIOSKt.getAuthViewModel().state.value.currentUser?.id ?? ""
             wrapper.connect(bookingId: bookingId, token: token)

@@ -21,6 +21,8 @@ import com.example.hop.presentation.tripdetail.TripDetailViewModel
 import com.example.hop.presentation.tripdetailactive.TripDetailActiveViewModel
 import com.example.hop.presentation.trips.SearchTripsViewModel
 import com.example.hop.network.TokenStorage
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatform
 
@@ -68,5 +70,5 @@ fun getSearchViewModel(): SearchViewModel = KoinPlatform.getKoin().get()
 
 fun getSettlementViewModel(): SettlementViewModel = KoinPlatform.getKoin().get()
 
-/** Returns the stored Supabase access token from the iOS Keychain. Used by ChatView. */
-suspend fun getAccessToken(): String? = KoinPlatform.getKoin().get<TokenStorage>().getAccessToken()
+/** Returns the active Supabase session access token. Used by ChatView to authenticate the WebSocket. */
+fun getAccessToken(): String? = KoinPlatform.getKoin().get<SupabaseClient>().auth.currentSessionOrNull()?.accessToken
