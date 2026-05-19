@@ -109,6 +109,7 @@ fun RateDriverRoute(
             driverInitials = bookingState.driverInitials,
             isSubmitting = bookingState.isLoading,
             onBack = onNavigateBack,
+            onSkip = onNavigateToMyTrips,
             onSubmit = { stars, comment ->
                 bookingViewModel.onEvent(
                     BookingEvent.SubmitRating(
@@ -135,6 +136,7 @@ fun RateDriverScreen(
     driverInitials: String,
     isSubmitting: Boolean,
     onBack: () -> Unit,
+    onSkip: () -> Unit,
     onSubmit: (stars: Int, comment: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -295,6 +297,17 @@ fun RateDriverScreen(
                     .fillMaxWidth()
                     .semantics { contentDescription = "Submit rating button" },
             )
+            androidx.compose.material3.TextButton(
+                onClick = onSkip,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = "Maybe later",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = HopColors.authTextSecondary,
+                    ),
+                )
+            }
         }
     }
 }
@@ -310,6 +323,7 @@ private fun RateDriverScreenPreview() {
             driverInitials = "LE",
             isSubmitting = false,
             onBack = {},
+            onSkip = {},
             onSubmit = { _, _ -> },
         )
     }
@@ -324,6 +338,7 @@ private fun RateDriverScreenFilledPreview() {
             driverInitials = "LE",
             isSubmitting = false,
             onBack = {},
+            onSkip = {},
             onSubmit = { _, _ -> },
         )
     }

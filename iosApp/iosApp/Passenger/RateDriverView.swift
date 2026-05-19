@@ -87,7 +87,17 @@ struct RateDriverView: View {
                     comment: comment.trimmingCharacters(in: .whitespaces).isEmpty ? nil : comment
                 )
             }
-            .padding(HopSpacing.md)
+            .padding(.horizontal, HopSpacing.md)
+            Button(action: onSkip) {
+                Text("Maybe later")
+                    .font(HopFont.bodyMedium())
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, HopSpacing.xs)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HopSpacing.md)
+            .padding(.bottom, HopSpacing.md)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.hopBackground.ignoresSafeArea())

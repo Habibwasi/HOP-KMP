@@ -8,8 +8,6 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CreateRatingDto } from './dto/create-rating.dto'
 import { BookingStatus } from '@prisma/client'
 
-const RATING_WINDOW_HOURS = 48
-
 @Injectable()
 export class RatingsService {
   constructor(private prisma: PrismaService) {}
@@ -39,13 +37,6 @@ export class RatingsService {
 
     if (!isDriver && !isPassenger) {
       throw new BadRequestException('You were not part of this trip')
-    }
-
-    // Enforce 48hr rating window
-    const windowEnd = new Date(trip.departureAt)
-    windowEnd.setHours(windowEnd.getHours() + RATING_WINDOW_HOURS)
-    if (new Date() > windowEnd) {
-      throw new BadRequestException('Rating window has closed (48 hours after departure)')
     }
 
     // Prevent duplicate rating

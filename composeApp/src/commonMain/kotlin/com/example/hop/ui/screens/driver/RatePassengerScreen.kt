@@ -111,6 +111,7 @@ fun RatePassengerRoute(
             passengerInitials = passengerInitials,
             isSubmitting = bookingState.isLoading,
             onBack = onNavigateBack,
+            onSkip = onNavigateToDriverHome,
             onSubmit = { stars, comment ->
                 bookingViewModel.onEvent(
                     BookingEvent.SubmitRating(
@@ -137,6 +138,7 @@ fun RatePassengerScreen(
     passengerInitials: String,
     isSubmitting: Boolean,
     onBack: () -> Unit,
+    onSkip: () -> Unit,
     onSubmit: (stars: Int, comment: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -297,6 +299,17 @@ fun RatePassengerScreen(
                     .fillMaxWidth()
                     .semantics { contentDescription = "Submit rating button" },
             )
+            androidx.compose.material3.TextButton(
+                onClick = onSkip,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = "Maybe later",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = HopColors.authTextSecondary,
+                    ),
+                )
+            }
         }
     }
 }
@@ -312,6 +325,7 @@ private fun RatePassengerScreenPreview() {
             passengerInitials = "MA",
             isSubmitting = false,
             onBack = {},
+            onSkip = {},
             onSubmit = { _, _ -> },
         )
     }
@@ -326,6 +340,7 @@ private fun RatePassengerScreenFilledPreview() {
             passengerInitials = "MA",
             isSubmitting = false,
             onBack = {},
+            onSkip = {},
             onSubmit = { _, _ -> },
         )
     }

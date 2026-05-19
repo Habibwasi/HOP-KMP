@@ -152,6 +152,7 @@ struct HopNavigationStack: View {
             RateDriverView(
                 bookingId: bookingId,
                 onSubmitted: { navigate(.myTripsPassenger) },
+                onSkip: { navigate(.myTripsPassenger) },
                 onBack: popBack
             )
 
@@ -244,6 +245,7 @@ struct HopNavigationStack: View {
                 passengerName:     passengerName,
                 passengerInitials: passengerInitials,
                 onSubmitted:       { navigate(.myTripsDriver) },
+                onSkip:            { navigate(.myTripsDriver) },
                 onBack:            popBack
             )
 

@@ -10,6 +10,7 @@ struct RatePassengerView: View {
     let passengerInitials: String
 
     var onSubmitted: () -> Void
+    var onSkip:      () -> Void
     var onBack:      () -> Void
 
     @StateObject private var wrapper = BookingViewModelWrapper()
@@ -82,7 +83,17 @@ struct RatePassengerView: View {
                         comment: comment.isEmpty ? nil : comment
                     )
                 }
-                .padding(HopSpacing.md)
+                .padding(.horizontal, HopSpacing.md)
+                Button(action: onSkip) {
+                    Text("Maybe later")
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopAuthTextSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, HopSpacing.xs)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, HopSpacing.md)
+                .padding(.bottom, HopSpacing.md)
             }
         }
         .task {
