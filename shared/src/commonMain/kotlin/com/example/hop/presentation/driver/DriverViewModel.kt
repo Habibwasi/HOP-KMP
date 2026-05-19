@@ -455,16 +455,11 @@ class DriverViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = tripRepository.completeTrip(tripId)) {
                 is ApiResponse.Success -> {
-                    val firstBookingId = _state.value.activeTripDetail.firstBookingId
                     _state.value = _state.value.copy(
                         isLoading = false,
                         trips = _state.value.trips.filterNot { it.id == tripId },
                     )
-                    if (firstBookingId != null) {
-                        _effect.send(DriverEffect.NavigateToDriverSettlement(firstBookingId))
-                    } else {
-                        _effect.send(DriverEffect.NavigateToMyTrips)
-                    }
+                    _effect.send(DriverEffect.NavigateToDriverSettlement(tripId))
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
