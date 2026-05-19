@@ -95,8 +95,7 @@ fun PassengerSettlementRoute(
                     runCatching { uriHandler.openUri(effect.uri) }
                         .onFailure { snackbarHostState.showSnackbar("MobilePay not installed") }
                 }
-                is SettlementEffect.PaymentMarkedSuccess ->
-                    snackbarHostState.showSnackbar("Marked as paid - waiting for driver confirmation")
+                is SettlementEffect.PaymentMarkedSuccess -> onSettlementComplete()
                 is SettlementEffect.ConfirmReceivedSuccess -> onSettlementComplete()
                 is SettlementEffect.DisputeSubmittedSuccess ->
                     snackbarHostState.showSnackbar("Dispute submitted")

@@ -197,10 +197,7 @@ struct PassengerSettlementView: View {
                         }
                     }
                 case is SettlementEffectPaymentMarkedSuccess:
-                    withAnimation { toast = "Marked as paid — waiting for driver confirmation" }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                        withAnimation { toast = nil }
-                    }
+                    onSettlementComplete()
                 case is SettlementEffectUnmarkPaidSuccess:
                     withAnimation { toast = "Unmarked — you can re-send payment when ready" }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
