@@ -81,6 +81,25 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
                 }
             }
 
+            s.on("history") { args ->
+                val jsonArray = args?.getOrNull(0) as? org.json.JSONArray ?: return@on
+                for (i in 0 until jsonArray.length()) {
+                    runCatching {
+                        val json = jsonArray.getJSONObject(i)
+                        Message(
+                            id = json.getString("id"),
+                            bookingId = json.getString("bookingId"),
+                            senderId = json.getString("senderId"),
+                            senderName = json.getString("senderName"),
+                            body = json.getString("body"),
+                            timestampMs = json.getLong("timestampMs"),
+                        )
+                    }.onSuccess { msg ->
+                        scope.launch { _messages.emit(msg) }
+                    }
+                }
+            }
+
             s.connect()
         }
     }

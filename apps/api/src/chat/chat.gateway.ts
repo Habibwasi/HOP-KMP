@@ -85,6 +85,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     await client.join(`booking:${payload.bookingId}`)
     this.logger.log(`[Chat] ${sock.userId} joined booking:${payload.bookingId}`)
+
+    // Push the last 50 messages directly so the client doesn't need a separate
+    // ack-based 'history' request (simpler for both Android and iOS clients).
+    const history = await this.chatService.getHistory(payload.bookingId, sock.userId)
+    client.emit('history', history)
+
     return { joined: payload.bookingId }
   }
 
