@@ -447,12 +447,16 @@ fun HopNavGraph(
                 onNavigateToMarkTripComplete = { tripId, driverNetOere ->
                     navController.navigate(HopRoutes.MarkTripComplete(tripId = tripId, driverNetOere = driverNetOere))
                 },
-                onNavigateToRatePassenger = { bookingId, passengerName, passengerInitials ->
+                onNavigateToRatePassenger = { bookingId, passengerName, passengerInitials,
+                                              remainingIds, remainingNames, remainingInitials ->
                     navController.navigate(
                         HopRoutes.RatePassenger(
                             bookingId = bookingId,
                             passengerName = passengerName,
                             passengerInitials = passengerInitials,
+                            remainingBookingIds = remainingIds,
+                            remainingPassengerNames = remainingNames,
+                            remainingPassengerInitials = remainingInitials,
                         )
                     ) {
                         popUpTo(HopRoutes.TripDetailActiveDriver(tripId = route.tripId)) { inclusive = true }
