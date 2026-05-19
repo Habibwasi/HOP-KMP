@@ -63,20 +63,16 @@ private const val COMMENT_MAX_CHARS = 280
 /**
  * PA-09 — Rate Driver Route.
  *
- * Wires [BookingViewModel] from Koin, collects effects and delegates
- * rendering to the stateless [RateDriverScreen].
+ * Wires [BookingViewModel] from Koin, loads driver info on mount, collects
+ * effects and delegates rendering to the stateless [RateDriverScreen].
  *
  * @param bookingId          Booking to attach the rating to.
- * @param driverName         Driver's display name shown in the headline.
- * @param driverInitials     Initials for the avatar fallback (e.g. "JD").
  * @param onNavigateBack     Called when the user taps the back arrow.
  * @param onNavigateToMyTrips Called on successful rating submission.
  */
 @Composable
 fun RateDriverRoute(
     bookingId: String,
-    driverName: String,
-    driverInitials: String,
     onNavigateBack: () -> Unit,
     onNavigateToMyTrips: () -> Unit,
     modifier: Modifier = Modifier,
@@ -85,6 +81,10 @@ fun RateDriverRoute(
     val bookingState by bookingViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(bookingId) {
+        bookingViewModel.onEvent(BookingEvent.LoadDriverForRating(bookingId))
+    }
 
     LaunchedEffect(bookingViewModel) {
         bookingViewModel.effect.collectLatest { effect ->
@@ -105,8 +105,8 @@ fun RateDriverRoute(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         RateDriverScreen(
-            driverName = driverName,
-            driverInitials = driverInitials,
+            driverName = bookingState.driverName,
+            driverInitials = bookingState.driverInitials,
             isSubmitting = bookingState.isLoading,
             onBack = onNavigateBack,
             onSubmit = { stars, comment ->

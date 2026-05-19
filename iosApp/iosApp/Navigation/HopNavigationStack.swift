@@ -117,7 +117,7 @@ struct HopNavigationStack: View {
             PassengerSettlementView(
                 bookingId: bookingId,
                 onBack: popBack,
-                onSettlementComplete: { navigate(.myTripsPassenger) }
+                onSettlementComplete: { navigate(.rateDriver(bookingId: bookingId)) }
             )
 
         case .bookingSuccess(let bookingId):
@@ -148,11 +148,9 @@ struct HopNavigationStack: View {
                 onNavigateToPassengerSettlement: { bid in navigate(.passengerSettlement(bookingId: bid)) }
             )
 
-        case .rateDriver(let bookingId, let driverName, let driverInitials):
+        case .rateDriver(let bookingId):
             RateDriverView(
-                bookingId:      bookingId,
-                driverName:     driverName,
-                driverInitials: driverInitials,
+                bookingId: bookingId,
                 onSubmitted: { navigate(.myTripsPassenger) },
                 onBack: popBack
             )
@@ -263,7 +261,7 @@ struct HopNavigationStack: View {
             PassengerSettlementView(
                 bookingId: bookingId,
                 onBack: popBack,
-                onSettlementComplete: { navigate(.myTripsPassenger) }
+                onSettlementComplete: { navigate(.rateDriver(bookingId: bookingId)) }
             )
 
         case .driverSettlement(let tripId):

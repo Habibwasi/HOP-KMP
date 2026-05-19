@@ -56,7 +56,7 @@ enum HopRoute: Hashable {
     case tripDetailActive(bookingId: String)
 
     /// PA-09 Rate Driver
-    case rateDriver(bookingId: String, driverName: String, driverInitials: String)
+    case rateDriver(bookingId: String)
 
     /// PA-10 Cancellation Confirmation
     case cancellationConfirmation(bookingId: String)

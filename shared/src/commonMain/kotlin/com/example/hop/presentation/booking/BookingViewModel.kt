@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.Booking
 import com.example.hop.domain.repository.BookingRepository
+import com.example.hop.domain.repository.TripRepository
+import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +20,8 @@ data class BookingUiState(
     val isLoading: Boolean = false,
     val booking: Booking? = null,
     val error: String? = null,
+    val driverName: String = "",
+    val driverInitials: String = "",
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -30,6 +34,7 @@ sealed interface BookingEvent {
         val stars: Int,
         val comment: String?,
     ) : BookingEvent
+    data class LoadDriverForRating(val bookingId: String) : BookingEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -45,6 +50,8 @@ sealed interface BookingEffect {
 
 class BookingViewModel(
     private val bookingRepository: BookingRepository,
+    private val tripRepository: TripRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BookingUiState())
@@ -58,6 +65,7 @@ class BookingViewModel(
             is BookingEvent.CreateBooking -> createBooking(event.tripId, event.seats)
             is BookingEvent.CancelBooking -> cancelBooking(event.id)
             is BookingEvent.SubmitRating -> submitRating(event.bookingId, event.stars, event.comment)
+            is BookingEvent.LoadDriverForRating -> loadDriverForRating(event.bookingId)
         }
     }
 
@@ -107,6 +115,45 @@ class BookingViewModel(
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isLoading = false, error = response.message)
                     _effect.send(BookingEffect.ShowSnackbar(response.message))
+                }
+            }
+        }
+    }
+
+    private fun loadDriverForRating(bookingId: String) {
+        if (_state.value.isLoading) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            when (val bookingResponse = bookingRepository.getBooking(bookingId)) {
+                is ApiResponse.Success -> {
+                    val booking = bookingResponse.data
+                    when (val tripResponse = tripRepository.getTripById(booking.tripId)) {
+                        is ApiResponse.Success -> {
+                            val trip = tripResponse.data
+                            val driverUser = userRepository.getUserProfile(trip.driverId)
+                            val driverName = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.fullName
+                                is ApiResponse.Error -> ""
+                            }
+                            val driverInitials = driverName
+                                .split(" ")
+                                .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                                .take(2)
+                                .joinToString("")
+                                .ifEmpty { trip.driverId.take(2).uppercase() }
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                driverName = driverName,
+                                driverInitials = driverInitials,
+                            )
+                        }
+                        is ApiResponse.Error -> {
+                            _state.value = _state.value.copy(isLoading = false)
+                        }
+                    }
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isLoading = false)
                 }
             }
         }

@@ -4,8 +4,6 @@ import Shared
 /// PA-09 — Rate Driver. Mirrors composeApp `RateDriverScreen.kt`.
 struct RateDriverView: View {
     let bookingId: String
-    let driverName: String
-    let driverInitials: String
     let onSubmitted: () -> Void
     let onBack: () -> Void
 
@@ -13,6 +11,9 @@ struct RateDriverView: View {
     @State private var rating: Int = 0
     @State private var comment: String = ""
     private let commentMax = 280
+
+    private var driverName: String { wrapper.state.driverName }
+    private var driverInitials: String { wrapper.state.driverInitials }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -91,6 +92,7 @@ struct RateDriverView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.hopBackground.ignoresSafeArea())
         .onAppear {
+            wrapper.loadDriverForRating(bookingId: bookingId)
             wrapper.startObserving { effect in
                 // Submit success → screen pops via Route layer; here we just navigate.
                 if effect is BookingEffectShowSnackbar { return }

@@ -10,6 +10,7 @@ import Shared
 //   BookingEvent.CreateBooking         → BookingEventCreateBooking
 //   BookingEvent.CancelBooking         → BookingEventCancelBooking
 //   BookingEvent.SubmitRating          → BookingEventSubmitRating
+//   BookingEvent.LoadDriverForRating   → BookingEventLoadDriverForRating
 //
 // SKIE flat names for BookingEffect:
 //   BookingEffect.NavigateToSuccess                → BookingEffectNavigateToSuccess
@@ -59,5 +60,9 @@ final class BookingViewModelWrapper: ObservableObject {
             stars: Int32(stars),
             comment: comment
         ))
+    }
+
+    func loadDriverForRating(bookingId: String) {
+        viewModel.onEvent(event: BookingEventLoadDriverForRating(bookingId: bookingId))
     }
 }

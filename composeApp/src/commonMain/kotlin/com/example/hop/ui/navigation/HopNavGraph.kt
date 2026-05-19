@@ -309,8 +309,6 @@ fun HopNavGraph(
             val route: HopRoutes.RateDriver = backStackEntry.toRoute()
             RateDriverRoute(
                 bookingId = route.bookingId,
-                driverName = route.driverName,
-                driverInitials = route.driverInitials,
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToMyTrips = {
                     navController.navigate(HopRoutes.MyTripsPassenger) {
@@ -583,8 +581,8 @@ fun HopNavGraph(
                 bookingId = route.bookingId,
                 onNavigateBack = { navController.navigateUp() },
                 onSettlementComplete = {
-                    navController.navigate(HopRoutes.MyTripsPassenger) {
-                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    navController.navigate(HopRoutes.RateDriver(bookingId = route.bookingId)) {
+                        popUpTo(HopRoutes.PassengerSettlement(bookingId = route.bookingId)) { inclusive = true }
                     }
                 },
             )

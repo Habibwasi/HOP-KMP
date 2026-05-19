@@ -85,8 +85,6 @@ sealed interface HopRoutes {
     @Serializable
     data class RateDriver(
         val bookingId: String,
-        val driverName: String,
-        val driverInitials: String,
     ) : HopRoutes
 
     /** PA-10 */
