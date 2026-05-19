@@ -153,7 +153,7 @@ struct HopNavigationStack: View {
                 bookingId: bookingId,
                 onSubmitted: { navigate(.myTripsPassenger) },
                 onSkip: { navigate(.myTripsPassenger) },
-                onBack: popBack
+                onBack: goHome
             )
 
         case .cancellationConfirmation(let bookingId):
@@ -268,7 +268,7 @@ struct HopNavigationStack: View {
                     }
                 },
                 onSkip:            { navigate(.myTripsDriver) },
-                onBack:            popBack
+                onBack:            goHome
             )
 
         case .taxDashboard:
@@ -284,7 +284,7 @@ struct HopNavigationStack: View {
         case .passengerSettlement(let bookingId):
             PassengerSettlementView(
                 bookingId: bookingId,
-                onBack: popBack,
+                onBack: goHome,
                 onSettlementComplete: { navigate(.rateDriver(bookingId: bookingId)) }
             )
 
