@@ -14,7 +14,10 @@ struct TripCardLight: View {
     /// Price in øre. Displayed as DKK (÷100).
     let pricePerSeatOere: Int
     var isVerified: Bool = false
+    var isBooked: Bool = false
     var onTap: (() -> Void)? = nil
+
+    @State private var scale: CGFloat = 1.0
 
     var body: some View {
         Button(action: { onTap?() }) {
@@ -36,6 +39,23 @@ struct TripCardLight: View {
                     }
                     Spacer(minLength: HopSpacing.sm)
                     StatusBadge(status: badgeStatus)
+
+                    // ── Booked ✓ chip ─────────────────────────────────────
+                    if isBooked {
+                        Spacer().frame(width: 6)
+                        HStack(spacing: 3) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(Color(hex: 0x1A1A1A))
+                            Text("Booked")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Color(hex: 0x1A1A1A))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.hopPrimaryLime)
+                        .clipShape(Capsule())
+                    }
                 }
                 Spacer().frame(height: HopSpacing.sm)
                 Divider().overlay(Color(hex: 0xF0F0F0))
@@ -81,10 +101,26 @@ struct TripCardLight: View {
                 }
             }
             .padding(HopSpacing.md)
-            .background(Color.white)
+            .background(isBooked ? Color.hopPrimaryLime.opacity(0.04) : Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isBooked ? Color.hopPrimaryLime : Color.clear, lineWidth: 2)
+            )
+            .shadow(
+                color: isBooked ? Color.hopPrimaryLime.opacity(0.55) : Color.black.opacity(0.10),
+                radius: isBooked ? 12 : 4,
+                x: 0, y: isBooked ? 4 : 1
+            )
+            .scaleEffect(scale)
         }
         .buttonStyle(.plain)
+        .onAppear {
+            guard isBooked else { return }
+            scale = 0.93
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                scale = 1.0
+            }
+        }
     }
 }

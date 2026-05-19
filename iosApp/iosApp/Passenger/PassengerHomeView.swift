@@ -191,6 +191,7 @@ struct PassengerHomeView: View {
                                         departureTime: trip.departsAt,
                                         badgeStatus: trip.model == .a ? .modelA : .modelB,
                                         pricePerSeatOere: Int(trip.priceOerePerSeat),
+                                        isBooked: trip.bookingId != nil,
                                         onTap: {
                                             let bookingId = trip.bookingId ?? trip.id
                                             navigate(.tripDetailActive(bookingId: bookingId))
