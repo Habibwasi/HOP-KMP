@@ -74,7 +74,7 @@ class MyTripsPassengerViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = tripRepository.getMyTripsAsPassenger()) {
                 is ApiResponse.Success -> {
-                    val all = response.data.toUiModels()
+                    val all = response.data.toUiModels().sortedBy { it.departsAt }
                     _state.value = _state.value.copy(
                         isLoading = false,
                         upcomingTrips = all.filter { it.status.isUpcoming() || it.bookingStatus == BookingStatus.AWAITING_PAYMENT },

@@ -77,7 +77,7 @@ class TripViewModel(
             }
             when (val response = tripRepository.getMyTripsAsPassenger()) {
                 is ApiResponse.Success -> {
-                    val uiModels = response.data.toUiModels()
+                    val uiModels = response.data.toUiModels().sortedBy { it.departsAt }
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
