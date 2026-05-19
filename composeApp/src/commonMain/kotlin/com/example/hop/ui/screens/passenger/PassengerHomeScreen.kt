@@ -262,6 +262,7 @@ fun PassengerHomeContent(
         onDeleteRecentSearch = { recent ->
             homeStatsViewModel.onEvent(HomeStatsEvent.DeleteRecentSearch(recent.id))
         },
+        onNavigateToTripDetailActive = onNavigateToTripDetailActive,
         modifier = modifier,
     )
 }
@@ -282,6 +283,7 @@ fun PassengerHomeScreen(
     isLoading: Boolean,
     onFindRides: (origin: String, dest: String, date: String, seats: Int) -> Unit,
     onTripClick: (tripId: String) -> Unit,
+    onNavigateToTripDetailActive: (bookingId: String) -> Unit,
     modifier: Modifier = Modifier,
     firstName: String? = null,
     isRefreshing: Boolean = false,
@@ -1552,6 +1554,7 @@ private fun PassengerHomeEmptyPreview() {
             isLoading = false,
             onFindRides = { _, _, _, _ -> },
             onTripClick = {},
+            onNavigateToTripDetailActive = {},
         )
     }
 }
@@ -1565,6 +1568,7 @@ private fun PassengerHomeLoadingPreview() {
             isLoading = true,
             onFindRides = { _, _, _, _ -> },
             onTripClick = {},
+            onNavigateToTripDetailActive = {},
         )
     }
 }
