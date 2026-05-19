@@ -103,7 +103,7 @@ struct PassengerHomeView: View {
                                 departureIso: active.departsAt,
                                 origin: active.originName,
                                 destination: active.destName,
-                                onTap: { navigate(.tripDetailActive(bookingId: active.tripId)) }
+                                onTap: { navigate(.tripDetailActive(bookingId: active.id)) }
                             )
                         } else if let fallback = nextActiveFallback {
                             ActiveBookingBanner(

@@ -380,7 +380,7 @@ fun PassengerHomeScreen(
                         departureIso = bannerSource.departsAt,
                         origin = bannerSource.originName,
                         destination = bannerSource.destName,
-                        onClick = { onTripClick(bannerSource.tripId) },
+                        onClick = { onNavigateToTripDetailActive(bannerSource.id) },
                     )
                 }
             } else if (nextActive != null) {
