@@ -6,6 +6,7 @@ import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
+import com.example.hop.util.formatDeparture
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -127,7 +128,7 @@ class TripDetailViewModel(
                         isDriverVerified = isDriverVerified,
                         originName = trip.originName,
                         destName = trip.destName,
-                        departsAt = trip.departsAt,
+                        departsAt = formatDeparture(trip.departsAt),
                         distanceMetres = trip.distanceMetres,
                         seatsTotal = trip.seatsTotal,
                         seatsBooked = trip.seatsBooked,

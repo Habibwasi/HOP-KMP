@@ -65,6 +65,7 @@ import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import com.example.hop.domain.model.Trip
+import com.example.hop.util.formatDeparture
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -228,7 +229,7 @@ fun TripDetailActiveDriverScreen(
                         TripHeaderSection(
                             originName = domainTrip.originName,
                             destName = domainTrip.destName,
-                            departsAt = domainTrip.departsAt,
+                            departsAt = formatDeparture(domainTrip.departsAt),
                             status = domainTrip.status,
                             modifier = Modifier.padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                         )

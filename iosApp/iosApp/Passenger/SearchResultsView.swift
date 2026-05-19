@@ -82,7 +82,7 @@ struct SearchResultsView: View {
                                 driverRating: 4.8,
                                 originName: trip.originName,
                                 destinationName: trip.destName,
-                                departureTime: trip.departsAt,
+                                departureTime: trip.formattedDepartsAt,
                                 badgeStatus: trip.model == .a ? .modelA : .modelB,
                                 pricePerSeatOere: Int(trip.priceOerePerSeat)
                             ) {

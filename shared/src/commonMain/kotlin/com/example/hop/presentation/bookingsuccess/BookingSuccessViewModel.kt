@@ -7,6 +7,7 @@ import com.example.hop.domain.repository.BookingRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
+import com.example.hop.util.formatDeparture
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,7 +91,7 @@ class BookingSuccessViewModel(
                                 tripModel = trip.model,
                                 originName = trip.originName,
                                 destName = trip.destName,
-                                departsAt = trip.departsAt,
+                                departsAt = formatDeparture(trip.departsAt),
                                 driverName = driverName,
                             )
                         }

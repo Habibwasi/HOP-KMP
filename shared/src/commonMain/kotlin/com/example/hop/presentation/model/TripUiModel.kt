@@ -3,6 +3,7 @@ package com.example.hop.presentation.model
 import com.example.hop.domain.model.BookingStatus
 import com.example.hop.domain.model.Trip
 import com.example.hop.domain.model.isBroken
+import com.example.hop.util.formatDeparture
 
 /**
  * Trip wrapped with UI-layer concerns.
@@ -23,6 +24,7 @@ data class TripUiModel(
     val originName get() = trip.originName
     val destName get() = trip.destName
     val departsAt get() = trip.departsAt
+    val formattedDepartsAt: String get() = formatDeparture(trip.departsAt)
     val seatsTotal get() = trip.seatsTotal
     val seatsBooked get() = trip.seatsBooked
     val priceOerePerSeat get() = trip.priceOerePerSeat

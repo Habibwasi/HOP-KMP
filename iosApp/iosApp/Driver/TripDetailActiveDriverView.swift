@@ -35,7 +35,7 @@ struct TripDetailActiveDriverView: View {
                                 Spacer()
                                 tripStatusBadge(trip.trip.status)
                             }
-                            Text(trip.departsAt)
+                            Text(trip.formattedDepartsAt)
                                 .font(HopFont.bodySmall())
                                 .foregroundColor(Color.hopAuthTextSecondary)
                             Text("\(trip.seatsBooked)/\(trip.seatsTotal) seats booked")

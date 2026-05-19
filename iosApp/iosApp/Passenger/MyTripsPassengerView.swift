@@ -144,7 +144,7 @@ private struct TripList: View {
                         driverRating: 4.8,
                         originName: trip.originName,
                         destinationName: trip.destName,
-                        departureTime: trip.departsAt,
+                        departureTime: trip.formattedDepartsAt,
                         badgeStatus: badgeFor(trip),
                         pricePerSeatOere: Int(trip.priceOerePerSeat)
                     ) { onTap(trip) }

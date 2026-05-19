@@ -422,7 +422,7 @@ private struct DriverTripCard: View {
             Divider().background(Color(hex: 0xF0F0F0))
 
             HStack {
-                Text("Departs \(trip.trip.departsAt)")
+                Text("Departs \(trip.formattedDepartsAt)")
                     .font(HopFont.bodySmall())
                     .foregroundColor(Color(hex: 0x666666))
                 Spacer()

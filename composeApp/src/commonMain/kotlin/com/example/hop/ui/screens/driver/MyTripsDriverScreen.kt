@@ -551,7 +551,7 @@ private fun DriverTripCard(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "Departs ${tripUiModel.departsAt}",
+                    text = "Departs ${tripUiModel.formattedDepartsAt}",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = Color(0xFF666666),
                     ),

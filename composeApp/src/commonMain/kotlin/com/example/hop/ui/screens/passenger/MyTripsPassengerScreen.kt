@@ -353,7 +353,7 @@ private fun TripList(
                 driverRating = 5.0f,
                 originName = tripUiModel.originName,
                 destinationName = tripUiModel.destName,
-                departureTime = tripUiModel.departsAt,
+                departureTime = tripUiModel.formattedDepartsAt,
                 tripModel = tripUiModel.bookingStatus?.toPassengerBadgeType()
                     ?: tripUiModel.status.toBadgeType(),
                 pricePerSeatOere = tripUiModel.priceOerePerSeat,

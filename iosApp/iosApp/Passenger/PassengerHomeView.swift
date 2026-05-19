@@ -188,7 +188,7 @@ struct PassengerHomeView: View {
                                         driverRating: 0.0,
                                         originName: trip.originName,
                                         destinationName: trip.destName,
-                                        departureTime: trip.departsAt,
+                                        departureTime: trip.formattedDepartsAt,
                                         badgeStatus: trip.model == .a ? .modelA : .modelB,
                                         pricePerSeatOere: Int(trip.priceOerePerSeat),
                                         isBooked: trip.bookingId != nil,

@@ -379,7 +379,7 @@ private fun TripResultsList(
                 driverRating = 5.0f,
                 originName = tripUiModel.originName,
                 destinationName = tripUiModel.destName,
-                departureTime = tripUiModel.departsAt,
+                departureTime = tripUiModel.formattedDepartsAt,
                 tripModel = when (tripUiModel.model) {
                     TripModel.A -> BadgeType.ModelA
                     TripModel.B -> BadgeType.ModelB
