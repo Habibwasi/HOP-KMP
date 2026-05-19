@@ -309,10 +309,14 @@ fun HopNavGraph(
             val route: HopRoutes.RateDriver = backStackEntry.toRoute()
             RateDriverRoute(
                 bookingId = route.bookingId,
-                onNavigateBack = { navController.navigateUp() },
+                onNavigateBack = {
+                    navController.navigate(HopRoutes.MyTripsPassenger) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    }
+                },
                 onNavigateToMyTrips = {
                     navController.navigate(HopRoutes.MyTripsPassenger) {
-                        popUpTo(HopRoutes.MyTripsPassenger) { inclusive = true }
+                        popUpTo(HopRoutes.Home) { inclusive = false }
                     }
                 },
             )
@@ -508,7 +512,11 @@ fun HopNavGraph(
                 bookingId = route.bookingId,
                 passengerName = route.passengerName,
                 passengerInitials = route.passengerInitials,
-                onNavigateBack = { navController.navigateUp() },
+                onNavigateBack = {
+                    navController.navigate(HopRoutes.MyTripsDriver) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    }
+                },
                 onNavigateToDriverHome = {
                     if (route.remainingBookingIds.isNotEmpty()) {
                         navController.navigate(
@@ -600,7 +608,11 @@ fun HopNavGraph(
             val route: HopRoutes.PassengerSettlement = backStackEntry.toRoute()
             PassengerSettlementRoute(
                 bookingId = route.bookingId,
-                onNavigateBack = { navController.navigateUp() },
+                onNavigateBack = {
+                    navController.navigate(HopRoutes.MyTripsPassenger) {
+                        popUpTo(HopRoutes.Home) { inclusive = false }
+                    }
+                },
                 onSettlementComplete = {
                     navController.navigate(HopRoutes.RateDriver(bookingId = route.bookingId)) {
                         popUpTo(HopRoutes.PassengerSettlement(bookingId = route.bookingId)) { inclusive = true }
