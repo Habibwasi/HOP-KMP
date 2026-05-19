@@ -26,6 +26,10 @@ struct HopNavigationStack: View {
     @State private var lastSearchDate:   String = ""
     @State private var lastSearchSeats:  Int    = 1
 
+    /// Active booking ID surfaced by HomeView so the Chat tab can navigate
+    /// directly to Chat(bookingId) instead of showing My Trips.
+    @State private var activeBookingId: String? = nil
+
     private func navigate(_ route: HopRoute) { path.append(route) }
     private func popBack() { if !path.isEmpty { path.removeLast() } }
     private func goHome() { path.removeAll() }
@@ -42,7 +46,7 @@ struct HopNavigationStack: View {
                 path.append(.searchResults)
             } onLogout: {
                 // Logout flips back to auth via AuthEffectNavigateToLogin in ContentView
-            }
+            } activeBookingId: $activeBookingId
             .navigationDestination(for: HopRoute.self) { route in
                 destinationView(for: route)
                     // All detail screens render their own custom top bar

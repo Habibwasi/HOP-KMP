@@ -51,6 +51,10 @@ struct HopTabView: View {
     /// Called when the user logs out from the Settings tab.
     var onLogout: () -> Void
 
+    /// Active booking ID bubbled up from HomeView so the Chat tab can go
+    /// straight to Chat(bookingId) when the user has a live booking.
+    @Binding var activeBookingId: String?
+
     @State private var selectedTab: HopTab = .home
 
     var body: some View {
@@ -60,7 +64,8 @@ struct HopTabView: View {
             HomeView(
                 navigate: navigate,
                 onSearch: onSearch,
-                onLogout: onLogout
+                onLogout: onLogout,
+                activeBookingId: $activeBookingId
             )
             .tabItem { Label(HopTab.home.label, systemImage: HopTab.home.icon) }
             .tag(HopTab.home)
@@ -95,6 +100,15 @@ struct HopTabView: View {
             )
             .tabItem { Label(HopTab.profile.label, systemImage: HopTab.profile.icon) }
             .tag(HopTab.profile)
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            guard newTab == .chat else { return }
+            if let bookingId = activeBookingId {
+                // Navigate directly to the active booking's chat screen.
+                selectedTab = .home
+                navigate(.chat(bookingId: bookingId))
+            }
+            // No active booking — fall through; NotificationsView shows as-is.
         }
         .tint(Color.hopPrimaryLime)
         // Dark tab-bar background to match the app's surface colour

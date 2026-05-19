@@ -17,6 +17,10 @@ struct HomeView: View {
     var onSearch: (_ origin: String, _ dest: String, _ date: String, _ seats: Int) -> Void
     var onLogout: () -> Void
 
+    /// Written whenever activeBooking changes so HopTabView can intercept
+    /// the Chat tab and push Chat(bookingId) directly.
+    @Binding var activeBookingId: String?
+
     @State private var selectedRole: HopRole = .passenger
     @StateObject private var statsWrapper = HomeStatsViewModelWrapper()
 
@@ -49,6 +53,9 @@ struct HomeView: View {
         }
         .navigationBarHidden(true)
         .animation(.easeInOut(duration: 0.2), value: selectedRole)
+        .onChange(of: statsWrapper.state.activeBooking?.id) { _, newId in
+            activeBookingId = newId
+        }
         .task {
             statsWrapper.startObserving { _ in }
             statsWrapper.load()
@@ -94,5 +101,5 @@ private struct HomeTopBar: View {
 }
 
 #Preview {
-    HomeView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {})
+    HomeView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {}, activeBookingId: .constant(nil))
 }
