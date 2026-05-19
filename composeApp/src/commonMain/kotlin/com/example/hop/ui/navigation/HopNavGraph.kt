@@ -161,10 +161,13 @@ fun HopNavGraph(
                 onNavigateToMyTripsDriver = {
                     navController.navigate(HopRoutes.MyTripsDriver)
                 },
-                onNavigateToChat = {
-                    // Navigate to MyTrips where the user can tap into their
-                    // active booking and open chat from TripDetailActive.
-                    navController.navigate(HopRoutes.MyTripsPassenger)
+                onNavigateToChat = { bookingId ->
+                    if (bookingId != null) {
+                        navController.navigate(HopRoutes.Chat(bookingId = bookingId))
+                    } else {
+                        // No active booking — show My Trips so the user can find one.
+                        navController.navigate(HopRoutes.MyTripsPassenger)
+                    }
                 },
                 onNavigateToProfile = {
                     val userId = "" // currentUserId from AuthViewModel is not in scope here;
