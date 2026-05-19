@@ -183,11 +183,11 @@ private struct HopTabPlaceholder: View {
 // MARK: — Previews ─────────────────────────────────────────────────────────────
 
 #Preview("Default – Home selected") {
-    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {})
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {}, activeBookingId: .constant(nil), selectedRole: .constant(.passenger))
 }
 
 #Preview("My Trips selected") {
     // SwiftUI previews cannot drive @State from outside; the tab bar itself
     // controls selection.  Use the live preview to switch tabs interactively.
-    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {})
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {}, activeBookingId: .constant(nil), selectedRole: .constant(.passenger))
 }
