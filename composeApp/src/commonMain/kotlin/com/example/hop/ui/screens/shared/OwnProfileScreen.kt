@@ -698,16 +698,12 @@ private fun MobilepayRow(
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = HopSpacing.md),
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            SectionTitle("MobilePay number", modifier = Modifier.weight(1f).padding(horizontal = 0.dp))
+            SectionTitle("MobilePay number", modifier = Modifier.weight(1f))
             IconButton(
                 onClick = onEditClick,
                 modifier = Modifier.size(32.dp),
@@ -719,6 +715,7 @@ private fun MobilepayRow(
                     modifier = Modifier.size(18.dp),
                 )
             }
+            Spacer(modifier = Modifier.width(HopSpacing.xs))
         }
         Spacer(modifier = Modifier.height(HopSpacing.sm))
         if (number.isNullOrBlank()) {
@@ -726,12 +723,14 @@ private fun MobilepayRow(
                 text = "Not set — passengers pay you via MobilePay",
                 style = MaterialTheme.typography.bodySmall,
                 color = HopColors.authTextSecondary,
+                modifier = Modifier.padding(horizontal = HopSpacing.md),
             )
         } else {
             Text(
                 text = number,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                 color = HopColors.authTextPrimary,
+                modifier = Modifier.padding(horizontal = HopSpacing.md),
             )
         }
     }
@@ -748,12 +747,8 @@ private fun InlineMobilepayEditor(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = HopSpacing.md),
-    ) {
-        SectionTitle("MobilePay number", modifier = Modifier.padding(horizontal = 0.dp))
+    Column(modifier = modifier.fillMaxWidth()) {
+        SectionTitle("MobilePay number")
         Spacer(modifier = Modifier.height(HopSpacing.sm))
         OutlinedTextField(
             value = draft,
@@ -761,7 +756,7 @@ private fun InlineMobilepayEditor(
             label = { Text("8-digit number") },
             placeholder = { Text("e.g. 20123456") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = HopSpacing.md),
             enabled = !isSaving,
             keyboardOptions = KeyboardOptions(
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
@@ -784,11 +779,11 @@ private fun InlineMobilepayEditor(
             text = "Passengers will send money here after the ride",
             style = MaterialTheme.typography.bodySmall,
             color = HopColors.authTextSecondary,
-            modifier = Modifier.padding(top = HopSpacing.xs),
+            modifier = Modifier.padding(horizontal = HopSpacing.md, vertical = HopSpacing.xs),
         )
         Spacer(modifier = Modifier.height(HopSpacing.sm))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = HopSpacing.md),
             horizontalArrangement = Arrangement.End,
         ) {
             TextButton(onClick = onCancel, enabled = !isSaving) {
