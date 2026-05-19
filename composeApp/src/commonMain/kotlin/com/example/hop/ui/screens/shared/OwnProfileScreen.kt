@@ -720,7 +720,7 @@ private fun MobilepayRow(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(HopSpacing.xs))
+        Spacer(modifier = Modifier.height(HopSpacing.sm))
         if (number.isNullOrBlank()) {
             Text(
                 text = "Not set — passengers pay you via MobilePay",
