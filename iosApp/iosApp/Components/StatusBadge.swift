@@ -7,8 +7,11 @@ enum HopBadgeStatus {
     case confirmed
     case active
     case pending
+    case awaitingPayment
     case cancelled
     case completed
+    case disputed
+    case thresholdNotMet
     /// Model A — daily commute (recurring)
     case modelA
     /// Model B — one-off long distance (threshold-gated)
@@ -16,25 +19,31 @@ enum HopBadgeStatus {
 
     var label: String {
         switch self {
-        case .confirmed: return "Confirmed"
-        case .active:    return "Active"
-        case .pending:   return "Pending"
-        case .cancelled: return "Cancelled"
-        case .completed: return "Completed"
-        case .modelA:    return "Commute"
-        case .modelB:    return "Long Trip"
+        case .confirmed:       return "Confirmed"
+        case .active:          return "Active"
+        case .pending:         return "Pending"
+        case .awaitingPayment: return "Pay now"
+        case .cancelled:       return "Cancelled"
+        case .completed:       return "Completed"
+        case .disputed:        return "Disputed"
+        case .thresholdNotMet: return "Threshold not met"
+        case .modelA:          return "Commute"
+        case .modelB:          return "Long Trip"
         }
     }
 
     var foregroundColor: Color {
         switch self {
-        case .confirmed: return Color.hopSuccess
-        case .active:    return Color(hex: 0x1A1A1A)
-        case .pending:   return Color.hopWarning
-        case .cancelled: return Color.hopError
-        case .completed: return Color.hopAuthTextSecondary
-        case .modelA:    return Color.hopPrimaryLime
-        case .modelB:    return Color.hopPrimaryGreen
+        case .confirmed:       return Color.hopSuccess
+        case .active:          return Color(hex: 0x1A1A1A)
+        case .pending:         return Color.hopWarning
+        case .awaitingPayment: return Color(hex: 0x3B82F6)
+        case .cancelled:       return Color.hopError
+        case .completed:       return Color.hopAuthTextSecondary
+        case .disputed:        return Color.hopError
+        case .thresholdNotMet: return Color.hopWarning
+        case .modelA:          return Color.hopPrimaryLime
+        case .modelB:          return Color.hopPrimaryGreen
         }
     }
 

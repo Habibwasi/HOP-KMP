@@ -28,9 +28,13 @@ struct TripDetailActiveDriverView: View {
                     VStack(alignment: .leading, spacing: HopSpacing.md) {
                         // Trip card
                         VStack(alignment: .leading, spacing: HopSpacing.sm) {
-                            Text("\(trip.originName) → \(trip.destName)")
-                                .font(HopFont.headlineSmall(weight: .semibold))
-                                .foregroundColor(Color.hopAuthTextPrimary)
+                            HStack {
+                                Text("\(trip.originName) → \(trip.destName)")
+                                    .font(HopFont.headlineSmall(weight: .semibold))
+                                    .foregroundColor(Color.hopAuthTextPrimary)
+                                Spacer()
+                                tripStatusBadge(trip.trip.status)
+                            }
                             Text(trip.departsAt)
                                 .font(HopFont.bodySmall())
                                 .foregroundColor(Color.hopAuthTextSecondary)
@@ -87,6 +91,27 @@ struct TripDetailActiveDriverView: View {
         DriverTopBar(title: "Trip detail", onBack: onBack)
             .background(Color.hopBackground)
     }
+    }
+
+    @ViewBuilder
+    private func tripStatusBadge(_ status: TripStatus) -> some View {
+        let (label, color): (String, Color) = {
+            switch status {
+            case .active:          return ("Active",            Color.hopPrimaryLime)
+            case .confirmed:       return ("Confirmed",         Color.hopSuccess)
+            case .completed:       return ("Completed",         Color.hopAuthTextSecondary)
+            case .cancelled:       return ("Cancelled",         Color.hopError)
+            case .thresholdNotMet: return ("Threshold not met", Color.hopWarning)
+            default:               return ("Unknown",           Color.hopAuthTextSecondary)
+            }
+        }()
+        Text(label)
+            .font(HopFont.labelSmall(weight: .semibold))
+            .foregroundColor(color)
+            .padding(.horizontal, HopSpacing.xs)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.15))
+            .clipShape(Capsule())
     }
 }
 

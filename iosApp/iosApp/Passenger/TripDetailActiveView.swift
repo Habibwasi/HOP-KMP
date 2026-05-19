@@ -179,13 +179,13 @@ private struct BookingStatusBadge: View {
     var body: some View {
         let (label, color): (String, Color) = {
             switch status {
-            case .confirmed: return ("Confirmed", Color.hopSuccess)
-            case .pending: return ("Pending", Color.hopWarning)
-            case .awaitingPayment: return ("Awaiting payment", Color.hopWarning)
-            case .cancelled: return ("Cancelled", Color.hopError)
-            case .completed: return ("Completed", Color.hopSuccess)
-            case .disputed: return ("Disputed", Color.hopError)
-            default: return ("Unknown", Color.hopAuthTextSecondary)
+            case .confirmed:       return ("Confirmed",        Color.hopSuccess)
+            case .pending:         return ("Pending",          Color.hopWarning)
+            case .awaitingPayment: return ("Pay now",          Color(hex: 0x3B82F6))
+            case .cancelled:       return ("Cancelled",        Color.hopError)
+            case .completed:       return ("Completed",        Color.hopSuccess)
+            case .disputed:        return ("Disputed",         Color.hopError)
+            default:               return ("Unknown",          Color.hopAuthTextSecondary)
             }
         }()
         HStack(spacing: 6) {

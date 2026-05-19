@@ -44,12 +44,12 @@ sealed class BadgeType {
 private data class BadgeColors(val background: Color, val contentColor: Color, val label: String)
 
 private fun BadgeType.resolve(): BadgeColors = when (this) {
-    BadgeType.Confirmed -> BadgeColors(HopColors.primaryGreen,       Color(0xFF1A1A1A), "CONFIRMED")
-    BadgeType.Pending   -> BadgeColors(HopColors.warning,            Color(0xFF1A1A1A), "PENDING")
-    BadgeType.Cancelled -> BadgeColors(HopColors.error,              Color.White,       "CANCELLED")
-    BadgeType.Completed -> BadgeColors(HopColors.textSecondary,      Color(0xFF1A1A1A), "COMPLETED")
-    BadgeType.ModelA    -> BadgeColors(HopColors.primaryLime,        Color(0xFF1A1A1A), "MODEL A")
-    BadgeType.ModelB    -> BadgeColors(HopColors.surfaceElevated,    HopColors.textPrimary, "MODEL B")
+    BadgeType.Confirmed -> BadgeColors(HopColors.primaryGreen,       Color(0xFF1A1A1A), "Confirmed")
+    BadgeType.Pending   -> BadgeColors(HopColors.warning,            Color(0xFF1A1A1A), "Pending")
+    BadgeType.Cancelled -> BadgeColors(HopColors.error,              Color.White,       "Cancelled")
+    BadgeType.Completed -> BadgeColors(HopColors.textSecondary,      Color(0xFF1A1A1A), "Completed")
+    BadgeType.ModelA    -> BadgeColors(HopColors.primaryLime,        Color(0xFF1A1A1A), "Model A")
+    BadgeType.ModelB    -> BadgeColors(HopColors.surfaceElevated,    HopColors.textPrimary, "Model B")
     is BadgeType.Custom -> BadgeColors(this.background, this.contentColor, this.label)
 }
 

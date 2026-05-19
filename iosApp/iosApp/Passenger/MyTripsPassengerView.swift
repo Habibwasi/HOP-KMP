@@ -154,6 +154,20 @@ private struct TripList: View {
         }
     }
     private func badgeFor(_ trip: TripUiModel) -> HopBadgeStatus {
+        // Prefer the passenger's own booking status when available — that is
+        // what they actually care about (was my booking accepted? do I need to pay?)
+        if let bs = trip.bookingStatus {
+            switch bs {
+            case .pending:         return .pending
+            case .confirmed:       return .confirmed
+            case .awaitingPayment: return .awaitingPayment
+            case .cancelled:       return .cancelled
+            case .completed:       return .completed
+            case .disputed:        return .disputed
+            default: break
+            }
+        }
+        // Fall back to trip status for trips without a booking (e.g. past tab without booking data)
         switch trip.status {
         case .confirmed: return .confirmed
         case .active:    return .active

@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.hop.domain.model.BookingStatus
 import com.example.hop.domain.model.Trip
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.model.TripStatus
@@ -353,7 +354,8 @@ private fun TripList(
                 originName = tripUiModel.originName,
                 destinationName = tripUiModel.destName,
                 departureTime = tripUiModel.departsAt,
-                tripModel = tripUiModel.status.toBadgeType(),
+                tripModel = tripUiModel.bookingStatus?.toPassengerBadgeType()
+                    ?: tripUiModel.status.toBadgeType(),
                 pricePerSeatOere = tripUiModel.priceOerePerSeat,
                 onClick = if (tripUiModel.isBroken) ({}) else ({ onTripClick(clickId) }),
                 modifier = if (tripUiModel.isBroken) Modifier.alpha(0.6f) else Modifier,
@@ -444,6 +446,28 @@ private fun MyTripsBottomNavBar(
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+private fun BookingStatus.toPassengerBadgeType(): BadgeType = when (this) {
+    BookingStatus.PENDING          -> BadgeType.Pending
+    BookingStatus.CONFIRMED        -> BadgeType.Confirmed
+    BookingStatus.AWAITING_PAYMENT -> BadgeType.Custom(
+        label = "Pay now",
+        background = Color(0xFF3B82F6).copy(alpha = 0.15f),
+        contentColor = Color(0xFF3B82F6),
+    )
+    BookingStatus.CANCELLED        -> BadgeType.Cancelled
+    BookingStatus.COMPLETED        -> BadgeType.Completed
+    BookingStatus.DISPUTED         -> BadgeType.Custom(
+        label = "Disputed",
+        background = HopColors.error.copy(alpha = 0.15f),
+        contentColor = HopColors.error,
+    )
+    BookingStatus.UNKNOWN          -> BadgeType.Custom(
+        label = "Unknown",
+        background = HopColors.authInputSurface,
+        contentColor = HopColors.authTextSecondary,
+    )
+}
 
 private fun TripStatus.toBadgeType(): BadgeType = when (this) {
     TripStatus.ACTIVE     -> BadgeType.Custom(

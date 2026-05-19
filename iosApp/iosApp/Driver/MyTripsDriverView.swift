@@ -158,10 +158,11 @@ private struct DriverTripDetailRow: View {
     @ViewBuilder
     private var statusBadge: some View {
         switch trip.trip.status {
-        case TripStatus.active:    Badge(text: "Active",    color: Color.hopPrimaryLime)
-        case TripStatus.confirmed: Badge(text: "Confirmed", color: Color.hopSuccess)
-        case TripStatus.completed: Badge(text: "Completed", color: Color.hopAuthTextSecondary)
-        case TripStatus.cancelled: Badge(text: "Cancelled", color: Color.hopError)
+        case TripStatus.active:          Badge(text: "Active",            color: Color.hopPrimaryLime)
+        case TripStatus.confirmed:       Badge(text: "Confirmed",         color: Color.hopSuccess)
+        case TripStatus.completed:       Badge(text: "Completed",         color: Color.hopAuthTextSecondary)
+        case TripStatus.cancelled:       Badge(text: "Cancelled",         color: Color.hopError)
+        case TripStatus.thresholdNotMet: Badge(text: "Threshold not met", color: Color.hopWarning)
         default: EmptyView()
         }
     }
