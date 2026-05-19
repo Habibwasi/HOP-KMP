@@ -5,6 +5,7 @@ import Shared
 struct RateDriverView: View {
     let bookingId: String
     let onSubmitted: () -> Void
+    let onSkip: () -> Void
     let onBack: () -> Void
 
     @StateObject private var wrapper = BookingViewModelWrapper()
