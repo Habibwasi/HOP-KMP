@@ -346,9 +346,9 @@ private fun TripHeaderSection(
             val badgeType = when (status) {
                 TripStatus.CONFIRMED -> BadgeType.Confirmed
                 TripStatus.ACTIVE -> BadgeType.Custom(
-                    label = "ACTIVE",
-                    background = HopColors.primaryLime,
-                    contentColor = HopColors.authTextPrimary,
+                    label = "Active",
+                    background = HopColors.primaryLime.copy(alpha = 0.20f),
+                    contentColor = Color(0xFF1A1A1A),
                 )
                 TripStatus.COMPLETED -> BadgeType.Completed
                 TripStatus.CANCELLED -> BadgeType.Cancelled

@@ -456,8 +456,22 @@ private fun DriverTripCard(
                     },
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                // "Awaiting payment" badge — a passenger has not yet paid
+                if (tripUiModel.awaitingPaymentBookingId != null) {
+                    Text(
+                        text = "Awaiting payment",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = Color(0xFF3B82F6),
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF3B82F6).copy(alpha = 0.12f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                    Spacer(modifier = Modifier.width(HopSpacing.xs))
                 // "New booking" badge — shown when any booking was created in last 24 h
-                if (tripUiModel.hasRecentBooking) {
+                } else if (tripUiModel.hasRecentBooking) {
                     Text(
                         text = "New booking",
                         style = MaterialTheme.typography.labelSmall.copy(
@@ -762,7 +776,7 @@ private fun MyTripsDriverBottomNavBar(
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 private fun TripStatus.isUpcomingDriver(): Boolean =
-    this == TripStatus.ACTIVE || this == TripStatus.CONFIRMED
+    this == TripStatus.ACTIVE || this == TripStatus.CONFIRMED || this == TripStatus.THRESHOLD_NOT_MET
 
 private fun TripStatus.isPastDriver(): Boolean =
     this == TripStatus.COMPLETED || this == TripStatus.CANCELLED
