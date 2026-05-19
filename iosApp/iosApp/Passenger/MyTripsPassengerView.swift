@@ -22,6 +22,52 @@ struct MyTripsPassengerView: View {
 
     @StateObject private var wrapper = MyTripsPassengerViewModelWrapper()
     @State private var selectedTab: Int = 0
+    @State private var filterDate: Date? = nil
+    @State private var showDatePicker: Bool = false
+    @State private var filterModel: TripModelFilter? = nil
+
+    private enum TripModelFilter: String {
+        case commute  = "Commute"
+        case longTrip = "Long Trip"
+    }
+
+    private var filteredUpcoming: [TripUiModel] {
+        var trips = Array(wrapper.state.upcomingTrips)
+        if let m = filterModel {
+            trips = trips.filter { m == .commute ? $0.model == .a : $0.model == .b }
+        }
+        if let date = filterDate {
+            let prefix = Self.ymdString(from: date)
+            trips = trips.filter { $0.departsAt.hasPrefix(prefix) }
+        }
+        return trips
+    }
+
+    private var filteredPast: [TripUiModel] {
+        var trips = Array(wrapper.state.pastTrips)
+        if let m = filterModel {
+            trips = trips.filter { m == .commute ? $0.model == .a : $0.model == .b }
+        }
+        if let date = filterDate {
+            let prefix = Self.ymdString(from: date)
+            trips = trips.filter { $0.departsAt.hasPrefix(prefix) }
+        }
+        return trips
+    }
+
+    private static func ymdString(from date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f.string(from: date)
+    }
+
+    private func chipDateLabel(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f.string(from: date)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,13 +96,100 @@ struct MyTripsPassengerView: View {
                 tabButton(title: "Past", index: 1)
             }
 
+            // Filter bar
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    // Date chip
+                    Button(action: { showDatePicker = true }) {
+                        HStack(spacing: 4) {
+                            if filterDate == nil {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 12))
+                            }
+                            Text(filterDate.map { chipDateLabel($0) } ?? "Date")
+                                .font(HopFont.labelSmall(weight: .medium))
+                            if filterDate != nil {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 12))
+                                    .onTapGesture { filterDate = nil }
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(filterDate != nil ? Color.hopPrimaryLime.opacity(0.20) : Color.hopCardSurfaceMuted)
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(filterDate != nil ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+
+                    // Commute chip
+                    Button(action: { filterModel = filterModel == .commute ? nil : .commute }) {
+                        Text("Commute")
+                            .font(HopFont.labelSmall(weight: .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(filterModel == .commute ? Color.hopPrimaryLime.opacity(0.20) : Color.hopCardSurfaceMuted)
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(filterModel == .commute ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+
+                    // Long Trip chip
+                    Button(action: { filterModel = filterModel == .longTrip ? nil : .longTrip }) {
+                        Text("Long Trip")
+                            .font(HopFont.labelSmall(weight: .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(filterModel == .longTrip ? Color.hopPrimaryLime.opacity(0.20) : Color.hopCardSurfaceMuted)
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(filterModel == .longTrip ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, HopSpacing.md)
+                .padding(.vertical, 8)
+            }
+            .sheet(isPresented: $showDatePicker) {
+                VStack(spacing: HopSpacing.lg) {
+                    Text("Filter by date")
+                        .font(HopFont.headlineSmall(weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                    DatePicker(
+                        "",
+                        selection: Binding(
+                            get: { filterDate ?? Date() },
+                            set: { filterDate = $0 }
+                        ),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.graphical)
+                    .accentColor(Color.hopPrimaryLime)
+                    HStack {
+                        if filterDate != nil {
+                            Button("Clear") { filterDate = nil; showDatePicker = false }
+                                .foregroundColor(Color.hopAuthTextSecondary)
+                        }
+                        Spacer()
+                        Button("Done") { showDatePicker = false }
+                            .foregroundColor(Color.hopPrimaryLime)
+                            .fontWeight(.semibold)
+                    }
+                    .padding(.horizontal)
+                }
+                .padding()
+                .presentationDetents([.medium])
+            }
+
             // Content
             if wrapper.state.isLoading {
                 Spacer()
                 ProgressView().tint(Color.hopPrimaryGreen)
                 Spacer()
             } else if selectedTab == 0 {
-                if wrapper.state.upcomingTrips.isEmpty {
+                if filteredUpcoming.isEmpty {
                     EmptyStateLight(
                         systemImage: "car",
                         headline: "No upcoming trips",
@@ -65,13 +198,13 @@ struct MyTripsPassengerView: View {
                         onCta: onNavigateToFindRide
                     )
                 } else {
-                    TripList(trips: wrapper.state.upcomingTrips, onTap: { trip in
+                    TripList(trips: filteredUpcoming, onTap: { trip in
                         let id = trip.bookingId ?? trip.id
                         wrapper.selectUpcoming(bookingId: id)
                     })
                 }
             } else {
-                if wrapper.state.pastTrips.isEmpty {
+                if filteredPast.isEmpty {
                     EmptyStateLight(
                         systemImage: "clock.arrow.circlepath",
                         headline: "No past trips",
@@ -79,7 +212,7 @@ struct MyTripsPassengerView: View {
                         ctaLabel: nil, onCta: {}
                     )
                 } else {
-                    TripList(trips: wrapper.state.pastTrips, onTap: { trip in
+                    TripList(trips: filteredPast, onTap: { trip in
                         wrapper.selectPast(tripId: trip.id)
                     })
                 }

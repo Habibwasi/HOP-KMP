@@ -91,6 +91,18 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.hours
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.mutableStateOf
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -186,9 +198,28 @@ fun MyTripsDriverScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(initialSelectedTab) }
     val tabs = listOf("Upcoming", "Past")
+    var filterDate by remember { mutableStateOf<Long?>(null) }
+    var filterModel by remember { mutableStateOf<TripModel?>(null) }
 
-    val upcomingTrips = remember(state.trips) { state.trips.filter { it.isUpcomingDriver() } }
-    val pastTrips = remember(state.trips) { state.trips.filter { it.isPastDriver() } }
+    val filterDateStr = remember(filterDate) {
+        filterDate?.let {
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            sdf.format(java.util.Date(it))
+        }
+    }
+    val upcomingTrips = remember(state.trips, filterDate, filterModel) {
+        state.trips
+            .filter { it.isUpcomingDriver() }
+            .let { list -> if (filterModel != null) list.filter { it.model == filterModel } else list }
+            .let { list -> if (filterDateStr != null) list.filter { it.departsAt.take(10) == filterDateStr } else list }
+    }
+    val pastTrips = remember(state.trips, filterDate, filterModel) {
+        state.trips
+            .filter { it.isPastDriver() }
+            .let { list -> if (filterModel != null) list.filter { it.model == filterModel } else list }
+            .let { list -> if (filterDateStr != null) list.filter { it.departsAt.take(10) == filterDateStr } else list }
+    }
 
     Column(
         modifier = modifier
@@ -231,7 +262,13 @@ fun MyTripsDriverScreen(
                 }
             }
         }
-
+        // ── Filter bar ──────────────────────────────────────────────────────────
+        TripsFilterBar(
+            filterDate = filterDate,
+            filterModel = filterModel,
+            onFilterDateChange = { filterDate = it },
+            onFilterModelChange = { filterModel = it },
+        )
         // ── Content ───────────────────────────────────────────────────────────
         Box(modifier = Modifier.weight(1f)) {
             when {
@@ -775,6 +812,97 @@ private fun MyTripsDriverBottomNavBar(
             label = { Text(text = "Profile", style = MaterialTheme.typography.labelSmall) },
             colors = chipColors,
         )
+    }
+}
+
+// ── Filter bar composable ────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TripsFilterBar(
+    filterDate: Long?,
+    filterModel: TripModel?,
+    onFilterDateChange: (Long?) -> Unit,
+    onFilterModelChange: (TripModel?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filterDate)
+    val dateLabel = filterDate?.let {
+        val sdf = java.text.SimpleDateFormat("d MMM", java.util.Locale.US)
+        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        sdf.format(java.util.Date(it))
+    } ?: "Date"
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
+    ) {
+        FilterChip(
+            selected = filterDate != null,
+            onClick = { showDatePicker = true },
+            label = { Text(text = dateLabel, style = MaterialTheme.typography.labelMedium) },
+            leadingIcon = if (filterDate == null) {
+                { Icon(Icons.Outlined.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) }
+            } else null,
+            trailingIcon = if (filterDate != null) {
+                {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = "Clear date filter",
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { onFilterDateChange(null) },
+                    )
+                }
+            } else null,
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+        FilterChip(
+            selected = filterModel == TripModel.A,
+            onClick = { onFilterModelChange(if (filterModel == TripModel.A) null else TripModel.A) },
+            label = { Text("Commute", style = MaterialTheme.typography.labelMedium) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+        FilterChip(
+            selected = filterModel == TripModel.B,
+            onClick = { onFilterModelChange(if (filterModel == TripModel.B) null else TripModel.B) },
+            label = { Text("Long Trip", style = MaterialTheme.typography.labelMedium) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onFilterDateChange(datePickerState.selectedDateMillis)
+                    showDatePicker = false
+                }) {
+                    Text("OK", color = HopColors.primaryLime)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", color = HopColors.authTextSecondary)
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 }
 

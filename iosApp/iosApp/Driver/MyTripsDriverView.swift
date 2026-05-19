@@ -13,18 +13,27 @@ struct MyTripsDriverView: View {
     @StateObject  private var wrapper = DriverViewModelWrapper.shared
 
     @State private var selectedFilter: Filter = .upcoming
+    @State private var filterDate: Date? = nil
+    @State private var showDatePicker: Bool = false
+    @State private var filterModel: DriverModelFilter? = nil
 
     private enum Filter: String, CaseIterable {
         case upcoming = "Upcoming"
         case past     = "Past"
     }
 
+    private enum DriverModelFilter: String {
+        case commute  = "Commute"
+        case longTrip = "Long Trip"
+    }
+
     private var displayed: [TripUiModel] {
         let trips = wrapper.state.trips
         let now = Date()
+        var result: [TripUiModel]
         switch selectedFilter {
         case .upcoming:
-            return trips.filter {
+            result = trips.filter {
                 let departsInFuture = Self.departsInFuture($0.trip.departsAt, relativeTo: now)
                 return departsInFuture && (
                     $0.trip.status == TripStatus.active ||
@@ -34,13 +43,37 @@ struct MyTripsDriverView: View {
                 )
             }
         case .past:
-            return trips.filter {
+            result = trips.filter {
                 let departedPast = !Self.departsInFuture($0.trip.departsAt, relativeTo: now)
                 let statusIsPast = $0.trip.status == TripStatus.completed || $0.trip.status == TripStatus.cancelled
                 let departedNotSettling = departedPast && $0.trip.awaitingPaymentBookingId == nil
                 return statusIsPast || departedNotSettling
             }
         }
+        // Apply model filter
+        if let m = filterModel {
+            result = result.filter { m == .commute ? $0.model == .a : $0.model == .b }
+        }
+        // Apply date filter
+        if let date = filterDate {
+            let prefix = Self.ymdString(from: date)
+            result = result.filter { $0.trip.departsAt.hasPrefix(prefix) }
+        }
+        return result
+    }
+
+    private static func ymdString(from date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f.string(from: date)
+    }
+
+    private func chipDateLabel(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f.string(from: date)
     }
 
     /// Returns true if the ISO-8601 departsAt string is less than 2 hours in the past.
@@ -80,6 +113,90 @@ struct MyTripsDriverView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                }
+
+                // ── Filter bar ───────────────────────────────────────────────
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Button(action: { showDatePicker = true }) {
+                            HStack(spacing: 4) {
+                                if filterDate == nil {
+                                    Image(systemName: "calendar")
+                                        .font(.system(size: 12))
+                                }
+                                Text(filterDate.map { chipDateLabel($0) } ?? "Date")
+                                    .font(HopFont.labelSmall(weight: .medium))
+                                if filterDate != nil {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 12))
+                                        .onTapGesture { filterDate = nil }
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(filterDate != nil ? Color.hopPrimaryLime.opacity(0.20) : Color(hex: 0x2A2A2A))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(filterDate != nil ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: { filterModel = filterModel == .commute ? nil : .commute }) {
+                            Text("Commute")
+                                .font(HopFont.labelSmall(weight: .medium))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(filterModel == .commute ? Color.hopPrimaryLime.opacity(0.20) : Color(hex: 0x2A2A2A))
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(filterModel == .commute ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: { filterModel = filterModel == .longTrip ? nil : .longTrip }) {
+                            Text("Long Trip")
+                                .font(HopFont.labelSmall(weight: .medium))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(filterModel == .longTrip ? Color.hopPrimaryLime.opacity(0.20) : Color(hex: 0x2A2A2A))
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(filterModel == .longTrip ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, HopSpacing.md)
+                    .padding(.vertical, 8)
+                }
+                .sheet(isPresented: $showDatePicker) {
+                    VStack(spacing: HopSpacing.lg) {
+                        Text("Filter by date")
+                            .font(HopFont.headlineSmall(weight: .semibold))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                        DatePicker(
+                            "",
+                            selection: Binding(
+                                get: { filterDate ?? Date() },
+                                set: { filterDate = $0 }
+                            ),
+                            displayedComponents: .date
+                        )
+                        .datePickerStyle(.graphical)
+                        .accentColor(Color.hopPrimaryLime)
+                        HStack {
+                            if filterDate != nil {
+                                Button("Clear") { filterDate = nil; showDatePicker = false }
+                                    .foregroundColor(Color.hopAuthTextSecondary)
+                            }
+                            Spacer()
+                            Button("Done") { showDatePicker = false }
+                                .foregroundColor(Color.hopPrimaryLime)
+                                .fontWeight(.semibold)
+                        }
+                        .padding(.horizontal)
+                    }
+                    .padding()
+                    .presentationDetents([.medium])
                 }
 
                 if wrapper.state.isLoading && wrapper.state.trips.isEmpty {
