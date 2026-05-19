@@ -32,6 +32,7 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
     override val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
     private var socket: Socket? = null
+    private var currentBookingId: String = ""
 
     override fun connect(bookingId: String, token: String) {
         // Idempotency guard — avoid duplicate connections
@@ -39,6 +40,7 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
             _connectionState.value is ConnectionState.Connecting
         ) return
 
+        currentBookingId = bookingId
         _connectionState.value = ConnectionState.Connecting
 
         val opts = IO.Options().apply {
@@ -46,11 +48,12 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
             auth = hashMapOf("token" to token)
         }
 
-        socket = IO.socket(URI.create("https://hop.ridly.dk"), opts).also { s ->
+        // Connect to the /chat namespace on the API host
+        socket = IO.socket(URI.create("https://api.ridly.dk/chat"), opts).also { s ->
             s.on(Socket.EVENT_CONNECT) {
                 _connectionState.value = ConnectionState.Connected
-                // Join the booking-specific room
-                s.emit("join", bookingId)
+                // Join the booking-specific room — gateway expects { bookingId: string }
+                s.emit("join", JSONObject().put("bookingId", bookingId))
             }
 
             s.on(Socket.EVENT_DISCONNECT) {
@@ -91,7 +94,10 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
 
     override fun sendMessage(body: String) {
         if (_connectionState.value !is ConnectionState.Connected) return
-        val payload = JSONObject().apply { put("body", body) }
+        val payload = JSONObject().apply {
+            put("bookingId", currentBookingId)
+            put("body", body)
+        }
         socket?.emit("message", payload)
     }
 }
