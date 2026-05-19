@@ -391,7 +391,11 @@ fun PassengerHomeScreen(
                         departureIso = nextActive.departsAt,
                         origin = nextActive.originName,
                         destination = nextActive.destName,
-                        onClick = { onTripClick(nextActive.id) },
+                        onClick = {
+                            val bId = nextActive.bookingId
+                            if (bId != null) onNavigateToTripDetailActive(bId)
+                            else onTripClick(nextActive.id)
+                        },
                     )
                 }
             }

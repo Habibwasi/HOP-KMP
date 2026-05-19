@@ -110,7 +110,7 @@ struct PassengerHomeView: View {
                                 departureIso: fallback.departsAt,
                                 origin: fallback.originName,
                                 destination: fallback.destName,
-                                onTap: { navigate(.tripDetailActive(bookingId: fallback.id)) }
+                                onTap: { navigate(.tripDetailActive(bookingId: fallback.bookingId ?? fallback.id)) }
                             )
                         }
 
