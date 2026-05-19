@@ -21,20 +21,41 @@ struct MyTripsDriverView: View {
 
     private var displayed: [TripUiModel] {
         let trips = wrapper.state.trips
+        let now = Date()
         switch selectedFilter {
         case .upcoming:
             return trips.filter {
-                $0.trip.status == TripStatus.active ||
-                $0.trip.status == TripStatus.confirmed ||
-                $0.trip.status == TripStatus.thresholdNotMet ||
-                $0.trip.awaitingPaymentBookingId != nil
+                let departsInFuture = Self.departsInFuture($0.trip.departsAt, relativeTo: now)
+                return departsInFuture && (
+                    $0.trip.status == TripStatus.active ||
+                    $0.trip.status == TripStatus.confirmed ||
+                    $0.trip.status == TripStatus.thresholdNotMet ||
+                    $0.trip.awaitingPaymentBookingId != nil
+                )
             }
         case .past:
             return trips.filter {
-                ($0.trip.status == TripStatus.completed || $0.trip.status == TripStatus.cancelled) &&
-                $0.trip.awaitingPaymentBookingId == nil
+                let departedPast = !Self.departsInFuture($0.trip.departsAt, relativeTo: now)
+                let statusIsPast = $0.trip.status == TripStatus.completed || $0.trip.status == TripStatus.cancelled
+                let departedNotSettling = departedPast && $0.trip.awaitingPaymentBookingId == nil
+                return statusIsPast || departedNotSettling
             }
         }
+    }
+
+    /// Returns true if the ISO-8601 departsAt string is less than 2 hours in the past.
+    private static func departsInFuture(_ departsAt: String, relativeTo now: Date) -> Bool {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: departsAt) {
+            return date > now.addingTimeInterval(-2 * 3600)
+        }
+        // Fallback: try without fractional seconds
+        let fallback = ISO8601DateFormatter()
+        if let date = fallback.date(from: departsAt) {
+            return date > now.addingTimeInterval(-2 * 3600)
+        }
+        return true // parse failure — keep in upcoming to be safe
     }
 
     var body: some View {
@@ -115,7 +136,7 @@ private struct DriverTripDetailRow: View {
     @State private var scale: CGFloat = 1.0
 
     var body: some View {
-        let isNew = trip.hasRecentBooking
+        let isNew = trip.hasRecentBooking && trip.trip.awaitingPaymentBookingId == nil
         let isAwaitingPayment = trip.trip.awaitingPaymentBookingId != nil
         let showThreshold = trip.model == .b && trip.trip.minThreshold != nil && trip.trip.seatsTotal > 0
         VStack(alignment: .leading, spacing: HopSpacing.xs) {

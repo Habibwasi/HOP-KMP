@@ -87,6 +87,9 @@ import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.hours
 import org.koin.compose.viewmodel.koinViewModel
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -184,8 +187,8 @@ fun MyTripsDriverScreen(
     var selectedTab by remember { mutableIntStateOf(initialSelectedTab) }
     val tabs = listOf("Upcoming", "Past")
 
-    val upcomingTrips = remember(state.trips) { state.trips.filter { it.status.isUpcomingDriver() } }
-    val pastTrips = remember(state.trips) { state.trips.filter { it.status.isPastDriver() } }
+    val upcomingTrips = remember(state.trips) { state.trips.filter { it.isUpcomingDriver() } }
+    val pastTrips = remember(state.trips) { state.trips.filter { it.isPastDriver() } }
 
     Column(
         modifier = modifier
@@ -393,7 +396,9 @@ private fun DriverTripCard(
     modifier: Modifier = Modifier,
 ) {
     val cardShape = RoundedCornerShape(12.dp)
-    val isNew = tripUiModel.hasRecentBooking
+    // Suppress the "new booking" glow once the booking has moved to awaiting-payment
+    // state — at that point the blue badge already draws attention.
+    val isNew = tripUiModel.hasRecentBooking && tripUiModel.awaitingPaymentBookingId == null
 
     val scale = remember { Animatable(if (isNew) 0.93f else 1f) }
     LaunchedEffect(isNew) {
@@ -775,11 +780,24 @@ private fun MyTripsDriverBottomNavBar(
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-private fun TripStatus.isUpcomingDriver(): Boolean =
-    this == TripStatus.ACTIVE || this == TripStatus.CONFIRMED || this == TripStatus.THRESHOLD_NOT_MET
+/** Trips that departed more than 2 hours ago are treated as past regardless of status. */
+private fun departsAtIsPast(departsAt: String): Boolean = try {
+    Instant.parse(departsAt) < Clock.System.now() - 2.hours
+} catch (_: Exception) { false }
 
-private fun TripStatus.isPastDriver(): Boolean =
-    this == TripStatus.COMPLETED || this == TripStatus.CANCELLED
+private fun TripUiModel.isUpcomingDriver(): Boolean {
+    if (departsAtIsPast(departsAt)) return false
+    return status == TripStatus.ACTIVE ||
+        status == TripStatus.CONFIRMED ||
+        status == TripStatus.THRESHOLD_NOT_MET ||
+        awaitingPaymentBookingId != null
+}
+
+private fun TripUiModel.isPastDriver(): Boolean {
+    val statusIsPast = status == TripStatus.COMPLETED || status == TripStatus.CANCELLED
+    val departedAndNotSettling = departsAtIsPast(departsAt) && awaitingPaymentBookingId == null
+    return statusIsPast || departedAndNotSettling
+}
 
 // ── Preview helpers ────────────────────────────────────────────────────────────
 
