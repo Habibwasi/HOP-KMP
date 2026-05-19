@@ -1,9 +1,12 @@
 package com.example.hop.ui.screens.driver
 
 import kotlin.math.roundToInt
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -389,13 +392,24 @@ private fun DriverTripCard(
     modifier: Modifier = Modifier,
 ) {
     val cardShape = RoundedCornerShape(12.dp)
+    val isNew = tripUiModel.hasRecentBooking
+
+    val scale = remember { Animatable(if (isNew) 0.93f else 1f) }
+    LaunchedEffect(isNew) {
+        if (isNew) scale.animateTo(1f, animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f))
+    }
+
+    val elevation = if (isNew) 14.dp else 4.dp
+    val shadowColor = if (isNew) HopColors.primaryLime.copy(alpha = 0.55f) else Color(0x1A000000)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = cardShape, ambientColor = Color(0x1A000000))
+            .graphicsLayer { scaleX = scale.value; scaleY = scale.value }
+            .shadow(elevation = elevation, shape = cardShape, ambientColor = shadowColor, spotColor = shadowColor)
+            .then(if (isNew) Modifier.border(2.dp, HopColors.primaryLime, cardShape) else Modifier)
             .clip(cardShape)
-            .background(Color.White)
+            .background(if (isNew) HopColors.primaryLime.copy(alpha = 0.04f) else Color.White)
             .clickable(onClick = onClick),
     ) {
         Column(

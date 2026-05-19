@@ -373,7 +373,10 @@ private struct RepostRow: View {
 private struct DriverTripCard: View {
     let trip: TripUiModel
 
+    @State private var scale: CGFloat = 1.0
+
     var body: some View {
+        let isNew = trip.hasRecentBooking
         VStack(alignment: .leading, spacing: HopSpacing.sm) {
             HStack(spacing: HopSpacing.xs) {
                 modelBadge
@@ -430,8 +433,22 @@ private struct DriverTripCard: View {
         }
         .padding(HopSpacing.md)
         .frame(maxWidth: .infinity)
-        .driverCard()
-        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+        .background(isNew ? Color.hopPrimaryLime.opacity(0.04) : Color.hopCardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isNew ? Color.hopPrimaryLime : Color.clear, lineWidth: 2)
+        )
+        .shadow(
+            color: isNew ? Color.hopPrimaryLime.opacity(0.55) : Color.black.opacity(0.06),
+            radius: isNew ? 12 : 4, x: 0, y: isNew ? 4 : 2
+        )
+        .scaleEffect(scale)
+        .onAppear {
+            guard isNew else { return }
+            scale = 0.93
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) { scale = 1.0 }
+        }
     }
 
     @ViewBuilder
