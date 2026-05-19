@@ -470,12 +470,16 @@ fun HopNavGraph(
                 tripId = route.tripId,
                 driverNetOere = route.driverNetOere,
                 onNavigateBack = { navController.navigateUp() },
-                onNavigateToRatePassenger = { bookingId, passengerName, passengerInitials ->
+                onNavigateToRatePassenger = { bookingId, passengerName, passengerInitials,
+                                              remainingIds, remainingNames, remainingInitials ->
                     navController.navigate(
                         HopRoutes.RatePassenger(
                             bookingId = bookingId,
                             passengerName = passengerName,
                             passengerInitials = passengerInitials,
+                            remainingBookingIds = remainingIds,
+                            remainingPassengerNames = remainingNames,
+                            remainingPassengerInitials = remainingInitials,
                         )
                     ) {
                         popUpTo(HopRoutes.MyTripsDriver) { inclusive = false }
@@ -502,9 +506,22 @@ fun HopNavGraph(
                 passengerInitials = route.passengerInitials,
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToDriverHome = {
-                    // Pop the entire driver post-trip stack back to the existing
-                    // Home entry so the DRIVER tab is preserved.
-                    navController.popBackStack<HopRoutes.Home>(inclusive = false)
+                    if (route.remainingBookingIds.isNotEmpty()) {
+                        navController.navigate(
+                            HopRoutes.RatePassenger(
+                                bookingId = route.remainingBookingIds.first(),
+                                passengerName = route.remainingPassengerNames.firstOrNull() ?: "",
+                                passengerInitials = route.remainingPassengerInitials.firstOrNull() ?: "",
+                                remainingBookingIds = route.remainingBookingIds.drop(1),
+                                remainingPassengerNames = route.remainingPassengerNames.drop(1),
+                                remainingPassengerInitials = route.remainingPassengerInitials.drop(1),
+                            )
+                        ) {
+                            popUpTo<HopRoutes.RatePassenger> { inclusive = true }
+                        }
+                    } else {
+                        navController.popBackStack<HopRoutes.Home>(inclusive = false)
+                    }
                 },
             )
         }

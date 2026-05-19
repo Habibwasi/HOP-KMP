@@ -113,8 +113,14 @@ class BookingViewModel(
                     _effect.send(BookingEffect.NavigateToMyTripsPassenger)
                 }
                 is ApiResponse.Error -> {
-                    _state.value = _state.value.copy(isLoading = false, error = response.message)
-                    _effect.send(BookingEffect.ShowSnackbar(response.message))
+                    // 409 means already rated — treat as success so the user isn't stuck
+                    if (response.code == 409) {
+                        _state.value = _state.value.copy(isLoading = false)
+                        _effect.send(BookingEffect.NavigateToMyTripsPassenger)
+                    } else {
+                        _state.value = _state.value.copy(isLoading = false, error = response.message)
+                        _effect.send(BookingEffect.ShowSnackbar(response.message))
+                    }
                 }
             }
         }

@@ -227,8 +227,15 @@ struct HopNavigationStack: View {
             MarkTripCompleteView(
                 tripId: tripId,
                 driverNetOere: driverNetOere,
-                onCompleted: { bookingId, name, initials in
-                    navigate(.ratePassenger(bookingId: bookingId, passengerName: name, passengerInitials: initials))
+                onCompleted: { bookingId, name, initials, remIds, remNames, remInitials in
+                    navigate(.ratePassenger(
+                        bookingId: bookingId,
+                        passengerName: name,
+                        passengerInitials: initials,
+                        remainingBookingIds: remIds,
+                        remainingPassengerNames: remNames,
+                        remainingPassengerInitials: remInitials
+                    ))
                 },
                 onSettlementRequired: { tripId in
                     // Pop markTripComplete before pushing settlement so the driver
@@ -239,12 +246,27 @@ struct HopNavigationStack: View {
                 onBack: popBack
             )
 
-        case .ratePassenger(let bookingId, let passengerName, let passengerInitials):
+        case .ratePassenger(let bookingId, let passengerName, let passengerInitials,
+                            let remainingIds, let remainingNames, let remainingInitials):
             RatePassengerView(
                 bookingId:         bookingId,
                 passengerName:     passengerName,
                 passengerInitials: passengerInitials,
-                onSubmitted:       { navigate(.myTripsDriver) },
+                onSubmitted: {
+                    if !remainingIds.isEmpty {
+                        navigate(.ratePassenger(
+                            bookingId: remainingIds[0],
+                            passengerName: remainingNames.count > 0 ? remainingNames[0] : "",
+                            passengerInitials: remainingInitials.count > 0 ? remainingInitials[0] : "",
+                            remainingBookingIds: Array(remainingIds.dropFirst()),
+                            remainingPassengerNames: Array(remainingNames.dropFirst()),
+                            remainingPassengerInitials: Array(remainingInitials.dropFirst())
+                        ))
+                        if path.count >= 2 { path.removeLast() }
+                    } else {
+                        navigate(.myTripsDriver)
+                    }
+                },
                 onSkip:            { navigate(.myTripsDriver) },
                 onBack:            popBack
             )

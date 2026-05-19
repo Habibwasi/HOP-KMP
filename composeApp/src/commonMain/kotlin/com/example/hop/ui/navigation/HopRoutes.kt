@@ -139,6 +139,10 @@ sealed interface HopRoutes {
         val bookingId: String,
         val passengerName: String,
         val passengerInitials: String,
+        /** Remaining booking IDs still waiting to be rated (parallel with the two lists below). */
+        val remainingBookingIds: List<String> = emptyList(),
+        val remainingPassengerNames: List<String> = emptyList(),
+        val remainingPassengerInitials: List<String> = emptyList(),
     ) : HopRoutes
 
     /** DR-13 */

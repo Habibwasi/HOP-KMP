@@ -8,7 +8,8 @@ struct MarkTripCompleteView: View {
     let tripId: String
     let driverNetOere: Int
 
-    var onCompleted: (_ bookingId: String, _ passengerName: String, _ passengerInitials: String) -> Void
+    var onCompleted: (_ bookingId: String, _ passengerName: String, _ passengerInitials: String,
+                      _ remainingIds: [String], _ remainingNames: [String], _ remainingInitials: [String]) -> Void
     var onSettlementRequired: (_ bookingId: String) -> Void
     var onBack: () -> Void
 
@@ -64,12 +65,24 @@ struct MarkTripCompleteView: View {
             for await effect in wrapper.effects {
                 switch effect {
                 case let nav as DriverEffectNavigateToRatePassenger:
-                    let passenger = wrapper.state.activeTripDetail.passengers
-                        .first(where: { $0.bookingId == nav.bookingId })
+                    let allPassengers = wrapper.state.activeTripDetail.passengers
+                    let bookingIds = nav.bookingIds as! [String]
+                    let firstId = bookingIds.first ?? ""
+                    let remaining = Array(bookingIds.dropFirst())
+                    let first = allPassengers.first(where: { $0.bookingId == firstId })
+                    let remNames = remaining.map { id in
+                        allPassengers.first(where: { $0.bookingId == id })?.fullName ?? ""
+                    }
+                    let remInitials = remaining.map { id in
+                        allPassengers.first(where: { $0.bookingId == id })?.initials ?? ""
+                    }
                     onCompleted(
-                        nav.bookingId,
-                        passenger?.fullName ?? "Passenger",
-                        passenger?.initials ?? "P"
+                        firstId,
+                        first?.fullName ?? "Passenger",
+                        first?.initials ?? "P",
+                        remaining,
+                        remNames,
+                        remInitials
                     )
                 case let nav as DriverEffectNavigateToDriverSettlement:
                     onSettlementRequired(nav.tripId)

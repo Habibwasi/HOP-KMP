@@ -68,7 +68,14 @@ fun MarkTripCompleteRoute(
     tripId: String,
     driverNetOere: Int,
     onNavigateBack: () -> Unit,
-    onNavigateToRatePassenger: (bookingId: String, passengerName: String, passengerInitials: String) -> Unit,
+    onNavigateToRatePassenger: (
+        bookingId: String,
+        passengerName: String,
+        passengerInitials: String,
+        remainingBookingIds: List<String>,
+        remainingPassengerNames: List<String>,
+        remainingPassengerInitials: List<String>,
+    ) -> Unit,
     onNavigateToDriverSettlement: (tripId: String) -> Unit,
     onNavigateToMyTrips: () -> Unit,
     modifier: Modifier = Modifier,
@@ -87,12 +94,18 @@ fun MarkTripCompleteRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is DriverEffect.NavigateToRatePassenger -> {
-                    val passenger = state.activeTripDetail.passengers
-                        .firstOrNull { it.bookingId == effect.bookingId }
+                    val bookingIds = effect.bookingIds
+                    val passengers = state.activeTripDetail.passengers
+                    val firstId = bookingIds.first()
+                    val remaining = bookingIds.drop(1)
+                    val first = passengers.firstOrNull { it.bookingId == firstId }
                     onNavigateToRatePassenger(
-                        effect.bookingId,
-                        passenger?.fullName ?: "",
-                        passenger?.initials ?: "",
+                        firstId,
+                        first?.fullName ?: "",
+                        first?.initials ?: "",
+                        remaining,
+                        remaining.mapNotNull { id -> passengers.firstOrNull { it.bookingId == id }?.fullName },
+                        remaining.mapNotNull { id -> passengers.firstOrNull { it.bookingId == id }?.initials },
                     )
                 }
                 is DriverEffect.NavigateToDriverSettlement -> onNavigateToDriverSettlement(effect.tripId)

@@ -93,7 +93,14 @@ enum HopRoute: Hashable {
     case markTripComplete(tripId: String, driverNetOere: Int)
 
     /// DR-12 Rate Passenger
-    case ratePassenger(bookingId: String, passengerName: String, passengerInitials: String)
+    case ratePassenger(
+        bookingId: String,
+        passengerName: String,
+        passengerInitials: String,
+        remainingBookingIds: [String] = [],
+        remainingPassengerNames: [String] = [],
+        remainingPassengerInitials: [String] = []
+    )
 
     /// DR-13 Tax Dashboard
     case taxDashboard

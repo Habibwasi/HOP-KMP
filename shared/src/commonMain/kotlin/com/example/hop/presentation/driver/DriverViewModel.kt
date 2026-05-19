@@ -84,8 +84,8 @@ data class ActiveTripDetailUiState(
     val passengers: List<PassengerSummary> = emptyList(),
     val error: String? = null,
 ) {
-    /** First booking id — used to seed the RatePassenger flow. */
-    val firstBookingId: String? get() = passengers.firstOrNull()?.bookingId
+    /** All booking ids — used to seed the multi-passenger RatePassenger queue. */
+    val allBookingIds: List<String> get() = passengers.map { it.bookingId }
 }
 
 // ─ State ──────────────────────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ sealed interface DriverEffect {
     data object NavigateToPriceReview : DriverEffect
     data object NavigateToMyTrips : DriverEffect
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
-    data class NavigateToRatePassenger(val bookingId: String) : DriverEffect
+    data class NavigateToRatePassenger(val bookingIds: List<String>) : DriverEffect
     /** Navigates to the trip-level settlement screen (shows all passengers). */
     data class NavigateToDriverSettlement(val tripId: String) : DriverEffect
     data class NavigateToPastTripDetail(val tripId: String) : DriverEffect
@@ -459,9 +459,9 @@ class DriverViewModel(
                         isLoading = false,
                         trips = _state.value.trips.filterNot { it.id == tripId },
                     )
-                    val firstBookingId = _state.value.activeTripDetail.firstBookingId
-                    if (firstBookingId != null) {
-                        _effect.send(DriverEffect.NavigateToRatePassenger(firstBookingId))
+                    val allBookingIds = _state.value.activeTripDetail.allBookingIds
+                    if (allBookingIds.isNotEmpty()) {
+                        _effect.send(DriverEffect.NavigateToRatePassenger(allBookingIds))
                     } else {
                         _effect.send(DriverEffect.NavigateToDriverSettlement(tripId))
                     }

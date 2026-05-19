@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateRatingDto } from './dto/create-rating.dto'
-import { BookingStatus } from '@prisma/client'
 
 @Injectable()
 export class RatingsService {
@@ -23,7 +22,6 @@ export class RatingsService {
       include: {
         bookings: {
           where: {
-            status: BookingStatus.CONFIRMED,
             passengerId: raterId,
           },
         },
