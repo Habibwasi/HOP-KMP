@@ -507,6 +507,7 @@ fun PassengerHomeScreen(
                             )
                         },
                         pricePerSeatOere = tripUiModel.priceOerePerSeat,
+                        isBooked = tripUiModel.bookingId != null,
                         onClick = { onTripClick(tripUiModel.id) },
                         modifier = if (tripUiModel.isBroken) Modifier.alpha(0.5f) else Modifier,
                     )
