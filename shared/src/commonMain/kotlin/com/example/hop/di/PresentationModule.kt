@@ -16,6 +16,7 @@ import com.example.hop.presentation.settlement.SettlementViewModel
 import com.example.hop.presentation.settings.SettingsViewModel
 import com.example.hop.presentation.search.SearchViewModel
 import com.example.hop.presentation.chat.ChatViewModel
+import com.example.hop.presentation.chatlist.ChatListViewModel
 import com.example.hop.presentation.tax.TaxViewModel
 import com.example.hop.presentation.trip.TripViewModel
 import com.example.hop.presentation.tripdetail.TripDetailViewModel
@@ -38,6 +39,7 @@ val presentationModule = module {
     viewModelOf(::TripDetailActiveViewModel)
     viewModelOf(::TaxViewModel)
     viewModelOf(::ChatViewModel)
+    viewModelOf(::ChatListViewModel)
     viewModelOf(::OwnProfileViewModel)
     viewModelOf(::OtherProfileViewModel)
     viewModelOf(::NotificationsViewModel)

@@ -5,6 +5,7 @@ import com.example.hop.presentation.booking.BookingViewModel
 import com.example.hop.presentation.bookingsuccess.BookingSuccessViewModel
 import com.example.hop.presentation.cancellationconfirmation.CancellationConfirmationViewModel
 import com.example.hop.presentation.chat.ChatViewModel
+import com.example.hop.presentation.chatlist.ChatListViewModel
 import com.example.hop.presentation.driver.DriverViewModel
 import com.example.hop.presentation.home.HomeStatsViewModel
 import com.example.hop.presentation.home.SavedPlacesViewModel
@@ -61,6 +62,9 @@ fun getOwnProfileViewModel(): OwnProfileViewModel = KoinPlatform.getKoin().get()
 fun getOtherProfileViewModel(): OtherProfileViewModel = KoinPlatform.getKoin().get()
 
 fun getChatViewModel(): ChatViewModel = KoinPlatform.getKoin().get()
+
+@ObjCName("getChatListViewModel")
+fun getChatListViewModel(): ChatListViewModel = KoinPlatform.getKoin().get()
 
 fun getTaxViewModel(): TaxViewModel = KoinPlatform.getKoin().get()
 

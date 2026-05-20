@@ -40,6 +40,11 @@ export class BookingsController {
     return this.bookings.findActiveForPassenger(req.user.id)
   }
 
+  @Get('my-chats')
+  myChats(@Req() req: any) {
+    return this.bookings.findMyChats(req.user.id)
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.bookings.findById(id)

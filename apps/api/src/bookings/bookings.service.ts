@@ -199,6 +199,54 @@ export class BookingsService {
     })
   }
 
+  async findMyChats(userId: string) {
+    const [asPassenger, asDriver] = await Promise.all([
+      this.prisma.booking.findMany({
+        where: { passengerId: userId, status: { not: 'CANCELLED' } },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          trip: {
+            include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+          },
+        },
+      }),
+      this.prisma.booking.findMany({
+        where: { trip: { driverId: userId }, status: { not: 'CANCELLED' } },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          passenger: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          trip: true,
+        },
+      }),
+    ])
+
+    const passengerChats = asPassenger.map((b) => ({
+      bookingId: b.id,
+      bookingStatus: b.status,
+      tripOrigin: b.trip.originAddress,
+      tripDest: b.trip.destAddress,
+      departureAt: b.trip.departureAt.toISOString(),
+      otherPartyName: `${b.trip.driver.firstName} ${b.trip.driver.lastName}`.trim(),
+      otherPartyAvatarUrl: b.trip.driver.avatarUrl ?? null,
+      myRole: 'PASSENGER',
+    }))
+
+    const driverChats = asDriver.map((b) => ({
+      bookingId: b.id,
+      bookingStatus: b.status,
+      tripOrigin: b.trip.originAddress,
+      tripDest: b.trip.destAddress,
+      departureAt: b.trip.departureAt.toISOString(),
+      otherPartyName: `${b.passenger.firstName} ${b.passenger.lastName}`.trim(),
+      otherPartyAvatarUrl: b.passenger.avatarUrl ?? null,
+      myRole: 'DRIVER',
+    }))
+
+    return [...passengerChats, ...driverChats].sort(
+      (a, b) => new Date(b.departureAt).getTime() - new Date(a.departureAt).getTime(),
+    )
+  }
+
   // Called by BullMQ processor
   async checkModelBThreshold(tripId: string) {
     const trip = await this.prisma.trip.findUnique({

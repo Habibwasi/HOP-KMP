@@ -90,10 +90,10 @@ struct HopTabView: View {
             .tabItem { Label(HopTab.myTrips.label, systemImage: HopTab.myTrips.icon) }
             .tag(HopTab.myTrips)
 
-            // ── Notifications (Chat tab repurposed for SH-05) ────────────────
-            NotificationsView(
-                navigate: navigate,
-                onBack:   { selectedTab = .home }
+            // ── Chat list (SH-04b) ───────────────────────────────────────────
+            ChatListView(
+                onBack:           { selectedTab = .home },
+                onNavigateToChat: { bookingId in navigate(.chat(bookingId: bookingId)) }
             )
             .tabItem { Label(HopTab.chat.label, systemImage: HopTab.chat.icon) }
             .tag(HopTab.chat)
@@ -105,19 +105,6 @@ struct HopTabView: View {
             )
             .tabItem { Label(HopTab.profile.label, systemImage: HopTab.profile.icon) }
             .tag(HopTab.profile)
-        }
-        .onChange(of: selectedTab) { _, newTab in
-            guard newTab == .chat else { return }
-            if selectedRole == .driver {
-                // Drivers pick a passenger to chat with from their trip detail.
-                selectedTab = .myTrips
-                navigate(.myTripsDriver)
-            } else if let bookingId = activeBookingId {
-                // Passenger with an active booking — go straight to chat.
-                selectedTab = .home
-                navigate(.chat(bookingId: bookingId))
-            }
-            // Passenger with no active booking — fall through to notifications tab.
         }
         .tint(Color.hopPrimaryLime)
         // Dark tab-bar background to match the app's surface colour

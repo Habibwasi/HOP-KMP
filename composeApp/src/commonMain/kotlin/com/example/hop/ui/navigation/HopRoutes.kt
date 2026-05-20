@@ -167,6 +167,10 @@ sealed interface HopRoutes {
     @Serializable
     data class Chat(val bookingId: String) : HopRoutes
 
+    /** SH-04b Chat List — all chats the user has had or is having */
+    @Serializable
+    data object ChatList : HopRoutes
+
     /** SH-05 */
     @Serializable
     data object Notifications : HopRoutes

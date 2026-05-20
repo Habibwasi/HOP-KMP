@@ -53,6 +53,7 @@ import com.example.hop.ui.screens.driver.TaxDashboardRoute
 import com.example.hop.ui.screens.driver.TaxReportDownloadRoute
 import com.example.hop.ui.screens.shared.NotificationsRoute
 import com.example.hop.ui.screens.shared.ChatRoute
+import com.example.hop.ui.screens.shared.ChatListRoute
 import com.example.hop.ui.screens.shared.OtherProfileRoute
 import com.example.hop.ui.screens.shared.OwnProfileRoute
 import com.example.hop.ui.screens.shared.SettingsRoute
@@ -162,11 +163,7 @@ fun HopNavGraph(
                     navController.navigate(HopRoutes.MyTripsDriver)
                 },
                 onNavigateToChat = { bookingId, isDriverRole ->
-                    when {
-                        isDriverRole -> navController.navigate(HopRoutes.MyTripsDriver)
-                        bookingId != null -> navController.navigate(HopRoutes.Chat(bookingId = bookingId))
-                        else -> navController.navigate(HopRoutes.MyTripsPassenger)
-                    }
+                    navController.navigate(HopRoutes.ChatList)
                 },
                 onNavigateToProfile = {
                     val userId = "" // currentUserId from AuthViewModel is not in scope here;
@@ -277,6 +274,7 @@ fun HopNavGraph(
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateToChat = {
+                    navController.navigate(HopRoutes.ChatList)
                     // Already on MyTrips — user can tap a trip row to reach chat.
                 },
                 onNavigateToProfile = {
@@ -437,6 +435,7 @@ fun HopNavGraph(
                     navController.popBackStack<HopRoutes.Home>(inclusive = false)
                 },
                 onNavigateToChat = {
+                    navController.navigate(HopRoutes.ChatList)
                     // Already on MyTripsDriver — user can tap a trip row to reach chat.
                 },
                 onNavigateToProfile = {
@@ -581,6 +580,15 @@ fun HopNavGraph(
             ChatRoute(
                 bookingId      = route.bookingId,
                 onNavigateBack = { navController.navigateUp() },
+            )
+        }
+
+        composable<HopRoutes.ChatList> {
+            ChatListRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToChat = { bookingId ->
+                    navController.navigate(HopRoutes.Chat(bookingId = bookingId))
+                },
             )
         }
 

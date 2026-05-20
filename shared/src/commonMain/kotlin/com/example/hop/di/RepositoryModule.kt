@@ -2,6 +2,7 @@ package com.example.hop.di
 
 import com.example.hop.data.repository.AggregatesRepositoryImpl
 import com.example.hop.data.repository.BookingRepositoryImpl
+import com.example.hop.data.repository.ChatListRepositoryImpl
 import com.example.hop.data.repository.DriverRepositoryImpl
 import com.example.hop.data.repository.HomeStatsRepositoryImpl
 import com.example.hop.data.repository.PlacesRepositoryImpl
@@ -14,6 +15,7 @@ import com.example.hop.data.repository.TripRepositoryImpl
 import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.domain.repository.AggregatesRepository
 import com.example.hop.domain.repository.BookingRepository
+import com.example.hop.domain.repository.ChatListRepository
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.HomeStatsRepository
 import com.example.hop.domain.repository.PlacesRepository
@@ -44,6 +46,11 @@ fun repositoryModule(mapsApiKey: String) = module {
     }
     single<BookingRepository> {
         BookingRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<ChatListRepository> {
+        ChatListRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
     }

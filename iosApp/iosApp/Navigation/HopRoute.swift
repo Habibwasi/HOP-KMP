@@ -119,6 +119,9 @@ enum HopRoute: Hashable {
     /// SH-04 In-App Chat (per booking)
     case chat(bookingId: String)
 
+    /// SH-04b Chat List — all chats the user has had or is having
+    case chatList
+
     /// SH-05 Notifications
     case notifications
 

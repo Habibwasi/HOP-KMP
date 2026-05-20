@@ -340,6 +340,12 @@ struct HopNavigationStack: View {
                 onBack: popBack
             )
 
+        case .chatList:
+            ChatListView(
+                onBack: popBack,
+                onNavigateToChat: { bookingId in navigate(.chat(bookingId: bookingId)) }
+            )
+
         case .notifications:
             NotificationsView(
                 navigate: navigate,
