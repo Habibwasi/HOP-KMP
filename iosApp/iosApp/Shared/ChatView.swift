@@ -9,9 +9,9 @@ struct ChatView: View {
     let bookingId: String
     var onBack: () -> Void
 
-    @StateObject private var wrapper = ChatViewModelWrapper()
+    @StateObject private var wrapper     = ChatViewModelWrapper()
+    @StateObject private var authWrapper  = AuthViewModelWrapper()
     @State private var inputText: String = ""
-    @State private var currentUserId: String = ""
 
     var body: some View {
         ZStack {
@@ -25,7 +25,7 @@ struct ChatView: View {
                     ScrollView {
                         LazyVStack(spacing: HopSpacing.xs) {
                             ForEach(wrapper.state.messages, id: \.id) { msg in
-                                MessageBubble(message: msg, isMine: msg.senderId == currentUserId)
+                                MessageBubble(message: msg, isMine: msg.senderId == (authWrapper.state.currentUser?.id ?? ""))
                                     .id(msg.id)
                             }
                         }
@@ -78,12 +78,15 @@ struct ChatView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             wrapper.startObserving { _ in }
+            authWrapper.startObserving()
             let token = KoinIOSKt.getAccessToken() ?? ""
-            // Capture current user ID for message ownership detection
-            currentUserId = KoinIOSKt.getAuthViewModel().state.value.currentUser?.id ?? ""
             wrapper.connect(bookingId: bookingId, token: token)
         }
         .onDisappear { wrapper.disconnect() }
+        // The rest of the app is light-themed; chat uses a dark surface.
+        // Override here so system controls (TextField, keyboard) render
+        // correctly against the dark background.
+        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
