@@ -3,6 +3,7 @@ package com.example.hop.network
 import io.github.jan.supabase.SupabaseClient
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpResponseValidator
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -24,6 +25,17 @@ object HttpClientFactory {
     ): HttpClient = HttpClient {
 
         expectSuccess = true
+
+        // Automatically retry GET requests that fail with a connection reset
+        // (stale keep-alive connection reused from the pool after the server
+        // already closed it).
+        install(HttpRequestRetry) {
+            maxRetries = 2
+            retryOnExceptionIf { _, cause ->
+                cause is java.net.SocketException || cause is java.io.IOException
+            }
+            exponentialDelay(base = 2.0, maxDelayMs = 5_000)
+        }
 
         install(ContentNegotiation) {
             json(Json {
