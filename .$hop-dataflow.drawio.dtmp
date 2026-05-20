@@ -1,0 +1,412 @@
+<mxfile host="Electron" agent="GitHub Copilot">
+  <diagram id="hop-dataflow" name="Hop App – Full Data Flow">
+    <mxGraphModel dx="1853" dy="1077" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2340" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lane-mobile" parent="1" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;" value="Mobile Client (KMP – Android / iOS)" vertex="1">
+          <mxGeometry height="2280" width="1060" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-backend" parent="1" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=13;" value="NestJS Backend  (hop.ridly.dk/api/v1)" vertex="1">
+          <mxGeometry height="2280" width="1060" x="1100" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-external" parent="1" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=13;" value="External Services" vertex="1">
+          <mxGeometry height="2280" width="1100" x="2180" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="row1-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="① AUTH FLOW" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="row2-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="② TRIP SEARCH" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="row3-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="③ TRIP CREATION" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="row4-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="④ BOOKING FLOW" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="row5-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="⑤ CHAT (WS)" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="1360" as="geometry" />
+        </mxCell>
+        <mxCell id="row6-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="⑥ SETTLEMENT" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="row7-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="⑦ PUSH NOTIF" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="1870" as="geometry" />
+        </mxCell>
+        <mxCell id="row8-lbl" parent="1" style="text;fontStyle=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;" value="⑧ AGGREGATES" vertex="1">
+          <mxGeometry height="30" width="130" x="30" y="2120" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-auth" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Login / Register Screen&lt;/b&gt;&#xa;User enters: email, password,&#xa;firstName, lastName, phone" vertex="1">
+          <mxGeometry height="70" width="200" x="50" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-auth" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;AuthViewModel&lt;/b&gt;&#xa;AuthEvent.Register / Login&#xa;AuthEvent.RestoreSession&#xa;AuthEffect → NavigateToHome" vertex="1">
+          <mxGeometry height="70" width="220" x="310" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-auth" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;SupabaseAuthRepositoryImpl&lt;/b&gt;&#xa;register() / login() / logout()&#xa;restoreSession() / handleDeepLink()&#xa;updatePassword()" vertex="1">
+          <mxGeometry height="80" width="240" x="590" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="http-client" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Ktor HttpClient&lt;/b&gt;&#xa;AuthInterceptor: injects&#xa;Bearer {supabase.accessToken}&#xa;Base: https://hop.ridly.dk/api/v1&#xa;Timeout: 30s / Retry: 2x exp-backoff" vertex="1">
+          <mxGeometry height="90" width="180" x="880" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="token-storage" parent="1" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" value="&lt;b&gt;TokenStorage (Local)&lt;/b&gt;&#xa;Android: EncryptedSharedPreferences&#xa;(AES-256-GCM)&#xa;iOS: Keychain&#xa;Stores: accessToken, refreshToken,&#xa;recoveryPending flag" vertex="1">
+          <mxGeometry height="90" width="220" x="170" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="supabase-auth" parent="1" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="&lt;b&gt;Supabase Auth&lt;/b&gt;&#xa;signUpWith(Email)&#xa;signInWith(Email)&#xa;auth.getUser(token)&#xa;Returns: JWT accessToken + session&#xa;Redirect: ridly://auth/callback" vertex="1">
+          <mxGeometry height="90" width="220" x="2220" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="guard" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;SupabaseGuard&lt;/b&gt;&#xa;Validates Bearer JWT&#xa;via supabase.auth.getUser()&#xa;Auto-creates Prisma profile&#xa;from user_metadata if missing" vertex="1">
+          <mxGeometry height="80" width="220" x="1130" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-profile" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;UsersController&lt;/b&gt;&#xa;POST /users/profile&#xa;Body: {firstName, lastName, phone, email}&#xa;→ UsersService.createProfile()&#xa;→ Prisma User.create()" vertex="1">
+          <mxGeometry height="80" width="220" x="1400" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-me" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;UsersController&lt;/b&gt;&#xa;GET /users/me&#xa;→ UsersService.findMe()&#xa;→ Prisma User.findUnique()&#xa;Returns: UserDto" vertex="1">
+          <mxGeometry height="80" width="200" x="1680" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="db-user" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – User&lt;/b&gt;&#xa;id, email, phone, firstName,&#xa;lastName, role, mobilepayNumber,&#xa;isVerified, isBanned, isAdmin" vertex="1">
+          <mxGeometry height="90" width="200" x="1960" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="session-notifier" parent="1" style="rounded=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="&lt;b&gt;SessionExpiryNotifier&lt;/b&gt;&#xa;401 → notifyExpired()&#xa;AuthViewModel emits&#xa;AuthEffect.SessionExpired&#xa;→ Navigate to Login" vertex="1">
+          <mxGeometry height="80" width="200" x="450" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ui-vm-auth" edge="1" parent="1" source="ui-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="vm-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-repo-auth" edge="1" parent="1" source="vm-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-supabase" edge="1" parent="1" source="repo-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;fontSize=9;" target="supabase-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-http" edge="1" parent="1" source="repo-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="http-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-http-guard" edge="1" parent="1" source="http-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="guard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-guard-profile" edge="1" parent="1" source="guard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="ctrl-profile">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-guard-me" edge="1" parent="1" source="guard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="ctrl-me">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-profile-db" edge="1" parent="1" source="ctrl-profile" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-me-db" edge="1" parent="1" source="ctrl-me" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-guard-supabase" edge="1" parent="1" source="guard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="supabase-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-token" edge="1" parent="1" source="vm-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;fontSize=9;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="token-storage">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-http-session" edge="1" parent="1" source="http-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;fontSize=9;exitX=0;exitY=1;entryX=1;entryY=0;" target="session-notifier">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-search" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Search Screen&lt;/b&gt;&#xa;User enters: origin (text),&#xa;destination (text), date, seats" vertex="1">
+          <mxGeometry height="70" width="200" x="50" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-search" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;SearchTripsViewModel&lt;/b&gt;&#xa;SearchTripsEvent.Search&#xa;date resolved: today/tomorrow/ISO&#xa;Wraps result as TripUiModel&#xa;isBroken flag for UNKNOWN status" vertex="1">
+          <mxGeometry height="80" width="220" x="310" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-trip" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;TripRepositoryImpl&lt;/b&gt;&#xa;GET trips/search?origin&amp;dest&amp;date&amp;seats&#xa;GET trips/{id}&#xa;GET trips/me/driver&#xa;GET trips/me/passenger&#xa;POST trips (create)&#xa;DELETE trips/{id}&#xa;POST trips/{id}/complete" vertex="1">
+          <mxGeometry height="90" width="240" x="590" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-trip-search" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;TripsController&lt;/b&gt;&#xa;GET /trips/search&#xa;(no auth required)&#xa;→ TripsService.search()&#xa;normalizeSearchText() + aliases&#xa;filter: date, seats, status=ACTIVE" vertex="1">
+          <mxGeometry height="80" width="220" x="1130" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="db-trip" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – Trip&lt;/b&gt;&#xa;id, driverId, originLat/Lng,&#xa;originAddress, destLat/Lng,&#xa;destAddress, departureAt, seats,&#xa;pricePerSeat, model(A/B),&#xa;status, minPassengers,&#xa;thresholdDeadline, distanceKm,&#xa;recurringDays, isRecurring" vertex="1">
+          <mxGeometry height="110" width="200" x="1960" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-search-hist" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;SearchHistoryRepositoryImpl&lt;/b&gt;&#xa;GET search-history&#xa;POST search-history&#xa;DELETE search-history/{id}&#xa;→ DB RecentSearch table" vertex="1">
+          <mxGeometry height="70" width="220" x="180" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-places-geo" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;PlacesRepositoryImpl&lt;/b&gt;&#xa;GET places/geocode?address=...&#xa;→ Backend calls Mapbox API&#xa;Returns: {lat, lng, formattedAddress}" vertex="1">
+          <mxGeometry height="70" width="220" x="460" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-routing" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;RoutingRepositoryImpl&lt;/b&gt;&#xa;GET places/route?origin&amp;dest&#xa;→ Backend calls Mapbox Directions&#xa;Returns: {distanceMetres,&#xa;originLat/Lng, destLat/Lng}" vertex="1">
+          <mxGeometry height="75" width="230" x="720" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-mapbox" parent="1" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="&lt;b&gt;Mapbox API&lt;/b&gt;&#xa;Geocoding v5:&#xa;/geocoding/v5/mapbox.places/{addr}.json&#xa;Directions v5:&#xa;/directions/v5/mapbox/driving/{coords}&#xa;Auth: access_token={MAPBOX_ACCESS_TOKEN}" vertex="1">
+          <mxGeometry height="100" width="240" x="2220" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-places" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PlacesController / PlacesService&lt;/b&gt;&#xa;GET /places/geocode → Mapbox geocode&#xa;GET /places/route → Mapbox directions&#xa;GET /places → SavedPlace list&#xa;POST /places → upsert SavedPlace&#xa;DELETE /places/{id}" vertex="1">
+          <mxGeometry height="90" width="230" x="1400" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="db-savedplace" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – SavedPlace&lt;/b&gt;&#xa;id, userId, label, address,&#xa;lat, lng, kind(HOME/WORK/CUSTOM)" vertex="1">
+          <mxGeometry height="80" width="200" x="1960" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ui-vm-search" edge="1" parent="1" source="ui-search" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="vm-search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-repo-trip" edge="1" parent="1" source="vm-search" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-trip-ctrl" edge="1" parent="1" source="repo-trip" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="ctrl-trip-search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-trip-db" edge="1" parent="1" source="ctrl-trip-search" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-places-ctrl" edge="1" parent="1" source="repo-places-geo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="ctrl-places">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-routing-ctrl" edge="1" parent="1" source="repo-routing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="ctrl-places">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-places-mapbox" edge="1" parent="1" source="ctrl-places" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;fontSize=9;" target="ext-mapbox">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-places-db" edge="1" parent="1" source="ctrl-places" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-savedplace">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-trip-create" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Trip Creation Screen (Driver)&lt;/b&gt;&#xa;origin/dest address, departureAt,&#xa;seats, pricePerSeat, model(A/B),&#xa;minPassengers, thresholdDeadline,&#xa;recurringDays, distanceKm" vertex="1">
+          <mxGeometry height="90" width="220" x="50" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-trip" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;TripViewModel&lt;/b&gt;&#xa;PricingEngine (client-side preview)&#xa;tripRepository.postTrip()&#xa;routingRepository.getRouteInfo()&#xa;→ distanceMetres for price calc" vertex="1">
+          <mxGeometry height="80" width="230" x="310" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-trip-create" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;TripsController&lt;/b&gt;&#xa;POST /trips  [auth required]&#xa;→ TripsService.create()&#xa;PricingService.calculatePrice()&#xa;BullMQ: search-alerts queue job&#xa;(match existing search alerts)&#xa;Prisma Trip.create()" vertex="1">
+          <mxGeometry height="100" width="240" x="1130" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="bullmq" parent="1" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" value="&lt;b&gt;BullMQ + Redis&lt;/b&gt;&#xa;Queue: bookings (check-threshold job)&#xa;Queue: trips (extend-recurring job)&#xa;Queue: search-alerts (match-alerts job)&#xa;Workers process jobs async" vertex="1">
+          <mxGeometry height="90" width="240" x="2220" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ui-vm-trip" edge="1" parent="1" source="ui-trip-create" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="vm-trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-trip-repo" edge="1" parent="1" source="vm-trip" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-trip-create-ctrl" edge="1" parent="1" source="repo-trip" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="ctrl-trip-create">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-trip-db2" edge="1" parent="1" source="ctrl-trip-create" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-trip-bullmq" edge="1" parent="1" source="ctrl-trip-create" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="bullmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-booking" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Trip Detail / Booking Screen&lt;/b&gt;&#xa;Passenger selects seats&#xa;BookingEvent.CreateBooking(tripId, seats)&#xa;BookingEffect → NavigateToSuccess" vertex="1">
+          <mxGeometry height="80" width="220" x="50" y="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-booking" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;BookingViewModel&lt;/b&gt;&#xa;createBooking() / cancelBooking()&#xa;submitRating() / loadDriverForRating()&#xa;Uses: BookingRepo, TripRepo, UserRepo" vertex="1">
+          <mxGeometry height="80" width="230" x="310" y="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-booking" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;BookingRepositoryImpl&lt;/b&gt;&#xa;POST bookings {tripId, seats}&#xa;GET bookings/{id}&#xa;PATCH bookings/{id}/cancel&#xa;POST bookings/{id}/rate {stars, comment}" vertex="1">
+          <mxGeometry height="90" width="240" x="590" y="1055" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-booking" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;BookingsController / BookingsService&lt;/b&gt;&#xa;POST /bookings [auth]&#xa;$transaction: SELECT seats, check available,&#xa;check duplicate, Booking.create()&#xa;If Model B: BullMQ check-threshold job&#xa;Notify driver via FCM/APNS&#xa;POST /bookings/{id}/rate → Rating.create()" vertex="1">
+          <mxGeometry height="100" width="260" x="1130" y="1055" as="geometry" />
+        </mxCell>
+        <mxCell id="db-booking" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – Booking&lt;/b&gt;&#xa;id, tripId, passengerId, seats,&#xa;totalOere, status:&#xa;PENDING→CONFIRMED→AWAITING_PAYMENT&#xa;→COMPLETED / CANCELLED / DISPUTED" vertex="1">
+          <mxGeometry height="100" width="200" x="1960" y="1055" as="geometry" />
+        </mxCell>
+        <mxCell id="db-rating" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – Rating&lt;/b&gt;&#xa;raterId, rateeId, score, comment" vertex="1">
+          <mxGeometry height="70" width="200" x="1960" y="1200" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ui-vm-booking" edge="1" parent="1" source="ui-booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="vm-booking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-repo-booking" edge="1" parent="1" source="vm-booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-booking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-booking-ctrl" edge="1" parent="1" source="repo-booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="ctrl-booking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-booking-db" edge="1" parent="1" source="ctrl-booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-booking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-booking-rating" edge="1" parent="1" source="ctrl-booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-rating">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-booking-bullmq" edge="1" parent="1" source="ctrl-booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=0.3;entryX=0;entryY=0.5;fontSize=9;" target="bullmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-chat" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Chat Screen&lt;/b&gt;&#xa;User types message&#xa;ChatEvent.Connect(bookingId, token)&#xa;ChatEvent.SendMessage&#xa;ChatEffect.ScrollToBottom" vertex="1">
+          <mxGeometry height="80" width="220" x="50" y="1380" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-chat" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;ChatViewModel&lt;/b&gt;&#xa;collectMessages() from Flow&#xa;collectConnectionState()&#xa;sendMessage() → chatRepository" vertex="1">
+          <mxGeometry height="80" width="220" x="310" y="1380" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-chat-android" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;ChatRepositoryImpl (Android)&lt;/b&gt;&#xa;Library: socket.io-client&#xa;URL: wss://hop.ridly.dk/chat&#xa;Auth: { token: JWT } in handshake.auth&#xa;Events out: join(bookingId), message(text)&#xa;Events in: history(messages[]), message" vertex="1">
+          <mxGeometry height="90" width="260" x="570" y="1375" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-chat-ios" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;ChatRepositoryImpl (iOS)&lt;/b&gt;&#xa;Library: NSURLSessionWebSocketTask&#xa;URL: wss://hop.ridly.dk/socket.io/&#xa;?EIO=4&amp;transport=websocket&#xa;Auth: Authorization: Bearer {JWT}&#xa;Protocol: Socket.IO v4 / Engine.IO v4" vertex="1">
+          <mxGeometry height="90" width="260" x="570" y="1490" as="geometry" />
+        </mxCell>
+        <mxCell id="gateway-chat" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;ChatGateway (Socket.IO)&lt;/b&gt;&#xa;Namespace: /chat, transport: websocket&#xa;Middleware: supabase.auth.getUser(token)&#xa;→ prisma.user.findUnique()&#xa;sock.userId set before any event&#xa;handleJoin(): validate participant, send history&#xa;handleMessage(): ChatService.saveMessage()&#xa;→ broadcast to room&#xa;handleDisconnect(): log session end" vertex="1">
+          <mxGeometry height="120" width="280" x="1130" y="1375" as="geometry" />
+        </mxCell>
+        <mxCell id="db-chat" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – ChatMessage&lt;/b&gt;&#xa;id, bookingId, senderId,&#xa;senderName, content, createdAt&#xa;(history: last 50 on join)" vertex="1">
+          <mxGeometry height="90" width="200" x="1960" y="1375" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ui-vm-chat" edge="1" parent="1" source="ui-chat" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="vm-chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-repo-chat" edge="1" parent="1" source="vm-chat" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-chat-android">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-chat-gw" edge="1" parent="1" source="repo-chat-android" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;strokeColor=#FF0000;" target="gateway-chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-chat-ios-gw" edge="1" parent="1" source="repo-chat-ios" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.7;fontSize=9;strokeColor=#FF0000;dashed=1;" target="gateway-chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-gw-db-chat" edge="1" parent="1" source="gateway-chat" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-gw-supabase-chat" edge="1" parent="1" source="gateway-chat" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=0;entryX=0;entryY=0.5;fontSize=9;" target="supabase-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-settlement" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Settlement Screen&lt;/b&gt;&#xa;Passenger: markPaid()&#xa;Driver: confirmReceived()&#xa;Either: dispute(reason)" vertex="1">
+          <mxGeometry height="75" width="220" x="50" y="1620" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-settlement" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;SettlementViewModel&lt;/b&gt;&#xa;settlementRepository.getSettlement()&#xa;markPaid() / unmarkPaid()&#xa;confirmReceived() / dispute()" vertex="1">
+          <mxGeometry height="75" width="220" x="310" y="1620" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-settlement" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;SettlementRepositoryImpl&lt;/b&gt;&#xa;GET settlements/{bookingId}&#xa;GET settlements/trip/{tripId}&#xa;POST settlements/{bookingId}/mark-paid&#xa;POST …/unmark-paid&#xa;POST …/confirm-received&#xa;POST …/dispute {reason}" vertex="1">
+          <mxGeometry height="90" width="260" x="570" y="1615" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-settlement" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;SettlementsController / SettlementsService&lt;/b&gt;&#xa;assertParty() – verify passenger/driver&#xa;markPassengerPaid() → update passengerPaidAt&#xa;→ Notify driver: PAYMENT_MARKED_PAID&#xa;markDriverConfirmed() → update driverConfirmedAt&#xa;→ Booking.status = COMPLETED&#xa;→ Notify passenger: PAYMENT_CONFIRMED&#xa;dispute() → Booking.status = DISPUTED" vertex="1">
+          <mxGeometry height="110" width="280" x="1130" y="1615" as="geometry" />
+        </mxCell>
+        <mxCell id="db-settlement" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – RideSettlement&lt;/b&gt;&#xa;bookingId (PK), suggestedAmountOere,&#xa;mobilepayNumber, passengerPaidAt,&#xa;driverConfirmedAt, disputedAt, disputeReason" vertex="1">
+          <mxGeometry height="100" width="210" x="1960" y="1615" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ui-vm-settlement" edge="1" parent="1" source="ui-settlement" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="vm-settlement">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-repo-settlement" edge="1" parent="1" source="vm-settlement" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-settlement">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-settlement-ctrl" edge="1" parent="1" source="repo-settlement" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="ctrl-settlement">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-settlement-db" edge="1" parent="1" source="ctrl-settlement" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-settlement">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="push-android" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;PushNotificationService (Android)&lt;/b&gt;&#xa;extends FirebaseMessagingService&#xa;onNewToken() → UserRepo.savePushToken()&#xa;POST users/push-token {token, platform:android}&#xa;onMessageReceived() → show notification&#xa;+ deep-link to booking" vertex="1">
+          <mxGeometry height="90" width="270" x="50" y="1895" as="geometry" />
+        </mxCell>
+        <mxCell id="notif-service-backend" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;NotificationsService (Backend)&lt;/b&gt;&#xa;sendToUser(userId, title, body, data)&#xa;  → prisma.pushToken.findMany({userId})&#xa;  iOS tokens → sendApns() via node-apn&#xa;  Android tokens → sendFcm() via firebase-admin&#xa;Auto-deletes invalid tokens&#xa;(Unregistered / BadDeviceToken)&#xa;Also: prisma.notification.create() (in-app)" vertex="1">
+          <mxGeometry height="110" width="280" x="1130" y="1895" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-fcm" parent="1" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="&lt;b&gt;Firebase Cloud Messaging (FCM)&lt;/b&gt;&#xa;Library: firebase-admin&#xa;Credentials: FIREBASE_PROJECT_ID,&#xa;FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY&#xa;Delivers to Android devices" vertex="1">
+          <mxGeometry height="90" width="240" x="2220" y="1870" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-apns" parent="1" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="&lt;b&gt;Apple Push Notification Service (APNS)&lt;/b&gt;&#xa;Library: node-apn&#xa;Credentials: APNS_KEY_PATH, APNS_KEY_ID,&#xa;APNS_TEAM_ID, APNS_BUNDLE_ID&#xa;Delivers to iOS devices" vertex="1">
+          <mxGeometry height="90" width="240" x="2220" y="1990" as="geometry" />
+        </mxCell>
+        <mxCell id="db-pushtoken" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – PushToken&lt;/b&gt;&#xa;userId, token (unique), platform&#xa;(ios / android)" vertex="1">
+          <mxGeometry height="80" width="200" x="1960" y="1895" as="geometry" />
+        </mxCell>
+        <mxCell id="db-notif" parent="1" style="shape=cylinder3;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;PostgreSQL – Notification&lt;/b&gt;&#xa;userId, type, title, body,&#xa;isRead, deepLinkId&#xa;Types: BOOKING_CONFIRMED,&#xa;CHAT_MESSAGE, PAYMENT_MARKED_PAID,&#xa;PAYMENT_CONFIRMED, SEARCH_ALERT, etc." vertex="1">
+          <mxGeometry height="100" width="200" x="1960" y="2000" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-notif" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;NotificationsViewModel&lt;/b&gt;&#xa;userRepository.getNotifications()&#xa;GET /notifications&#xa;markRead() → POST /notifications/{id}/read" vertex="1">
+          <mxGeometry height="75" width="230" x="360" y="1895" as="geometry" />
+        </mxCell>
+        <mxCell id="e-push-android-repo" edge="1" parent="1" source="push-android" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-trip">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="185" y="1960" />
+              <mxPoint x="710" y="1960" />
+              <mxPoint x="710" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-notif-svc-push-token-db" edge="1" parent="1" source="notif-service-backend" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-pushtoken">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-notif-svc-fcm" edge="1" parent="1" source="notif-service-backend" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=0.3;entryX=0;entryY=0.5;fontSize=9;" target="ext-fcm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-notif-svc-apns" edge="1" parent="1" source="notif-service-backend" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=0.7;entryX=0;entryY=0.5;fontSize=9;" target="ext-apns">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-notif-svc-db-notif" edge="1" parent="1" source="notif-service-backend" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-notif">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-booking-notif" edge="1" parent="1" source="ctrl-booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=1;entryX=0;entryY=0;fontSize=9;" target="notif-service-backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-settlement-notif" edge="1" parent="1" source="ctrl-settlement" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;exitX=1;exitY=1;entryX=0;entryY=0.3;fontSize=9;" target="notif-service-backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-home" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Driver Home / Aggregates Screen&lt;/b&gt;&#xa;Demand hotspots map,&#xa;Earnings chart, CO₂ saved" vertex="1">
+          <mxGeometry height="70" width="220" x="50" y="2140" as="geometry" />
+        </mxCell>
+        <mxCell id="vm-agg" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;DriverAggregatesViewModel&lt;/b&gt;&#xa;getDriverEarningsSeries(days)&#xa;getDemandHotspots()&#xa;getUserCo2Saved()" vertex="1">
+          <mxGeometry height="70" width="220" x="310" y="2140" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-agg" parent="1" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;AggregatesRepositoryImpl&lt;/b&gt;&#xa;GET aggregates/driver/earnings-series?days=N&#xa;GET aggregates/demand-hotspots&#xa;GET aggregates/co2-saved" vertex="1">
+          <mxGeometry height="70" width="260" x="570" y="2140" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl-agg" parent="1" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="&lt;b&gt;AggregatesController / AggregatesService&lt;/b&gt;&#xa;GET /aggregates/driver/earnings-series&#xa;  → prisma.rideSettlement + booking aggregations&#xa;GET /aggregates/demand-hotspots&#xa;  → prisma.trip GROUP BY origin region&#xa;GET /aggregates/co2-saved&#xa;  → prisma.booking sum distanceKm × factor" vertex="1">
+          <mxGeometry height="100" width="290" x="1130" y="2135" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ui-vm-agg" edge="1" parent="1" source="ui-home" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="vm-agg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vm-repo-agg" edge="1" parent="1" source="vm-agg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="repo-agg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-repo-agg-ctrl" edge="1" parent="1" source="repo-agg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" target="ctrl-agg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-agg-db-booking" edge="1" parent="1" source="ctrl-agg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-booking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ctrl-agg-db-trip" edge="1" parent="1" source="ctrl-agg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;" target="db-trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-bg" parent="1" style="swimlane;startSize=20;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontStyle=1;fontSize=10;" value="LEGEND" vertex="1">
+          <mxGeometry height="170" width="380" x="2450" y="2130" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" edge="1" parent="legend-bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#000000;endArrow=block;endFill=1;" value="">
+          <mxGeometry height="20" width="80" x="20" y="40" as="geometry">
+            <mxPoint x="20" y="50" as="sourcePoint" />
+            <mxPoint x="100" y="50" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg1-lbl" parent="legend-bg" style="text;fontSize=9;" value="Synchronous data flow" vertex="1">
+          <mxGeometry height="20" width="180" x="110" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" edge="1" parent="legend-bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#000000;dashed=1;endArrow=block;endFill=1;" value="">
+          <mxGeometry height="20" width="80" x="20" y="70" as="geometry">
+            <mxPoint x="20" y="80" as="sourcePoint" />
+            <mxPoint x="100" y="80" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg2-lbl" parent="legend-bg" style="text;fontSize=9;" value="Async / fire-and-forget / external call" vertex="1">
+          <mxGeometry height="20" width="230" x="110" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" edge="1" parent="legend-bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#FF0000;endArrow=block;endFill=1;" value="">
+          <mxGeometry height="20" width="80" x="20" y="100" as="geometry">
+            <mxPoint x="20" y="110" as="sourcePoint" />
+            <mxPoint x="100" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg3-lbl" parent="legend-bg" style="text;fontSize=9;" value="WebSocket (bidirectional, real-time)" vertex="1">
+          <mxGeometry height="20" width="230" x="110" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4a" parent="legend-bg" style="fillColor=#dae8fc;strokeColor=#6c8ebf;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="20" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4a-lbl" parent="legend-bg" style="text;fontSize=9;" value="Mobile Client (KMP)" vertex="1">
+          <mxGeometry height="20" width="120" x="50" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4b" parent="legend-bg" style="fillColor=#d5e8d4;strokeColor=#82b366;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="190" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4b-lbl" parent="legend-bg" style="text;fontSize=9;" value="Backend / DB" vertex="1">
+          <mxGeometry height="20" width="100" x="220" y="130" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

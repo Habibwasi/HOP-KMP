@@ -68,12 +68,38 @@ export class UsersController {
       // Roll back on ANY profile-creation error (conflict, bad request, unexpected
       // Prisma error, etc.) — delete the Supabase auth user so the email/phone is
       // free for a corrected re-registration attempt.
-      const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id)
-      if (deleteError) {
+      //
+      // Retry up to 3 times with exponential back-off (200ms, 400ms) because a
+      // transient network blip to Supabase's admin API must not leave a dangling
+      // auth user that permanently blocks re-registration with the same email.
+      const MAX_DELETE_ATTEMPTS = 3
+      let lastDeleteError: Error | null = null
+      for (let attempt = 1; attempt <= MAX_DELETE_ATTEMPTS; attempt++) {
+        const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id)
+        if (!deleteError) { lastDeleteError = null; break }
+        lastDeleteError = deleteError
+        if (attempt < MAX_DELETE_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, 200 * attempt))
+        }
+      }
+
+      if (lastDeleteError) {
+        // All retries exhausted — the Supabase user is dangling. Log with full
+        // context so an operator can delete it manually, then surface a specific
+        // message to the client so the user knows to contact support rather than
+        // retrying indefinitely.
         this.logger.error(
-          `Failed to delete dangling Supabase user ${supabaseUser.id}: ${deleteError.message}`,
+          `DANGLING_AUTH_USER supabaseId=${supabaseUser.id} email=${supabaseUser.email} ` +
+          `deleteError="${lastDeleteError.message}" originalError="${(err as Error).message}" ` +
+          `— manual cleanup required in Supabase dashboard`,
+        )
+        throw new Error(
+          `Registration failed: ${(err as Error).message}. ` +
+          `Your account is in a partial state — please contact support with your email address ` +
+          `before attempting to register again.`,
         )
       }
+
       throw err
     }
   }

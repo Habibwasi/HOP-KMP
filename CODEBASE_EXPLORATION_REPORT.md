@@ -61,10 +61,7 @@ Auth flow:
 Passenger flow:
 
 1. Passenger home shows saved places, recent searches, active booking, and search entry points.
-2. Search flow sends route/date/seat criteria to backend trip search.
-3. Trip detail resolves driver and Model B threshold progress.
-4. Booking confirmation creates booking, then success and passenger trip views handle lifecycle.
-5. After ride completion, settlement screen opens MobilePay deep link and lets passenger mark paid.
+2. Search flow sends route/d 
 
 Driver flow:
 

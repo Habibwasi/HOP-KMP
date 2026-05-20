@@ -155,11 +155,15 @@ class AuthViewModel(
             when (val response = authRepository.handleRecoveryDeepLink(url)) {
                 is ApiResponse.Success -> {
                     println("[HopDeepLink] handleRecoveryDeepLink SUCCESS — emitting NavigateToSetPassword")
+                    // Clear the flag synchronously before emitting the navigation effect.
+                    // A fire-and-forget launch here could be killed before the write
+                    // completes if the app crashes immediately after navigation, leaving
+                    // a stale flag that mis-routes subsequent deep links.
+                    tokenStorage.saveRecoveryPending(false)
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isPasswordRecoveryPending = false,
                     )
-                    viewModelScope.launch { tokenStorage.saveRecoveryPending(false) }
                     _effect.tryEmit(AuthEffect.NavigateToSetPassword)
                 }
                 is ApiResponse.Error -> {
@@ -176,9 +180,13 @@ class AuthViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.handleDeepLink(url)) {
                 is ApiResponse.Success -> {
+                    // Clear any stale recoveryPending flag so a future email-confirmation
+                    // deep link is not mistakenly routed to the Set-New-Password screen.
+                    tokenStorage.saveRecoveryPending(false)
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isAuthenticated = true,
+                        isPasswordRecoveryPending = false,
                         currentUser = response.data,
                     )
                     _effect.tryEmit(AuthEffect.NavigateToHome)
@@ -245,6 +253,10 @@ class AuthViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.logout()) {
                 is ApiResponse.Success -> {
+                    // Always clear the recovery-pending flag on logout so it cannot
+                    // persist across separate sign-in sessions and mis-route a future
+                    // email-confirmation deep link to the Set-New-Password screen.
+                    tokenStorage.saveRecoveryPending(false)
                     _state.value = AuthUiState()
                     _effect.tryEmit(AuthEffect.NavigateToLogin)
                 }
@@ -288,7 +300,11 @@ class AuthViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.updatePassword(newPassword)) {
                 is ApiResponse.Success -> {
-                    _state.value = _state.value.copy(isLoading = false)
+                    // Belt-and-suspenders: clear the recoveryPending flag here too in
+                    // case the user somehow reaches this screen without going through
+                    // handleRecoveryCallback (e.g. deep-link race on a fresh install).
+                    tokenStorage.saveRecoveryPending(false)
+                    _state.value = _state.value.copy(isLoading = false, isPasswordRecoveryPending = false)
                     _effect.tryEmit(AuthEffect.PasswordUpdated)
                 }
                 is ApiResponse.Error -> {
