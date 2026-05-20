@@ -45,6 +45,9 @@ import com.example.hop.presentation.chatlist.ChatListViewModel
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -261,8 +264,8 @@ private fun ChatThreadRow(
 
 private fun formatChatDeparture(iso: String): String {
     return try {
-        val instant = kotlinx.datetime.Instant.parse(iso)
-        val ldt = instant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        val instant = Instant.parse(iso)
+        val ldt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
         val h = ldt.hour.toString().padStart(2, '0')
         val m = ldt.minute.toString().padStart(2, '0')
         "${ldt.dayOfMonth} ${ldt.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)} · $h:$m"
