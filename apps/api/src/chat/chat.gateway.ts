@@ -4,6 +4,7 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   MessageBody,
   ConnectedSocket,
   WsException,
@@ -24,7 +25,7 @@ interface AuthenticatedSocket extends Socket {
   transports: ['websocket'],
   cors: { origin: '*' },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server
   private readonly logger = new Logger(ChatGateway.name)
 
@@ -34,35 +35,45 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly chatService: ChatService,
   ) {}
 
-  async handleConnection(client: Socket) {
-    // Accept token from Socket.io auth payload (Android) or Authorization header (iOS).
-    const token =
-      (client.handshake.auth as Record<string, string>)?.token ??
-      client.handshake.headers?.authorization?.replace(/^Bearer\s+/i, '')
+  /**
+   * Register auth middleware that runs BEFORE the connect ack is sent to the
+   * client.  This eliminates the race condition where handleConnection is async
+   * (Supabase + Prisma calls) and the client fires "join" before sock.userId
+   * has been set.  With middleware, the connect ack is only sent after next()
+   * is called, so sock.userId is always ready when any subsequent event arrives.
+   */
+  afterInit(server: Server) {
+    server.use(async (socket, next) => {
+      const token =
+        (socket.handshake.auth as Record<string, string>)?.token ??
+        socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, '')
 
-    if (!token) {
-      this.logger.warn(`[Chat] Rejected unauthenticated connection ${client.id}`)
-      client.disconnect(true)
-      return
-    }
+      if (!token) {
+        this.logger.warn(`[Chat] Rejected unauthenticated connection ${socket.id}`)
+        return next(new Error('Unauthorized'))
+      }
 
-    const { data: { user }, error } = await this.supabase.auth.getUser(token)
-    if (error || !user) {
-      this.logger.warn(`[Chat] Auth failed for connection ${client.id}: ${error?.message}`)
-      client.disconnect(true)
-      return
-    }
+      const { data: { user }, error } = await this.supabase.auth.getUser(token)
+      if (error || !user) {
+        this.logger.warn(`[Chat] Auth failed for connection ${socket.id}: ${error?.message}`)
+        return next(new Error('Unauthorized'))
+      }
 
-    const prismaUser = await this.prisma.user.findUnique({ where: { id: user.id } })
-    if (!prismaUser) {
-      client.disconnect(true)
-      return
-    }
+      const prismaUser = await this.prisma.user.findUnique({ where: { id: user.id } })
+      if (!prismaUser) {
+        return next(new Error('Unauthorized'))
+      }
 
+      const sock = socket as AuthenticatedSocket
+      sock.userId = prismaUser.id
+      sock.userFullName = `${prismaUser.firstName} ${prismaUser.lastName}`.trim()
+      next()
+    })
+  }
+
+  handleConnection(client: Socket) {
     const sock = client as AuthenticatedSocket
-    sock.userId = prismaUser.id
-    sock.userFullName = `${prismaUser.firstName} ${prismaUser.lastName}`.trim()
-    this.logger.log(`[Chat] Connected: ${client.id} user=${prismaUser.id}`)
+    this.logger.log(`[Chat] Connected: ${client.id} user=${sock.userId}`)
   }
 
   handleDisconnect(client: Socket) {
