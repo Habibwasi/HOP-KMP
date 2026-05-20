@@ -63,7 +63,6 @@ fun getOtherProfileViewModel(): OtherProfileViewModel = KoinPlatform.getKoin().g
 
 fun getChatViewModel(): ChatViewModel = KoinPlatform.getKoin().get()
 
-@ObjCName("getChatListViewModel")
 fun getChatListViewModel(): ChatListViewModel = KoinPlatform.getKoin().get()
 
 fun getTaxViewModel(): TaxViewModel = KoinPlatform.getKoin().get()
