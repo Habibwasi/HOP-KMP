@@ -26,14 +26,13 @@ object HttpClientFactory {
 
         expectSuccess = true
 
-        // Automatically retry GET requests that fail with a connection reset
-        // (stale keep-alive connection reused from the pool after the server
-        // already closed it).
+        // Automatically retry on transient connection failures (stale keep-alive
+        // connections, network resets, etc.).  retryOnException() covers any
+        // exception thrown before a response is received, which is safe for
+        // idempotent GET/HEAD requests and avoids java.* references in commonMain.
         install(HttpRequestRetry) {
             maxRetries = 2
-            retryOnExceptionIf { _, cause ->
-                cause is java.net.SocketException || cause is java.io.IOException
-            }
+            retryOnException(maxRetries = 2, retryOnTimeout = true)
             exponentialDelay(base = 2.0, maxDelayMs = 5_000)
         }
 
