@@ -10,6 +10,7 @@ import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.PostTripRequest
 import com.example.hop.domain.repository.RouteInfo
 import com.example.hop.domain.repository.RoutingRepository
+import com.example.hop.domain.repository.TaxRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
@@ -205,6 +206,7 @@ class DriverViewModel(
     private val tripRepository: TripRepository,
     private val driverRepository: DriverRepository,
     private val routingRepository: RoutingRepository,
+    private val taxRepository: TaxRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DriverUiState())
@@ -246,21 +248,29 @@ class DriverViewModel(
             } else {
                 _state.value.copy(isLoading = true, error = null)
             }
-            when (val response = tripRepository.getMyTripsAsDriver()) {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val tripsDeferred = async { tripRepository.getMyTripsAsDriver() }
+            val earningsDeferred = async { taxRepository.getTaxSummary(now.year, now.monthNumber) }
+            val tripsResponse = tripsDeferred.await()
+            val earningsResponse = earningsDeferred.await()
+            when (tripsResponse) {
                 is ApiResponse.Success -> {
+                    val summary = (earningsResponse as? ApiResponse.Success)?.data
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        trips = response.data.toUiModels(),
+                        trips = tripsResponse.data.toUiModels(),
+                        monthlyEarningsOere = summary?.grossOere ?: _state.value.monthlyEarningsOere,
+                        estimatedTaxOere = summary?.estimatedTaxOere ?: _state.value.estimatedTaxOere,
                     )
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = response.toUserMessage("loading your trips"),
+                        error = tripsResponse.toUserMessage("loading your trips"),
                     )
-                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("loading your trips")))
+                    _effect.send(DriverEffect.ShowSnackbar(tripsResponse.toUserMessage("loading your trips")))
                 }
             }
         }
