@@ -10,66 +10,39 @@ struct ChatView: View {
     var onBack: () -> Void
 
     @StateObject private var wrapper     = ChatViewModelWrapper()
-    @StateObject private var authWrapper  = AuthViewModelWrapper()
+    @StateObject private var authWrapper = AuthViewModelWrapper()
     @State private var inputText: String = ""
 
     private var myUserId: String { authWrapper.state.currentUser?.id ?? "" }
 
     var body: some View {
-        ZStack {
-            Color.hopSurface.ignoresSafeArea()
+        VStack(spacing: 0) {
+            chatTopBar
 
-            VStack(spacing: 0) {
-                // ── Custom top bar (replaces .toolbar which is hidden by HopNavigationStack) ──
-                chatTopBar
+            connectionBanner
 
-                connectionBanner
-
-                // ── Message list ─────────────────────────────────────────────
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: HopSpacing.xs) {
-                            ForEach(wrapper.state.messages, id: \.id) { msg in
-                                MessageBubble(message: msg, isMine: msg.senderId == myUserId)
-                                    .id(msg.id)
-                            }
-                        }
-                        .padding(HopSpacing.md)
-                    }
-                    .onChange(of: wrapper.state.messages.count) { _, _ in
-                        if let last = wrapper.state.messages.last {
-                            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+            // ── Message list ──────────────────────────────────────────────────
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: HopSpacing.xs) {
+                        ForEach(wrapper.state.messages, id: \.id) { msg in
+                            MessageBubble(message: msg, isMine: msg.senderId == myUserId)
+                                .id(msg.id)
                         }
                     }
+                    .padding(HopSpacing.md)
                 }
-
-                // ── Composer ─────────────────────────────────────────────────
-                HStack(spacing: HopSpacing.sm) {
-                    TextField("Type a message…", text: $inputText, axis: .vertical)
-                        .lineLimit(1...4)
-                        .padding(HopSpacing.sm)
-                        .background(Color.hopSurfaceElevated)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .foregroundColor(Color.hopTextPrimary)
-                        .onChange(of: inputText) { _, new in wrapper.inputChanged(new) }
-
-                    Button {
-                        wrapper.send()
-                        inputText = ""
-                    } label: {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundColor(Color.hopSurface)
-                            .padding(HopSpacing.sm)
-                            .background(inputText.trimmingCharacters(in: .whitespaces).isEmpty
-                                        ? Color.hopSurfaceElevated : Color.hopPrimaryLime)
-                            .clipShape(Circle())
+                .onChange(of: wrapper.state.messages.count) { _, _ in
+                    if let last = wrapper.state.messages.last {
+                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
-                    .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .padding(HopSpacing.sm)
-                .background(Color.hopSurfaceElevated)
             }
+
+            // ── Composer ──────────────────────────────────────────────────────
+            composerBar
         }
+        .background(Color.hopSurface.ignoresSafeArea())
         .navigationBarHidden(true)
         .task {
             wrapper.startObserving { _ in }
@@ -78,9 +51,6 @@ struct ChatView: View {
             wrapper.connect(bookingId: bookingId, token: token)
         }
         .onDisappear { wrapper.disconnect() }
-        // The rest of the app is light-themed; chat uses a dark surface.
-        // Override here so system controls (TextField, keyboard) render
-        // correctly against the dark background.
         .preferredColorScheme(.dark)
     }
 
@@ -88,34 +58,58 @@ struct ChatView: View {
 
     private var chatTopBar: some View {
         VStack(spacing: 0) {
-            HStack(spacing: HopSpacing.sm) {
+            HStack(spacing: 0) {
                 Button(action: onBack) {
                     Image(systemName: "arrow.left")
                         .foregroundColor(Color.hopTextPrimary)
                         .frame(width: 44, height: 44)
                 }
-
-                Spacer(minLength: 0)
-
+                Spacer()
                 Text("Chat")
                     .font(HopFont.bodyLarge(weight: .semibold))
                     .foregroundColor(Color.hopTextPrimary)
-
-                Spacer(minLength: 0)
-
-                // Connection dot — right side, mirrors Android ConnectionIndicator
+                Spacer()
                 connectionDot
                     .frame(width: 44, height: 44, alignment: .center)
             }
             .padding(.horizontal, HopSpacing.xs)
             .frame(height: 56)
-            .background(Color.hopSurfaceElevated)
 
-            Divider().background(Color.hopSurface)
+            Divider().background(Color.hopSurface.opacity(0.5))
         }
-        .padding(.top, safeAreaTopPadding)
-        .background(Color.hopSurfaceElevated.ignoresSafeArea(edges: .top))
+        .background(Color.hopSurfaceElevated)
     }
+
+    // ── Composer bar ──────────────────────────────────────────────────────────
+
+    private var composerBar: some View {
+        let sendEnabled = !inputText.trimmingCharacters(in: .whitespaces).isEmpty
+        return HStack(spacing: HopSpacing.sm) {
+            TextField("Type a message…", text: $inputText, axis: .vertical)
+                .lineLimit(1...4)
+                .padding(HopSpacing.sm)
+                .background(Color.hopSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .foregroundColor(Color.hopTextPrimary)
+                .onChange(of: inputText) { _, new in wrapper.inputChanged(new) }
+
+            Button {
+                wrapper.send()
+                inputText = ""
+            } label: {
+                Image(systemName: "paperplane.fill")
+                    .foregroundColor(sendEnabled ? Color.hopSurface : Color.hopTextSecondary)
+                    .padding(HopSpacing.sm)
+                    .background(sendEnabled ? Color.hopPrimaryLime : Color.hopSurface)
+                    .clipShape(Circle())
+            }
+            .disabled(!sendEnabled)
+        }
+        .padding(HopSpacing.sm)
+        .background(Color.hopSurfaceElevated)
+    }
+
+    // ── Connection dot ────────────────────────────────────────────────────────
 
     @ViewBuilder
     private var connectionDot: some View {
@@ -128,6 +122,8 @@ struct ChatView: View {
             Circle().fill(Color.hopTextSecondary).frame(width: 8, height: 8)
         }
     }
+
+    // ── Connection banner ─────────────────────────────────────────────────────
 
     @ViewBuilder
     private var connectionBanner: some View {
@@ -152,12 +148,6 @@ struct ChatView: View {
         .padding(.horizontal, HopSpacing.md)
         .padding(.vertical, HopSpacing.xs)
         .background(Color.hopSurfaceElevated)
-    }
-
-    private var safeAreaTopPadding: CGFloat {
-        (UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.top) ?? 0
     }
 }
 
