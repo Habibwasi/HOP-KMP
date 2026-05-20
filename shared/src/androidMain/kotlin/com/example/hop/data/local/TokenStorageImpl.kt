@@ -5,16 +5,19 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.example.hop.network.TokenStorage
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
  * Android implementation of [TokenStorage] backed by EncryptedSharedPreferences.
  *
- * TODO: Add dependency to shared/build.gradle.kts androidMain:
- *   implementation("androidx.security:security-crypto:1.1.0-alpha06")
+ * [getAccessToken] reads from the live Supabase session so that the WebSocket
+ * and any other caller always receives a valid JWT without needing an explicit
+ * save step after login.
  */
-class TokenStorageImpl(context: Context) : TokenStorage {
+class TokenStorageImpl(context: Context, private val supabase: SupabaseClient) : TokenStorage {
 
     private val sharedPreferences: SharedPreferences
 
@@ -32,9 +35,8 @@ class TokenStorageImpl(context: Context) : TokenStorage {
         )
     }
 
-    override suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
-        sharedPreferences.getString(KEY_ACCESS_TOKEN, null)
-    }
+    override suspend fun getAccessToken(): String? =
+        supabase.auth.currentSessionOrNull()?.accessToken
 
     override suspend fun saveAccessToken(token: String) = withContext(Dispatchers.IO) {
         sharedPreferences.edit().putString(KEY_ACCESS_TOKEN, token).apply()

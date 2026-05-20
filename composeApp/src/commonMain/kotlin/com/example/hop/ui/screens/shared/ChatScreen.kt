@@ -56,9 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.chat.ConnectionState
 import com.example.hop.chat.Message
+import com.example.hop.network.TokenStorage
 import com.example.hop.presentation.auth.AuthViewModel
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
 import com.example.hop.presentation.chat.ChatEffect
 import com.example.hop.presentation.chat.ChatEvent
 import com.example.hop.presentation.chat.ChatUiState
@@ -91,7 +90,7 @@ fun ChatRoute(
     modifier: Modifier = Modifier,
     viewModel: ChatViewModel = koinViewModel(),
     authViewModel: AuthViewModel = koinViewModel(),
-    supabase: SupabaseClient = koinInject(),
+    tokenStorage: TokenStorage = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
@@ -103,10 +102,9 @@ fun ChatRoute(
     val currentUserId = authState.currentUser?.id.orEmpty()
 
     // Connect once when bookingId is available and we have a valid token.
-    // Read from the live Supabase session — same source as AuthInterceptor.
-    // TokenStorage is never written to, so getAccessToken() always returns null.
+    // getAccessToken() reads from the live Supabase session on both platforms.
     LaunchedEffect(bookingId) {
-        val token = supabase.auth.currentSessionOrNull()?.accessToken ?: return@LaunchedEffect
+        val token = tokenStorage.getAccessToken() ?: return@LaunchedEffect
         viewModel.onEvent(ChatEvent.Connect(bookingId = bookingId, token = token))
     }
 
