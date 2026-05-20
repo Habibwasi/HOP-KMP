@@ -24,17 +24,17 @@ struct ChatListView: View {
                 Spacer()
                 Text("Could not load chats.")
                     .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
+                    .foregroundColor(Color.hopAuthTextSecondary)
                 Spacer()
             } else if wrapper.state.threads.isEmpty {
                 Spacer()
                 VStack(spacing: HopSpacing.sm) {
                     Image(systemName: "bubble.left.and.bubble.right")
                         .font(.system(size: 48))
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                     Text("No chats yet.\nBook a trip to start chatting!")
                         .font(HopFont.bodyMedium())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                         .multilineTextAlignment(.center)
                 }
                 Spacer()
@@ -68,12 +68,12 @@ struct ChatListView: View {
             HStack(spacing: 0) {
                 Button(action: onBack) {
                     Image(systemName: "arrow.left")
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
                         .frame(width: 44, height: 44)
                 }
                 Text("My Chats")
                     .font(HopFont.bodyLarge(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .foregroundColor(Color.hopAuthTextPrimary)
                 Spacer()
             }
             .padding(.horizontal, HopSpacing.xs)
@@ -107,15 +107,15 @@ private struct ChatThreadRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(thread.otherPartyName)
                         .font(HopFont.bodyMedium(weight: .semibold))
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
                         .lineLimit(1)
                     Text("\(thread.tripOrigin) → \(thread.tripDest)")
                         .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                         .lineLimit(1)
                     Text(formatDeparture(thread.departureAt))
                         .font(.system(size: 11))
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                 }
 
                 Spacer()

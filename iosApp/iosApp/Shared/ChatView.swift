@@ -61,13 +61,13 @@ struct ChatView: View {
             HStack(spacing: 0) {
                 Button(action: onBack) {
                     Image(systemName: "arrow.left")
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
                         .frame(width: 44, height: 44)
                 }
                 Spacer()
                 Text("Chat")
                     .font(HopFont.bodyLarge(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
+                    .foregroundColor(Color.hopAuthTextPrimary)
                 Spacer()
                 connectionDot
                     .frame(width: 44, height: 44, alignment: .center)
@@ -75,9 +75,9 @@ struct ChatView: View {
             .padding(.horizontal, HopSpacing.xs)
             .frame(height: 56)
 
-            Divider().background(Color.hopSurface.opacity(0.5))
+            Divider().background(Color.hopAuthInputBorder)
         }
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopBackground)
     }
 
     // ── Composer bar ──────────────────────────────────────────────────────────
@@ -88,9 +88,9 @@ struct ChatView: View {
             TextField("Type a message…", text: $inputText, axis: .vertical)
                 .lineLimit(1...4)
                 .padding(HopSpacing.sm)
-                .background(Color.hopSurface)
+                .background(Color.hopAuthInputSurface)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
-                .foregroundColor(Color.hopTextPrimary)
+                .foregroundColor(Color.hopAuthTextPrimary)
                 .onChange(of: inputText) { _, new in wrapper.inputChanged(new) }
 
             Button {
@@ -98,15 +98,16 @@ struct ChatView: View {
                 inputText = ""
             } label: {
                 Image(systemName: "paperplane.fill")
-                    .foregroundColor(sendEnabled ? Color.hopSurface : Color.hopTextSecondary)
+                    .foregroundColor(sendEnabled ? Color(hex: 0x1A1A1A) : Color.hopAuthTextSecondary)
                     .padding(HopSpacing.sm)
-                    .background(sendEnabled ? Color.hopPrimaryLime : Color.hopSurface)
+                    .background(sendEnabled ? Color.hopPrimaryLime : Color.hopAuthInputSurface)
                     .clipShape(Circle())
             }
             .disabled(!sendEnabled)
         }
         .padding(HopSpacing.sm)
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopBackground)
+        .overlay(Divider().frame(maxWidth: .infinity, maxHeight: 0.5).background(Color.hopAuthInputBorder), alignment: .top)
     }
 
     // ── Connection dot ────────────────────────────────────────────────────────
@@ -142,12 +143,12 @@ struct ChatView: View {
     private func banner(text: String, color: Color) -> some View {
         HStack {
             Circle().fill(color).frame(width: 8, height: 8)
-            Text(text).font(HopFont.bodySmall()).foregroundColor(Color.hopTextSecondary)
+            Text(text).font(HopFont.bodySmall()).foregroundColor(Color.hopAuthTextSecondary)
             Spacer()
         }
         .padding(.horizontal, HopSpacing.md)
         .padding(.vertical, HopSpacing.xs)
-        .background(Color.hopSurfaceElevated)
+        .background(Color.hopAuthInputSurface)
     }
 }
 
@@ -164,17 +165,17 @@ private struct MessageBubble: View {
             VStack(alignment: isMine ? .trailing : .leading, spacing: 2) {
                 if !isMine {
                     Text(message.senderName)
-                        .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color.hopAuthTextSecondary)
                         .padding(.horizontal, HopSpacing.xs)
                 }
 
                 Text(message.body)
                     .font(HopFont.bodyMedium())
-                    .foregroundColor(isMine ? Color(hex: 0x1A1A1A) : Color.hopTextPrimary)
+                    .foregroundColor(isMine ? Color(hex: 0x1A1A1A) : Color.hopAuthTextPrimary)
                     .padding(.horizontal, HopSpacing.md)
                     .padding(.vertical, HopSpacing.sm)
-                    .background(isMine ? Color.hopPrimaryLime : Color.hopSurfaceElevated)
+                    .background(isMine ? Color.hopPrimaryLime : Color.hopAuthInputSurface)
                     .clipShape(
                         isMine
                         ? UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 16,
@@ -184,8 +185,8 @@ private struct MessageBubble: View {
                     )
 
                 Text(formatTimestamp(message.timestampMs))
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(isMine ? Color(hex: 0x1A1A1A, opacity: 0.6) : Color.hopTextSecondary)
+                    .font(.system(size: 11))
+                    .foregroundColor(isMine ? Color(hex: 0x1A1A1A, opacity: 0.5) : Color.hopAuthTextSecondary)
                     .padding(.horizontal, HopSpacing.xs)
             }
 
@@ -194,9 +195,10 @@ private struct MessageBubble: View {
     }
 
     private func formatTimestamp(_ epochMs: Int64) -> String {
-        let totalMinutes = epochMs / 60_000
-        let hours   = (totalMinutes / 60) % 24
-        let minutes = totalMinutes % 60
-        return String(format: "%02d:%02d", hours, minutes)
+        let date = Date(timeIntervalSince1970: Double(epochMs) / 1000.0)
+        let df = DateFormatter()
+        df.dateFormat = "HH:mm"
+        df.locale = Locale(identifier: "en_GB")
+        return df.string(from: date)
     }
 }
