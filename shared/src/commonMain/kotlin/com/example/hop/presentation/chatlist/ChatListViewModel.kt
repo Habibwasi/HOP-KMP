@@ -59,7 +59,17 @@ class ChatListViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val result = chatListRepository.getMyChats()) {
-                is ApiResponse.Success -> _state.value = ChatListUiState(threads = result.data)
+                is ApiResponse.Success -> {
+                    // Group by otherPartyId so the same person only appears once.
+                    // If otherPartyId is missing (legacy), fall back to otherPartyName.
+                    // Keep the entry whose departureAt is the most recent in each group.
+                    val deduped = result.data
+                        .groupBy { t -> t.otherPartyId.ifEmpty { t.otherPartyName } }
+                        .values
+                        .map { group -> group.maxBy { it.departureAt } }
+                        .sortedByDescending { it.departureAt }
+                    _state.value = ChatListUiState(threads = deduped)
+                }
                 is ApiResponse.Error -> {
                     _state.value = ChatListUiState(error = result.message)
                     _effect.send(ChatListEffect.ShowError(result.message))

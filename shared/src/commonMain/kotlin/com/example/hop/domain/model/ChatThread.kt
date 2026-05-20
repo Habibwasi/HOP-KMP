@@ -9,6 +9,7 @@ data class ChatThread(
     val tripOrigin: String,
     val tripDest: String,
     val departureAt: String,      // ISO-8601 UTC
+    val otherPartyId: String = "",
     val otherPartyName: String,
     val otherPartyAvatarUrl: String?,
     val myRole: String,           // "PASSENGER" | "DRIVER"
