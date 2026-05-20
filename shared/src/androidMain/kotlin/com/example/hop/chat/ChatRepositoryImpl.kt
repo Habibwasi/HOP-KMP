@@ -44,6 +44,10 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
         _connectionState.value = ConnectionState.Connecting
 
         val opts = IO.Options().apply {
+            // Skip polling — server only accepts WebSocket transport.
+            // Without this the client tries HTTP polling first, gets 400,
+            // and never upgrades.
+            transports = arrayOf("websocket")
             // Pass JWT as socket.io auth payload (server reads from handshake.auth)
             auth = hashMapOf("token" to token)
         }
