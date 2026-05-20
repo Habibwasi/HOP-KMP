@@ -16,6 +16,6 @@ class ChatListRepositoryImpl(
         val envelope = httpClient.get("bookings/my-chats").body<ApiEnvelope<List<ChatThread>>>()
         ApiResponse.Success(envelope.data ?: emptyList())
     } catch (e: Exception) {
-        ApiResponse.Error(e.message ?: "Unknown error")
+        ApiResponse.Error(-1, e.message ?: "Unknown error")
     }
 }
