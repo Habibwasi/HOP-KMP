@@ -104,6 +104,15 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
                 }
             }
 
+            // NestJS emits an "exception" event when a @SubscribeMessage handler
+            // throws a WsException (e.g. not a participant, auth failure).
+            // Without this listener the error is swallowed and the user sees nothing.
+            s.on("exception") { args ->
+                val message = (args?.getOrNull(0) as? org.json.JSONObject)
+                    ?.optString("message") ?: args?.getOrNull(0)?.toString() ?: "Unknown error"
+                _connectionState.value = ConnectionState.Error(message)
+            }
+
             s.connect()
         }
     }

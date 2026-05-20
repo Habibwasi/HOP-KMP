@@ -143,6 +143,14 @@ internal class IosChatRepositoryImpl : ChatRepository {
                             val arr = jsonArray[1] as? kotlinx.serialization.json.JsonArray
                             arr?.mapNotNull { runCatching { parseMessage(it.jsonObject) }.getOrNull() }
                         }
+                        // NestJS WsException — surface as connection error so the banner shows
+                        "exception" -> {
+                            val msg = runCatching {
+                                jsonArray[1].jsonObject["message"]?.jsonPrimitive?.content
+                            }.getOrNull() ?: "Server error"
+                            _connectionState.value = ConnectionState.Error(msg)
+                            null
+                        }
                         else -> null
                     }
                 }.getOrNull()?.forEach { msg ->

@@ -116,7 +116,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       payload.body.trim(),
     )
 
-    this.server.to(`booking:${payload.bookingId}`).emit('message', message)
+    // Broadcast to all OTHER participants in the room, then echo directly back
+    // to the sender.  Using client.to() + client.emit() (rather than
+    // server.to()) guarantees the sender always receives their own message
+    // even if there is a brief window between the join and the send.
+    client.to(`booking:${payload.bookingId}`).emit('message', message)
+    client.emit('message', message)
     return { sent: true }
   }
 
