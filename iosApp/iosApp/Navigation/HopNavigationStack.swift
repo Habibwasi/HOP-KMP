@@ -37,6 +37,9 @@ struct HopNavigationStack: View {
     private func navigate(_ route: HopRoute) { path.append(route) }
     private func popBack() { if !path.isEmpty { path.removeLast() } }
     private func goHome() { path.removeAll() }
+    /// Clear the entire back-stack and land on `route` so the user cannot
+    /// press back into a completed flow.
+    private func replaceWith(_ route: HopRoute) { path = [route] }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -135,7 +138,7 @@ struct HopNavigationStack: View {
         case .bookingSuccess(let bookingId):
             BookingSuccessView(
                 bookingId: bookingId,
-                onViewMyTrips: { navigate(.myTripsPassenger) },
+                onViewMyTrips: { replaceWith(.myTripsPassenger) },
                 onBackToHome: goHome
             )
 
@@ -163,15 +166,15 @@ struct HopNavigationStack: View {
         case .rateDriver(let bookingId):
             RateDriverView(
                 bookingId: bookingId,
-                onSubmitted: { navigate(.myTripsPassenger) },
-                onSkip: { navigate(.myTripsPassenger) },
+                onSubmitted: { replaceWith(.myTripsPassenger) },
+                onSkip: { replaceWith(.myTripsPassenger) },
                 onBack: goHome
             )
 
         case .cancellationConfirmation(let bookingId):
             CancellationConfirmationView(
                 bookingId: bookingId,
-                onBackToMyTrips: { navigate(.myTripsPassenger) }
+                onBackToMyTrips: { replaceWith(.myTripsPassenger) }
             )
 
         // ── Driver ────────────────────────────────────────────────────────────
@@ -215,7 +218,7 @@ struct HopNavigationStack: View {
 
         case .priceReview:
             PriceReviewView(
-                onNavigateToMyTrips: { navigate(.myTripsDriver) },
+                onNavigateToMyTrips: { replaceWith(.myTripsDriver) },
                 onBack: popBack
             )
 
@@ -276,10 +279,10 @@ struct HopNavigationStack: View {
                         ))
                         if path.count >= 2 { path.removeLast() }
                     } else {
-                        navigate(.myTripsDriver)
+                        replaceWith(.myTripsDriver)
                     }
                 },
-                onSkip:            { navigate(.myTripsDriver) },
+                onSkip:            { replaceWith(.myTripsDriver) },
                 onBack:            goHome
             )
 
@@ -304,7 +307,7 @@ struct HopNavigationStack: View {
             DriverSettlementView(
                 tripId: tripId,
                 onBack: popBack,
-                onSettlementComplete: { navigate(.myTripsDriver) }
+                onSettlementComplete: { replaceWith(.myTripsDriver) }
             )
 
         case .driverSettlementByBooking(let bookingId):
@@ -312,7 +315,7 @@ struct HopNavigationStack: View {
                 tripId: "",
                 bookingIdForResolution: bookingId,
                 onBack: popBack,
-                onSettlementComplete: { navigate(.myTripsDriver) }
+                onSettlementComplete: { replaceWith(.myTripsDriver) }
             )
 
         case .pastTripDetailDriver(let tripId):
