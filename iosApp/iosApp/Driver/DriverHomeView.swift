@@ -21,9 +21,10 @@ struct DriverHomeView: View {
 
     var navigate: (HopRoute) -> Void
 
-    @StateObject  private var wrapper     = DriverViewModelWrapper.shared
-    @StateObject  private var authWrapper   = AuthViewModelWrapper()
-    @State        private var toast: String? = nil
+    @StateObject  private var wrapper           = DriverViewModelWrapper.shared
+    @StateObject  private var aggregatesWrapper = DriverAggregatesViewModelWrapper.shared
+    @StateObject  private var authWrapper       = AuthViewModelWrapper()
+    @State        private var toast: String?    = nil
 
     /// Mirrors Android: a user is a driver when their `currentUser.roles`
     /// contains DRIVER. Licence verification was dropped — there is no
@@ -43,10 +44,24 @@ struct DriverHomeView: View {
 
                     if hasDriverRole {
                         // ── Earnings hero ─────────────────────────────────
+                        let derivedEarningsOere: Int = {
+                            let series = aggregatesWrapper.state.earningsSeries
+                            if series.isEmpty {
+                                return Int(wrapper.state.monthlyEarningsOere)
+                            }
+                            return series.reduce(0) { $0 + Int($1.earningsOere) }
+                        }()
+                        let sparkSeries: [Int] = {
+                            let series = aggregatesWrapper.state.earningsSeries
+                            if series.isEmpty {
+                                return synthesiseSeries(Int(wrapper.state.monthlyEarningsOere))
+                            }
+                            return series.map { Int($0.earningsOere) }
+                        }()
                         EarningsHeroCard(
-                            monthlyOere: Int(wrapper.state.monthlyEarningsOere),
+                            monthlyOere: derivedEarningsOere,
                             estimatedTaxOere: Int(wrapper.state.estimatedTaxOere),
-                            series: synthesiseSeries(Int(wrapper.state.monthlyEarningsOere)),
+                            series: sparkSeries,
                             onTap: { wrapper.tapEarningsBanner() }
                         )
 
@@ -148,6 +163,7 @@ struct DriverHomeView: View {
         .task {
             authWrapper.startObserving()
             wrapper.loadDriverHome()
+            aggregatesWrapper.load()
             for await effect in wrapper.effects {
                 switch effect {
                 case is DriverEffectNavigateToPostTrip:

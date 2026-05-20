@@ -267,13 +267,17 @@ fun DriverHomeScreen(
                 // Earnings hero — only shown to approved drivers.
                 if (hasDriverRole) {
                     item {
+                        // Derive the monthly total directly from the aggregates
+                        // series that DriverAggregatesViewModel already loads
+                        // successfully — avoids a duplicate endpoint call and
+                        // ensures the counter and sparkline are always in sync.
+                        val derivedEarningsOere = if (aggregatesState.earningsSeries.isNotEmpty())
+                            aggregatesState.earningsSeries.sumOf { it.earningsOere }
+                        else
+                            state.monthlyEarningsOere
                         EarningsHeroCard(
-                            monthlyEarningsOere = state.monthlyEarningsOere,
+                            monthlyEarningsOere = derivedEarningsOere,
                             estimatedTaxOere = state.estimatedTaxOere,
-                            // Real 7-day series from the aggregates endpoint;
-                            // fall back to the synthesised baseline before the
-                            // first response so the sparkline never looks empty.
-                            // .toFloat() applied at render only — money stays Int upstream.
                             sparkSeriesOere = if (aggregatesState.earningsSeries.isNotEmpty()) {
                                 aggregatesState.earningsSeries.map { it.earningsOere }
                             } else {
