@@ -29,16 +29,16 @@ export class AggregatesService {
         trip: {
           driverId,
           status: TripStatus.COMPLETED,
+          departureAt: { gte: since },
         },
-        createdAt: { gte: since },
       },
-      select: { totalOere: true, createdAt: true },
+      select: { totalOere: true, trip: { select: { departureAt: true } } },
     })
 
     const dailyMap = new Map<string, number>()
     let totalOere = 0
     for (const b of bookings) {
-      const dateKey = b.createdAt.toISOString().split('T')[0]
+      const dateKey = b.trip.departureAt.toISOString().split('T')[0]
       dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + b.totalOere)
       totalOere += b.totalOere
     }
