@@ -703,6 +703,8 @@ private fun BookingConfirmationModelAPreview() {
         BookingConfirmationScreen(
             tripState = previewTripState(model = TripModel.A),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
             onConfirm = {},
         )
@@ -720,6 +722,8 @@ private fun BookingConfirmationModelBPreview() {
                 minThreshold = 4,
             ),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
             onConfirm = {},
         )
@@ -737,6 +741,8 @@ private fun BookingConfirmationModelBThresholdMetPreview() {
                 minThreshold = 4,
             ),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
             onConfirm = {},
         )
@@ -750,6 +756,8 @@ private fun BookingConfirmationProcessingPreview() {
         BookingConfirmationScreen(
             tripState = previewTripState(model = TripModel.A),
             isProcessing = true,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
             onConfirm = {},
         )
@@ -763,6 +771,8 @@ private fun BookingConfirmationLoadingPreview() {
         BookingConfirmationScreen(
             tripState = previewTripState(isLoading = true),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
             onConfirm = {},
         )
