@@ -510,8 +510,12 @@ private fun PriceBreakdownCard(
             color = HopColors.authTextSecondary,
         )
 
+        val priceKr = priceOerePerSeat / 100
+        val priceOre = priceOerePerSeat % 100
+        val priceText = if (priceOre == 0) "DKK $priceKr"
+                        else "DKK $priceKr,${priceOre.toString().padStart(2, '0')}"
         Text(
-            text = "DKK ${priceOerePerSeat / 100}",
+            text = priceText,
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontFamily = HopMonoFontFamily,
                 fontWeight = FontWeight.Bold,

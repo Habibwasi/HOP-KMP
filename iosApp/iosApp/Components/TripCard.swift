@@ -125,7 +125,9 @@ struct TripCard: View {
     // MARK: - Helpers
 
     private var priceFormatted: String {
-        "DKK \(data.priceOerePerSeat / 100)"
+        let kr = data.priceOerePerSeat / 100
+        let ore = data.priceOerePerSeat % 100
+        return ore == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", ore))"
     }
 
     private var accessibilityDescription: String {

@@ -9,6 +9,9 @@ final class SearchViewModelWrapper: ObservableObject {
     @Published var state: SearchUiState
     @Published var alertToast: String? = nil
 
+    private var stateTask: Task<Void, Never>?
+    private var effectTask: Task<Void, Never>?
+
     init() {
         let vm = KoinIOSKt.getSearchViewModel()
         self.viewModel = vm
@@ -16,12 +19,14 @@ final class SearchViewModelWrapper: ObservableObject {
     }
 
     func startObserving(onEffect: @escaping (any SearchEffect) -> Void) {
-        Task {
+        stateTask?.cancel()
+        effectTask?.cancel()
+        stateTask = Task {
             for await newState in viewModel.state {
                 self.state = newState
             }
         }
-        Task {
+        effectTask = Task {
             for await effect in viewModel.effect {
                 onEffect(effect)
             }

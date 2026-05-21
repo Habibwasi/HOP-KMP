@@ -388,8 +388,11 @@ private fun PriceSummaryCard(
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = HopColors.authTextPrimary,
             )
+            val kr = totalOere / 100
+            val ore = totalOere % 100
+            val totalText = if (ore == 0) "DKK $kr" else "DKK $kr,${ore.toString().padStart(2, '0')}"
             Text(
-                text = "DKK ${totalOere / 100}",
+                text = totalText,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontFamily = HopMonoFontFamily,
                     fontWeight = FontWeight.Bold,
@@ -426,8 +429,11 @@ private fun PriceBreakdownRow(label: String, valueOere: Int) {
             style = MaterialTheme.typography.bodySmall,
             color = HopColors.authTextSecondary,
         )
+        val kr = valueOere / 100
+        val ore = valueOere % 100
+        val priceText = if (ore == 0) "DKK $kr" else "DKK $kr,${ore.toString().padStart(2, '0')}"
         Text(
-            text = "DKK ${valueOere / 100}",
+            text = priceText,
             style = MaterialTheme.typography.bodySmall.copy(
                 fontFamily = HopMonoFontFamily,
                 fontWeight = FontWeight.Medium,

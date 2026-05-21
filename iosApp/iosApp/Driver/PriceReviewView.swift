@@ -181,12 +181,15 @@ private struct PriceBreakdownCard: View {
     }
 
     private func row(label: String, oere: Int, highlight: Bool) -> some View {
-        HStack {
+        let kr = oere / 100
+        let rem = oere % 100
+        let priceText = rem == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", rem))"
+        return HStack {
             Text(label)
                 .font(HopFont.bodyMedium())
                 .foregroundColor(Color.hopAuthTextSecondary)
             Spacer()
-            Text("DKK \(oere / 100)")
+            Text(priceText)
                 .font(highlight ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .semibold))
                 .foregroundColor(highlight ? Color.hopPrimaryGreen : Color.hopAuthTextPrimary)
         }

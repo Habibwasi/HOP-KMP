@@ -202,8 +202,12 @@ fun TripCard(
                     ),
                 )
 
+                val priceKr = pricePerSeatOere / 100
+                val priceOre = pricePerSeatOere % 100
+                val priceText = if (priceOre == 0) "DKK $priceKr"
+                                else "DKK $priceKr,${priceOre.toString().padStart(2, '0')}"
                 Text(
-                    text = "DKK ${pricePerSeatOere / 100}",
+                    text = priceText,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1A1A1A),

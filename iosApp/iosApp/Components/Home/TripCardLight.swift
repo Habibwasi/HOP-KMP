@@ -95,7 +95,10 @@ struct TripCardLight: View {
                         .font(HopFont.bodySmall())
                         .foregroundColor(Color(hex: 0x666666))
                     Spacer()
-                    Text("DKK \(pricePerSeatOere / 100)")
+                    let priceKr = pricePerSeatOere / 100
+                    let priceOre = pricePerSeatOere % 100
+                    let priceText = priceOre == 0 ? "DKK \(priceKr)" : "DKK \(priceKr),\(String(format: "%02d", priceOre))"
+                    Text(priceText)
                         .font(HopFont.bodyLarge(weight: .bold))
                         .foregroundColor(Color(hex: 0x1A1A1A))
                 }

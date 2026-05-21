@@ -69,14 +69,17 @@ struct RouteSummaryRowView: View {
                     distanceMetres: Int32(distanceMetres),
                     seatsTotal: Int32(seatsTotal)
                 )
-                let pricePerSeat = Int(priceResult.pricePerSeatOere) / 100
+                let priceOere = Int(priceResult.pricePerSeatOere)
+                let priceKr = priceOere / 100
+                let priceRem = priceOere % 100
+                let priceDisplay = priceRem == 0 ? "DKK \(priceKr)/seat" : "DKK \(priceKr),\(String(format: "%02d", priceRem))/seat"
                 Text("\(km) km")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.hopAuthTextPrimary)
                 Text("·")
                     .font(.system(size: 14))
                     .foregroundColor(Color.hopAuthTextSecondary)
-                Text("DKK \(pricePerSeat)/seat")
+                Text(priceDisplay)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.hopPrimaryLime)
             }

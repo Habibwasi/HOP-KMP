@@ -11,6 +11,8 @@ import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -52,6 +54,10 @@ class SearchHistoryRepositoryImpl(
         val error = envelope.error
         if (error != null) ApiResponse.Error(error.code, error.message)
         else ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
+    } catch (e: HttpRequestTimeoutException) {
+        ApiResponse.Error(ApiResponse.CODE_TIMEOUT, "Connection timed out. Please check your network and try again.")
+    } catch (e: ServerResponseException) {
+        ApiResponse.Error(e.response.status.value, "Server error (${e.response.status.value}). Please try again later.")
     } catch (e: ClientRequestException) {
         ApiResponse.Error(e.response.status.value, e.message ?: "Client error")
     } catch (e: Exception) {

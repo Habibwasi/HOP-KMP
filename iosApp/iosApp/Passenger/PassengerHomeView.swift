@@ -29,7 +29,6 @@ struct PassengerHomeView: View {
     // ── ViewModels (Koin) ─────────────────────────────────────────────────
     @StateObject private var statsWrapper  = HomeStatsViewModelWrapper()
     @StateObject private var placesWrapper = SavedPlacesViewModelWrapper()
-    @StateObject private var searchWrapper = SearchViewModelWrapper()
     @StateObject private var tripsWrapper  = MyTripsPassengerViewModelWrapper()
     @StateObject private var authWrapper   = AuthViewModelWrapper()
 
@@ -136,12 +135,6 @@ struct PassengerHomeView: View {
                                 #if canImport(UIKit)
                                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                                 #endif
-                                searchWrapper.search(
-                                    origin: fromLocation,
-                                    dest:   toLocation,
-                                    date:   selectedDate,
-                                    seats:  seats
-                                )
                                 onSearch(fromLocation, toLocation, selectedDate, seats)
                             }
                         )
@@ -303,7 +296,6 @@ struct PassengerHomeView: View {
                     showSnack(err.message)
                 }
             }
-            searchWrapper.startObserving { _ in }
             tripsWrapper.startObserving { _ in }
 
             statsWrapper.load()

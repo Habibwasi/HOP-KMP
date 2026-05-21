@@ -9,6 +9,7 @@ import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.presentation.model.toUiModels
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -79,11 +80,22 @@ class SearchViewModel(
     private val _effect = Channel<SearchEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
+    // Raw (unfiltered) results from the last successful search.
+    // applyFilter() always re-filters from this list so toggling a filter
+    // off correctly restores the full result set.
+    private var _allResults: List<TripUiModel> = emptyList()
+
+    // Tracks the in-flight search coroutine so a new search cancels the previous one.
+    private var searchJob: Job? = null
+
     fun onEvent(event: SearchEvent) {
         when (event) {
             is SearchEvent.Search -> search(event.origin, event.dest, event.date, event.seats)
             is SearchEvent.ApplyFilter -> applyFilter(event.filter)
-            is SearchEvent.ClearFilters -> _state.value = _state.value.copy(activeFilters = emptySet())
+            is SearchEvent.ClearFilters -> _state.value = _state.value.copy(
+                activeFilters = emptySet(),
+                results = _allResults,
+            )
             is SearchEvent.SelectTrip -> viewModelScope.launch {
                 _effect.send(SearchEffect.NavigateToTripDetail(event.tripId))
             }
@@ -92,10 +104,13 @@ class SearchViewModel(
     }
 
     private fun search(origin: String, dest: String, date: String, seats: Int) {
-        viewModelScope.launch {
+        // Cancel any in-flight search to prevent a stale response from overwriting newer results.
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             _state.value = _state.value.copy(
                 isLoading = true,
                 error = null,
+                results = emptyList(),
                 origin = origin,
                 dest = dest,
                 date = date,
@@ -104,6 +119,7 @@ class SearchViewModel(
             when (val response = tripRepository.searchTrips(origin, dest, date, seats)) {
                 is ApiResponse.Success -> {
                     val uiModels = response.data.toUiModels()
+                    _allResults = uiModels
                     _state.value = _state.value.copy(
                         isLoading = false,
                         results = uiModels.applyFilters(_state.value.activeFilters),
@@ -150,18 +166,28 @@ class SearchViewModel(
         val updated = if (filter in current) current - filter else current + filter
         _state.value = _state.value.copy(
             activeFilters = updated,
-            results = _state.value.results.applyFilters(updated),
+            // Always re-filter from the raw results so toggling off a filter
+            // restores trips that were hidden by the previous filter set.
+            results = _allResults.applyFilters(updated),
         )
     }
 
     private fun List<TripUiModel>.applyFilters(filters: Set<SearchFilter>): List<TripUiModel> {
         if (filters.isEmpty()) return this
         var filtered = this
-        if (SearchFilter.DAILY_COMMUTE in filters) filtered = filtered.filter { it.model == TripModel.A }
-        if (SearchFilter.LONG_DISTANCE in filters) filtered = filtered.filter { it.model == TripModel.B }
+        // Model filters use OR semantics: a trip is kept when it matches ANY selected model.
+        // Using AND (two sequential filter{} calls) would produce an empty list when both are active.
+        val modelFilters = filters.intersect(setOf(SearchFilter.DAILY_COMMUTE, SearchFilter.LONG_DISTANCE))
+        if (modelFilters.isNotEmpty()) {
+            filtered = filtered.filter { trip ->
+                (SearchFilter.DAILY_COMMUTE in modelFilters && trip.model == TripModel.A) ||
+                (SearchFilter.LONG_DISTANCE in modelFilters && trip.model == TripModel.B)
+            }
+        }
         val sortFilters = filters.intersect(setOf(SearchFilter.EARLIEST, SearchFilter.CHEAPEST, SearchFilter.TOP_RATED))
         if (sortFilters.isNotEmpty()) {
-            filtered = when (sortFilters.first()) {
+            // Use last() so the most-recently-tapped sort chip wins when both are active.
+            filtered = when (sortFilters.last()) {
                 SearchFilter.EARLIEST -> filtered.sortedBy { it.departsAt }
                 SearchFilter.CHEAPEST -> filtered.sortedBy { it.priceOerePerSeat }
                 // TOP_RATED: no-op — Trip.rating not yet in domain model
