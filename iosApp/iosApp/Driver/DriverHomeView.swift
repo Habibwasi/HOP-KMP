@@ -44,20 +44,10 @@ struct DriverHomeView: View {
 
                     if hasDriverRole {
                         // ── Earnings hero ─────────────────────────────────
-                        let derivedEarningsOere: Int = {
-                            let series = aggregatesWrapper.state.earningsSeries
-                            if series.isEmpty {
-                                return Int(wrapper.state.monthlyEarningsOere)
-                            }
-                            return series.reduce(0) { $0 + Int($1.earningsOere) }
-                        }()
-                        let sparkSeries: [Int] = {
-                            let series = aggregatesWrapper.state.earningsSeries
-                            if series.isEmpty {
-                                return synthesiseSeries(Int(wrapper.state.monthlyEarningsOere))
-                            }
-                            return series.map { Int($0.earningsOere) }
-                        }()
+                        let derivedEarningsOere: Int = aggregatesWrapper.state.earningsSeries
+                            .reduce(0) { $0 + Int($1.earningsOere) }
+                        let sparkSeries: [Int] = aggregatesWrapper.state.earningsSeries
+                            .suffix(7).map { Int($0.earningsOere) }
                         EarningsHeroCard(
                             monthlyOere: derivedEarningsOere,
                             estimatedTaxOere: Int(wrapper.state.estimatedTaxOere),
@@ -186,15 +176,6 @@ struct DriverHomeView: View {
     }
 }
 
-// MARK: — Synthesised 7-day spark series (until /drivers/me/earnings/series)
-
-private func synthesiseSeries(_ monthlyOere: Int) -> [Int] {
-    if monthlyOere <= 0 { return Array(repeating: 0, count: 7) }
-    let avg = monthlyOere / 30
-    let factors: [Double] = [0.6, 0.7, 1.1, 0.9, 1.3, 1.5, 1.4]
-    return factors.map { Int(Double(avg) * $0) }
-}
-
 // MARK: — EarningsHeroCard ─────────────────────────────────────────────────
 
 private struct EarningsHeroCard: View {
@@ -216,7 +197,7 @@ private struct EarningsHeroCard: View {
                     Text("DKK ")
                         .font(HopFont.headlineSmall(weight: .bold))
                         .foregroundColor(Color.hopAuthTextPrimary)
-                    Text("\(animatedDkk)")
+                    Text("\(animatedDkk / 100),\(String(format: "%02d", animatedDkk % 100))")
                         .font(HopFont.mono(size: 34, weight: .bold))
                         .foregroundColor(Color.hopAuthTextPrimary)
                     Spacer()
@@ -225,9 +206,9 @@ private struct EarningsHeroCard: View {
                         .foregroundColor(Color.hopAuthTextPrimary.opacity(0.4))
                 }
 
-                Text("Est. tax: DKK \(estimatedTaxOere / 100)")
-                    .font(HopFont.bodySmall(weight: .medium))
-                    .foregroundColor(Color.hopAuthTextPrimary.opacity(0.65))
+//                Text("Est. tax: DKK \(estimatedTaxOere / 100),\(String(format: "%02d", estimatedTaxOere % 100))")
+//                    .font(HopFont.bodySmall(weight: .medium))
+//                    .foregroundColor(Color.hopAuthTextPrimary.opacity(0.65))
 
                 Spacer().frame(height: HopSpacing.sm)
 
@@ -247,11 +228,11 @@ private struct EarningsHeroCard: View {
         .buttonStyle(.plain)
         .onAppear {
             withAnimation(.easeOut(duration: 0.9)) {
-                animatedDkk = monthlyOere / 100
+                animatedDkk = monthlyOere
             }
         }
         .onChange(of: monthlyOere) { _, new in
-            withAnimation(.easeOut(duration: 0.9)) { animatedDkk = new / 100 }
+            withAnimation(.easeOut(duration: 0.9)) { animatedDkk = new }
         }
     }
 }

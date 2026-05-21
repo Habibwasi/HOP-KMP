@@ -271,18 +271,11 @@ fun DriverHomeScreen(
                         // series that DriverAggregatesViewModel already loads
                         // successfully — avoids a duplicate endpoint call and
                         // ensures the counter and sparkline are always in sync.
-                        val derivedEarningsOere = if (aggregatesState.earningsSeries.isNotEmpty())
-                            aggregatesState.earningsSeries.sumOf { it.earningsOere }
-                        else
-                            state.monthlyEarningsOere
+                        val derivedEarningsOere = aggregatesState.earningsSeries.sumOf { it.earningsOere }
                         EarningsHeroCard(
                             monthlyEarningsOere = derivedEarningsOere,
                             estimatedTaxOere = state.estimatedTaxOere,
-                            sparkSeriesOere = if (aggregatesState.earningsSeries.isNotEmpty()) {
-                                aggregatesState.earningsSeries.map { it.earningsOere }
-                            } else {
-                                synthesiseSparkSeries(state.monthlyEarningsOere)
-                            },
+                            sparkSeriesOere = aggregatesState.earningsSeries.takeLast(7).map { it.earningsOere },
                             onClick = onEarningsBannerClick,
                         )
                     }
@@ -421,20 +414,6 @@ fun DriverHomeScreen(
             )
         }
     }
-}
-
-/**
- * Builds a deterministic, gently-rising 7-point series in øre derived from the
- * running monthly total. Used as a placeholder until the real
- * `/drivers/me/earnings/series` endpoint lands. Renders as a flat baseline at
- * zero when no earnings exist yet.
- */
-private fun synthesiseSparkSeries(monthlyTotalOere: Int): List<Int> {
-    if (monthlyTotalOere <= 0) return List(7) { 0 }
-    val avg = monthlyTotalOere / 30
-    // Mild ascending pattern: 0.6×, 0.7×, 1.1×, 0.9×, 1.3×, 1.5×, 1.4× of daily avg.
-    val factors = floatArrayOf(0.6f, 0.7f, 1.1f, 0.9f, 1.3f, 1.5f, 1.4f)
-    return factors.map { (avg * it).toInt() }
 }
 
 // ── Become-driver prompt (shown when hasDriverRole = false) ──────────────────

@@ -57,9 +57,6 @@ fun EarningsHeroCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val targetDkk = monthlyEarningsOere / 100
-    val taxDkk = estimatedTaxOere / 100
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -87,7 +84,8 @@ fun EarningsHeroCard(
                     ),
                 )
                 AnimatedCounter(
-                    targetValue = targetDkk,
+                    targetValue = monthlyEarningsOere,
+                    format = { oere -> "${oere / 100},${(oere % 100).toString().padStart(2, '0')}" },
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontFamily = HopMonoFontFamily,
                         fontWeight = FontWeight.Bold,
@@ -103,14 +101,14 @@ fun EarningsHeroCard(
                     modifier = Modifier.size(20.dp),
                 )
             }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Est. tax: DKK $taxDkk",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = HopColors.authTextPrimary.copy(alpha = 0.65f),
-                    fontWeight = FontWeight.Medium,
-                ),
-            )
+//            Spacer(modifier = Modifier.height(2.dp))
+//            Text(
+//                text = "Est. tax: DKK ${estimatedTaxOere / 100},${(estimatedTaxOere % 100).toString().padStart(2, '0')}",
+//                style = MaterialTheme.typography.bodySmall.copy(
+//                    color = HopColors.authTextPrimary.copy(alpha = 0.65f),
+//                    fontWeight = FontWeight.Medium,
+//                ),
+//            )
             Spacer(modifier = Modifier.height(HopSpacing.sm))
             Sparkline(
                 series = sparkSeriesOere,

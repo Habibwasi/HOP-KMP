@@ -53,7 +53,7 @@ class DriverAggregatesViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
 
-            val earningsDeferred = async { aggregatesRepository.getDriverEarningsSeries(days = 7) }
+            val earningsDeferred = async { aggregatesRepository.getDriverEarningsSeries(days = 30) }
             val hotspotsDeferred = async { aggregatesRepository.getDemandHotspots() }
             val co2Deferred = async { aggregatesRepository.getUserCo2Saved() }
 

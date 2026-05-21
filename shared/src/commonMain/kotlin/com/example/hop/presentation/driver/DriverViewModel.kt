@@ -6,7 +6,6 @@ import com.example.hop.domain.model.CarDetails
 import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.model.TripStatus
-import com.example.hop.domain.repository.AggregatesRepository
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.PostTripRequest
 import com.example.hop.domain.repository.RouteInfo
@@ -208,7 +207,6 @@ class DriverViewModel(
     private val tripRepository: TripRepository,
     private val driverRepository: DriverRepository,
     private val routingRepository: RoutingRepository,
-    private val aggregatesRepository: AggregatesRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DriverUiState())
@@ -251,18 +249,13 @@ class DriverViewModel(
                 _state.value.copy(isLoading = true, error = null)
             }
             val tripsDeferred = async { tripRepository.getMyTripsAsDriver() }
-            val earningsDeferred = async { aggregatesRepository.getDriverEarningsSeries(days = 30) }
             val tripsResponse = tripsDeferred.await()
-            val earningsResponse = earningsDeferred.await()
             when (tripsResponse) {
                 is ApiResponse.Success -> {
-                    val totalOere = (earningsResponse as? ApiResponse.Success)?.data
-                        ?.sumOf { it.earningsOere } ?: _state.value.monthlyEarningsOere
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
                         trips = tripsResponse.data.toUiModels(),
-                        monthlyEarningsOere = totalOere,
                     )
                 }
                 is ApiResponse.Error -> {

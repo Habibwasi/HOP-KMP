@@ -9,6 +9,10 @@ import { PrismaService } from '../prisma/prisma.service'
  */
 const CO2_KG_PER_TRIP = 4.2
 
+/** Returns a YYYY-MM-DD string in server-local time, matching how `setHours` anchors midnight. */
+const toLocalDateKey = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 @Injectable()
 export class AggregatesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -38,7 +42,7 @@ export class AggregatesService {
     const dailyMap = new Map<string, number>()
     let totalOere = 0
     for (const b of bookings) {
-      const dateKey = b.trip.departureAt.toISOString().split('T')[0]
+      const dateKey = toLocalDateKey(b.trip.departureAt)
       dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + b.totalOere)
       totalOere += b.totalOere
     }
@@ -48,7 +52,7 @@ export class AggregatesService {
       const d = new Date()
       d.setHours(0, 0, 0, 0)
       d.setDate(d.getDate() - i)
-      const key = d.toISOString().split('T')[0]
+      const key = toLocalDateKey(d)
       series.push({ date: key, earningsOere: dailyMap.get(key) ?? 0 })
     }
     return { series, totalOere }
@@ -64,7 +68,7 @@ export class AggregatesService {
     since.setDate(since.getDate() - 7)
 
     const trips = await this.prisma.trip.findMany({
-      where: { createdAt: { gte: since } },
+      where: { departureAt: { gte: since } },
       select: {
         originAddress: true,
         destAddress: true,
@@ -113,7 +117,7 @@ export class AggregatesService {
     since.setDate(since.getDate() - 7)
 
     const trips = await this.prisma.trip.findMany({
-      where: { createdAt: { gte: since } },
+      where: { departureAt: { gte: since } },
       orderBy: { createdAt: 'desc' },
       select: {
         originAddress: true,
