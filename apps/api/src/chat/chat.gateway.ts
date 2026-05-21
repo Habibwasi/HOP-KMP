@@ -23,7 +23,10 @@ interface AuthenticatedSocket extends Socket {
 @WebSocketGateway({
   namespace: '/chat',
   transports: ['websocket'],
-  cors: { origin: '*' },
+  // Restrict allowed origins via env var; falls back to '*' for local dev only.
+  // Mobile clients (iOS/Android) do not send an Origin header, so they are
+  // unaffected by CORS restrictions regardless of this setting.
+  cors: { origin: process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) ?? '*' },
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server
@@ -114,9 +117,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (!sock.userId) throw new WsException('Unauthorized')
     if (!payload.body?.trim()) throw new WsException('Empty message')
 
-    try {
-      await this.chatService.assertParticipant(payload.bookingId, sock.userId)
-    } catch {
+    // Verify the sender has already joined the booking room.  Room membership
+    // is the server-side proof of the assertParticipant check that ran during
+    // handleJoin — no extra DB round-trip needed per message.
+    if (!client.rooms.has(`booking:${payload.bookingId}`)) {
       throw new WsException('Not a participant of this booking')
     }
 

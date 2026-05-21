@@ -47,7 +47,7 @@ struct ChatView: View {
         .task {
             wrapper.startObserving { _ in }
             authWrapper.startObserving()
-            let token = KoinIOSKt.getAccessToken() ?? ""
+            guard let token = KoinIOSKt.getAccessToken(), !token.isEmpty else { return }
             wrapper.connect(bookingId: bookingId, token: token)
         }
         .onDisappear { wrapper.disconnect() }

@@ -8,6 +8,13 @@ final class ChatViewModelWrapper: ObservableObject {
 
     @Published var state: ChatUiState
 
+    // Held so that a second call to startObserving() (e.g. on view re-appear)
+    // cancels the previous Tasks before spawning new ones.  Without this,
+    // viewModel.effect is consumed by two concurrent Tasks — receiveAsFlow()
+    // is single-consumer, so effects are dropped nondeterministically.
+    private var stateTask: Task<Void, Never>?
+    private var effectTask: Task<Void, Never>?
+
     init() {
         let vm = KoinIOSKt.getChatViewModel()
         self.viewModel = vm
@@ -15,12 +22,15 @@ final class ChatViewModelWrapper: ObservableObject {
     }
 
     func startObserving(onEffect: @escaping (any ChatEffect) -> Void) {
-        Task {
+        stateTask?.cancel()
+        effectTask?.cancel()
+
+        stateTask = Task {
             for await newState in viewModel.state {
                 self.state = newState
             }
         }
-        Task {
+        effectTask = Task {
             for await effect in viewModel.effect {
                 onEffect(effect)
             }
