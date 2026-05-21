@@ -23,3 +23,4 @@ google-services.json
 
 # Exclude local embedded skill repo from source control
 kmp-compose-multiplatform-skill/
+iosApp/SentryLocal/Sentry.xcframework
