@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import Sentry
 import Shared
 
 /// Handles APNS push notification registration for the Hop iOS app.
@@ -13,6 +14,17 @@ class HopAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterD
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // Initialise Sentry before anything else so crashes during launch are captured.
+        if let dsn = Bundle.main.object(forInfoDictionaryKey: "SENTRY_DSN") as? String, !dsn.isEmpty {
+            SentrySDK.start { options in
+                options.dsn = dsn
+                options.environment = Bundle.main.object(forInfoDictionaryKey: "SENTRY_ENV") as? String ?? "production"
+                // Capture 20% of transactions for performance monitoring.
+                options.tracesSampleRate = 0.2
+                options.enableUserInteractionTracing = true
+            }
+        }
+
         UNUserNotificationCenter.current().delegate = self
 
         // Request push notification permission; register for remote notifications only if granted.

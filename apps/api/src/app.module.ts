@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { SentryModule } from '@sentry/nestjs/setup'
 import { ConfigModule } from '@nestjs/config'
 import { BullModule } from '@nestjs/bullmq'
 import { ScheduleModule } from '@nestjs/schedule'
@@ -21,6 +22,7 @@ import { HealthController } from './health.controller'
 @Module({
   controllers: [HealthController],
   imports: [
+    SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     BullModule.forRootAsync({

@@ -5,3 +5,7 @@ PRODUCT_BUNDLE_IDENTIFIER=com.example.hop.Ridly$(TEAM_ID)
 
 CURRENT_PROJECT_VERSION=1
 MARKETING_VERSION=1.0
+
+// Sentry — set via CI/CD environment; left blank for local builds.
+SENTRY_DSN=
+SENTRY_ENV=development

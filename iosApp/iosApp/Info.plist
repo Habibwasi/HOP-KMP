@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>SENTRY_DSN</key>
+	<string>$(SENTRY_DSN)</string>
+	<key>SENTRY_ENV</key>
+	<string>$(SENTRY_ENV)</string>
 	<key>SUPABASE_URL</key>
 	<string>https://bfijluuhbkqoldnszeqc.supabase.co</string>
 	<key>SUPABASE_ANON_KEY</key>
