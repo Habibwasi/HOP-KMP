@@ -23,6 +23,9 @@ final class TripViewModelWrapper: ObservableObject {
 
     @Published var state: TripUiState
 
+    private var stateTask: Task<Void, Never>?
+    private var effectTask: Task<Void, Never>?
+
     init() {
         let vm = KoinIOSKt.getTripViewModel()
         self.viewModel = vm
@@ -30,13 +33,23 @@ final class TripViewModelWrapper: ObservableObject {
     }
 
     func startObserving(onEffect: @escaping (any TripEffect) -> Void) {
-        Task {
-            for await newState in viewModel.state {
+        // Cancel any previous observation tasks before spawning new ones.
+        // Without this guard, each .onAppear re-entry spawns additional Tasks
+        // that both consume from the same single-consumer Kotlin Channel, causing
+        // non-deterministic effect delivery and state duplication.
+        stateTask?.cancel()
+        effectTask?.cancel()
+        stateTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await newState in self.viewModel.state {
+                guard !Task.isCancelled else { return }
                 self.state = newState
             }
         }
-        Task {
-            for await effect in viewModel.effect {
+        effectTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await effect in self.viewModel.effect {
+                guard !Task.isCancelled else { return }
                 onEffect(effect)
             }
         }

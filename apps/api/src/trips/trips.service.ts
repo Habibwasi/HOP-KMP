@@ -215,6 +215,14 @@ export class TripsService {
           originAddress: firstTrip.originAddress,
           destAddress: firstTrip.destAddress,
         })
+      } else {
+        // Trips were created by createMany but findFirst returned null.
+        // This is a data-integrity inconsistency (e.g. a race between createMany
+        // and findFirst on a busy DB). Log it so it can be investigated; the trips
+        // exist but the MATCH_ALERTS_JOB will not fire for this batch.
+        this.logger.error(
+          `[TripsService] Model A trips created for driver ${driverId} but findFirst returned null — MATCH_ALERTS_JOB not queued.`,
+        )
       }
 
       return firstTrip

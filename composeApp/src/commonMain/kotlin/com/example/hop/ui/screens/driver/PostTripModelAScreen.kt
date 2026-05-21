@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -408,7 +409,13 @@ internal fun FormSection(
     }
 }
 
-private val WEEK_DAYS = listOf("MON", "TUE", "WED", "THU", "FRI")
+// Top row: weekdays; bottom row: weekend. Two separate lists so each row can be
+// rendered independently while keeping identical chip widths (computed once via
+// BoxWithConstraints based on the 5-chip top row).
+private val WEEK_DAY_ROWS = listOf(
+    listOf("MON", "TUE", "WED", "THU", "FRI"),
+    listOf("SAT", "SUN"),
+)
 
 @Composable
 private fun DayChipsRow(
@@ -416,37 +423,43 @@ private fun DayChipsRow(
     onToggleDay: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
-    ) {
-        WEEK_DAYS.forEach { day ->
-            val isSelected = selectedDays.contains(day)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        if (isSelected) HopColors.primaryLime
-                        else HopColors.authInputSurface,
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = if (isSelected) Color.Transparent
-                        else HopColors.authTextSecondary.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(10.dp),
-                    )
-                    .clickable { onToggleDay(day) }
-                    .semantics { contentDescription = "$day ${if (isSelected) "selected" else "not selected"}" },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = day.take(2), // "Mo", "Tu", etc.
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) HopColors.authTextPrimary else HopColors.authTextSecondary,
-                )
+    // Derive chip width from the 5-chip top row so the weekend chips below are
+    // the same size (left-aligned, not stretched to full width).
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val chipWidth = (maxWidth - HopSpacing.sm * 4) / 5
+        Column(verticalArrangement = Arrangement.spacedBy(HopSpacing.sm)) {
+            WEEK_DAY_ROWS.forEach { rowDays ->
+                Row(horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm)) {
+                    rowDays.forEach { day ->
+                        val isSelected = selectedDays.contains(day)
+                        Box(
+                            modifier = Modifier
+                                .width(chipWidth)
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (isSelected) HopColors.primaryLime
+                                    else HopColors.authInputSurface,
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) Color.Transparent
+                                    else HopColors.authTextSecondary.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(10.dp),
+                                )
+                                .clickable { onToggleDay(day) }
+                                .semantics { contentDescription = "$day ${if (isSelected) "selected" else "not selected"}" },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = day.take(2), // "Mo", "Tu", "Sa", "Su", etc.
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isSelected) HopColors.authTextPrimary else HopColors.authTextSecondary,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -718,6 +731,10 @@ internal fun RouteSummaryRow(
                 PricingEngine.calculate(distanceMetres, seatsTotal)
             }
             val km = distanceMetres / 1000
+            val priceKr = priceResult.pricePerSeatOere / 100
+            val priceRem = priceResult.pricePerSeatOere % 100
+            val priceText = if (priceRem == 0) "DKK $priceKr/seat"
+                            else "DKK $priceKr,${priceRem.toString().padStart(2, '0')}/seat"
             Text(
                 text = "$km km",
                 fontSize = 14.sp,
@@ -732,7 +749,7 @@ internal fun RouteSummaryRow(
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
-                text = "DKK ${priceResult.pricePerSeatOere / 100}/seat",
+                text = priceText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = HopColors.primaryLime,

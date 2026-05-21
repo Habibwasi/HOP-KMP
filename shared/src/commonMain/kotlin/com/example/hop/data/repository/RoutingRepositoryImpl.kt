@@ -6,6 +6,9 @@ import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.network.ApiResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import kotlinx.serialization.Serializable
@@ -51,6 +54,12 @@ class RoutingRepositoryImpl(
         val error = envelope.error
         if (error != null) return ApiResponse.Error(error.code, error.message)
         ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
+    } catch (e: HttpRequestTimeoutException) {
+        ApiResponse.Error(-1, "Request timed out. Please try again.")
+    } catch (e: ServerResponseException) {
+        ApiResponse.Error(e.response.status.value, "Server error. Please try again.")
+    } catch (e: ClientRequestException) {
+        ApiResponse.Error(e.response.status.value, e.message ?: "Client error")
     } catch (e: Exception) {
         ApiResponse.Error(-1, e.message ?: "Unknown error")
     }

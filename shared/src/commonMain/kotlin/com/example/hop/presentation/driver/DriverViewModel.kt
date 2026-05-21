@@ -16,8 +16,10 @@ import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.presentation.model.toUiModel
 import com.example.hop.presentation.model.toUiModels
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -326,10 +328,17 @@ class DriverViewModel(
         viewModelScope.launch { _effect.send(DriverEffect.NavigateToPriceReview) }
     }
 
+    // Tracks the in-flight route calculation so it can be cancelled when the user
+    // changes an address before the previous request completes.
+    private var routeCalcJob: Job? = null
+
     private fun calculateRouteDistance(originName: String, destName: String) {
-        if (_state.value.isCalculatingRoute) return
         if (originName.isBlank() || destName.isBlank()) return
-        viewModelScope.launch {
+        // Cancel any in-flight request so we never use a stale route.
+        routeCalcJob?.cancel()
+        routeCalcJob = viewModelScope.launch {
+            // Debounce: wait for the user to stop typing before hitting the network.
+            delay(400)
             _state.value = _state.value.copy(
                 isCalculatingRoute = true,
                 routeDistanceMetres = 0,
@@ -376,6 +385,29 @@ class DriverViewModel(
                 _effect.send(DriverEffect.ShowSnackbar("Route not yet calculated. Please wait a moment and try again."))
             }
             return
+        }
+
+        // Guard: for Model B, validate the date/time string and ensure the threshold
+        // deadline (departsAt − 6 h) is still in the future. If the deadline is already
+        // past when the trip is created, the BullMQ scheduler silently skips the job and
+        // the trip will never auto-cancel — drivers would be stranded with a ghost trip.
+        if (modelBDraft != null) {
+            val departsAtStr = "${modelBDraft.date}T${modelBDraft.departureTime}:00Z"
+            val departsInstant = try {
+                Instant.parse(departsAtStr)
+            } catch (e: IllegalArgumentException) {
+                viewModelScope.launch {
+                    _effect.send(DriverEffect.ShowSnackbar("Invalid date or time format. Please check your input."))
+                }
+                return
+            }
+            val thresholdInstant = departsInstant - 6.hours
+            if (thresholdInstant <= Clock.System.now()) {
+                viewModelScope.launch {
+                    _effect.send(DriverEffect.ShowSnackbar("Departure time is too soon — please choose a time at least 6 hours from now."))
+                }
+                return
+            }
         }
 
         val request = when {

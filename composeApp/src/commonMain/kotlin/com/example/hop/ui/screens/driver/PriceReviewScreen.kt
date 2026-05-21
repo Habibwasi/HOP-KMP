@@ -471,8 +471,7 @@ private fun SystemPriceWarning(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.width(HopSpacing.sm))
         Text(
             text = "Price is set by the system and cannot be changed. " +
-                "Rates follow SKAT's reimbursement rules (DKK 2.28 / km). " +
-                "A 15 % platform fee is deducted from the passenger fare.",
+                "Rates follow SKAT's reimbursement rules (DKK 2.28 / km).",
             fontSize = 13.sp,
             lineHeight = 19.sp,
             color = HopColors.warning,
