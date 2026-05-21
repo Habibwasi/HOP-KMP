@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import { Response } from 'express'
+import * as Sentry from '@sentry/nestjs'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -16,6 +17,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (!(exception instanceof HttpException)) {
       this.logger.error('Unhandled exception', exception instanceof Error ? exception.stack : String(exception))
+      Sentry.captureException(exception)
     }
 
     const exceptionResponse =

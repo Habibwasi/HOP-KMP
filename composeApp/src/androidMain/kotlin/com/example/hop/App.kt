@@ -13,6 +13,8 @@ import com.example.hop.ui.navigation.AuthEffectHandler
 import com.example.hop.ui.navigation.HopNavGraph
 import com.example.hop.ui.theme.HopTheme
 import com.google.firebase.messaging.FirebaseMessaging
+import io.sentry.Sentry
+import io.sentry.protocol.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -26,6 +28,18 @@ fun App() {
         val userRepository: UserRepository = koinInject()
         val state by authViewModel.state.collectAsStateWithLifecycle()
         val appScope = rememberCoroutineScope()
+
+        // Keep Sentry's user scope in sync with the authenticated user so every
+        // error report carries a user ID. Cleared on logout so anonymous sessions
+        // don't inherit the previous user's identity.
+        LaunchedEffect(state.currentUser?.id) {
+            val user = state.currentUser
+            if (user != null) {
+                Sentry.setUser(User().apply { id = user.id })
+            } else {
+                Sentry.setUser(null)
+            }
+        }
 
         // Re-register FCM token after login so the backend has the current token
         // even if onNewToken() fired before the user was authenticated (401 silently swallowed).
