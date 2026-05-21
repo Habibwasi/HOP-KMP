@@ -270,7 +270,7 @@ private fun PassengerSettlementCard(
                 }
             }
             Text(
-                text = "DKK ${entry.suggestedAmountOere / 100}",
+                text = formatDkk(entry.suggestedAmountOere),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = HopMonoFontFamily,
                     fontWeight = FontWeight.Bold,
@@ -288,6 +288,12 @@ private fun PassengerSettlementCard(
             )
         }
     }
+}
+
+private fun formatDkk(oere: Int): String {
+    val kr = oere / 100
+    val rem = oere % 100
+    return if (rem == 0) "DKK $kr" else "DKK $kr,${rem.toString().padStart(2, '0')}"
 }
 
 // Previews

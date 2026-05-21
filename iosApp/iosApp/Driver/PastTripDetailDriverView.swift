@@ -63,7 +63,7 @@ struct PastTripDetailDriverView: View {
                             .font(HopFont.bodyMedium())
                             .foregroundColor(Color.hopAuthTextSecondary)
                         Spacer()
-                        Text("DKK \(totalOere / 100)")
+                        Text(formatDkk(totalOere))
                             .font(.system(size: 20, weight: .bold, design: .monospaced))
                             .foregroundColor(Color.hopPrimaryLime)
                     }
@@ -147,7 +147,7 @@ private struct PastPassengerRow: View {
 
             Spacer()
 
-            Text("DKK \(entry.suggestedAmountOere / 100)")
+            Text(formatDkk(Int(entry.suggestedAmountOere)))
                 .font(.system(size: 15, weight: .semibold, design: .monospaced))
                 .foregroundColor(Color.hopAuthTextPrimary)
         }
@@ -155,4 +155,10 @@ private struct PastPassengerRow: View {
         .background(Color.hopAuthInputSurface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
+}
+
+private func formatDkk(_ oere: Int) -> String {
+    let kr = oere / 100
+    let rem = oere % 100
+    return rem == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", rem))"
 }

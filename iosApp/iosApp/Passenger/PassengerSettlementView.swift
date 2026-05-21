@@ -19,6 +19,12 @@ struct PassengerSettlementView: View {
     @State private var copied = false
     @Environment(\.scenePhase) private var scenePhase
 
+    private func formatDkk(_ oere: Int) -> String {
+        let kr = oere / 100
+        let rem = oere % 100
+        return rem == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", rem))"
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             Color.hopBackground.ignoresSafeArea()
@@ -58,7 +64,7 @@ struct PassengerSettlementView: View {
                                 Text("Amount to send")
                                     .font(HopFont.labelSmall())
                                     .foregroundColor(Color.hopAuthTextSecondary)
-                                Text("DKK \(settlement.suggestedAmountOere / 100)")
+                                Text(formatDkk(settlement.suggestedAmountOere))
                                     .font(.system(size: 32, weight: .bold, design: .monospaced))
                                     .foregroundColor(Color.hopPrimaryLime)
                                 Text("SKAT-suggested rate · send directly to driver's MobilePay")
@@ -105,7 +111,7 @@ struct PassengerSettlementView: View {
                             .buttonStyle(.plain)
 
                             // Instruction hint
-                            Text("Open MobilePay → paste the number → send DKK \(settlement.suggestedAmountOere / 100)")
+                            Text("Open MobilePay → paste the number → send \(formatDkk(settlement.suggestedAmountOere))")
                                 .font(HopFont.bodySmall())
                                 .foregroundColor(Color.hopAuthTextSecondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)

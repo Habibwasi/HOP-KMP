@@ -156,7 +156,7 @@ private fun PastTripDetailDriverScreen(
                         color = HopColors.authTextSecondary,
                     )
                     Text(
-                        "DKK ${totalOere / 100}",
+                        formatDkk(totalOere),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontFamily = HopMonoFontFamily,
                             fontWeight = FontWeight.Bold,
@@ -235,7 +235,7 @@ private fun PastPassengerRow(
             }
         }
         Text(
-            text = "DKK ${entry.suggestedAmountOere / 100}",
+            text = formatDkk(entry.suggestedAmountOere),
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontFamily = HopMonoFontFamily,
                 fontWeight = FontWeight.SemiBold,
@@ -243,6 +243,12 @@ private fun PastPassengerRow(
             color = HopColors.authTextPrimary,
         )
     }
+}
+
+private fun formatDkk(oere: Int): String {
+    val kr = oere / 100
+    val rem = oere % 100
+    return if (rem == 0) "DKK $kr" else "DKK $kr,${rem.toString().padStart(2, '0')}"
 }
 
 // Previews

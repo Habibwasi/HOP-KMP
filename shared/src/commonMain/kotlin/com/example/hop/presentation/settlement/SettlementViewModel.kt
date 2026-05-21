@@ -119,23 +119,34 @@ class SettlementViewModel(
         }
     }
 
-    /** Resolve tripId from a bookingId, then load all passengers for the trip. */
+    /** Resolve tripId from a bookingId, then load all passengers for the trip.
+     *  NOTE: does NOT delegate to loadForTrip() to avoid the isLoading guard
+     *  blocking the inner fetch while the outer fetch is still running. */
     private fun loadForTripByBooking(bookingId: String) {
         if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            when (val response = settlementRepository.getSettlement(bookingId)) {
+            when (val settlementResponse = settlementRepository.getSettlement(bookingId)) {
                 is ApiResponse.Success -> {
-                    val tripId = response.data.tripId
+                    val tripId = settlementResponse.data.tripId
                     if (tripId != null) {
-                        loadForTrip(tripId)
+                        currentTripId = tripId
+                        when (val tripResponse = settlementRepository.getSettlementsForTrip(tripId)) {
+                            is ApiResponse.Success -> {
+                                _state.value = _state.value.copy(isLoading = false, entries = tripResponse.data)
+                            }
+                            is ApiResponse.Error -> {
+                                _state.value = _state.value.copy(isLoading = false, error = tripResponse.message)
+                                _effect.send(SettlementEffect.ShowSnackbar(tripResponse.message))
+                            }
+                        }
                     } else {
                         _state.value = _state.value.copy(isLoading = false, error = "Trip not found")
                     }
                 }
                 is ApiResponse.Error -> {
-                    _state.value = _state.value.copy(isLoading = false, error = response.message)
-                    _effect.send(SettlementEffect.ShowSnackbar(response.message))
+                    _state.value = _state.value.copy(isLoading = false, error = settlementResponse.message)
+                    _effect.send(SettlementEffect.ShowSnackbar(settlementResponse.message))
                 }
             }
         }
@@ -184,8 +195,12 @@ class SettlementViewModel(
             } else if (tripId.isNotEmpty()) {
                 when (val response = settlementRepository.getSettlementsForTrip(tripId)) {
                     is ApiResponse.Success -> {
+                        // Only navigate away when transitioning from at-least-one-pending
+                        // to all-confirmed. Avoids repeated navigation on every refresh
+                        // when the trip was already fully settled on screen open.
+                        val prevHadPending = _state.value.entries.any { it.driverConfirmedAt == null }
                         _state.value = _state.value.copy(entries = response.data)
-                        if (response.data.isNotEmpty() && response.data.all { it.driverConfirmedAt != null }) {
+                        if (prevHadPending && response.data.isNotEmpty() && response.data.all { it.driverConfirmedAt != null }) {
                             _effect.send(SettlementEffect.ConfirmReceivedSuccess)
                         }
                     }

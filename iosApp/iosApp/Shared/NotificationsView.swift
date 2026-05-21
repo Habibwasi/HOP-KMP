@@ -59,6 +59,10 @@ struct NotificationsView: View {
             navigate(.tripDetail(id: id))
         case NotificationType.chatMessage:
             navigate(.chat(bookingId: id))
+        case NotificationType.paymentMarkedPaid:
+            navigate(.driverSettlementByBooking(bookingId: id))
+        case NotificationType.paymentConfirmed:
+            navigate(.passengerSettlement(bookingId: id))
         default:
             break
         }

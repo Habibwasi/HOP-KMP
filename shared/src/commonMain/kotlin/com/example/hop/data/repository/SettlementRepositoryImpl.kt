@@ -7,6 +7,9 @@ import com.example.hop.domain.repository.SettlementRepository
 import com.example.hop.network.ApiResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -47,6 +50,12 @@ class SettlementRepositoryImpl(
         val envelope = block()
         if (envelope.data != null) ApiResponse.Success(envelope.data)
         else ApiResponse.Error(envelope.error?.code ?: -1, envelope.error?.message ?: "Unknown error")
+    } catch (e: HttpRequestTimeoutException) {
+        ApiResponse.Error(ApiResponse.CODE_TIMEOUT, "Connection timed out. Please check your network and try again.")
+    } catch (e: ServerResponseException) {
+        ApiResponse.Error(e.response.status.value, "Server error (${e.response.status.value}). Please try again later.")
+    } catch (e: ClientRequestException) {
+        ApiResponse.Error(e.response.status.value, e.message ?: "Request error")
     } catch (e: Exception) {
         ApiResponse.Error(-1, e.message ?: "Unknown error")
     }

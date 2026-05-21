@@ -40,6 +40,9 @@ class MainActivity : ComponentActivity() {
         } else if (url.startsWith("hop://driver-settlement/")) {
             Log.d("HopDeepLink", "Queueing driver-settlement deep link: $url")
             authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
+        } else if (url.startsWith("hop://passenger-settlement/")) {
+            Log.d("HopDeepLink", "Queueing passenger-settlement deep link: $url")
+            authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
         } else {
             Log.w("HopDeepLink", "URL does not match any known scheme — ignored: $url")
         }

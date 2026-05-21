@@ -166,7 +166,7 @@ export class SettlementsService {
   }
 
   async dispute(bookingId: string, userId: string, reason: string) {
-    const { booking } = await this.assertParty(bookingId, userId)
+    const { booking, isPassenger } = await this.assertParty(bookingId, userId)
     if (booking.status !== BookingStatus.AWAITING_PAYMENT) {
       throw new BadRequestException('Booking is not awaiting payment')
     }
@@ -185,6 +185,30 @@ export class SettlementsService {
         data: { status: BookingStatus.DISPUTED },
       }),
     ])
+
+    // Notify the other party about the dispute
+    const notifyUserId = isPassenger ? booking.trip.driverId : booking.passengerId
+    const title = 'Payment dispute raised'
+    const body = isPassenger
+      ? 'The passenger has raised a dispute for this trip payment.'
+      : 'The driver has raised a dispute for this trip payment.'
+    // recipientRole tells the mobile client which settlement screen to open on tap.
+    // The notified party is the OTHER party: driver receives if passenger disputed, vice-versa.
+    const recipientRole = isPassenger ? 'driver' : 'passenger'
+    await this.notifications.sendToUser(notifyUserId, title, body, {
+      type: 'PAYMENT_DISPUTED',
+      bookingId,
+      recipientRole,
+    }).catch(() => {/* non-fatal */})
+    await this.prisma.notification.create({
+      data: {
+        userId: notifyUserId,
+        type: 'PAYMENT_DISPUTED',
+        title,
+        body,
+        deepLinkId: bookingId,
+      },
+    })
 
     return updatedSettlement
   }

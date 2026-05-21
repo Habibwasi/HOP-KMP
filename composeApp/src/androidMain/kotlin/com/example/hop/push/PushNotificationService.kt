@@ -46,11 +46,12 @@ class PushNotificationService : FirebaseMessagingService() {
             ?: ""
         val type = message.data["type"]
         val bookingId = message.data["bookingId"]
+        val recipientRole = message.data["recipientRole"]
 
-        showNotification(title = title, body = body, type = type, bookingId = bookingId)
+        showNotification(title = title, body = body, type = type, bookingId = bookingId, recipientRole = recipientRole)
     }
 
-    private fun showNotification(title: String, body: String, type: String? = null, bookingId: String? = null) {
+    private fun showNotification(title: String, body: String, type: String? = null, bookingId: String? = null, recipientRole: String? = null) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Ensure the channel exists (required Android 8+)
@@ -68,6 +69,11 @@ class PushNotificationService : FirebaseMessagingService() {
         val deepLinkUri: Uri? = when {
             type == "PAYMENT_MARKED_PAID" && !bookingId.isNullOrBlank() ->
                 Uri.parse("hop://driver-settlement/$bookingId")
+            type == "PAYMENT_CONFIRMED" && !bookingId.isNullOrBlank() ->
+                Uri.parse("hop://passenger-settlement/$bookingId")
+            type == "PAYMENT_DISPUTED" && !bookingId.isNullOrBlank() ->
+                if (recipientRole == "driver") Uri.parse("hop://driver-settlement/$bookingId")
+                else Uri.parse("hop://passenger-settlement/$bookingId")
             else -> null
         }
         val tapIntent = Intent(this, MainActivity::class.java).apply {

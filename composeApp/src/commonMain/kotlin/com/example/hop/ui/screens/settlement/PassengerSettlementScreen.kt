@@ -172,7 +172,7 @@ private fun PassengerSettlementScreen(
                     ) {
                         Text("Amount to send", style = MaterialTheme.typography.labelMedium, color = HopColors.authTextSecondary)
                         Text(
-                            "DKK ${settlement.suggestedAmountOere / 100}",
+                            formatDkk(settlement.suggestedAmountOere),
                             style = MaterialTheme.typography.headlineMedium.copy(
                                 fontFamily = HopMonoFontFamily,
                                 fontWeight = FontWeight.Bold,
@@ -241,7 +241,7 @@ private fun PassengerSettlementScreen(
 
                     // Instruction hint
                     Text(
-                        "Open MobilePay → paste the number → send DKK ${settlement.suggestedAmountOere / 100}",
+                        "Open MobilePay → paste the number → send ${formatDkk(settlement.suggestedAmountOere)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = HopColors.authTextSecondary,
                         modifier = Modifier.fillMaxWidth(),
@@ -303,6 +303,12 @@ private fun PassengerSettlementScreen(
             }
         }
     }
+}
+
+private fun formatDkk(oere: Int): String {
+    val kr = oere / 100
+    val rem = oere % 100
+    return if (rem == 0) "DKK $kr" else "DKK $kr,${rem.toString().padStart(2, '0')}"
 }
 
 // Previews

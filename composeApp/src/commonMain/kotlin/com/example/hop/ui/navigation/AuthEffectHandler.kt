@@ -80,6 +80,10 @@ fun AuthEffectHandler(
                 is AuthEffect.NavigateToDriverSettlement -> {
                     navController.navigate(HopRoutes.DriverSettlementByBooking(bookingId = effect.bookingId))
                 }
+
+                is AuthEffect.NavigateToPassengerSettlement -> {
+                    navController.navigate(HopRoutes.PassengerSettlement(bookingId = effect.bookingId))
+                }
             }
         }
     }

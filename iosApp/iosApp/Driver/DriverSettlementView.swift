@@ -147,6 +147,12 @@ private struct PassengerSettlementCard: View {
         }
     }
 
+    private func formatDkk(_ oere: Int) -> String {
+        let kr = oere / 100
+        let rem = oere % 100
+        return rem == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", rem))"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: HopSpacing.sm) {
             HStack {
@@ -171,7 +177,7 @@ private struct PassengerSettlementCard: View {
 
                 Spacer()
 
-                Text("DKK \(entry.suggestedAmountOere / 100)")
+                Text(formatDkk(entry.suggestedAmountOere))
                     .font(.system(size: 17, weight: .bold, design: .monospaced))
                     .foregroundColor(Color.hopAuthTextPrimary)
             }

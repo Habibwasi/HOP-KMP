@@ -63,6 +63,8 @@ sealed interface AuthEffect {
     data object PasswordUpdated : AuthEffect
     /** Emitted when a push-notification deep link targets the driver settlement screen. */
     data class NavigateToDriverSettlement(val bookingId: String) : AuthEffect
+    /** Emitted when a push-notification deep link targets the passenger settlement screen. */
+    data class NavigateToPassengerSettlement(val bookingId: String) : AuthEffect
 }
 
 class AuthViewModel(
@@ -129,6 +131,11 @@ class AuthViewModel(
         if (url.startsWith("hop://driver-settlement/")) {
             val bookingId = url.removePrefix("hop://driver-settlement/")
             if (bookingId.isNotBlank()) _effect.tryEmit(AuthEffect.NavigateToDriverSettlement(bookingId))
+            return
+        }
+        if (url.startsWith("hop://passenger-settlement/")) {
+            val bookingId = url.removePrefix("hop://passenger-settlement/")
+            if (bookingId.isNotBlank()) _effect.tryEmit(AuthEffect.NavigateToPassengerSettlement(bookingId))
             return
         }
         viewModelScope.launch {
