@@ -170,6 +170,7 @@ model CarDetails {
 }
 
 enum NotificationType {
+  NEW_BOOKING
   BOOKING_CONFIRMED
   BOOKING_CANCELLED
   TRIP_REMINDER
