@@ -55,7 +55,7 @@ struct PastTripDetailDriverView: View {
                     Spacer()
                 } else {
                     let entries = wrapper.state.entries
-                    let totalOere = entries.reduce(0) { $0 + $1.suggestedAmountOere }
+                    let totalOere = entries.reduce(0) { $0 + Int($1.suggestedAmountOere) }
 
                     // Earnings header
                     HStack {

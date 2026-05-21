@@ -177,7 +177,7 @@ private struct PassengerSettlementCard: View {
 
                 Spacer()
 
-                Text(formatDkk(entry.suggestedAmountOere))
+                Text(formatDkk(Int(entry.suggestedAmountOere)))
                     .font(.system(size: 17, weight: .bold, design: .monospaced))
                     .foregroundColor(Color.hopAuthTextPrimary)
             }

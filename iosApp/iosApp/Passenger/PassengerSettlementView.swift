@@ -64,7 +64,7 @@ struct PassengerSettlementView: View {
                                 Text("Amount to send")
                                     .font(HopFont.labelSmall())
                                     .foregroundColor(Color.hopAuthTextSecondary)
-                                Text(formatDkk(settlement.suggestedAmountOere))
+                                Text(formatDkk(Int(settlement.suggestedAmountOere)))
                                     .font(.system(size: 32, weight: .bold, design: .monospaced))
                                     .foregroundColor(Color.hopPrimaryLime)
                                 Text("SKAT-suggested rate · send directly to driver's MobilePay")
@@ -111,7 +111,7 @@ struct PassengerSettlementView: View {
                             .buttonStyle(.plain)
 
                             // Instruction hint
-                            Text("Open MobilePay → paste the number → send \(formatDkk(settlement.suggestedAmountOere))")
+                            Text("Open MobilePay → paste the number → send \(formatDkk(Int(settlement.suggestedAmountOere)))")
                                 .font(HopFont.bodySmall())
                                 .foregroundColor(Color.hopAuthTextSecondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
