@@ -63,6 +63,8 @@ struct NotificationsView: View {
             navigate(.driverSettlementByBooking(bookingId: id))
         case NotificationType.paymentConfirmed:
             navigate(.passengerSettlement(bookingId: id))
+        case NotificationType.searchAlert:
+            navigate(.home)
         default:
             break
         }
@@ -188,13 +190,18 @@ private struct NotificationIconChip: View {
 
     private func iconForType() -> (String, Color) {
         switch type {
-        case NotificationType.bookingConfirmed: return ("checkmark.circle", Color.hopSuccess)
-        case NotificationType.bookingCancelled: return ("xmark.circle",     Color.hopError)
-        case NotificationType.tripReminder:     return ("clock",             Color.hopWarning)
-        case NotificationType.newRating:        return ("star",              Color.hopPrimaryLime)
-        case NotificationType.thresholdMet:     return ("checkmark.seal",    Color.hopPrimaryGreen)
-        case NotificationType.chatMessage:      return ("bubble.left",       Color.hopAuthTextSecondary)
-        default:                                return ("bell.badge",        Color.hopAuthTextSecondary)
+        case NotificationType.bookingConfirmed:    return ("checkmark.circle",              Color.hopSuccess)
+        case NotificationType.bookingCancelled:    return ("xmark.circle",                  Color.hopError)
+        case NotificationType.tripReminder:        return ("clock",                          Color.hopWarning)
+        case NotificationType.newRating:           return ("star",                           Color.hopPrimaryLime)
+        case NotificationType.thresholdMet:        return ("checkmark.seal",                 Color.hopPrimaryGreen)
+        case NotificationType.chatMessage:         return ("bubble.left",                    Color.hopAuthTextSecondary)
+        case NotificationType.paymentMarkedPaid:   return ("dollarsign.circle",              Color.hopPrimaryGreen)
+        case NotificationType.paymentConfirmed:    return ("checkmark.circle.fill",          Color.hopSuccess)
+        case NotificationType.paymentDisputed:     return ("exclamationmark.circle",         Color.hopError)
+        case NotificationType.rideAwaitingPayment: return ("clock.badge.exclamationmark",    Color.hopWarning)
+        case NotificationType.searchAlert:         return ("magnifyingglass",                Color.hopPrimaryLime)
+        default:                                   return ("bell.badge",                    Color.hopAuthTextSecondary)
         }
     }
 }

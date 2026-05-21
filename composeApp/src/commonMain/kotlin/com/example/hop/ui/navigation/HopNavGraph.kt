@@ -596,6 +596,12 @@ fun HopNavGraph(
             NotificationsRoute(
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToSearch = { navController.navigate(HopRoutes.SearchResults()) },
+                onNavigateToDriverSettlement = { bookingId ->
+                    navController.navigate(HopRoutes.DriverSettlementByBooking(bookingId = bookingId))
+                },
+                onNavigateToPassengerSettlement = { bookingId ->
+                    navController.navigate(HopRoutes.PassengerSettlement(bookingId = bookingId))
+                },
             )
         }
 

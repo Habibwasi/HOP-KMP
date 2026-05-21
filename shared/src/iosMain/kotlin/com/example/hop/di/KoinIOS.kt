@@ -23,8 +23,11 @@ import com.example.hop.presentation.tripdetail.TripDetailViewModel
 import com.example.hop.presentation.tripdetailactive.TripDetailActiveViewModel
 import com.example.hop.presentation.trips.SearchTripsViewModel
 import com.example.hop.network.TokenStorage
+import com.example.hop.domain.repository.UserRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatform
 
@@ -78,3 +81,14 @@ fun getDriverAggregatesViewModel(): DriverAggregatesViewModel = KoinPlatform.get
 
 /** Returns the active Supabase session access token. Used by ChatView to authenticate the WebSocket. */
 fun getAccessToken(): String? = KoinPlatform.getKoin().get<SupabaseClient>().auth.currentSessionOrNull()?.accessToken
+
+/**
+ * Registers a device push token with the backend.
+ * Called from the iOS AppDelegate after APNS token registration.
+ * Fire-and-forget: launches on [MainScope] so the caller (Swift) doesn't need to manage coroutines.
+ */
+fun registerPushToken(token: String, platform: String) {
+    MainScope().launch {
+        KoinPlatform.getKoin().get<UserRepository>().savePushToken(token, platform)
+    }
+}

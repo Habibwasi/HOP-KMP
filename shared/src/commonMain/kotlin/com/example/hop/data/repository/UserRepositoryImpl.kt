@@ -109,10 +109,10 @@ class UserRepositoryImpl(
             Unit
         }
 
-    override suspend fun savePushToken(token: String): ApiResponse<Unit> =
+    override suspend fun savePushToken(token: String, platform: String): ApiResponse<Unit> =
         safeApiCall {
             httpClient.post("users/push-token") {
-                setBody(PushTokenRequest(token = token))
+                setBody(PushTokenRequest(token = token, platform = platform))
             }
             Unit
         }

@@ -104,6 +104,17 @@ export class BookingsService {
       )
       .catch(() => {/* ignore push errors */})
 
+    // Persist in-app notification so the driver sees it in their notification inbox.
+    this.prisma.notification.create({
+      data: {
+        userId: booking.trip.driverId,
+        type: 'NEW_BOOKING',
+        title: 'New booking 🎉',
+        body: `${passengerName} booked ${dto.seats} seat(s) on your trip`,
+        deepLinkId: booking.id,
+      },
+    }).catch(() => {/* non-fatal */})
+
     return booking
   }
 

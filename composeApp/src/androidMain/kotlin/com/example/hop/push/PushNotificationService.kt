@@ -33,7 +33,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         serviceScope.launch {
-            userRepository.savePushToken(token)
+            userRepository.savePushToken(token, "android")
         }
     }
 

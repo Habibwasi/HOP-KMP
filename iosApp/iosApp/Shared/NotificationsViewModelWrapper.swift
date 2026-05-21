@@ -8,6 +8,9 @@ final class NotificationsViewModelWrapper: ObservableObject {
 
     @Published var state: NotificationsUiState
 
+    private var stateTask: Task<Void, Never>?
+    private var effectTask: Task<Void, Never>?
+
     init() {
         let vm = KoinIOSKt.getNotificationsViewModel()
         self.viewModel = vm
@@ -15,12 +18,15 @@ final class NotificationsViewModelWrapper: ObservableObject {
     }
 
     func startObserving(onEffect: @escaping (any NotificationsEffect) -> Void) {
-        Task {
+        stateTask?.cancel()
+        effectTask?.cancel()
+
+        stateTask = Task {
             for await newState in viewModel.state {
                 self.state = newState
             }
         }
-        Task {
+        effectTask = Task {
             for await effect in viewModel.effect {
                 onEffect(effect)
             }

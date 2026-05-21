@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import Shared
 
 // ── App root ──────────────────────────────────────────────────────────────────
@@ -59,6 +60,9 @@ struct ContentView: View {
             for await effect in authWrapper.viewModel.effect {
                 if effect is AuthEffectNavigateToHome {
                     withAnimation(.easeInOut) { isAuthenticated = true }
+                    // Re-register APNS token after login so the backend has the current token
+                    // even if didRegisterForRemoteNotificationsWithDeviceToken fired pre-login.
+                    UIApplication.shared.registerForRemoteNotifications()
                 } else if effect is AuthEffectNavigateToLogin {
                     // Only NavigateToLogin (explicit logout) flips back to auth screens.
                     // SessionExpired no longer forces the user out automatically.

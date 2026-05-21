@@ -22,7 +22,7 @@ interface UserRepository {
     /** POST /users/:id/report — files a report against another user. */
     suspend fun reportUser(userId: String, reason: String): ApiResponse<Unit>
     /** POST /users/push-token — registers or refreshes an FCM push token. */
-    suspend fun savePushToken(token: String): ApiResponse<Unit>
+    suspend fun savePushToken(token: String, platform: String = "android"): ApiResponse<Unit>
     /** GET /notifications — returns the notification inbox for the current user. */
     suspend fun getNotifications(): ApiResponse<List<HopNotification>>
     /** POST /notifications/:id/read — marks a single notification as read. */

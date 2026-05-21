@@ -49,7 +49,7 @@ class DevUserRepository : UserRepository {
     override suspend fun reportUser(userId: String, reason: String): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
 
-    override suspend fun savePushToken(token: String): ApiResponse<Unit> =
+    override suspend fun savePushToken(token: String, platform: String): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
 
     override suspend fun getNotifications(): ApiResponse<List<HopNotification>> =
