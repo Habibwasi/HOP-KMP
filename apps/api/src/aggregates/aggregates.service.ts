@@ -29,7 +29,7 @@ export class AggregatesService {
 
     const bookings = await this.prisma.booking.findMany({
       where: {
-        status: BookingStatus.CONFIRMED,
+        status: { in: [BookingStatus.AWAITING_PAYMENT, BookingStatus.COMPLETED] },
         trip: {
           driverId,
           status: TripStatus.COMPLETED,
