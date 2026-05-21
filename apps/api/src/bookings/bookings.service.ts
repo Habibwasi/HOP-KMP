@@ -36,12 +36,15 @@ export class BookingsService {
         throw new BadRequestException('Cannot book your own trip')
       }
 
-      // Check available seats
-      const confirmedBookings = await tx.booking.aggregate({
-        where: { tripId: dto.tripId, status: BookingStatus.CONFIRMED },
+      // Check available seats (count CONFIRMED + PENDING to prevent concurrent overbooking)
+      const activeBookings = await tx.booking.aggregate({
+        where: {
+          tripId: dto.tripId,
+          status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
+        },
         _sum: { seats: true },
       })
-      const bookedSeats = confirmedBookings._sum.seats ?? 0
+      const bookedSeats = activeBookings._sum.seats ?? 0
       const available = trip.seats - bookedSeats
 
       if (dto.seats > available) {
@@ -66,7 +69,8 @@ export class BookingsService {
           passengerId,
           seats: dto.seats,
           totalOere,
-          status: BookingStatus.PENDING,
+          // Model A trips confirm immediately; Model B trips wait for the threshold deadline.
+          status: trip.model === TripModel.A ? BookingStatus.CONFIRMED : BookingStatus.PENDING,
         },
         include: {
           trip: { include: { driver: { select: { id: true, firstName: true, lastName: true } } } },
@@ -257,14 +261,20 @@ export class BookingsService {
     })
     if (!trip || trip.status !== TripStatus.ACTIVE) return
 
-    const confirmed = await this.prisma.booking.aggregate({
-      where: { tripId, status: BookingStatus.CONFIRMED },
+    // Count PENDING bookings — these are the passengers waiting to confirm
+    const pending = await this.prisma.booking.aggregate({
+      where: { tripId, status: BookingStatus.PENDING },
       _sum: { seats: true },
     })
-    const bookedSeats = confirmed._sum.seats ?? 0
+    const pendingSeats = pending._sum.seats ?? 0
 
-    if (bookedSeats >= (trip.minPassengers ?? 0)) {
-      // Threshold met — notify the driver and confirmed passengers
+    if (pendingSeats >= (trip.minPassengers ?? 0)) {
+      // Threshold met — confirm all pending bookings and notify
+      await this.prisma.booking.updateMany({
+        where: { tripId, status: BookingStatus.PENDING },
+        data: { status: BookingStatus.CONFIRMED },
+      })
+
       const confirmedBookings = await this.prisma.booking.findMany({
         where: { tripId, status: BookingStatus.CONFIRMED },
         select: { passengerId: true },

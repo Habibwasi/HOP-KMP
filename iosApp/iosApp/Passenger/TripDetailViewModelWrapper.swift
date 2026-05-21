@@ -8,6 +8,9 @@ final class TripDetailViewModelWrapper: ObservableObject {
 
     @Published var state: TripDetailUiState
 
+    private var stateTask: Task<Void, Never>?
+    private var effectTask: Task<Void, Never>?
+
     init() {
         let vm = KoinIOSKt.getTripDetailViewModel()
         self.viewModel = vm
@@ -15,12 +18,14 @@ final class TripDetailViewModelWrapper: ObservableObject {
     }
 
     func startObserving(onEffect: @escaping (any TripDetailEffect) -> Void) {
-        Task {
+        stateTask?.cancel()
+        effectTask?.cancel()
+        stateTask = Task {
             for await newState in viewModel.state {
                 self.state = newState
             }
         }
-        Task {
+        effectTask = Task {
             for await effect in viewModel.effect {
                 onEffect(effect)
             }

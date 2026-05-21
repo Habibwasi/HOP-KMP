@@ -1,4 +1,4 @@
----
+   ---
 name: hop-debug
 description: 'Expert bug-auditing and edge-case testing workflow for the Hop KMP carpooling app. Use when asked to "find bugs", "audit the codebase", "edge case test", "review for correctness", or "debug". Covers: Koin registration completeness, cross-module smart casts, ViewModel idempotency guards, auth phone propagation, monetary display safety, effect handler completeness, LaunchedEffect key correctness, Model B threshold math, and filter AND/OR semantics.'
 argument-hint: 'subsystem to audit (e.g. "auth flow", "payment", "matching")'
@@ -41,6 +41,8 @@ Check off each file as you read it. **Never declare done until every box is chec
 ### Rule 2 — Read each file fully, not selectively
 Every function in every file in the flow. Do not skim. The `ClearFilters` bug was missed because only part of the `onEvent` `when` block was read. The `PassengerHomeView` wasted API call was missed because only one section of the file was read.
 
+**Never stop reading a file early because you already found the bug you were looking for.** Other bugs in the same file will be missed. Read to the end, then check off the file.
+
 ### Rule 3 — Ask these questions at every line
 At every non-trivial line, ask:
 - Can this be `null`, blank, or empty unexpectedly?
@@ -56,6 +58,22 @@ Every assumption must be confirmed with a `grep_search`, not assumed from readin
 
 ### Rule 5 — Fix as you go, then re-read the fixed file
 Fixes introduce new bugs. After every fix, re-read the surrounding 20+ lines for new issues before moving on.
+
+### Rule 6 — "Known limitation" is not an escape hatch for data-corruption issues
+A finding may only be labelled "known limitation — not fixed" if it affects **UX only** (cosmetic degradation, minor inconvenience) and **cannot cause wrong data to be submitted or persisted**. If incorrect data can reach the backend under any realistic usage scenario, it is a ❌ Bug regardless of how it was previously characterised. Reclassify and fix it.
+
+> **Origin of this rule:** `calculateRouteDistance()` was labelled "known limitation — drops new requests while one is in-flight" in the trip-creation audit. In reality a driver changing a destination mid-calculation would silently submit a trip with the wrong distance and route coordinates. It was a ❌ Bug and should have been fixed in the same pass.
+
+### Rule 7 — Ask the user before making design decisions; ask when stuck
+When a fix requires a **design choice** (layout options, UX behaviour, API contract change, naming), do not decide unilaterally. Present the options with trade-offs and ask the user to choose before writing any code.
+
+When genuinely blocked (two failed approaches, ambiguous requirements, missing context that cannot be found by searching), stop and ask the user rather than guessing or brute-forcing.
+
+Examples of decisions that require user input:
+- Layout variants (single row vs two rows for a chip picker)
+- Debounce duration (400 ms vs 600 ms)
+- Whether a breaking change to a public API is acceptable
+- Which of two conflicting data sources is the source of truth
 
 ---
 
@@ -134,6 +152,7 @@ Key patterns encountered to date:
 | **Stale results behind spinner** | Previous search results remain visible during a new search → user sees wrong data while loading | Set `results = emptyList()` at the start of every new search, before the API call. |
 | **Concurrent search race** | Rapid search taps fire overlapping coroutines; whichever finishes last wins, not the most recent | Track `searchJob: Job?`; call `searchJob?.cancel()` before launching a new search coroutine. |
 | **Shadow API call** | A ViewModel wrapper calls `.search()` on a factory-scoped VM whose results are observed by no one (e.g., `searchWrapper` in `PassengerHomeView` before nav) | Delete the wrapper and its `.search()` / `.startObserving { _ in }` calls entirely. |
+| **Stale route from dropped address-change request** | `calculateRouteDistance()` guarded by `if (isCalculatingRoute) return` — a new address typed while a request is in-flight is silently dropped; the old route coordinates are submitted | Store `private var routeCalcJob: Job? = null`; call `routeCalcJob?.cancel()` then relaunch. Add `delay(400)` debounce at the top of the new coroutine so cancellation happens before any network call. This is a **data-corruption** issue (wrong distance/coordinates persisted), not a UX issue — classify as ❌ not ⚠️. |
 
 ---
 

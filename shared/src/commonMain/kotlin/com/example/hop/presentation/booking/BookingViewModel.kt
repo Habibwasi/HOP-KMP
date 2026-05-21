@@ -155,11 +155,13 @@ class BookingViewModel(
                         }
                         is ApiResponse.Error -> {
                             _state.value = _state.value.copy(isLoading = false)
+                            _effect.send(BookingEffect.ShowSnackbar(tripResponse.message))
                         }
                     }
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isLoading = false)
+                    _effect.send(BookingEffect.ShowSnackbar(bookingResponse.message))
                 }
             }
         }

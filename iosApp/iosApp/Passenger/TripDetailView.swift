@@ -212,7 +212,7 @@ private struct PriceBreakdownCard: View {
     }
     private func dkk(_ oere: Int) -> String {
         let d = oere / 100, o = oere % 100
-        return String(format: "DKK %d.%02d", d, o)
+        return String(format: "DKK %d,%02d", d, o)
     }
 }
 

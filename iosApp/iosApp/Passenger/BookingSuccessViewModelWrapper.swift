@@ -8,6 +8,8 @@ final class BookingSuccessViewModelWrapper: ObservableObject {
 
     @Published var state: BookingSuccessUiState
 
+    private var stateTask: Task<Void, Never>?
+
     init() {
         let vm = KoinIOSKt.getBookingSuccessViewModel()
         self.viewModel = vm
@@ -15,7 +17,8 @@ final class BookingSuccessViewModelWrapper: ObservableObject {
     }
 
     func startObserving() {
-        Task {
+        stateTask?.cancel()
+        stateTask = Task {
             for await newState in viewModel.state {
                 self.state = newState
             }

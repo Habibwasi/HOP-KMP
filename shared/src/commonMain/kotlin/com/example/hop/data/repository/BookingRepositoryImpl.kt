@@ -69,6 +69,10 @@ class BookingRepositoryImpl(
             val error = envelope.error
             if (error != null) return ApiResponse.Error(error.code, error.message)
             ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
+        } catch (e: io.ktor.client.plugins.HttpRequestTimeoutException) {
+            ApiResponse.Error(ApiResponse.CODE_TIMEOUT, "Connection timed out. Please check your network and try again.")
+        } catch (e: io.ktor.client.plugins.ServerResponseException) {
+            ApiResponse.Error(e.response.status.value, "Server error (${e.response.status.value}). Please try again later.")
         } catch (e: ClientRequestException) {
             ApiResponse.Error(e.response.status.value, e.message ?: "Client error")
         } catch (e: Exception) {

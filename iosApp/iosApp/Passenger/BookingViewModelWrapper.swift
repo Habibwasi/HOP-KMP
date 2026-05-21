@@ -25,6 +25,9 @@ final class BookingViewModelWrapper: ObservableObject {
 
     @Published var state: BookingUiState
 
+    private var stateTask: Task<Void, Never>?
+    private var effectTask: Task<Void, Never>?
+
     init() {
         let vm = KoinIOSKt.getBookingViewModel()
         self.viewModel = vm
@@ -32,12 +35,14 @@ final class BookingViewModelWrapper: ObservableObject {
     }
 
     func startObserving(onEffect: @escaping (any BookingEffect) -> Void) {
-        Task {
+        stateTask?.cancel()
+        effectTask?.cancel()
+        stateTask = Task {
             for await newState in viewModel.state {
                 self.state = newState
             }
         }
-        Task {
+        effectTask = Task {
             for await effect in viewModel.effect {
                 onEffect(effect)
             }

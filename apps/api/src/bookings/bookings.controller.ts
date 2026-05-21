@@ -56,6 +56,12 @@ export class BookingsController {
     return this.bookings.cancel(id, req.user.id)
   }
 
+  @Patch(':id/confirm')
+  @HttpCode(200)
+  confirm(@Param('id') id: string) {
+    return this.bookings.confirm(id)
+  }
+
   @Post(':id/rate')
   @HttpCode(201)
   async rate(

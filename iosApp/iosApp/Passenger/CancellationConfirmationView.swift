@@ -55,7 +55,7 @@ struct CancellationConfirmationView: View {
         if let amount = wrapper.state.refundAmountOere?.intValue {
             let dkk = amount / 100
             let ore = amount % 100
-            let s = ore == 0 ? "DKK \(dkk)" : String(format: "DKK %d.%02d", dkk, ore)
+            let s = ore == 0 ? "DKK \(dkk)" : String(format: "DKK %d,%02d", dkk, ore)
             return "Your refund of \(s) is on its way."
         }
         return "Your refund is on its way."

@@ -139,7 +139,7 @@ private struct PriceSummaryCard: View {
     private func dkk(_ oere: Int) -> String {
         let dkk = oere / 100
         let ore = oere % 100
-        return String(format: "DKK %d.%02d", dkk, ore)
+        return String(format: "DKK %d,%02d", dkk, ore)
     }
 }
 
