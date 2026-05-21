@@ -18,7 +18,11 @@ class HopAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterD
         if let dsn = Bundle.main.object(forInfoDictionaryKey: "SENTRY_DSN") as? String, !dsn.isEmpty {
             SentrySDK.start { options in
                 options.dsn = dsn
+                #if DEBUG
+                options.environment = "development"
+                #else
                 options.environment = Bundle.main.object(forInfoDictionaryKey: "SENTRY_ENV") as? String ?? "production"
+                #endif
                 options.releaseName = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
 
                 // Error monitoring — crash reporting, app hangs, watchdog terminations.
