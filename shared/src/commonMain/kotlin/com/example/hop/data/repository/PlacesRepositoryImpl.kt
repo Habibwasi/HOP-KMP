@@ -83,7 +83,7 @@ class PlacesRepositoryImpl(
     ): ApiResponse<T> = try {
         val envelope = block()
         val error = envelope.error
-        if (error != null) ApiResponse.Error(error.code, error.message)
+        if (error != null) ApiResponse.Error(error.code, error.message, error.errorCode)
         else ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
     } catch (e: HttpRequestTimeoutException) {
         ApiResponse.Error(ApiResponse.CODE_TIMEOUT, "Connection timed out. Please check your network and try again.")

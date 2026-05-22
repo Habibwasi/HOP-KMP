@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, UseGuards, Req, Param,
-  Body, NotFoundException, UnauthorizedException, Logger,
+  Body, Logger,
   HttpCode, HttpStatus,
   Inject,
 } from '@nestjs/common'
@@ -13,6 +13,8 @@ import { CreateProfileDto } from './dto/create-profile.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { CreateCarDetailsDto } from './dto/create-car-details.dto'
 import { IsString, MinLength } from 'class-validator'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 class ReportDto {
   @IsString()
@@ -51,11 +53,11 @@ export class UsersController {
   @Post('profile')
   async createProfile(@Req() req: any, @Body() dto: CreateProfileDto) {
     const auth: string | undefined = req.headers?.authorization
-    if (!auth?.startsWith('Bearer ')) throw new UnauthorizedException()
+    if (!auth?.startsWith('Bearer ')) throw new AppException(ApiErrorCode.TOKEN_MISSING)
     const token = auth.slice(7)
 
     const { data: { user: supabaseUser }, error } = await this.supabase.auth.getUser(token)
-    if (error || !supabaseUser) throw new UnauthorizedException()
+    if (error || !supabaseUser) throw new AppException(ApiErrorCode.TOKEN_INVALID)
 
     try {
       return await this.users.createProfile(supabaseUser.id, {
@@ -93,11 +95,7 @@ export class UsersController {
           `deleteError="${lastDeleteError.message}" originalError="${(err as Error).message}" ` +
           `— manual cleanup required in Supabase dashboard`,
         )
-        throw new Error(
-          `Registration failed: ${(err as Error).message}. ` +
-          `Your account is in a partial state — please contact support with your email address ` +
-          `before attempting to register again.`,
-        )
+        throw new AppException(ApiErrorCode.DANGLING_AUTH_USER)
       }
 
       throw err
@@ -108,7 +106,7 @@ export class UsersController {
   @UseGuards(SupabaseGuard)
   async getMe(@Req() req: any) {
     const user = await this.users.findById(req.user.id)
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new AppException(ApiErrorCode.USER_NOT_FOUND)
     return user
   }
 
@@ -157,7 +155,7 @@ export class UsersController {
   @UseGuards(SupabaseGuard)
   async getUserById(@Param('id') id: string) {
     const user = await this.users.findById(id)
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new AppException(ApiErrorCode.USER_NOT_FOUND)
     return user
   }
 
@@ -176,7 +174,7 @@ export class UsersController {
   @Get(':id/car')
   async getCarDetails(@Param('id') id: string) {
     const car = await this.users.getCarDetails(id)
-    if (!car) throw new NotFoundException('No car details found')
+    if (!car) throw new AppException(ApiErrorCode.CAR_NOT_FOUND)
     return car
   }
 

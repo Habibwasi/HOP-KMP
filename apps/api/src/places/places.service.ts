@@ -1,7 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { UpsertPlaceDto } from './places.controller'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 @Injectable()
 export class PlacesService {
@@ -39,8 +41,8 @@ export class PlacesService {
 
   async update(userId: string, id: string, dto: UpsertPlaceDto) {
     const existing = await this.prisma.savedPlace.findUnique({ where: { id } })
-    if (!existing) throw new NotFoundException('Place not found')
-    if (existing.userId !== userId) throw new ForbiddenException()
+    if (!existing) throw new AppException(ApiErrorCode.PLACE_NOT_FOUND)
+    if (existing.userId !== userId) throw new AppException(ApiErrorCode.NOT_YOUR_TRIP)
     return this.prisma.savedPlace.update({
       where: { id },
       data: {
@@ -55,8 +57,8 @@ export class PlacesService {
 
   async remove(userId: string, id: string) {
     const existing = await this.prisma.savedPlace.findUnique({ where: { id } })
-    if (!existing) throw new NotFoundException('Place not found')
-    if (existing.userId !== userId) throw new ForbiddenException()
+    if (!existing) throw new AppException(ApiErrorCode.PLACE_NOT_FOUND)
+    if (existing.userId !== userId) throw new AppException(ApiErrorCode.NOT_YOUR_TRIP)
     await this.prisma.savedPlace.delete({ where: { id } })
     return { ok: true }
   }
@@ -67,11 +69,11 @@ export class PlacesService {
    */
   async geocode(address: string): Promise<{ lat: number; lng: number; formattedAddress: string }> {
     const token = this.mapboxToken()
-    if (!token) throw new BadRequestException('Geocoding is not configured on this server')
+    if (!token) throw new AppException(ApiErrorCode.GEOCODING_NOT_CONFIGURED)
 
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1&types=address,place,poi`
     const res = await fetch(url)
-    if (!res.ok) throw new BadRequestException('Geocoding request failed')
+    if (!res.ok) throw new AppException(ApiErrorCode.GEOCODING_FAILED)
 
     const json = await res.json() as {
       features: Array<{
@@ -81,7 +83,7 @@ export class PlacesService {
     }
 
     if (!json.features?.length) {
-      throw new BadRequestException(`No geocoding result for: ${address}`)
+      throw new AppException(ApiErrorCode.GEOCODING_NO_RESULT, `No geocoding result for: ${address}`)
     }
 
     const [lng, lat] = json.features[0].center
@@ -97,12 +99,12 @@ export class PlacesService {
     destLng: number
   }> {
     const token = this.mapboxToken()
-    if (!token) throw new BadRequestException('Route calculation is not configured on this server')
+    if (!token) throw new AppException(ApiErrorCode.ROUTE_NOT_CONFIGURED)
 
     const cleanOrigin = origin?.trim()
     const cleanDest = dest?.trim()
     if (!cleanOrigin || !cleanDest) {
-      throw new BadRequestException('origin and dest are required')
+      throw new AppException(ApiErrorCode.ROUTE_PARAMS_MISSING)
     }
 
     // Forward-geocode both addresses to coordinates first
@@ -115,7 +117,7 @@ export class PlacesService {
     const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?access_token=${token}&overview=false&steps=false`
 
     const res = await fetch(url)
-    if (!res.ok) throw new BadRequestException('Route calculation request failed')
+    if (!res.ok) throw new AppException(ApiErrorCode.ROUTE_NOT_CONFIGURED)
 
     const json = await res.json() as {
       code: string
@@ -126,7 +128,7 @@ export class PlacesService {
     }
 
     if (json.code !== 'Ok' || !json.routes?.length) {
-      throw new BadRequestException(json.message ?? 'No driving route found between the selected addresses')
+      throw new AppException(ApiErrorCode.ROUTE_PARAMS_MISSING)
     }
 
     return {

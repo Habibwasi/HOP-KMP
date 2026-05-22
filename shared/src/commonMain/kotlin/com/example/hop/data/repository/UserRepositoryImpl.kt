@@ -64,7 +64,7 @@ class UserRepositoryImpl(
         return try {
             val envelope: ApiEnvelope<CarDetailsDto?> = httpClient.get("users/$userId/car").body()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             ApiResponse.Success(envelope.data?.toDomain())
         } catch (e: ClientRequestException) {
             if (e.response.status == HttpStatusCode.NotFound) {
@@ -141,7 +141,7 @@ class UserRepositoryImpl(
         return try {
             val envelope = block()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
         } catch (e: ClientRequestException) {
             ApiResponse.Error(e.response.status.value, e.message ?: "Client error")

@@ -1,5 +1,7 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 @Injectable()
 export class ChatService {
@@ -11,10 +13,10 @@ export class ChatService {
       where: { id: bookingId },
       include: { trip: { select: { driverId: true } } },
     })
-    if (!booking) throw new NotFoundException('Booking not found')
+    if (!booking) throw new AppException(ApiErrorCode.BOOKING_NOT_FOUND)
     const isPassenger = booking.passengerId === userId
     const isDriver = booking.trip.driverId === userId
-    if (!isPassenger && !isDriver) throw new ForbiddenException('Not a participant')
+    if (!isPassenger && !isDriver) throw new AppException(ApiErrorCode.NOT_A_PARTICIPANT)
   }
 
   /** Persist a chat message and return it for broadcasting. */

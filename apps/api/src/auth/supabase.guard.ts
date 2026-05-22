@@ -4,10 +4,11 @@ import {
   Inject,
   Injectable,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { PrismaService } from '../prisma/prisma.service'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 @Injectable()
 export class SupabaseGuard implements CanActivate {
@@ -21,14 +22,14 @@ export class SupabaseGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const token = this.extractBearerToken(request)
-    if (!token) throw new UnauthorizedException()
+    if (!token) throw new AppException(ApiErrorCode.TOKEN_MISSING)
 
     const {
       data: { user: supabaseUser },
       error,
     } = await this.supabase.auth.getUser(token)
 
-    if (error || !supabaseUser) throw new UnauthorizedException()
+    if (error || !supabaseUser) throw new AppException(ApiErrorCode.TOKEN_INVALID)
 
     let user = await this.prisma.user.findUnique({ where: { id: supabaseUser.id } })
 
@@ -81,9 +82,7 @@ export class SupabaseGuard implements CanActivate {
           update: {},
         })
       } else {
-        throw new UnauthorizedException(
-          'Profile not found. Please register again or contact support.',
-        )
+        throw new AppException(ApiErrorCode.PROFILE_NOT_FOUND)
       }
     }
 
@@ -95,7 +94,7 @@ export class SupabaseGuard implements CanActivate {
           data: { isBanned: false, banExpiresAt: null },
         })
       } else {
-        throw new UnauthorizedException('Account banned')
+        throw new AppException(ApiErrorCode.ACCOUNT_BANNED)
       }
     }
 

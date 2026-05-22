@@ -1,12 +1,11 @@
 import {
   Injectable,
-  BadRequestException,
-  NotFoundException,
-  ForbiddenException,
   forwardRef,
   Inject,
   Logger,
 } from '@nestjs/common'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { PrismaService } from '../prisma/prisma.service'
@@ -123,30 +122,28 @@ export class TripsService {
     // Ensure driver has a MobilePay number before publishing any trip
     const driver = await this.prisma.user.findUnique({ where: { id: driverId } })
     if (!driver?.mobilepayNumber) {
-      throw new BadRequestException(
-        'Please add your MobilePay number in your profile before creating a trip',
-      )
+      throw new AppException(ApiErrorCode.MOBILEPAY_MISSING)
     }
 
     // Validate Model B requirements
     if (dto.model === TripModel.B) {
       if (!dto.minPassengers) {
-        throw new BadRequestException('minPassengers is required for Model B trips')
+        throw new AppException(ApiErrorCode.MODEL_B_MISSING_MIN_PASSENGERS)
       }
       if (!dto.thresholdDeadline) {
-        throw new BadRequestException('thresholdDeadline is required for Model B trips')
+        throw new AppException(ApiErrorCode.MODEL_B_MISSING_DEADLINE)
       }
       const deadline = new Date(dto.thresholdDeadline)
       const departure = new Date(dto.departureAt)
       if (deadline >= departure) {
-        throw new BadRequestException('thresholdDeadline must be before departureAt')
+        throw new AppException(ApiErrorCode.MODEL_B_DEADLINE_AFTER_DEPARTURE)
       }
     }
 
     // Model A: validate recurringDays present
     if (dto.model === TripModel.A) {
       if (!dto.recurringDays || dto.recurringDays.length === 0) {
-        throw new BadRequestException('recurringDays is required for Model A trips')
+        throw new AppException(ApiErrorCode.MODEL_A_MISSING_RECURRING_DAYS)
       }
     }
 
@@ -186,9 +183,7 @@ export class TripsService {
       const dates = buildRecurringDates(anchor, dto.recurringDays!, 30)
 
       if (dates.length === 0) {
-        throw new BadRequestException(
-          'No occurrences found in the next 30 days for the selected days',
-        )
+        throw new AppException(ApiErrorCode.NO_OCCURRENCES)
       }
 
       const instances = dates.map((d) => ({ ...baseData, departureAt: d }))
@@ -487,14 +482,14 @@ export class TripsService {
         },
       },
     })
-    if (!trip) throw new NotFoundException('Trip not found')
+    if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
     return trip
   }
 
   async getTripPassengers(tripId: string, driverId: string) {
     const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
-    if (!trip) throw new NotFoundException('Trip not found')
-    if (trip.driverId !== driverId) throw new ForbiddenException('Not your trip')
+    if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
+    if (trip.driverId !== driverId) throw new AppException(ApiErrorCode.NOT_YOUR_TRIP)
 
     const bookings = await this.prisma.booking.findMany({
       where: {
@@ -531,10 +526,10 @@ export class TripsService {
 
   async cancel(tripId: string, userId: string) {
     const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
-    if (!trip) throw new NotFoundException('Trip not found')
-    if (trip.driverId !== userId) throw new ForbiddenException('Not your trip')
+    if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
+    if (trip.driverId !== userId) throw new AppException(ApiErrorCode.NOT_YOUR_TRIP)
     if (trip.status === TripStatus.CANCELLED) {
-      throw new BadRequestException('Trip already cancelled')
+      throw new AppException(ApiErrorCode.TRIP_ALREADY_CANCELLED)
     }
 
     await this.prisma.trip.update({
@@ -562,15 +557,15 @@ export class TripsService {
         bookings: { where: { status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] } } },
       },
     })
-    if (!trip) throw new NotFoundException('Trip not found')
-    if (trip.driverId !== userId) throw new ForbiddenException('Not your trip')
+    if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
+    if (trip.driverId !== userId) throw new AppException(ApiErrorCode.NOT_YOUR_TRIP)
     if (!trip.driver.mobilepayNumber) {
-      throw new BadRequestException('Add your MobilePay number before completing a trip')
+      throw new AppException(ApiErrorCode.MOBILEPAY_MISSING)
     }
     const driver = trip.driver
     if (trip.status === TripStatus.COMPLETED) return { completed: true }
     if (trip.status !== TripStatus.ACTIVE) {
-      throw new BadRequestException('Trip must be ACTIVE to complete')
+      throw new AppException(ApiErrorCode.TRIP_NOT_ACTIVE_FOR_COMPLETE)
     }
 
     await this.prisma.trip.update({

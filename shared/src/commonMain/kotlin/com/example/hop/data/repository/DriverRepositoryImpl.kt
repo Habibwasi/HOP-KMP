@@ -46,7 +46,7 @@ class DriverRepositoryImpl(
         return try {
             val envelope = block()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
         } catch (e: ClientRequestException) {
             ApiResponse.Error(e.response.status.value, e.message ?: "Client error")

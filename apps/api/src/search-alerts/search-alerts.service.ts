@@ -1,9 +1,6 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 import { PrismaService } from '../prisma/prisma.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { CreateSearchAlertDto } from './dto/create-search-alert.dto'
@@ -24,7 +21,7 @@ export class SearchAlertsService {
         isActive: true,
       },
     })
-    if (existing) throw new ConflictException('Alert already exists for this route')
+    if (existing) throw new AppException(ApiErrorCode.ALERT_ALREADY_EXISTS)
 
     return this.prisma.searchAlert.create({
       data: {
@@ -45,8 +42,8 @@ export class SearchAlertsService {
 
   async remove(userId: string, id: string) {
     const alert = await this.prisma.searchAlert.findUnique({ where: { id } })
-    if (!alert) throw new NotFoundException('Alert not found')
-    if (alert.userId !== userId) throw new ForbiddenException()
+    if (!alert) throw new AppException(ApiErrorCode.ALERT_NOT_FOUND)
+    if (alert.userId !== userId) throw new AppException(ApiErrorCode.NOT_A_PARTY)
     await this.prisma.searchAlert.update({ where: { id }, data: { isActive: false } })
     return { ok: true }
   }

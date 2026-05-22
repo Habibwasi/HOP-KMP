@@ -2,6 +2,7 @@ package com.example.hop.data.dto
 
 import com.example.hop.domain.model.User
 import com.example.hop.domain.model.UserRole
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // ── Request bodies ────────────────────────────────────────────────────────────
@@ -41,8 +42,9 @@ data class ApiEnvelope<T>(
 
 @Serializable
 data class ApiEnvelopeError(
-    val code: Int,
+    @SerialName("statusCode") val code: Int,
     val message: String,
+    val errorCode: String? = null,
 )
 
 // ── Mapping ───────────────────────────────────────────────────────────────────

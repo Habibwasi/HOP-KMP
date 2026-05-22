@@ -3,10 +3,14 @@ package com.example.hop.network
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.statement.bodyAsText
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 sealed class ApiResponse<out T> {
     data class Success<out T>(val data: T) : ApiResponse<T>()
-    data class Error(val code: Int, val message: String) : ApiResponse<Nothing>()
+    data class Error(val code: Int, val message: String, val errorCode: String? = null) : ApiResponse<Nothing>()
 
     companion object {
         /** Returned when the device has no network or the connection was refused. */
@@ -26,8 +30,18 @@ suspend fun <T> safeApiCall(block: suspend () -> T): ApiResponse<T> = try {
     // 5xx response — server-side fault, not the user's.
     ApiResponse.Error(e.response.status.value, "Server error (${e.response.status.value}). Please try again later.")
 } catch (e: ClientRequestException) {
-    // 4xx response — bad request, unauthorised, not found, etc.
-    ApiResponse.Error(e.response.status.value, e.message ?: "Request error")
+    // 4xx response — parse the structured error body to extract errorCode.
+    try {
+        val body = e.response.bodyAsText()
+        val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(body).jsonObject
+        val errorObj = json["error"]?.jsonObject
+        val errorCode = errorObj?.get("errorCode")?.jsonPrimitive?.contentOrNull
+        val msg = errorObj?.get("message")?.jsonPrimitive?.contentOrNull
+            ?: (e.message ?: "Request error")
+        ApiResponse.Error(e.response.status.value, msg, errorCode)
+    } catch (_: Exception) {
+        ApiResponse.Error(e.response.status.value, e.message ?: "Request error")
+    }
 } catch (e: Exception) {
     // Catch-all: differentiate common network-layer failures from unexpected bugs
     // so the UI can show a meaningful message instead of a raw exception dump.

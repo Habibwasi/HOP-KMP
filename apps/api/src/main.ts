@@ -6,6 +6,8 @@ import { AppModule } from './app.module'
 import { Logger, ValidationPipe } from '@nestjs/common'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
+import { AppException } from './common/errors/app-exception'
+import { ApiErrorCode } from './common/errors/api-error-codes'
 
 const logger = new Logger('Bootstrap')
 
@@ -42,7 +44,18 @@ async function bootstrap() {
     `Redis config — URL=${process.env.REDIS_URL ? '[SET]' : '[UNSET]'} HOST=${process.env.REDIS_HOST ?? '[UNSET]'} PORT=${process.env.REDIS_PORT ?? '[UNSET]'} PASSWORD=${process.env.REDIS_PASSWORD ? '[SET]' : '[UNSET]'}`,
   )
   const app = await NestFactory.create(AppModule, { rawBody: true })
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      exceptionFactory: (errors) => {
+        const details = errors.flatMap((e) =>
+          Object.values(e.constraints ?? {}).map((msg) => ({ field: e.property, message: msg })),
+        )
+        return new AppException(ApiErrorCode.VALIDATION_ERROR, undefined, details)
+      },
+    }),
+  )
   app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalInterceptors(new TransformInterceptor())
   app.setGlobalPrefix('api/v1')

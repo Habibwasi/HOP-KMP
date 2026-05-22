@@ -1,6 +1,16 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import { Response } from 'express'
 import * as Sentry from '@sentry/nestjs'
+import { ApiErrorCode } from '../errors/api-error-codes'
+
+const STATUS_FALLBACK: Partial<Record<number, ApiErrorCode>> = {
+  [HttpStatus.BAD_REQUEST]: ApiErrorCode.VALIDATION_ERROR,
+  [HttpStatus.UNAUTHORIZED]: ApiErrorCode.UNAUTHORIZED,
+  [HttpStatus.FORBIDDEN]: ApiErrorCode.ADMIN_REQUIRED,
+  [HttpStatus.NOT_FOUND]: ApiErrorCode.USER_NOT_FOUND,
+  [HttpStatus.CONFLICT]: ApiErrorCode.FIELD_TAKEN,
+  [HttpStatus.INTERNAL_SERVER_ERROR]: ApiErrorCode.INTERNAL_ERROR,
+}
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -23,19 +33,30 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : null
 
-    const message =
+    const responseObj =
       typeof exceptionResponse === 'object' && exceptionResponse !== null
-        ? (exceptionResponse as any).message
-        : exception instanceof Error
-          ? exception.message
-          : 'Internal server error'
+        ? (exceptionResponse as Record<string, any>)
+        : null
 
-    const displayMessage = Array.isArray(message) ? message.join(', ') : message
+    const errorCode: string =
+      responseObj?.errorCode ??
+      STATUS_FALLBACK[status] ??
+      ApiErrorCode.INTERNAL_ERROR
+
+    const rawMessage =
+      responseObj?.message ??
+      (exception instanceof Error ? exception.message : 'Internal server error')
+    const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : (rawMessage as string)
+
+    const details: Array<{ field: string; message: string }> | null =
+      responseObj?.details ?? null
 
     response.status(status).json({
       error: {
-        code: status,
-        message: displayMessage,
+        statusCode: status,
+        errorCode,
+        message,
+        details,
       },
     })
   }

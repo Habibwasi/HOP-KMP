@@ -55,7 +55,7 @@ class AggregatesRepositoryImpl(
     ): ApiResponse<T> = try {
         val envelope = block()
         val error = envelope.error
-        if (error != null) ApiResponse.Error(error.code, error.message)
+        if (error != null) ApiResponse.Error(error.code, error.message, error.errorCode)
         else ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
     } catch (e: ClientRequestException) {
         ApiResponse.Error(e.response.status.value, e.message ?: "Client error")

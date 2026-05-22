@@ -1,11 +1,6 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common'
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { AggregatesService } from './aggregates.service'
 
@@ -25,7 +20,7 @@ export class AggregatesController {
   ) {
     const days = daysStr ? parseInt(daysStr, 10) : 7
     if (isNaN(days) || days < 1 || days > 30) {
-      throw new BadRequestException('days must be between 1 and 30')
+      throw new AppException(ApiErrorCode.INVALID_PARAM, 'days must be between 1 and 30')
     }
     return this.aggregates.getDriverEarningsSeries(req.user.id, days)
   }
@@ -34,7 +29,7 @@ export class AggregatesController {
   async popularRoutes(@Query('limit') limitStr?: string) {
     const limit = limitStr ? parseInt(limitStr, 10) : 5
     if (isNaN(limit) || limit < 1 || limit > 50) {
-      throw new BadRequestException('limit must be between 1 and 50')
+      throw new AppException(ApiErrorCode.INVALID_PARAM, 'limit must be between 1 and 50')
     }
     return this.aggregates.getPopularRoutes(limit)
   }

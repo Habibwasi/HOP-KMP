@@ -1,18 +1,12 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-  ForbiddenException,
-  ConflictException,
-  UnauthorizedException,
-  Logger,
-} from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 import { BookingStatus, TripModel, TripStatus } from '@prisma/client'
 import { NotificationsService } from '../notifications/notifications.service'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 @Injectable()
 export class BookingsService {
@@ -29,12 +23,12 @@ export class BookingsService {
     const booking = await this.prisma.$transaction(async (tx) => {
       const trip = await tx.trip.findUnique({ where: { id: dto.tripId } })
 
-      if (!trip) throw new NotFoundException('Trip not found')
+      if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
       if (trip.status !== TripStatus.ACTIVE) {
-        throw new BadRequestException('Trip is not active')
+        throw new AppException(ApiErrorCode.TRIP_NOT_ACTIVE)
       }
       if (trip.driverId === passengerId) {
-        throw new BadRequestException('Cannot book your own trip')
+        throw new AppException(ApiErrorCode.CANNOT_BOOK_OWN_TRIP)
       }
 
       // Check available seats (count CONFIRMED + PENDING to prevent concurrent overbooking)
@@ -49,7 +43,7 @@ export class BookingsService {
       const available = trip.seats - bookedSeats
 
       if (dto.seats > available) {
-        throw new ConflictException(`Only ${available} seat(s) available`)
+        throw new AppException(ApiErrorCode.INSUFFICIENT_SEATS, `Only ${available} seat(s) available`)
       }
 
       // Check passenger doesn't already have an active booking
@@ -60,7 +54,7 @@ export class BookingsService {
           status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
         },
       })
-      if (existing) throw new ConflictException('Already booked this trip')
+      if (existing) throw new AppException(ApiErrorCode.ALREADY_BOOKED)
 
       const totalOere = trip.pricePerSeat * dto.seats
 
@@ -124,12 +118,12 @@ export class BookingsService {
       where: { id: bookingId },
       include: { trip: { select: { driverId: true } } },
     })
-    if (!booking) throw new NotFoundException('Booking not found')
-    if (booking.trip.driverId !== driverId) throw new ForbiddenException('Only the trip driver can confirm bookings')
+    if (!booking) throw new AppException(ApiErrorCode.BOOKING_NOT_FOUND)
+    if (booking.trip.driverId !== driverId) throw new AppException(ApiErrorCode.DRIVER_ONLY)
     // Idempotent: if already confirmed, just return.
     if (booking.status === BookingStatus.CONFIRMED) return booking
     if (booking.status !== BookingStatus.PENDING) {
-      throw new BadRequestException('Booking is not pending')
+      throw new AppException(ApiErrorCode.BOOKING_NOT_PENDING)
     }
     return this.prisma.booking.update({
       where: { id: bookingId },
@@ -145,7 +139,7 @@ export class BookingsService {
     const booking = await this.findById(id)
     const isParty =
       booking.passengerId === requesterId || booking.trip.driverId === requesterId
-    if (!isParty) throw new ForbiddenException('Not a party to this booking')
+    if (!isParty) throw new AppException(ApiErrorCode.NOT_A_PARTY)
     return booking
   }
 
@@ -154,14 +148,14 @@ export class BookingsService {
       where: { id: bookingId },
       include: { trip: true },
     })
-    if (!booking) throw new NotFoundException('Booking not found')
+    if (!booking) throw new AppException(ApiErrorCode.BOOKING_NOT_FOUND)
 
     const isPassenger = booking.passengerId === userId
     const isDriver = booking.trip.driverId === userId
-    if (!isPassenger && !isDriver) throw new ForbiddenException('Not authorised')
+    if (!isPassenger && !isDriver) throw new AppException(ApiErrorCode.NOT_A_PARTY)
 
     if (booking.status === BookingStatus.CANCELLED) {
-      throw new BadRequestException('Already cancelled')
+      throw new AppException(ApiErrorCode.ALREADY_CANCELLED)
     }
 
     await this.prisma.booking.update({
@@ -193,7 +187,7 @@ export class BookingsService {
         passenger: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     })
-    if (!booking) throw new NotFoundException('Booking not found')
+    if (!booking) throw new AppException(ApiErrorCode.BOOKING_NOT_FOUND)
     return booking
   }
 
