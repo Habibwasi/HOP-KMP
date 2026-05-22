@@ -52,7 +52,7 @@ export class RatingsService {
 
     // Prevent duplicate rating
     const existing = await this.prisma.rating.findFirst({
-      where: { raterId, rateeId: dto.rateeId, tripId: dto.tripId },
+      where: { raterId, rateeId: dto.rateeId },
     })
     if (existing) throw new ConflictException('Already rated this user for this trip')
 
