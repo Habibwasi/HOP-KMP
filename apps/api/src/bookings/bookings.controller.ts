@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req, HttpCode } from '@nestjs/common'
+import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req, HttpCode, ForbiddenException } from '@nestjs/common'
 import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { BookingsService } from './bookings.service'
@@ -46,8 +46,8 @@ export class BookingsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.bookings.findById(id)
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.bookings.findByIdAuthorized(id, req.user.id)
   }
 
   @Patch(':id/cancel')
@@ -58,8 +58,8 @@ export class BookingsController {
 
   @Patch(':id/confirm')
   @HttpCode(200)
-  confirm(@Param('id') id: string) {
-    return this.bookings.confirm(id)
+  confirm(@Param('id') id: string, @Req() req: any) {
+    return this.bookings.confirm(id, req.user.id)
   }
 
   @Post(':id/rate')

@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateRatingDto } from './dto/create-rating.dto'
@@ -16,14 +17,13 @@ export class RatingsService {
       throw new BadRequestException('Cannot rate yourself')
     }
 
-    // Verify rater was part of the trip
+    // Verify rater was part of the trip and resolve the valid ratee
     const trip = await this.prisma.trip.findUnique({
       where: { id: dto.tripId },
       include: {
         bookings: {
-          where: {
-            passengerId: raterId,
-          },
+          where: { passengerId: raterId },
+          select: { passengerId: true },
         },
       },
     })
@@ -37,9 +37,22 @@ export class RatingsService {
       throw new BadRequestException('You were not part of this trip')
     }
 
+    // Validate that rateeId is the actual counterparty for this trip.
+    // Driver may only rate a passenger on this trip; passenger may only rate the driver.
+    if (isDriver) {
+      const passengerIds = new Set(trip.bookings.map((b) => b.passengerId))
+      if (!passengerIds.has(dto.rateeId)) {
+        throw new ForbiddenException('You can only rate passengers on this trip')
+      }
+    } else {
+      if (dto.rateeId !== trip.driverId) {
+        throw new ForbiddenException('You can only rate the driver of this trip')
+      }
+    }
+
     // Prevent duplicate rating
     const existing = await this.prisma.rating.findFirst({
-      where: { raterId, rateeId: dto.rateeId },
+      where: { raterId, rateeId: dto.rateeId, tripId: dto.tripId },
     })
     if (existing) throw new ConflictException('Already rated this user for this trip')
 

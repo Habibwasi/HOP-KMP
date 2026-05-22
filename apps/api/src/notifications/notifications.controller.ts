@@ -22,8 +22,8 @@ export class NotificationsController {
   }
 
   @Delete('token')
-  remove(@Body('token') token: string) {
-    return this.notifications.removeToken(token)
+  remove(@Req() req: any, @Body('token') token: string) {
+    return this.notifications.removeToken(token, req.user.id)
   }
 
   @Get()

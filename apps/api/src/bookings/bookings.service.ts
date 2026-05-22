@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  UnauthorizedException,
   Logger,
 } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
@@ -118,9 +119,13 @@ export class BookingsService {
     return booking
   }
 
-  async confirm(bookingId: string) {
-    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } })
+  async confirm(bookingId: string, driverId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { trip: { select: { driverId: true } } },
+    })
     if (!booking) throw new NotFoundException('Booking not found')
+    if (booking.trip.driverId !== driverId) throw new ForbiddenException('Only the trip driver can confirm bookings')
     // Idempotent: if already confirmed, just return.
     if (booking.status === BookingStatus.CONFIRMED) return booking
     if (booking.status !== BookingStatus.PENDING) {
@@ -130,6 +135,18 @@ export class BookingsService {
       where: { id: bookingId },
       data: { status: BookingStatus.CONFIRMED },
     })
+  }
+
+  /**
+   * Like findById but also verifies the requesting user is a party to the
+   * booking (passenger or driver). Throws ForbiddenException otherwise.
+   */
+  async findByIdAuthorized(id: string, requesterId: string) {
+    const booking = await this.findById(id)
+    const isParty =
+      booking.passengerId === requesterId || booking.trip.driverId === requesterId
+    if (!isParty) throw new ForbiddenException('Not a party to this booking')
+    return booking
   }
 
   async cancel(bookingId: string, userId: string) {
