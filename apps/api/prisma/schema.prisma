@@ -65,6 +65,8 @@ model PushToken {
   token     String   @unique
   platform  String
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Trip {
@@ -92,6 +94,10 @@ model Trip {
   updatedAt     DateTime @updatedAt
 
   bookings   Booking[]
+
+  @@index([driverId])
+  @@index([status, departureAt])
+  @@index([isActive, departureAt])
 }
 
 model Booking {
@@ -108,6 +114,9 @@ model Booking {
 
   settlement   RideSettlement?
   chatMessages ChatMessage[]
+
+  @@index([tripId])
+  @@index([passengerId])
 }
 
 model Rating {
@@ -119,6 +128,8 @@ model Rating {
   score     Int
   comment   String?
   createdAt DateTime @default(now())
+
+  @@index([rateeId])
 }
 
 enum BookingStatus {

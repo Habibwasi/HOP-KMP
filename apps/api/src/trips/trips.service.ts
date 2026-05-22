@@ -119,6 +119,22 @@ export class TripsService {
     private notifications: NotificationsService,
   ) {}
 
+  /** Sync PostGIS geography columns for a single trip row. */
+  private async syncTripGeo(
+    tripId: string,
+    originLng: number,
+    originLat: number,
+    destLng: number,
+    destLat: number,
+  ): Promise<void> {
+    await this.prisma.$executeRaw`
+      UPDATE "Trip"
+      SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${originLng}, ${originLat}), 4326)::extensions.geography,
+          dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${destLng},   ${destLat}),   4326)::extensions.geography
+      WHERE id = ${tripId}
+    `
+  }
+
   async create(driverId: string, dto: CreateTripDto) {
     // Ensure driver has a MobilePay number before publishing any trip
     const driver = await this.prisma.user.findUnique({ where: { id: driverId } })
@@ -195,6 +211,14 @@ export class TripsService {
 
       await this.prisma.trip.createMany({ data: instances })
 
+      // Sync PostGIS geography columns for newly created instances
+      await this.prisma.$executeRaw`
+        UPDATE "Trip"
+        SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.originLng}, ${dto.originLat}), 4326)::extensions.geography,
+            dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.destLng},   ${dto.destLat}),   4326)::extensions.geography
+        WHERE "driverId" = ${driverId} AND "originAddress" = ${dto.originAddress} AND origin_geo IS NULL
+      `
+
       // Fetch the first created instance to return a consistent response shape
       const firstTrip = await this.prisma.trip.findFirst({
         where: {
@@ -236,6 +260,9 @@ export class TripsService {
       },
       include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
     })
+
+    // Sync PostGIS geography columns for this new trip
+    await this.syncTripGeo(trip.id, dto.originLng, dto.originLat, dto.destLng, dto.destLat)
 
     // Enqueue alert-matching as a fire-and-forget background job.
     await this.alertsQueue.add(MATCH_ALERTS_JOB, {
@@ -326,6 +353,12 @@ export class TripsService {
 
       if (newInstances.length > 0) {
         await this.prisma.trip.createMany({ data: newInstances, skipDuplicates: true })
+        await this.prisma.$executeRaw`
+          UPDATE "Trip"
+          SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${template.originLng}, ${template.originLat}), 4326)::extensions.geography,
+              dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${template.destLng},   ${template.destLat}),   4326)::extensions.geography
+          WHERE "driverId" = ${template.driverId} AND "originAddress" = ${template.originAddress} AND origin_geo IS NULL
+        `
       }
     }
   }
@@ -346,7 +379,67 @@ export class TripsService {
       dto.destLat != null &&
       dto.destLng != null
 
-    // Build where clause — text search when no coordinates provided
+    // ── Coordinate-based search: PostGIS ST_DWithin ───────────────────────────
+    if (useCoordinates) {
+      const radiusMetres = radiusKm * 1000
+
+      type TripSearchRow = {
+        id: string; driverId: string; model: string
+        originLat: number; originLng: number; originAddress: string
+        destLat: number; destLng: number; destAddress: string
+        departureAt: Date; seats: number; pricePerSeat: number
+        distanceKm: number | null; status: string
+        isActive: boolean; isRecurring: boolean; recurringDays: string[]
+        minPassengers: number | null; thresholdDeadline: Date | null
+        createdAt: Date; updatedAt: Date
+        driver: { id: string; firstName: string; lastName: string; avatarUrl: string | null }
+        bookedSeats: bigint
+      }
+
+      const rows = await this.prisma.$queryRaw<TripSearchRow[]>`
+        SELECT t.id, t."driverId", t.model,
+               t."originLat", t."originLng", t."originAddress",
+               t."destLat",   t."destLng",   t."destAddress",
+               t."departureAt", t.seats, t."pricePerSeat",
+               t."distanceKm", t.status, t."isActive",
+               t."isRecurring", t."recurringDays",
+               t."minPassengers", t."thresholdDeadline",
+               t."createdAt", t."updatedAt",
+               json_build_object(
+                 'id',        u.id,
+                 'firstName', u."firstName",
+                 'lastName',  u."lastName",
+                 'avatarUrl', u."avatarUrl"
+               ) AS driver,
+               COALESCE((
+                 SELECT SUM(b.seats)
+                 FROM "Booking" b
+                 WHERE b."tripId" = t.id AND b.status = 'CONFIRMED'
+               ), 0) AS "bookedSeats"
+        FROM "Trip" t
+        JOIN "User" u ON u.id = t."driverId"
+        WHERE t.status = 'ACTIVE'
+          AND t."departureAt" BETWEEN ${dayStart} AND ${dayEnd}
+          AND t.seats >= ${seats}
+          AND t.origin_geo IS NOT NULL
+          AND extensions.ST_DWithin(
+                t.origin_geo,
+                extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.originLng!}, ${dto.originLat!}), 4326)::extensions.geography,
+                ${radiusMetres}
+              )
+          AND extensions.ST_DWithin(
+                t.dest_geo,
+                extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.destLng!}, ${dto.destLat!}), 4326)::extensions.geography,
+                ${radiusMetres}
+              )
+      `
+
+      return rows
+        .filter((row) => (row.seats - Number(row.bookedSeats)) >= seats)
+        .map((row) => ({ ...row, availableSeats: row.seats - Number(row.bookedSeats), bookedSeats: undefined }))
+    }
+
+    // ── Text-based search (no coordinates): unchanged behaviour ───────────────
     const where: any = {
       status: TripStatus.ACTIVE,
       departureAt: { gte: dayStart, lte: dayEnd },
@@ -364,28 +457,10 @@ export class TripsService {
       },
     })
 
-    // Filter by proximity (haversine) when coordinates provided, otherwise just by available seats
     return trips
       .filter((trip) => {
         const bookedSeats = trip.bookings.reduce((sum, b) => sum + b.seats, 0)
         const availableSeats = trip.seats - bookedSeats
-
-        if (useCoordinates) {
-          const originDist = this.pricing.calculateDistance(
-            dto.originLat!,
-            dto.originLng!,
-            trip.originLat,
-            trip.originLng,
-          )
-          const destDist = this.pricing.calculateDistance(
-            dto.destLat!,
-            dto.destLng!,
-            trip.destLat,
-            trip.destLng,
-          )
-          return originDist <= radiusKm && destDist <= radiusKm && availableSeats >= seats
-        }
-
         return availableSeats >= seats &&
           addressMatches(trip.originAddress, dto.origin) &&
           addressMatches(trip.destAddress, dto.dest)
