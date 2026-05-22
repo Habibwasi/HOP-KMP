@@ -119,22 +119,6 @@ export class TripsService {
     private notifications: NotificationsService,
   ) {}
 
-  /** Sync PostGIS geography columns for a single trip row. */
-  private async syncTripGeo(
-    tripId: string,
-    originLng: number,
-    originLat: number,
-    destLng: number,
-    destLat: number,
-  ): Promise<void> {
-    await this.prisma.$executeRaw`
-      UPDATE "Trip"
-      SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${originLng}, ${originLat}), 4326)::extensions.geography,
-          dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${destLng},   ${destLat}),   4326)::extensions.geography
-      WHERE id = ${tripId}
-    `
-  }
-
   async create(driverId: string, dto: CreateTripDto) {
     // Ensure driver has a MobilePay number before publishing any trip
     const driver = await this.prisma.user.findUnique({ where: { id: driverId } })
@@ -211,12 +195,17 @@ export class TripsService {
 
       await this.prisma.trip.createMany({ data: instances })
 
-      // Sync PostGIS geography columns for newly created instances
+      // Sync PostGIS geography columns for newly created instances.
+      // Filter by driverId + originAddress + destAddress to avoid cross-contaminating
+      // a concurrent batch with the same origin but a different destination.
       await this.prisma.$executeRaw`
         UPDATE "Trip"
         SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.originLng}, ${dto.originLat}), 4326)::extensions.geography,
             dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.destLng},   ${dto.destLat}),   4326)::extensions.geography
-        WHERE "driverId" = ${driverId} AND "originAddress" = ${dto.originAddress} AND origin_geo IS NULL
+        WHERE "driverId" = ${driverId}
+          AND "originAddress" = ${dto.originAddress}
+          AND "destAddress"   = ${dto.destAddress}
+          AND origin_geo IS NULL
       `
 
       // Fetch the first created instance to return a consistent response shape
@@ -253,16 +242,25 @@ export class TripsService {
     }
 
     // ── Model B: single trip instance ────────────────────────────────────────
-    const trip = await this.prisma.trip.create({
-      data: {
-        ...baseData,
-        departureAt: new Date(dto.departureAt),
-      },
-      include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+    // create + geo sync run atomically: if the geo UPDATE fails the trip row is
+    // rolled back, preventing an orphaned row that would silently vanish from
+    // coordinate-based search results.
+    const trip = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.trip.create({
+        data: {
+          ...baseData,
+          departureAt: new Date(dto.departureAt),
+        },
+        include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+      })
+      await tx.$executeRaw`
+        UPDATE "Trip"
+        SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.originLng}, ${dto.originLat}), 4326)::extensions.geography,
+            dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.destLng},   ${dto.destLat}),   4326)::extensions.geography
+        WHERE id = ${created.id}
+      `
+      return created
     })
-
-    // Sync PostGIS geography columns for this new trip
-    await this.syncTripGeo(trip.id, dto.originLng, dto.originLat, dto.destLng, dto.destLat)
 
     // Enqueue alert-matching as a fire-and-forget background job.
     await this.alertsQueue.add(MATCH_ALERTS_JOB, {
@@ -357,7 +355,10 @@ export class TripsService {
           UPDATE "Trip"
           SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${template.originLng}, ${template.originLat}), 4326)::extensions.geography,
               dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${template.destLng},   ${template.destLat}),   4326)::extensions.geography
-          WHERE "driverId" = ${template.driverId} AND "originAddress" = ${template.originAddress} AND origin_geo IS NULL
+          WHERE "driverId" = ${template.driverId}
+            AND "originAddress" = ${template.originAddress}
+            AND "destAddress"   = ${template.destAddress}
+            AND origin_geo IS NULL
         `
       }
     }
