@@ -15,7 +15,8 @@ class HopApplication : Application() {
         if (BuildConfig.SENTRY_DSN.isNotBlank()) {
             SentryAndroid.init(this) { options ->
                 options.dsn = BuildConfig.SENTRY_DSN
-                options.tracesSampleRate = 1.0
+                options.environment = if (BuildConfig.DEBUG) "debug" else "production"
+                options.tracesSampleRate = if (BuildConfig.DEBUG) 1.0 else 0.2
                 options.isEnableUserInteractionTracing = true
             }
         }
