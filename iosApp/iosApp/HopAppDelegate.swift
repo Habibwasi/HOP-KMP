@@ -18,10 +18,39 @@ class HopAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterD
         if let dsn = Bundle.main.object(forInfoDictionaryKey: "SENTRY_DSN") as? String, !dsn.isEmpty {
             SentrySDK.start { options in
                 options.dsn = dsn
+                #if DEBUG
+                options.environment = "development"
+                #else
                 options.environment = Bundle.main.object(forInfoDictionaryKey: "SENTRY_ENV") as? String ?? "production"
-                // Capture 20% of transactions for performance monitoring.
+                #endif
+                options.releaseName = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+
+                // Error monitoring — crash reporting, app hangs, watchdog terminations.
+                options.enableCrashHandler = true
+                options.enableAppHangTracking = true
+                options.enableReportNonFullyBlockingAppHangs = true
+                options.enableWatchdogTerminationTracking = true
+                options.attachScreenshot = true
+                options.attachViewHierarchy = true
+                options.sendDefaultPii = true
+
+                // Tracing — 20% of transactions; auto-instruments app launch, network, UIViewController.
                 options.tracesSampleRate = 0.2
                 options.enableUserInteractionTracing = true
+                options.tracePropagationTargets = ["hop.ridly.dk"]
+
+                // Profiling — 10% of sessions, lifecycle tied to traces.
+                options.configureProfiling = {
+                    $0.sessionSampleRate = 0.1
+                    $0.lifecycle = .trace
+                }
+
+                // Session Replay — 10% continuous, 100% on errors (disabled on iOS 26+ by default).
+                options.sessionReplay.sessionSampleRate = 0.1
+                options.sessionReplay.onErrorSampleRate = 1.0
+
+                // Structured logging (SDK 9.0+).
+                options.enableLogs = true
             }
         }
 

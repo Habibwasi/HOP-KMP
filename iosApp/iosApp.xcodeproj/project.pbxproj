@@ -6,13 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		814FC90929BF48E68318551C /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = BEBD9C6AAD854F77B9A132C0 /* Sentry */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		C9358075A668AA09AE3BC7F6 /* Ridly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ridly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXBuildFile section */
-		AA0001000000000000000001 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = AA0001000000000000000002 /* Sentry */; };
-/* End PBXBuildFile section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		A42FDF8274413C7130E36F0A /* Exceptions for "iosApp" folder in "iosApp" target */ = {
@@ -45,6 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				814FC90929BF48E68318551C /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -64,8 +65,16 @@
 			children = (
 				57ED3D0AA7D92B09BF28023A /* Configuration */,
 				7486A34E78968B297F686934 /* iosApp */,
+				BBCABD692FBF92D20069522E /* Frameworks */,
 				6BE2FAF0570897FEA9E3984D /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		BBCABD692FBF92D20069522E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -79,6 +88,7 @@
 				D4A34BA28D3B005416B27844 /* Sources */,
 				4486D002F7789499ADDF8B6F /* Frameworks */,
 				D4C44645958592C5A1D7043C /* Resources */,
+				125AE3E59E154FCB8A6AF654 /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
@@ -87,11 +97,11 @@
 			fileSystemSynchronizedGroups = (
 				7486A34E78968B297F686934 /* iosApp */,
 			);
-			name = iosApp;
-			packageProductDependencies = (
-				AA0001000000000000000002 /* Sentry */,
-			);
-			productName = iosApp;
+				name = iosApp;
+				packageProductDependencies = (
+					BEBD9C6AAD854F77B9A132C0 /* Sentry */,
+				);
+				productName = iosApp;
 			productReference = C9358075A668AA09AE3BC7F6 /* Ridly.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -119,12 +129,12 @@
 			);
 			mainGroup = 7E7EEE704D2D6C506B696082;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BBCABF082FBF9BF80069522E /* XCLocalSwiftPackageReference "SentryLocal" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6BE2FAF0570897FEA9E3984D /* Products */;
 			projectDirPath = "";
-			packages = (
-				AA0001000000000000000003 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
-			);
 			projectRoot = "";
 			targets = (
 				526E8F04203814AF7A05A358 /* iosApp */,
@@ -143,6 +153,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		125AE3E59E154FCB8A6AF654 /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"$(SRCROOT)$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Upload Debug Symbols to Sentry";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "export SENTRY_ORG=habib-ahmed-wasi\nexport SENTRY_PROJECT=apple-ios\nif which sentry-cli >/dev/null; then\n    sentry-cli debug-files upload --include-sources \"${DWARF_DSYM_FOLDER_PATH}\"\nelse\n    echo \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+		};
 		BB7409C02F93985400BC9CE2 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -172,25 +202,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		AA0001000000000000000003 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
-				isa = XCRemoteSwiftPackageReference;
-				repositoryURL = "https://github.com/getsentry/sentry-cocoa.git";
-				requirement = {
-					kind = upToNextMajorVersion;
-					minimumVersion = 8.0.0;
-				};
-			};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		AA0001000000000000000002 /* Sentry */ = {
-				isa = XCSwiftPackageProductDependency;
-				package = AA0001000000000000000003 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
-				productName = Sentry;
-			};
-/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		19D75F0E1FDEABA520CACBB8 /* Debug */ = {
@@ -394,6 +405,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		BBCABF082FBF9BF80069522E /* XCLocalSwiftPackageReference "SentryLocal" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = SentryLocal;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BEBD9C6AAD854F77B9A132C0 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BBCABF082FBF9BF80069522E /* XCLocalSwiftPackageReference "SentryLocal" */;
+			productName = Sentry;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4D0F7DD81742FC0B0715BE46 /* Project object */;
 }
