@@ -103,13 +103,21 @@ export class EmailHookController {
     }
 
     const token = authHeader?.replace(/^Bearer\s+/i, '')
+
+    // Log diagnostics before any early exit so we always see what arrived
+    this.logger.log(
+      `[hook-auth] authHeader present: ${!!authHeader} | ` +
+      `secret configured: ${!!hookSecret}`,
+    )
+
     if (!token) {
+      this.logger.warn('[hook-auth] No token in Authorization header — check Supabase Dashboard hook secret is set')
       throw new UnauthorizedException('Missing authorization token')
     }
 
     const isJwt = (token.match(/\./g) ?? []).length === 2
 
-    // Log diagnostics (safe — only first/last 6 chars of each)
+    // Log diagnostics (safe — only first 6 chars of each)
     this.logger.log(
       `[hook-auth] token format: ${isJwt ? 'JWT' : 'raw'} | ` +
       `token[0..6]="${token.slice(0, 6)}" | ` +
