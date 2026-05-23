@@ -241,5 +241,5 @@ private struct SettingsDivider: View {
 }
 
 #Preview {
-    SettingsView(onBack: {}, onLoggedOut: {})
+    SettingsView(onBack: {}, onLoggedOut: {}, navigate: { _ in })
 }

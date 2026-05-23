@@ -1,5 +1,6 @@
 import SwiftUI
 import Shared
+import AuthenticationServices
 
 // MARK: - ON-03 Log In ───────────────────────────────────────────────────────
 // Mirrors `LoginScreen.kt`. Light theme, welcome header, email/password with
@@ -98,18 +99,31 @@ struct LoginView: View {
                     Spacer().frame(height: HopSpacing.md)
 
                     HopButton(
-                        text: "Continue with MitID",
+                        text: "Continue with Google",
                         variant: .ghost,
-                        isEnabled: false,
-                        lightSurface: true,
-                        action: {}
+                        isEnabled: !wrapper.state.isLoading,
+                        action: { wrapper.signInWithGoogle() }
                     )
-                    .overlay(
-                        Rectangle()
-                            .fill(Color.clear)
-                            .contentShape(Rectangle())
-                            .onTapGesture { showToast("Coming soon") }
-                    )
+
+                    Spacer().frame(height: HopSpacing.sm)
+
+                    // Apple Sign-In — uses native ASAuthorizationAppleIDButton appearance
+                    // as required by App Store guideline 4.8. Tap triggers Supabase
+                    // browser-based OAuth (no native credential exchange needed).
+                    SignInWithAppleButton(.signIn, onRequest: { _ in }, onCompletion: { _ in })
+                        .signInWithAppleButtonStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .cornerRadius(14)
+                        .allowsHitTesting(false)
+                        .overlay(
+                            Button(action: {
+                                if !wrapper.state.isLoading { wrapper.signInWithApple() }
+                            }) {
+                                Color.clear
+                            }
+                        )
+                        .opacity(wrapper.state.isLoading ? 0.5 : 1.0)
 
                     Spacer().frame(height: HopSpacing.xl)
 

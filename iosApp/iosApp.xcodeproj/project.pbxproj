@@ -97,11 +97,11 @@
 			fileSystemSynchronizedGroups = (
 				7486A34E78968B297F686934 /* iosApp */,
 			);
-				name = iosApp;
-				packageProductDependencies = (
-					BEBD9C6AAD854F77B9A132C0 /* Sentry */,
-				);
-				productName = iosApp;
+			name = iosApp;
+			packageProductDependencies = (
+				BEBD9C6AAD854F77B9A132C0 /* Sentry */,
+			);
+			productName = iosApp;
 			productReference = C9358075A668AA09AE3BC7F6 /* Ridly.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -277,6 +277,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = K8RLL2YB5T;
 				ENABLE_PREVIEWS = YES;
@@ -305,6 +306,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = K8RLL2YB5T;
 				ENABLE_PREVIEWS = YES;

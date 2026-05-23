@@ -1,9 +1,7 @@
 package com.example.hop.ui.screens.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -101,9 +98,6 @@ fun LoginRoute(
             onEvent = viewModel::onEvent,
             onNavigateToForgotPassword = onNavigateToForgotPassword,
             onNavigateToSignUp = onNavigateToSignUp,
-            onMitIdClick = {
-                scope.launch { snackbarHostState.showSnackbar("Coming soon") }
-            },
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -121,7 +115,6 @@ fun LoginRoute(
  * @param onEvent                  Dispatches [AuthEvent] to the ViewModel.
  * @param onNavigateToForgotPassword Navigate to the password reset stub screen.
  * @param onNavigateToSignUp       Navigate to ON-02 (Sign Up).
- * @param onMitIdClick             Fired when the disabled MitID button is tapped.
  */
 @Composable
 fun LoginScreen(
@@ -129,7 +122,6 @@ fun LoginScreen(
     onEvent: (AuthEvent) -> Unit,
     onNavigateToForgotPassword: () -> Unit,
     onNavigateToSignUp: () -> Unit,
-    onMitIdClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // ── Local form state ──────────────────────────────────────────────────────
@@ -253,24 +245,24 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(HopSpacing.md))
 
-        // ── Continue with MitID (Ghost — visible but disabled) ────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(
-                    role = Role.Button,
-                    onClickLabel = "Coming soon",
-                    onClick = onMitIdClick,
-                ),
-        ) {
-            HopButton(
-                text = "Continue with MitID",
-                onClick = { /* intercepted by Box wrapper */ },
-                variant = HopButtonVariant.Ghost,
-                enabled = false,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        // ── Social sign-in ────────────────────────────────────────────────────
+        HopButton(
+            text = "Continue with Google",
+            onClick = { onEvent(AuthEvent.SignInWithGoogle) },
+            variant = HopButtonVariant.Ghost,
+            enabled = !state.isLoading,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(HopSpacing.sm))
+
+        HopButton(
+            text = "Continue with Apple",
+            onClick = { onEvent(AuthEvent.SignInWithApple) },
+            variant = HopButtonVariant.Ghost,
+            enabled = !state.isLoading,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
@@ -312,7 +304,6 @@ private fun LoginScreenEmptyPreview() {
             onEvent = {},
             onNavigateToForgotPassword = {},
             onNavigateToSignUp = {},
-            onMitIdClick = {},
         )
     }
 }
@@ -326,7 +317,6 @@ private fun LoginScreenLoadingPreview() {
             onEvent = {},
             onNavigateToForgotPassword = {},
             onNavigateToSignUp = {},
-            onMitIdClick = {},
         )
     }
 }
@@ -340,7 +330,6 @@ private fun LoginScreenErrorPreview() {
             onEvent = {},
             onNavigateToForgotPassword = {},
             onNavigateToSignUp = {},
-            onMitIdClick = {},
         )
     }
 }

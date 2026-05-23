@@ -25,6 +25,8 @@ import com.example.hop.ui.screens.auth.SetNewPasswordRoute
 import com.example.hop.ui.screens.auth.LoginRoute
 import com.example.hop.ui.screens.auth.OnboardingScreen
 import com.example.hop.ui.screens.auth.SignUpRoute
+import com.example.hop.ui.screens.auth.VerifyEmailRoute
+import com.example.hop.ui.screens.auth.EmailVerifiedScreen
 import com.example.hop.ui.screens.passenger.BookingConfirmationRoute
 import com.example.hop.ui.screens.passenger.BookingSuccessRoute
 import com.example.hop.ui.screens.passenger.CancellationConfirmationRoute
@@ -114,6 +116,9 @@ fun HopNavGraph(
                 onNavigateToLogin = {
                     navController.navigate(HopRoutes.Login)
                 },
+                onNavigateToVerifyEmail = { email ->
+                    navController.navigate(HopRoutes.VerifyEmail(email = email))
+                },
             )
         }
 
@@ -142,6 +147,27 @@ fun HopNavGraph(
         composable<HopRoutes.SetNewPassword> {
             SetNewPasswordRoute(
                 onPasswordUpdated = {
+                    navController.navigate(HopRoutes.Home) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable<HopRoutes.VerifyEmail> {
+            VerifyEmailRoute(
+                onNavigateToEmailVerified = {
+                    navController.navigate(HopRoutes.EmailVerified) {
+                        popUpTo(HopRoutes.VerifyEmail(email = "")) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.navigateUp() },
+            )
+        }
+
+        composable<HopRoutes.EmailVerified> {
+            EmailVerifiedScreen(
+                onNavigateToHome = {
                     navController.navigate(HopRoutes.Home) {
                         popUpTo(0) { inclusive = true }
                     }

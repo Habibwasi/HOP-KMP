@@ -11,7 +11,9 @@ import kotlinx.serialization.json.jsonPrimitive
 
 sealed class ApiResponse<out T> {
     data class Success<out T>(val data: T) : ApiResponse<T>()
-    data class Error(val code: Int, val message: String, val errorCode: String? = null) : ApiResponse<Nothing>()
+    open class Error(open val code: Int, open val message: String, open val errorCode: String? = null) : ApiResponse<Nothing>()
+    /** Emitted by [AuthRepository.register] when Supabase requires email confirmation before the session is active. */
+    data class VerificationRequired(val email: String) : Error(-2, "Email verification required")
 
     companion object {
         /** Returned when the device has no network or the connection was refused. */

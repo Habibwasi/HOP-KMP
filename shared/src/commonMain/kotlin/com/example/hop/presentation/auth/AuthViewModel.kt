@@ -8,6 +8,8 @@ import com.example.hop.domain.repository.AuthRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.network.SessionExpiryNotifier
 import com.example.hop.network.TokenStorage
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,12 @@ data class AuthUiState(
     /** Set to true after a password-reset email is sent; cleared once the recovery deep-link is processed. */
     val isPasswordRecoveryPending: Boolean = false,
     val pendingDeepLinkUrl: String? = null,
+    /** Set to true after [AuthEvent.Register] when Supabase requires email confirmation. */
+    val isEmailVerificationPending: Boolean = false,
+    /** The email address awaiting confirmation; used to display on the verify screen and for resend. */
+    val pendingVerificationEmail: String? = null,
+    /** Seconds remaining before the resend button re-enables (counts 60 → 0). */
+    val resendCooldownSeconds: Int = 0,
 )
 
 sealed interface AuthEvent {
@@ -47,6 +55,14 @@ sealed interface AuthEvent {
     data class UpdatePassword(val newPassword: String) : AuthEvent
     /** Re-fetches the current user profile — use after role changes (e.g. becoming a driver). */
     data object RefreshProfile : AuthEvent
+    /** Re-sends the confirmation email; only valid when [AuthUiState.isEmailVerificationPending] is true. */
+    data object ResendVerificationEmail : AuthEvent
+    /** Fired when the user navigates back from the verify-email screen; clears pending verification state. */
+    data object ClearEmailVerification : AuthEvent
+    /** Initiates Google OAuth PKCE sign-in. */
+    data object SignInWithGoogle : AuthEvent
+    /** Initiates Apple OAuth PKCE sign-in. */
+    data object SignInWithApple : AuthEvent
 }
 
 sealed interface AuthEffect {
@@ -65,6 +81,10 @@ sealed interface AuthEffect {
     data class NavigateToDriverSettlement(val bookingId: String) : AuthEffect
     /** Emitted when a push-notification deep link targets the passenger settlement screen. */
     data class NavigateToPassengerSettlement(val bookingId: String) : AuthEffect
+    /** Emitted after register() when Supabase requires email confirmation before granting a session. */
+    data class NavigateToVerifyEmail(val email: String) : AuthEffect
+    /** Emitted after the email-confirmation deep link is processed successfully; show the success screen. */
+    data object NavigateToEmailVerified : AuthEffect
 }
 
 class AuthViewModel(
@@ -78,6 +98,9 @@ class AuthViewModel(
 
     private val _effect = MutableSharedFlow<AuthEffect>(extraBufferCapacity = 8)
     val effect: Flow<AuthEffect> = _effect.asSharedFlow()
+
+    /** Cancellable job that ticks the resend cooldown counter down to zero. */
+    private var countdownJob: Job? = null
 
     init {
         // In dev mode, auto-populate the authenticated user so every
@@ -123,18 +146,22 @@ class AuthViewModel(
             is AuthEvent.RequestPasswordReset -> requestPasswordReset(event.email)
             is AuthEvent.UpdatePassword -> updatePassword(event.newPassword)
             is AuthEvent.RefreshProfile -> viewModelScope.launch { refreshUser() }
+            is AuthEvent.ResendVerificationEmail -> resendVerificationEmail()
+            is AuthEvent.ClearEmailVerification -> clearEmailVerification()
+            is AuthEvent.SignInWithGoogle -> signInWithGoogle()
+            is AuthEvent.SignInWithApple -> signInWithApple()
         }
     }
 
     private fun handleDeepLink(url: String) {
         // Route push-notification deep links without hitting the auth callback logic.
-        if (url.startsWith("hop://driver-settlement/")) {
-            val bookingId = url.removePrefix("hop://driver-settlement/")
+        if (url.startsWith("ridly://driver-settlement/")) {
+            val bookingId = url.removePrefix("ridly://driver-settlement/")
             if (bookingId.isNotBlank()) _effect.tryEmit(AuthEffect.NavigateToDriverSettlement(bookingId))
             return
         }
-        if (url.startsWith("hop://passenger-settlement/")) {
-            val bookingId = url.removePrefix("hop://passenger-settlement/")
+        if (url.startsWith("ridly://passenger-settlement/")) {
+            val bookingId = url.removePrefix("ridly://passenger-settlement/")
             if (bookingId.isNotBlank()) _effect.tryEmit(AuthEffect.NavigateToPassengerSettlement(bookingId))
             return
         }
@@ -190,13 +217,24 @@ class AuthViewModel(
                     // Clear any stale recoveryPending flag so a future email-confirmation
                     // deep link is not mistakenly routed to the Set-New-Password screen.
                     tokenStorage.saveRecoveryPending(false)
+                    val wasVerificationPending = _state.value.isEmailVerificationPending
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isAuthenticated = true,
                         isPasswordRecoveryPending = false,
+                        isEmailVerificationPending = false,
+                        pendingVerificationEmail = null,
+                        resendCooldownSeconds = 0,
                         currentUser = response.data,
                     )
-                    _effect.tryEmit(AuthEffect.NavigateToHome)
+                    countdownJob?.cancel()
+                    // If the deep link completed an email verification, show the success
+                    // screen; otherwise navigate straight to Home (OAuth or re-login).
+                    if (wasVerificationPending) {
+                        _effect.tryEmit(AuthEffect.NavigateToEmailVerified)
+                    } else {
+                        _effect.tryEmit(AuthEffect.NavigateToHome)
+                    }
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isLoading = false, error = response.message)
@@ -218,6 +256,16 @@ class AuthViewModel(
                         currentUser = response.data,
                     )
                     _effect.tryEmit(AuthEffect.NavigateToHome)
+                }
+                is ApiResponse.VerificationRequired -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        isEmailVerificationPending = true,
+                        pendingVerificationEmail = response.email,
+                        resendCooldownSeconds = 60,
+                    )
+                    _effect.tryEmit(AuthEffect.NavigateToVerifyEmail(response.email))
+                    startResendCountdown()
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
@@ -358,6 +406,63 @@ class AuthViewModel(
             is ApiResponse.Error -> {
                 // No stored session or refresh failed — stay on onboarding/login.
                 _state.value = _state.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    private fun resendVerificationEmail() {
+        val email = _state.value.pendingVerificationEmail ?: return
+        viewModelScope.launch {
+            when (val response = authRepository.resendVerificationEmail(email)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(resendCooldownSeconds = 60)
+                    startResendCountdown()
+                    _effect.tryEmit(AuthEffect.ShowSnackbar("Verification email sent!"))
+                }
+                is ApiResponse.Error -> {
+                    _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    private fun clearEmailVerification() {
+        countdownJob?.cancel()
+        _state.value = _state.value.copy(
+            isEmailVerificationPending = false,
+            pendingVerificationEmail = null,
+            resendCooldownSeconds = 0,
+        )
+    }
+
+    private fun signInWithGoogle() {
+        viewModelScope.launch {
+            when (val response = authRepository.signInWithGoogle()) {
+                is ApiResponse.Error -> _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
+                else -> Unit // OAuth browser opened; session arrives via handleDeepLink
+            }
+        }
+    }
+
+    private fun signInWithApple() {
+        viewModelScope.launch {
+            when (val response = authRepository.signInWithApple()) {
+                is ApiResponse.Error -> _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
+                else -> Unit // OAuth browser opened; session arrives via handleDeepLink
+            }
+        }
+    }
+
+    /** Starts (or restarts) the 60-second resend cooldown countdown. */
+    private fun startResendCountdown() {
+        countdownJob?.cancel()
+        countdownJob = viewModelScope.launch {
+            while (_state.value.resendCooldownSeconds > 0) {
+                delay(1_000L)
+                _state.value = _state.value.copy(
+                    resendCooldownSeconds = (_state.value.resendCooldownSeconds - 1).coerceAtLeast(0),
+                )
             }
         }
     }

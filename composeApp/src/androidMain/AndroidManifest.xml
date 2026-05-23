@@ -46,6 +46,17 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="ridly" android:host="auth" android:pathPrefix="/callback" />
             </intent-filter>
+            <!-- Push-notification deep links for settlement screens -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="ridly" android:host="driver-settlement" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="ridly" android:host="passenger-settlement" />
+            </intent-filter>
         </activity>
 
         <!-- FCM push notifications service -->

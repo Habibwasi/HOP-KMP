@@ -10,6 +10,8 @@ enum AuthDestination: Hashable {
     case login
     case forgotPassword
     case setNewPassword
+    case verifyEmail(email: String)
+    case emailVerified
     // Home is handled at the app root level — not an auth destination.
 }
 
@@ -63,6 +65,9 @@ struct AuthNavigationCoordinator: View {
                     // Replace sign-up with login (pop sign-up, push login)
                     path.removeLast()
                     path.append(AuthDestination.login)
+                },
+                onNavigateToVerifyEmail: { email in
+                    path.append(AuthDestination.verifyEmail(email: email))
                 }
             )
 
@@ -92,6 +97,22 @@ struct AuthNavigationCoordinator: View {
                     while path.count > 1 { path.removeLast() }
                 },
                 onBack: { path.removeLast() }
+            )
+
+        case .verifyEmail(let email):
+            VerifyEmailView(
+                onNavigateToEmailVerified: {
+                    // Replace verifyEmail with emailVerified
+                    path.removeLast()
+                    path.append(AuthDestination.emailVerified)
+                },
+                onNavigateBack: { path.removeLast() }
+            )
+            .onAppear { _ = email } // email is captured in VerifyEmailView state via ViewModel
+
+        case .emailVerified:
+            EmailVerifiedView(
+                onNavigateToHome: { onAuthComplete() }
             )
 
         case .splash:

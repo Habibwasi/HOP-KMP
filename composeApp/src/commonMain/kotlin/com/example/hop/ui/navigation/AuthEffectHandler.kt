@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
 import com.example.hop.presentation.auth.AuthEffect
 import com.example.hop.presentation.auth.AuthViewModel
+import com.example.hop.ui.navigation.HopRoutes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 
@@ -83,6 +84,16 @@ fun AuthEffectHandler(
 
                 is AuthEffect.NavigateToPassengerSettlement -> {
                     navController.navigate(HopRoutes.PassengerSettlement(bookingId = effect.bookingId))
+                }
+
+                is AuthEffect.NavigateToVerifyEmail -> {
+                    navController.navigate(HopRoutes.VerifyEmail(email = effect.email))
+                }
+
+                is AuthEffect.NavigateToEmailVerified -> {
+                    navController.navigate(HopRoutes.EmailVerified) {
+                        popUpTo(HopRoutes.SignUp) { inclusive = true }
+                    }
                 }
             }
         }

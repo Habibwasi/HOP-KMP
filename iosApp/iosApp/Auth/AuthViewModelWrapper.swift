@@ -71,5 +71,21 @@ final class AuthViewModelWrapper: ObservableObject {
         // data object Logout → Kotlin singleton → Swift .shared
         viewModel.onEvent(event: AuthEventLogout.shared)
     }
+
+    func resendVerificationEmail() {
+        viewModel.onEvent(event: AuthEventResendVerificationEmail.shared)
+    }
+
+    func clearEmailVerification() {
+        viewModel.onEvent(event: AuthEventClearEmailVerification.shared)
+    }
+
+    func signInWithGoogle() {
+        viewModel.onEvent(event: AuthEventSignInWithGoogle.shared)
+    }
+
+    func signInWithApple() {
+        viewModel.onEvent(event: AuthEventSignInWithApple.shared)
+    }
 }
 

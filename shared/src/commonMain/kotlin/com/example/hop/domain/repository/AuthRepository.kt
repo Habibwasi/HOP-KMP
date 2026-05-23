@@ -40,4 +40,17 @@ interface AuthRepository {
      * Must be called after a recovery deep-link has been handled (session is set).
      */
     suspend fun updatePassword(newPassword: String): ApiResponse<Unit>
+
+    /**
+     * Re-sends the Supabase email confirmation link to [email].
+     * Only valid while email verification is pending (i.e. after [register] returns
+     * [ApiResponse.VerificationRequired]).
+     */
+    suspend fun resendVerificationEmail(email: String): ApiResponse<Unit>
+
+    /** Initiates a Google OAuth PKCE sign-in flow. Returns immediately; session arrives via deep link. */
+    suspend fun signInWithGoogle(): ApiResponse<Unit>
+
+    /** Initiates an Apple OAuth PKCE sign-in flow. Returns immediately; session arrives via deep link. */
+    suspend fun signInWithApple(): ApiResponse<Unit>
 }

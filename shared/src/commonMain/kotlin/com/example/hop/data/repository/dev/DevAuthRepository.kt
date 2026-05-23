@@ -49,4 +49,13 @@ class DevAuthRepository : AuthRepository {
 
     override suspend fun updatePassword(newPassword: String): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
+
+    override suspend fun resendVerificationEmail(email: String): ApiResponse<Unit> =
+        ApiResponse.Success(Unit)
+
+    override suspend fun signInWithGoogle(): ApiResponse<Unit> =
+        ApiResponse.Success(Unit)
+
+    override suspend fun signInWithApple(): ApiResponse<Unit> =
+        ApiResponse.Success(Unit)
 }

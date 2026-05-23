@@ -10,6 +10,9 @@ import com.example.hop.network.ApiResponse
 import com.example.hop.network.safeApiCall
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.OtpType
+import io.github.jan.supabase.auth.providers.Apple
+import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.ktor.client.HttpClient
@@ -22,6 +25,8 @@ import io.ktor.http.parseQueryString
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 class SupabaseAuthRepositoryImpl(
@@ -35,65 +40,61 @@ class SupabaseAuthRepositoryImpl(
         firstName: String,
         lastName: String,
         phone: String?,
-    ): ApiResponse<User> = safeApiCall {
-        // Store profile data as Supabase user metadata so the backend guard can
-        // auto-create the Prisma profile on first login even if email confirmation
-        // delays the initial profile POST.
-        supabase.auth.signUpWith(Email, redirectUrl = "ridly://auth/callback") {
-            this.email = email
-            this.password = password
-            this.data = buildJsonObject {
-                put("firstName", firstName)
-                put("lastName", lastName)
-                if (phone != null) put("phone", phone)
+    ): ApiResponse<User> {
+        // Step 1: call signUpWith — this may or may not produce an immediate session
+        // depending on whether email confirmation is enabled in Supabase.
+        val signUpResult = safeApiCall {
+            supabase.auth.signUpWith(Email, redirectUrl = "ridly://auth/callback") {
+                this.email = email
+                this.password = password
+                // Store profile metadata so the backend guard can auto-create the
+                // Prisma profile on the first verified request.
+                this.data = buildJsonObject {
+                    put("firstName", firstName)
+                    put("lastName", lastName)
+                    if (phone != null) put("phone", phone)
+                }
             }
         }
+        if (signUpResult is ApiResponse.Error) return signUpResult
 
-        // Wait until the Auth plugin has committed the session to its StateFlow.
-        // signUpWith is async-internal in supabase-kt v3 — poll sessionStatus until
-        // it settles so currentSessionOrNull() is reliable before the first request.
-        // 15-second timeout guards against a stall in the supabase-kt state machine
-        // (e.g. corrupt DataStore, library bug) that would otherwise block forever.
+        // Step 2: poll for session settlement (15-second timeout).
         val status = withTimeoutOrNull(15_000L) {
             supabase.auth.sessionStatus.first { it !is SessionStatus.Initializing }
-        } ?: throw Exception("Authentication timed out. Please check your connection and try again.")
+        } ?: return ApiResponse.Error(-1, "Authentication timed out. Please check your connection and try again.")
+
         val token = (status as? SessionStatus.Authenticated)?.session?.accessToken
         if (token != null) {
-            // When email confirmation is ON, Supabase may return a session whose
-            // JWT is rejected by the backend ("Email not confirmed"). Detect this
-            // early and sign out cleanly before the 401 is ever sent to the UI.
+            // We got an immediate session — check if email is already confirmed.
             val currentUser = supabase.auth.currentUserOrNull()
             if (currentUser?.emailConfirmedAt == null) {
+                // Email confirmation is ON and we received an unconfirmed session.
+                // Sign out to discard the unconfirmed session; the user must click
+                // the confirmation link to get a valid session.
                 supabase.auth.signOut()
-                throw Exception("Account created! Please check your email to confirm, then log in.")
+                return ApiResponse.VerificationRequired(email)
             }
 
-            // Email confirmation is OFF — we have a verified session immediately.
-            // POST /users/profile WITHOUT an explicit Authorization header — the
-            // AuthInterceptor (which now uses header set, not append) will add it.
-            // If profile creation fails (e.g. phone conflict), the backend deletes
-            // the dangling Supabase auth user. Sign out locally to clear the orphaned
-            // session so the user can re-register without "user already exists".
+            // Email confirmation is OFF — create Prisma profile immediately.
             val envelope = runCatching {
                 httpClient.post("users/profile") {
                     setBody(CreateProfileRequest(firstName, lastName, phone, email))
                 }.body<ApiEnvelope<UserDto>>()
             }.getOrElse { e ->
                 supabase.auth.signOut()
-                throw e
+                return ApiResponse.Error(-1, e.message ?: "Profile creation failed")
             }
             val err = envelope.error
             if (err != null) {
                 supabase.auth.signOut()
-                throw Exception(err.message)
+                return ApiResponse.Error(-1, err.message)
             }
-            return@safeApiCall checkNotNull(envelope.data) { "Null data in /users/profile response" }.toDomain()
+            val user = checkNotNull(envelope.data) { "Null data in /users/profile response" }.toDomain()
+            return ApiResponse.Success(user)
         }
 
-        // Email confirmation is ON — the guard will auto-create the Prisma profile
-        // from user_metadata on the user's first authenticated request after
-        // they confirm their email. Show a message to prompt confirmation.
-        throw Exception("Account created! Please check your email to confirm, then log in.")
+        // No session produced — email confirmation is required.
+        return ApiResponse.VerificationRequired(email)
     }
 
     override suspend fun login(
@@ -110,10 +111,7 @@ class SupabaseAuthRepositoryImpl(
         withTimeoutOrNull(15_000L) {
             supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
         } ?: throw Exception("Sign-in timed out. Please check your connection and try again.")
-        val envelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
-        val error = envelope.error
-        if (error != null) throw Exception(error.message)
-        checkNotNull(envelope.data) { "Null data in /users/me response" }.toDomain()
+        fetchOrCreateProfile()
     }
 
     override suspend fun logout(): ApiResponse<Unit> = safeApiCall {
@@ -170,10 +168,7 @@ class SupabaseAuthRepositoryImpl(
         withTimeoutOrNull(15_000L) {
             supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
         } ?: throw Exception("Authentication timed out. The link may have expired — please try again.")
-        val envelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
-        val error = envelope.error
-        if (error != null) throw Exception(error.message)
-        checkNotNull(envelope.data) { "Null data in /users/me response" }.toDomain()
+        fetchOrCreateProfile()
     }
 
     override suspend fun handleRecoveryDeepLink(url: String): ApiResponse<Unit> = safeApiCall {
@@ -216,5 +211,44 @@ class SupabaseAuthRepositoryImpl(
         supabase.auth.updateUser {
             password = newPassword
         }
+    }
+
+    override suspend fun resendVerificationEmail(email: String): ApiResponse<Unit> = safeApiCall {
+        supabase.auth.resendEmail(OtpType.Email.SIGNUP, email)
+    }
+
+    override suspend fun signInWithGoogle(): ApiResponse<Unit> = safeApiCall {
+        supabase.auth.signInWith(Google, redirectUrl = "ridly://auth/callback")
+    }
+
+    override suspend fun signInWithApple(): ApiResponse<Unit> = safeApiCall {
+        supabase.auth.signInWith(Apple, redirectUrl = "ridly://auth/callback")
+    }
+
+    /**
+     * Fetches the user profile from the backend. If the profile does not exist yet
+     * (first login after email confirmation), it is created using the metadata
+     * stored in Supabase during registration (firstName, lastName, phone).
+     */
+    private suspend fun fetchOrCreateProfile(): User {
+        val meEnvelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
+        if (meEnvelope.error == null && meEnvelope.data != null) {
+            return meEnvelope.data.toDomain()
+        }
+        // Profile not found — first login after email confirmation.
+        // Create the Prisma profile using metadata set during sign-up.
+        val supabaseUser = supabase.auth.currentUserOrNull()
+            ?: throw Exception("No authenticated user found.")
+        val meta = supabaseUser.userMetadata
+        val firstName = meta?.get("firstName")?.jsonPrimitive?.contentOrNull ?: ""
+        val lastName  = meta?.get("lastName")?.jsonPrimitive?.contentOrNull ?: ""
+        val phone     = meta?.get("phone")?.jsonPrimitive?.contentOrNull
+        val email     = supabaseUser.email ?: throw Exception("User email not found in session.")
+        val createEnvelope = httpClient.post("users/profile") {
+            setBody(CreateProfileRequest(firstName, lastName, phone, email))
+        }.body<ApiEnvelope<UserDto>>()
+        val createError = createEnvelope.error
+        if (createError != null) throw Exception(createError.message)
+        return checkNotNull(createEnvelope.data) { "Null data in /users/profile response" }.toDomain()
     }
 }

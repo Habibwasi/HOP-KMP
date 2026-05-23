@@ -2,8 +2,8 @@ package com.example.hop.ui.screens.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +75,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SignUpRoute(
     onNavigateToHome: () -> Unit,
     onNavigateToLogin: () -> Unit,
+    onNavigateToVerifyEmail: (email: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = koinViewModel(),
 ) {
@@ -87,6 +87,8 @@ fun SignUpRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is AuthEffect.NavigateToHome -> onNavigateToHome()
+
+                is AuthEffect.NavigateToVerifyEmail -> onNavigateToVerifyEmail(effect.email)
 
                 is AuthEffect.ShowSnackbar ->
                     scope.launch { snackbarHostState.showSnackbar(effect.message) }
@@ -107,9 +109,6 @@ fun SignUpRoute(
             state = state,
             onEvent = viewModel::onEvent,
             onNavigateToLogin = onNavigateToLogin,
-            onMitIdClick = {
-                scope.launch { snackbarHostState.showSnackbar("Coming soon") }
-            },
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -127,14 +126,12 @@ fun SignUpRoute(
  * @param state        Current auth loading/error state from the ViewModel.
  * @param onEvent      Dispatches [AuthEvent] to the ViewModel.
  * @param onNavigateToLogin    Navigate to ON-03 (Log In).
- * @param onMitIdClick Callback fired when the "Continue with MitID" button is tapped.
  */
 @Composable
 fun SignUpScreen(
     state: AuthUiState,
     onEvent: (AuthEvent) -> Unit,
     onNavigateToLogin: () -> Unit,
-    onMitIdClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // ── Local form state ──────────────────────────────────────────────────────
@@ -325,24 +322,24 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(HopSpacing.md))
 
-        // ── Continue with MitID (Ghost — always disabled, shows toast on tap) ─
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(
-                    role = Role.Button,
-                    onClickLabel = "Coming soon",
-                    onClick = onMitIdClick,
-                ),
-        ) {
-            HopButton(
-                text = "Continue with MitID",
-                onClick = { /* intercepted by Box wrapper */ },
-                variant = HopButtonVariant.Ghost,
-                enabled = false,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        // ── Social sign-in ────────────────────────────────────────────────────
+        HopButton(
+            text = "Continue with Google",
+            onClick = { onEvent(AuthEvent.SignInWithGoogle) },
+            variant = HopButtonVariant.Ghost,
+            enabled = !state.isLoading,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(HopSpacing.sm))
+
+        HopButton(
+            text = "Continue with Apple",
+            onClick = { onEvent(AuthEvent.SignInWithApple) },
+            variant = HopButtonVariant.Ghost,
+            enabled = !state.isLoading,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
@@ -444,7 +441,6 @@ private fun SignUpScreenEmptyPreview() {
             state = AuthUiState(),
             onEvent = {},
             onNavigateToLogin = {},
-            onMitIdClick = {},
         )
     }
 }
@@ -457,7 +453,6 @@ private fun SignUpScreenFilledPreview() {
             state = AuthUiState(),
             onEvent = {},
             onNavigateToLogin = {},
-            onMitIdClick = {},
         )
     }
 }
@@ -470,7 +465,6 @@ private fun SignUpScreenLoadingPreview() {
             state = AuthUiState(isLoading = true),
             onEvent = {},
             onNavigateToLogin = {},
-            onMitIdClick = {},
         )
     }
 }

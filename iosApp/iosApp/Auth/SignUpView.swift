@@ -1,5 +1,6 @@
 import SwiftUI
 import Shared
+import AuthenticationServices
 
 // MARK: - ON-02 Sign Up ──────────────────────────────────────────────────────
 // Mirrors `SignUpScreen.kt`. Light theme, 5-field form (firstName, lastName,
@@ -7,8 +8,9 @@ import Shared
 // primary "Create account" button, ghost MitID button.
 
 struct SignUpView: View {
-    var onNavigateToHome:  () -> Void
-    var onNavigateToLogin: () -> Void
+    var onNavigateToHome:           () -> Void
+    var onNavigateToLogin:          () -> Void
+    var onNavigateToVerifyEmail:    (String) -> Void = { _ in }
 
     @StateObject private var wrapper = AuthViewModelWrapper()
 
@@ -129,18 +131,31 @@ struct SignUpView: View {
                     Spacer().frame(height: HopSpacing.md)
 
                     HopButton(
-                        text: "Continue with MitID",
+                        text: "Continue with Google",
                         variant: .ghost,
-                        isEnabled: false,
-                        lightSurface: true,
-                        action: {}
+                        isEnabled: !wrapper.state.isLoading,
+                        action: { wrapper.signInWithGoogle() }
                     )
-                    .overlay(
-                        Rectangle()
-                            .fill(Color.clear)
-                            .contentShape(Rectangle())
-                            .onTapGesture { showToast("Coming soon") }
-                    )
+
+                    Spacer().frame(height: HopSpacing.sm)
+
+                    // Apple Sign-In — uses native ASAuthorizationAppleIDButton appearance
+                    // as required by App Store guideline 4.8. Tap triggers Supabase
+                    // browser-based OAuth (no native credential exchange needed).
+                    SignInWithAppleButton(.signUp, onRequest: { _ in }, onCompletion: { _ in })
+                        .signInWithAppleButtonStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .cornerRadius(14)
+                        .allowsHitTesting(false)
+                        .overlay(
+                            Button(action: {
+                                if !wrapper.state.isLoading { wrapper.signInWithApple() }
+                            }) {
+                                Color.clear
+                            }
+                        )
+                        .opacity(wrapper.state.isLoading ? 0.5 : 1.0)
 
                     Spacer().frame(height: HopSpacing.xl)
 
@@ -198,6 +213,8 @@ struct SignUpView: View {
         switch effect {
         case is AuthEffectNavigateToHome:
             onNavigateToHome()
+        case let navVerify as AuthEffectNavigateToVerifyEmail:
+            onNavigateToVerifyEmail(navVerify.email)
         case let snack as AuthEffectShowSnackbar:
             showToast(snack.message)
             wrapper.clearError()

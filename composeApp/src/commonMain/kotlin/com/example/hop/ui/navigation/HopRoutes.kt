@@ -40,6 +40,14 @@ sealed interface HopRoutes {
     @Serializable
     data object SetNewPassword : HopRoutes
 
+    /** ON-02a — Awaiting email confirmation after sign-up */
+    @Serializable
+    data class VerifyEmail(val email: String) : HopRoutes
+
+    /** ON-02b — Shown briefly after the confirmation link is tapped */
+    @Serializable
+    data object EmailVerified : HopRoutes
+
     // ── Shared Home ────────────────────────────────────────────────────────
 
     /** SH-01 — Unified home screen (passenger + driver via role toggle) */

@@ -68,12 +68,12 @@ class PushNotificationService : FirebaseMessagingService() {
         // a deep-link URI so MainActivity can navigate directly to the right screen.
         val deepLinkUri: Uri? = when {
             type == "PAYMENT_MARKED_PAID" && !bookingId.isNullOrBlank() ->
-                Uri.parse("hop://driver-settlement/$bookingId")
+                Uri.parse("ridly://driver-settlement/$bookingId")
             type == "PAYMENT_CONFIRMED" && !bookingId.isNullOrBlank() ->
-                Uri.parse("hop://passenger-settlement/$bookingId")
+                Uri.parse("ridly://passenger-settlement/$bookingId")
             type == "PAYMENT_DISPUTED" && !bookingId.isNullOrBlank() ->
-                if (recipientRole == "driver") Uri.parse("hop://driver-settlement/$bookingId")
-                else Uri.parse("hop://passenger-settlement/$bookingId")
+                if (recipientRole == "driver") Uri.parse("ridly://driver-settlement/$bookingId")
+                else Uri.parse("ridly://passenger-settlement/$bookingId")
             else -> null
         }
         val tapIntent = Intent(this, MainActivity::class.java).apply {

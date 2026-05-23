@@ -17,7 +17,7 @@ struct iOSApp: App {
         WindowGroup {
             ContentView()
                 .onOpenURL { url in
-                    guard url.scheme == "hop" else { return }
+                    guard url.scheme == "ridly" else { return }
                     let vm = KoinIOSKt.getAuthViewModel()
                     vm.onEvent(event: AuthEventHandleDeepLink(url: url.absoluteString))
                 }

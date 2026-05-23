@@ -34,13 +34,13 @@ class MainActivity : ComponentActivity() {
         val url = intent?.data?.toString()
         Log.d("HopDeepLink", "handleDeepLinkIntent | url=$url")
         if (url == null) return
-        if (url.startsWith("hop://auth/callback")) {
+        if (url.startsWith("ridly://auth/callback")) {
             Log.d("HopDeepLink", "Queueing auth deep link: $url")
             authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
-        } else if (url.startsWith("hop://driver-settlement/")) {
+        } else if (url.startsWith("ridly://driver-settlement/")) {
             Log.d("HopDeepLink", "Queueing driver-settlement deep link: $url")
             authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
-        } else if (url.startsWith("hop://passenger-settlement/")) {
+        } else if (url.startsWith("ridly://passenger-settlement/")) {
             Log.d("HopDeepLink", "Queueing passenger-settlement deep link: $url")
             authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
         } else {

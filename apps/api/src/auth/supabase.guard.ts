@@ -43,30 +43,36 @@ export class SupabaseGuard implements CanActivate {
           // Reconcile: we can't change the PK, so we create a new row with the
           // Supabase UUID, copying profile data, and leave the old row in place.
           // Going forward, the Supabase UUID row is authoritative.
+          // Use a transaction: clear phone/email on the old row first so the
+          // unique constraints don't fire when creating the new row.
           this.logger.log(`Migrating legacy user ${existingByEmail.id} → ${supabaseUser.id}`)
-          user = await this.prisma.user.create({
-            data: {
-              id: supabaseUser.id,
-              email: existingByEmail.email,
-              phone: existingByEmail.phone,
-              firstName: existingByEmail.firstName,
-              lastName: existingByEmail.lastName,
-              avatarUrl: existingByEmail.avatarUrl,
-              role: existingByEmail.role,
-              isVerified: existingByEmail.isVerified,
-              isAdmin: existingByEmail.isAdmin,
-            },
-          })
+          // All FKs on User have ON UPDATE CASCADE, so updating the PK in-place
+          // re-parents every related row (Trip, Booking, Rating, etc.) atomically.
+          await this.prisma.$executeRaw`UPDATE "User" SET "id" = ${supabaseUser.id} WHERE "id" = ${existingByEmail.id}`
+          user = await this.prisma.user.findUniqueOrThrow({ where: { id: supabaseUser.id } })
         }
       }
     }
 
     if (!user) {
-      // ── Auto-create path: new signup with email confirmation ON.
-      // The mobile stored firstName/lastName/phone in user_metadata during signUpWith.
+      // ── Auto-create path: new signup or first OAuth sign-in.
+      // Email/password: mobile stores firstName/lastName/phone in user_metadata.
+      // Google OAuth: provides given_name / family_name (or full_name).
+      // Apple OAuth: may only provide full_name on first sign-in.
       const meta = (supabaseUser.user_metadata ?? {}) as Record<string, string>
-      const firstName = meta['firstName'] ?? meta['first_name']
-      const lastName = meta['lastName'] ?? meta['last_name']
+      const fullNameParts = (meta['full_name'] ?? '').trim().split(/\s+/)
+      const firstName =
+        meta['firstName'] ??
+        meta['first_name'] ??
+        meta['given_name'] ??
+        (fullNameParts.length >= 1 ? fullNameParts[0] : undefined)
+      const lastName =
+        meta['lastName'] ??
+        meta['last_name'] ??
+        meta['family_name'] ??
+        (fullNameParts.length >= 2 ? fullNameParts.slice(1).join(' ') : undefined)
+      const avatarUrl: string | null =
+        meta['avatar_url'] ?? meta['picture'] ?? null
 
       if (firstName && lastName) {
         this.logger.log(`Auto-creating Prisma profile for Supabase user ${supabaseUser.id}`)
@@ -78,6 +84,7 @@ export class SupabaseGuard implements CanActivate {
             phone: meta['phone'] ?? null,
             firstName,
             lastName,
+            avatarUrl,
           },
           update: {},
         })
