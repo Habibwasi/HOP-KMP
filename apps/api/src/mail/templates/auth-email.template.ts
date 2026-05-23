@@ -37,8 +37,11 @@ export function buildSubject(actionType: EmailActionType): string {
 // ── HTML templates ─────────────────────────────────────────────────────────
 
 export function buildAuthEmail(ctx: AuthEmailContext): string {
+  // Supabase Cloud sends site_url as "https://<project>.supabase.co/auth/v1"
+  // (already includes /auth/v1). Strip it so we don't double the path.
+  const supabaseBase = ctx.siteUrl.replace(/\/auth\/v\d+\/?$/, '')
   const confirmUrl =
-    `${ctx.siteUrl}/auth/v1/verify` +
+    `${supabaseBase}/auth/v1/verify` +
     `?token=${ctx.tokenHash}` +
     `&type=${ctx.actionType}` +
     `&redirect_to=${encodeURIComponent(ctx.redirectTo)}`
