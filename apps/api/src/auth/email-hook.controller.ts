@@ -1,8 +1,8 @@
 import {
   Controller,
   Post,
-  Body,
-  Headers,
+  RawBodyRequest,
+  Req,
   HttpCode,
   HttpStatus,
   UnauthorizedException,
@@ -10,7 +10,7 @@ import {
   Logger,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { JwtService } from '@nestjs/jwt'
+import { Webhook } from 'standardwebhooks'
 import { MailService } from '../mail/mail.service'
 import {
   buildAuthEmail,
@@ -41,8 +41,9 @@ interface SupabaseEmailHookPayload {
  * Supabase Auth "Send Email" HTTP hook.
  * Configure in Supabase Dashboard → Authentication → Hooks → Send Email.
  *
- * Security: Bearer token in Authorization header must match
- * the SUPABASE_HOOK_SECRET environment variable.
+ * Security: Supabase signs requests using the Standard Webhooks protocol
+ * (webhook-id / webhook-timestamp / webhook-signature headers).
+ * The signing key is SUPABASE_HOOK_SECRET (format: "v1,whsec_<base64>").
  */
 @Controller('auth/hook')
 export class EmailHookController {
@@ -51,17 +52,16 @@ export class EmailHookController {
   constructor(
     private readonly mailService: MailService,
     private readonly config: ConfigService,
-    private readonly jwtService: JwtService,
   ) {}
 
   @Post('email')
   @HttpCode(HttpStatus.OK)
   async handleEmailHook(
-    @Headers('authorization') authHeader: string | undefined,
-    @Body() payload: SupabaseEmailHookPayload,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    @Req() req: any,
   ): Promise<Record<string, never>> {
-    // ── 1. Verify hook secret ──────────────────────────────────────────────
-    this.verifySecret(authHeader)
+    // ── 1. Verify signature (Standard Webhooks protocol) ──────────────────
+    const payload = this.verifyWebhook(req)
 
     // ── 2. Validate payload ────────────────────────────────────────────────
     const recipientEmail = payload?.user?.email
@@ -95,61 +95,30 @@ export class EmailHookController {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  private verifySecret(authHeader: string | undefined): void {
+  private verifyWebhook(req: RawBodyRequest<any>): SupabaseEmailHookPayload {
     const hookSecret = this.config.get<string>('SUPABASE_HOOK_SECRET')
     if (!hookSecret) {
       this.logger.warn('SUPABASE_HOOK_SECRET is not set — hook is unprotected!')
-      return
+      // Fall back to parsing the body directly
+      return req.body as SupabaseEmailHookPayload
     }
 
-    const token = authHeader?.replace(/^Bearer\s+/i, '')
+    // Supabase signs hook requests using the Standard Webhooks protocol.
+    // Strip "v1,whsec_" prefix — the Webhook class expects just the base64 secret.
+    const signingSecret = hookSecret.replace(/^v\d+,whsec_/, '')
 
-    // Log diagnostics before any early exit so we always see what arrived
-    this.logger.log(
-      `[hook-auth] authHeader present: ${!!authHeader} | ` +
-      `secret configured: ${!!hookSecret}`,
-    )
-
-    if (!token) {
-      this.logger.warn('[hook-auth] No token in Authorization header — check Supabase Dashboard hook secret is set')
-      throw new UnauthorizedException('Missing authorization token')
+    const wh = new Webhook(signingSecret)
+    const rawBody = req.rawBody
+    if (!rawBody) {
+      throw new UnauthorizedException('Raw body unavailable')
     }
 
-    const isJwt = (token.match(/\./g) ?? []).length === 2
-
-    // Log diagnostics (safe — only first 6 chars of each)
-    this.logger.log(
-      `[hook-auth] token format: ${isJwt ? 'JWT' : 'raw'} | ` +
-      `token[0..6]="${token.slice(0, 6)}" | ` +
-      `secret[0..6]="${hookSecret.slice(0, 6)}" | ` +
-      `tokenLen=${token.length} secretLen=${hookSecret.length}`,
-    )
-
-    if (isJwt) {
-      // Supabase signs the hook request with HS256 using the base64-decoded
-      // bytes of the value after "v1,whsec_"
-      const b64 = hookSecret.replace(/^v\d+,whsec_/, '')
-      const signingKey = Buffer.from(b64, 'base64')
-      try {
-        this.jwtService.verify(token, { secret: signingKey })
-        return
-      } catch (err) {
-        this.logger.warn(`[hook-auth] JWT verify (decoded key) failed: ${(err as Error).message}`)
-      }
-
-      // Fallback: try with the raw secret string (in case Supabase uses it directly)
-      try {
-        this.jwtService.verify(token, { secret: hookSecret })
-        return
-      } catch (err) {
-        this.logger.warn(`[hook-auth] JWT verify (raw secret) failed: ${(err as Error).message}`)
-      }
-    } else {
-      // Raw bearer comparison
-      if (token === hookSecret) return
-      this.logger.warn(`[hook-auth] Raw secret mismatch`)
+    try {
+      const verified = wh.verify(rawBody.toString(), req.headers as Record<string, string>)
+      return verified as SupabaseEmailHookPayload
+    } catch (err) {
+      this.logger.warn(`Hook signature verification failed: ${(err as Error).message}`)
+      throw new UnauthorizedException('Invalid webhook signature')
     }
-
-    throw new UnauthorizedException('Invalid hook token')
   }
 }
