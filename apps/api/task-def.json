@@ -1,9 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:eu-west-1:712242348131:task-definition/hop-api-staging:9",
+    "taskDefinitionArn": "arn:aws:ecs:eu-west-1:712242348131:task-definition/hop-api-staging:20",
     "containerDefinitions": [
         {
             "name": "hop-api",
-            "image": "712242348131.dkr.ecr.eu-west-1.amazonaws.com/hop-api@sha256:511b977e8fef9b12401b7e6b455c1e924df37c3c813bef2190a14eae15541441",
+            "image": "712242348131.dkr.ecr.eu-west-1.amazonaws.com/hop-api@sha256:717d4cffa77c0ede7eac6426f05799824f9e32bff23ba356a55403a7eddd4992",
             "cpu": 0,
             "portMappings": [
                 {
@@ -31,32 +31,32 @@
                     "value": "hop_refresh_secret_change_in_production_32"
                 },
                 {
-                    "name": "STRIPE_SECRET_KEY",
-                    "value": "sk_test_51TOQ40DXQislXJ1W9phS5WFoEGLEtTQ7oGdtsWdk8gCBLAUqgQZNjdDA2iG0ywTmyiKlzYK9CgtYDBJ4z5p3qY0Q00tbQWwteg"
-                },
-                {
                     "name": "PORT",
                     "value": "3000"
+                },
+                {
+                    "name": "SUPABASE_URL",
+                    "value": "https://bfijluuhbkqoldnszeqc.supabase.co"
                 },
                 {
                     "name": "DATABASE_URL",
                     "value": "postgresql://hop:Ha8801712014742@hop-staging-db.czckaqcosg7x.eu-west-1.rds.amazonaws.com:5432/hop_db?sslmode=require"
                 },
                 {
-                    "name": "NODE_TLS_REJECT_UNAUTHORIZED",
-                    "value": "0"
+                    "name": "SUPABASE_SERVICE_ROLE_KEY",
+                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmaWpsdXVoYmtxb2xkbnN6ZXFjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njg3ODc2NiwiZXhwIjoyMDkyNDU0NzY2fQ.u_Zz9Uijkn55HRtw5w3pguexx7dl6yf5FPLlhTH0zww"
                 },
                 {
                     "name": "REDIS_PORT",
                     "value": "6379"
                 },
                 {
-                    "name": "STRIPE_WEBHOOK_SECRET",
-                    "value": "whsec_placeholder"
-                },
-                {
                     "name": "JWT_REFRESH_EXPIRES_IN",
                     "value": "30d"
+                },
+                {
+                    "name": "NODE_TLS_REJECT_UNAUTHORIZED",
+                    "value": "0"
                 },
                 {
                     "name": "NODE_ENV",
@@ -77,14 +77,6 @@
                 {
                     "name": "TWILIO_ACCOUNT_SID",
                     "value": "AC0e1caf1a0fd6e23445a9a4b12e058128"
-                },
-                {
-                    "name": "SUPABASE_URL",
-                    "value": "https://bfijluuhbkqoldnszeqc.supabase.co"
-                },
-                {
-                    "name": "SUPABASE_SERVICE_ROLE_KEY",
-                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmaWpsdXVoYmtxb2xkbnN6ZXFjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njg3ODc2NiwiZXhwIjoyMDkyNDU0NzY2fQ.u_Zz9Uijkn55HRtw5w3pguexx7dl6yf5FPLlhTH0zww"
                 }
             ],
             "mountPoints": [],
@@ -103,7 +95,7 @@
     "family": "hop-api-staging",
     "executionRoleArn": "arn:aws:iam::712242348131:role/hop-staging-TaskExecutionRole-tMVGztADSTZ1",
     "networkMode": "awsvpc",
-    "revision": 9,
+    "revision": 20,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -135,14 +127,14 @@
     "placementConstraints": [],
     "compatibilities": [
         "EC2",
-        "MANAGED_INSTANCES",
-        "FARGATE"
+        "FARGATE",
+        "MANAGED_INSTANCES"
     ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-04-21T00:58:34.919000+02:00",
+    "registeredAt": "2026-05-01T15:20:13.137000+02:00",
     "registeredBy": "arn:aws:iam::712242348131:user/hop-deploy"
 }

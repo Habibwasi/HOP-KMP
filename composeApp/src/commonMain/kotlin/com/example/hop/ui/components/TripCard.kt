@@ -1,6 +1,9 @@
 package com.example.hop.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,16 +15,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,16 +69,36 @@ fun TripCard(
     modifier: Modifier = Modifier,
     driverAvatar: Painter? = null,
     isVerified: Boolean = false,
+    isBooked: Boolean = false,
     onClick: () -> Unit = {},
 ) {
     val cardShape = RoundedCornerShape(12.dp)
 
+    // Entrance pop: scale from 0.93 → 1.0 with a springy overshoot
+    val scale = remember { Animatable(if (isBooked) 0.93f else 1f) }
+    LaunchedEffect(isBooked) {
+        if (isBooked) {
+            scale.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f),
+            )
+        }
+    }
+
+    val elevation = if (isBooked) 14.dp else 4.dp
+    val shadowColor = if (isBooked) HopColors.primaryLime.copy(alpha = 0.55f) else Color(0x1A000000)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = cardShape, ambientColor = Color(0x1A000000))
+            .graphicsLayer { scaleX = scale.value; scaleY = scale.value }
+            .shadow(elevation = elevation, shape = cardShape, ambientColor = shadowColor, spotColor = shadowColor)
+            .then(
+                if (isBooked) Modifier.border(width = 2.dp, color = HopColors.primaryLime, shape = cardShape)
+                else Modifier
+            )
             .clip(cardShape)
-            .background(Color.White)        // White card per design spec
+            .background(if (isBooked) HopColors.primaryLime.copy(alpha = 0.04f) else Color.White)
             .clickable(onClick = onClick),
     ) {
         Column(
@@ -117,6 +147,35 @@ fun TripCard(
                 Spacer(modifier = Modifier.width(HopSpacing.sm))
 
                 StatusBadge(type = tripModel)
+
+                // ── Booked ✓ chip ──────────────────────────────────────────
+                if (isBooked) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(HopColors.primaryLime)
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF1A1A1A),
+                            modifier = Modifier.size(11.dp),
+                        )
+                        Text(
+                            text = "Booked",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1A1A1A),
+                                fontSize = 10.sp,
+                            ),
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(HopSpacing.sm))
@@ -143,8 +202,12 @@ fun TripCard(
                     ),
                 )
 
+                val priceKr = pricePerSeatOere / 100
+                val priceOre = pricePerSeatOere % 100
+                val priceText = if (priceOre == 0) "DKK $priceKr"
+                                else "DKK $priceKr,${priceOre.toString().padStart(2, '0')}"
                 Text(
-                    text = "DKK ${pricePerSeatOere / 100}",
+                    text = priceText,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1A1A1A),

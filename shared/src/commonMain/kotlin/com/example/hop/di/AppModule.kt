@@ -7,11 +7,12 @@ fun appModules(
     baseUrl: String = NetworkConstants.PRODUCTION_BASE_URL,
     supabaseUrl: String,
     supabaseAnonKey: String,
+    mapsApiKey: String = "",
 ): List<Module> = listOf(
     tokenStorageModule,
     supabaseModule(supabaseUrl, supabaseAnonKey),
     networkModule(baseUrl),
-    repositoryModule,
+    repositoryModule(mapsApiKey),
     chatRepositoryModule,
     presentationModule,
     connectivityModule,
@@ -21,11 +22,13 @@ fun devAppModules(
     baseUrl: String = NetworkConstants.PRODUCTION_BASE_URL,
     supabaseUrl: String,
     supabaseAnonKey: String,
+    mapsApiKey: String = "",
 ): List<Module> = listOf(
     tokenStorageModule,
     supabaseModule(supabaseUrl, supabaseAnonKey),
     networkModule(baseUrl),
     devRepositoryModule,
+    chatRepositoryModule,
     presentationModule,
     connectivityModule,
 )

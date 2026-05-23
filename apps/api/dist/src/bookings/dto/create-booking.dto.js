@@ -11,11 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateBookingDto = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
 class CreateBookingDto {
     tripId;
     seats;
-    paymentProvider;
 }
 exports.CreateBookingDto = CreateBookingDto;
 __decorate([
@@ -28,8 +26,4 @@ __decorate([
     (0, class_validator_1.Max)(8),
     __metadata("design:type", Number)
 ], CreateBookingDto.prototype, "seats", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(client_1.PaymentProvider),
-    __metadata("design:type", String)
-], CreateBookingDto.prototype, "paymentProvider", void 0);
 //# sourceMappingURL=create-booking.dto.js.map

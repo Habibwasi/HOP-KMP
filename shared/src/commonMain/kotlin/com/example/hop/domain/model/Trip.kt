@@ -15,6 +15,7 @@ enum class TripStatus {
     CONFIRMED,
     CANCELLED,
     COMPLETED,
+    THRESHOLD_NOT_MET,
     UNKNOWN, // Fallback for version mismatch or API drift
 }
 
@@ -41,6 +42,12 @@ data class Trip(
     // Set only when fetched from passenger-scoped endpoints (e.g. /trips/me/passenger).
     // Null on driver or search results. Use this for PA-08 TripDetailActive navigation.
     val bookingId: String? = null,
+    // The passenger's booking status. Null on driver-scoped endpoints.
+    val bookingStatus: BookingStatus? = null,
+    // For driver-scoped endpoints: the ID of the first AWAITING_PAYMENT booking, if any.
+    val awaitingPaymentBookingId: String? = null,
+    // True if any booking on this trip was created within the last 24 hours (driver-scoped only).
+    val hasRecentBooking: Boolean = false,
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

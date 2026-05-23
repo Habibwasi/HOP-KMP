@@ -26,25 +26,45 @@ struct HopNavigationStack: View {
     @State private var lastSearchDate:   String = ""
     @State private var lastSearchSeats:  Int    = 1
 
+    /// Active booking ID surfaced by HomeView so the Chat tab can navigate
+    /// directly to Chat(bookingId) instead of showing My Trips.
+    @State private var activeBookingId: String? = nil
+
+    /// Current home role — surfaced by HomeView so the Chat tab can route
+    /// drivers to MyTripsDriver rather than a direct chat screen.
+    @State private var selectedRole: HopRole = .passenger
+
     private func navigate(_ route: HopRoute) { path.append(route) }
     private func popBack() { if !path.isEmpty { path.removeLast() } }
     private func goHome() { path.removeAll() }
+    /// Clear the entire back-stack and land on `route` so the user cannot
+    /// press back into a completed flow.
+    private func replaceWith(_ route: HopRoute) { path = [route] }
 
     var body: some View {
         NavigationStack(path: $path) {
-            HopTabView { route in
-                path.append(route)
-            } onSearch: { origin, dest, date, seats in
-                lastSearchOrigin = origin
-                lastSearchDest   = dest
-                lastSearchDate   = date   // String ISO date from PassengerHomeView
-                lastSearchSeats  = seats
-                path.append(.searchResults)
-            }
+            HopTabView(
+                navigate: { route in path.append(route) },
+                onSearch: { origin, dest, date, seats in
+                    lastSearchOrigin = origin
+                    lastSearchDest   = dest
+                    lastSearchDate   = date   // String ISO date from PassengerHomeView
+                    lastSearchSeats  = seats
+                    path.append(.searchResults)
+                },
+                onLogout: {
+                    // Logout flips back to auth via AuthEffectNavigateToLogin in ContentView
+                },
+                activeBookingId: $activeBookingId,
+                selectedRole: $selectedRole
+            )
             .navigationDestination(for: HopRoute.self) { route in
                 destinationView(for: route)
-                    .toolbarBackground(Color.hopSurface, for: .navigationBar)
-                    .toolbarColorScheme(.dark, for: .navigationBar)
+                    // All detail screens render their own custom top bar
+                    // (HStack with arrow.left + title). Hide the system
+                    // NavigationStack toolbar so we don't get a duplicate
+                    // navigation bar stacked above each screen's chrome.
+                    .toolbar(.hidden, for: .navigationBar)
             }
         }
     }
@@ -78,132 +98,268 @@ struct HopNavigationStack: View {
 
         // ── Passenger ────────────────────────────────────────────────────────
         case .searchResults:
+            // Trigger the search via the shared SearchViewModel before pushing.
+            // Pass the captured params so the SearchResultsView's own VM
+            // instance can re-issue the search (Koin registers SearchViewModel
+            // as factory, so each call site gets a fresh instance).
             SearchResultsView(
+                onBack: popBack,
+                onNavigateToTripDetail: { id in navigate(.tripDetail(id: id)) },
                 origin: lastSearchOrigin,
-                destination: lastSearchDest,
-                date: lastSearchDate,
-                seats: lastSearchSeats,
-                onTripTapped: { id in navigate(.tripDetail(id: id)) },
-                onBack: popBack
+                dest:   lastSearchDest,
+                date:   lastSearchDate,
+                seats:  lastSearchSeats
             )
 
         case .tripDetail(let id):
             TripDetailView(
                 tripId: id,
-                onBook: { tripId in navigate(.bookingConfirmation(tripId: tripId)) },
-                onBack: popBack
+                onBack: popBack,
+                onNavigateToOtherProfile: { driverId in navigate(.otherProfile(userId: driverId)) },
+                onNavigateToBookingConfirmation: { tripId in navigate(.bookingConfirmation(tripId: tripId)) }
             )
 
         case .bookingConfirmation(let tripId):
             BookingConfirmationView(
                 tripId: tripId,
-                tripUi: nil,
-                onPayWithMobilePay: { bookingId in
-                    navigate(.mobilePayHandoff(bookingId: bookingId))
-                },
-                onBack: popBack
+                onBack: popBack,
+                onNavigateToSuccess: { bookingId in
+                    navigate(.bookingSuccess(bookingId: bookingId))
+                }
             )
 
         case .mobilePayHandoff(let bookingId):
-            MobilePayHandoffView(
+            PassengerSettlementView(
                 bookingId: bookingId,
-                redirectURL: "",
-                onSuccess: { bid in navigate(.bookingSuccess(bookingId: bid)) },
-                onBack: popBack
+                onBack: popBack,
+                onSettlementComplete: { navigate(.rateDriver(bookingId: bookingId)) }
             )
 
         case .bookingSuccess(let bookingId):
             BookingSuccessView(
                 bookingId: bookingId,
-                onViewMyTrips: { navigate(.myTripsPassenger) },
-                onGoHome: goHome
+                onViewMyTrips: { replaceWith(.myTripsPassenger) },
+                onBackToHome: goHome
             )
 
         case .myTripsPassenger:
             MyTripsPassengerView(
-                onTripTapped: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
-                navigate: navigate
+                onNavigateBack: popBack,
+                onNavigateToTripDetailActive: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
+                onNavigateToTripDetail: { tripId in navigate(.tripDetail(id: tripId)) },
+                onNavigateToPassengerSettlement: { bookingId in navigate(.passengerSettlement(bookingId: bookingId)) },
+                onNavigateToHome: goHome,
+                onNavigateToChat: { /* handled by tab bar */ },
+                onNavigateToProfile: { /* tab-bar Profile */ },
+                onNavigateToFindRide: goHome
             )
 
         case .tripDetailActive(let bookingId):
             TripDetailActiveView(
                 bookingId: bookingId,
-                onMessageDriver: { bid in navigate(.chat(bookingId: bid)) },
-                onCancelBooking: { bid in navigate(.cancellationConfirmation(bookingId: bid)) },
-                onRateDriver:    { bid, name, initials in navigate(.rateDriver(bookingId: bid, driverName: name, driverInitials: initials)) },
-                onBack: popBack
+                onBack: popBack,
+                onNavigateToChat: { bid in navigate(.chat(bookingId: bid)) },
+                onNavigateToCancellationConfirmation: { bid in navigate(.cancellationConfirmation(bookingId: bid)) },
+                onNavigateToPassengerSettlement: { bid in navigate(.passengerSettlement(bookingId: bid)) }
             )
 
-        case .rateDriver(let bookingId, let driverName, let driverInitials):
+        case .rateDriver(let bookingId):
             RateDriverView(
-                bookingId:      bookingId,
-                driverName:     driverName,
-                driverInitials: driverInitials,
-                onSubmitted: { navigate(.myTripsPassenger) },
-                onBack: popBack
+                bookingId: bookingId,
+                onSubmitted: { replaceWith(.myTripsPassenger) },
+                onSkip: { replaceWith(.myTripsPassenger) },
+                onBack: goHome
             )
 
         case .cancellationConfirmation(let bookingId):
             CancellationConfirmationView(
                 bookingId: bookingId,
-                onGoHome: goHome
+                onBackToMyTrips: { replaceWith(.myTripsPassenger) }
             )
 
         // ── Driver ────────────────────────────────────────────────────────────
         case .enableDriverStep1:
-            HopUnbuiltScreen(route: "DR-02 Car Details (Step 1)")
+            // Single-step onboarding (matches Android): saving car details
+            // fires DriverEffect.NavigateToHome, which the view forwards as
+            // `onNavigateNext` — navigate to step 2 (MobilePay) so the new
+            // driver sets their number before their first ride.
+            CarDetailsView(
+                onNavigateBack: popBack,
+                onNavigateNext: {
+                    KoinIOSKt.getAuthViewModel().onEvent(event: AuthEventRefreshProfile.shared)
+                    navigate(.enableDriverStep2)
+                }
+            )
 
         case .enableDriverStep2:
-            HopUnbuiltScreen(route: "DR-03 Licence Upload (Step 2)")
-
-        case .enableDriverStep3:
-            HopUnbuiltScreen(route: "DR-04 Review Pending (Step 3)")
+            MobilepayOnboardingView(
+                onNavigateBack: popBack,
+                onNavigateNext: goHome
+            )
 
         case .postTripModelSelect:
-            HopUnbuiltScreen(route: "DR-05 Post Trip – Model Select")
+            PostTripModelSelectView(
+                onNavigateToModelA: { navigate(.postTripModelA) },
+                onNavigateToModelB: { navigate(.postTripModelB) },
+                onBack: popBack
+            )
 
         case .postTripModelA:
-            HopUnbuiltScreen(route: "DR-06 Post Trip – Model A (Daily Commute)")
+            PostTripModelAView(
+                onNavigateToReview: { navigate(.priceReview) },
+                onBack: popBack
+            )
 
         case .postTripModelB:
-            HopUnbuiltScreen(route: "DR-07 Post Trip – Model B (Long Distance)")
+            PostTripModelBView(
+                onNavigateToReview: { navigate(.priceReview) },
+                onBack: popBack
+            )
 
         case .priceReview:
-            HopUnbuiltScreen(route: "DR-08 Price Review & Confirm")
+            PriceReviewView(
+                onNavigateToMyTrips: { replaceWith(.myTripsDriver) },
+                onBack: popBack
+            )
 
         case .myTripsDriver:
-            HopUnbuiltScreen(route: "DR-09 My Trips (Driver)")
+            MyTripsDriverView(
+                onTripTapped: { tid in navigate(.tripDetailActiveDriver(tripId: tid)) },
+                onSettlementTapped: { tripId in navigate(.driverSettlement(tripId: tripId)) },
+                onPastTripTapped: { tripId in navigate(.pastTripDetailDriver(tripId: tripId)) },
+                onBack: popBack
+            )
 
         case .tripDetailActiveDriver(let tripId):
-            HopUnbuiltScreen(route: "DR-10 Trip Detail Active (Driver) — \(tripId)")
+            TripDetailActiveDriverView(
+                tripId: tripId,
+                onMarkComplete: { tid, net in navigate(.markTripComplete(tripId: tid, driverNetOere: net)) },
+                onMessagePassenger: { bid in navigate(.chat(bookingId: bid)) },
+                onBack: popBack
+            )
 
         case .markTripComplete(let tripId, let driverNetOere):
-            HopUnbuiltScreen(route: "DR-11 Mark Trip Complete — \(tripId), DKK \(driverNetOere / 100)")
+            MarkTripCompleteView(
+                tripId: tripId,
+                driverNetOere: driverNetOere,
+                onCompleted: { bookingId, name, initials, remIds, remNames, remInitials in
+                    navigate(.ratePassenger(
+                        bookingId: bookingId,
+                        passengerName: name,
+                        passengerInitials: initials,
+                        remainingBookingIds: remIds,
+                        remainingPassengerNames: remNames,
+                        remainingPassengerInitials: remInitials
+                    ))
+                },
+                onSettlementRequired: { tripId in
+                    // Pop markTripComplete before pushing settlement so the driver
+                    // cannot go back and re-complete the trip.
+                    if !path.isEmpty { path.removeLast() }
+                    navigate(.driverSettlement(tripId: tripId))
+                },
+                onBack: popBack
+            )
 
-        case .ratePassenger(let bookingId, let passengerName, _):
-            HopUnbuiltScreen(route: "DR-12 Rate Passenger — \(passengerName) / \(bookingId)")
+        case .ratePassenger(let bookingId, let passengerName, let passengerInitials,
+                            let remainingIds, let remainingNames, let remainingInitials):
+            RatePassengerView(
+                bookingId:         bookingId,
+                passengerName:     passengerName,
+                passengerInitials: passengerInitials,
+                onSubmitted: {
+                    if !remainingIds.isEmpty {
+                        navigate(.ratePassenger(
+                            bookingId: remainingIds[0],
+                            passengerName: remainingNames.count > 0 ? remainingNames[0] : "",
+                            passengerInitials: remainingInitials.count > 0 ? remainingInitials[0] : "",
+                            remainingBookingIds: Array(remainingIds.dropFirst()),
+                            remainingPassengerNames: Array(remainingNames.dropFirst()),
+                            remainingPassengerInitials: Array(remainingInitials.dropFirst())
+                        ))
+                        if path.count >= 2 { path.removeLast() }
+                    } else {
+                        replaceWith(.myTripsDriver)
+                    }
+                },
+                onSkip:            { replaceWith(.myTripsDriver) },
+                onBack:            goHome
+            )
 
         case .taxDashboard:
-            HopUnbuiltScreen(route: "DR-13 Tax Dashboard")
+            TaxDashboardView(
+                onOpenAnnualReport: { navigate(.taxReportDownload) },
+                onBack: popBack
+            )
 
         case .taxReportDownload:
-            HopUnbuiltScreen(route: "DR-14 Annual Tax Report Download")
+            TaxReportDownloadView(onBack: popBack)
+
+        // ── Settlement ────────────────────────────────────────────────────────
+        case .passengerSettlement(let bookingId):
+            PassengerSettlementView(
+                bookingId: bookingId,
+                onBack: goHome,
+                onSettlementComplete: { navigate(.rateDriver(bookingId: bookingId)) }
+            )
+
+        case .driverSettlement(let tripId):
+            DriverSettlementView(
+                tripId: tripId,
+                onBack: popBack,
+                onSettlementComplete: { replaceWith(.myTripsDriver) }
+            )
+
+        case .driverSettlementByBooking(let bookingId):
+            DriverSettlementView(
+                tripId: "",
+                bookingIdForResolution: bookingId,
+                onBack: popBack,
+                onSettlementComplete: { replaceWith(.myTripsDriver) }
+            )
+
+        case .pastTripDetailDriver(let tripId):
+            PastTripDetailDriverView(
+                tripId: tripId,
+                onBack: popBack
+            )
 
         // ── Shared ────────────────────────────────────────────────────────────
-        case .profile(let userId):
-            HopUnbuiltScreen(route: "SH-02 Profile — \(userId)")
+        case .profile(_):
+            OwnProfileView(
+                navigate: navigate,
+                onBack: popBack
+            )
 
         case .otherProfile(let userId):
-            HopUnbuiltScreen(route: "SH-03 Other Profile — \(userId)")
+            OtherProfileView(
+                userId: userId,
+                onBack: popBack
+            )
 
         case .chat(let bookingId):
-            HopUnbuiltScreen(route: "SH-04 Chat — \(bookingId)")
+            ChatView(
+                bookingId: bookingId,
+                onBack: popBack
+            )
+
+        case .chatList:
+            ChatListView(
+                onBack: popBack,
+                onNavigateToChat: { bookingId in navigate(.chat(bookingId: bookingId)) }
+            )
 
         case .notifications:
-            HopUnbuiltScreen(route: "SH-05 Notifications")
+            NotificationsView(
+                navigate: navigate,
+                onBack: popBack
+            )
 
         case .settings:
-            HopUnbuiltScreen(route: "SH-06 Settings")
+            SettingsView(
+                onBack:      popBack,
+                onLoggedOut: goHome
+            )
         }
     }
 }

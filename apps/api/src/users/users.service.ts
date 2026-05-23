@@ -1,7 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { Prisma, User } from '@prisma/client'
 import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 @Injectable()
 export class UsersService {
@@ -36,9 +38,7 @@ export class UsersService {
     // the controller's try/catch (enabling Supabase user cleanup on failure).
     if (data.phone) {
       if (!isValidPhoneNumber(data.phone)) {
-        throw new BadRequestException(
-          'Phone number must be in international format, e.g. +45 20 12 34 56',
-        )
+        throw new AppException(ApiErrorCode.INVALID_PHONE)
       }
       // Normalise to E.164 so storage is consistent regardless of spacing
       data.phone = parsePhoneNumber(data.phone).format('E.164')
@@ -48,7 +48,7 @@ export class UsersService {
     if (data.phone) {
       const existing = await this.prisma.user.findUnique({ where: { phone: data.phone } })
       if (existing && existing.id !== supabaseId) {
-        throw new ConflictException('Phone number already in use')
+        throw new AppException(ApiErrorCode.PHONE_TAKEN)
       }
     }
 
@@ -56,7 +56,7 @@ export class UsersService {
     if (data.email) {
       const existing = await this.prisma.user.findUnique({ where: { email: data.email } })
       if (existing && existing.id !== supabaseId) {
-        throw new ConflictException('Email already in use')
+        throw new AppException(ApiErrorCode.EMAIL_TAKEN)
       }
     }
 
@@ -80,7 +80,7 @@ export class UsersService {
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         const fields = (e.meta?.target as string[])?.join(', ') ?? 'field'
-        throw new ConflictException(`${fields} already in use`)
+        throw new AppException(ApiErrorCode.FIELD_TAKEN, `${fields} already in use`)
       }
       throw e
     }
@@ -93,7 +93,10 @@ export class UsersService {
     })
   }
 
-  async updateProfile(userId: string, data: { firstName: string; lastName: string }): Promise<User> {
+  async updateProfile(
+    userId: string,
+    data: { firstName?: string; lastName?: string; mobilepayNumber?: string },
+  ): Promise<User> {
     return this.prisma.user.update({
       where: { id: userId },
       data,
@@ -101,10 +104,51 @@ export class UsersService {
   }
 
   async reportUser(reportedId: string, reporterId: string, reason: string): Promise<void> {
+    await this.prisma.userReport.create({
+      data: { reporterId, reportedId, reason },
+    })
     this.logger.log(`User ${reporterId} reported ${reportedId}: ${reason}`)
   }
 
   async getCarDetails(userId: string) {
     return this.prisma.carDetails.findUnique({ where: { userId } })
+  }
+
+  async saveCarDetails(
+    userId: string,
+    data: { make: string; model: string; year: number; licensePlate: string; colour: string; seatsAvailable: number },
+  ) {
+    const [carDetails] = await this.prisma.$transaction([
+      this.prisma.carDetails.upsert({
+        where: { userId },
+        create: { userId, ...data },
+        update: data,
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          role: { set: 'DRIVER' },
+        },
+      }),
+    ])
+    return carDetails
+  }
+
+  /**
+   * Counts trips the user has fully completed, both as driver (trip.status COMPLETED)
+   * and as passenger (CONFIRMED booking on a COMPLETED trip).
+   */
+  async completedTripCount(userId: string): Promise<number> {
+    const [asDriver, asPassenger] = await Promise.all([
+      this.prisma.trip.count({ where: { driverId: userId, status: 'COMPLETED' } }),
+      this.prisma.booking.count({
+        where: {
+          passengerId: userId,
+          status: 'CONFIRMED',
+          trip: { status: 'COMPLETED' },
+        },
+      }),
+    ])
+    return asDriver + asPassenger
   }
 }

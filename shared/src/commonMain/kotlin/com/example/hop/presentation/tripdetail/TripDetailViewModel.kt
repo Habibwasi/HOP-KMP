@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.repository.TripRepository
+import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
+import com.example.hop.util.formatDeparture
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +36,6 @@ data class TripDetailUiState(
     val minThreshold: Int? = null,
     val model: TripModel = TripModel.A,
     val priceOerePerSeat: Int = 0,
-    val platformFeeOere: Int = 0,
 ) {
     val seatsAvailable: Int
         get() = (seatsTotal - seatsBooked).coerceAtLeast(0)
@@ -67,6 +70,7 @@ sealed interface TripDetailEffect {
 
 class TripDetailViewModel(
     private val tripRepository: TripRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TripDetailUiState())
@@ -89,29 +93,48 @@ class TripDetailViewModel(
             when (val response = tripRepository.getTripById(tripId)) {
                 is ApiResponse.Success -> {
                     val trip = response.data
-                    // Platform fee = what the passenger pays minus what the driver earns.
-                    val platformFeeOere = (trip.priceOerePerSeat - trip.driverNetOere).coerceAtLeast(0)
-                    // Driver name and verified status will come from a UserRepository
-                    // endpoint once it is available (post-MVP). Placeholder values used here.
-                    val initials = trip.driverId.take(2).uppercase()
+                    // Fetch driver profile in parallel — best-effort; failures degrade gracefully.
+                    val driverUser = coroutineScope {
+                        async { userRepository.getUserProfile(trip.driverId) }.await()
+                    }
+                    val driverName = when (driverUser) {
+                        is ApiResponse.Success -> driverUser.data.fullName
+                        is ApiResponse.Error -> ""
+                    }
+                    val driverRating = when (driverUser) {
+                        is ApiResponse.Success -> driverUser.data.ratingDriver?.toFloat() ?: 0f
+                        is ApiResponse.Error -> 0f
+                    }
+                    val isDriverVerified = when (driverUser) {
+                        is ApiResponse.Success -> driverUser.data.roles.contains(
+                            com.example.hop.domain.model.UserRole.DRIVER
+                        )
+                        is ApiResponse.Error -> false
+                    }
+                    val initials = driverName
+                        .split(" ")
+                        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                        .take(2)
+                        .joinToString("")
+                        .ifEmpty { trip.driverId.take(2).uppercase() }
+
                     _state.value = _state.value.copy(
                         isLoading = false,
                         tripId = trip.id,
                         driverId = trip.driverId,
-                        driverName = "Driver",     // TODO: resolve via UserRepository
+                        driverName = driverName,
                         driverInitials = initials,
-                        driverRating = 4.8f,       // TODO: resolve via UserRepository
-                        isDriverVerified = true,   // TODO: resolve via UserRepository
+                        driverRating = driverRating,
+                        isDriverVerified = isDriverVerified,
                         originName = trip.originName,
                         destName = trip.destName,
-                        departsAt = trip.departsAt,
+                        departsAt = formatDeparture(trip.departsAt),
                         distanceMetres = trip.distanceMetres,
                         seatsTotal = trip.seatsTotal,
                         seatsBooked = trip.seatsBooked,
                         minThreshold = trip.minThreshold,
                         model = trip.model,
                         priceOerePerSeat = trip.priceOerePerSeat,
-                        platformFeeOere = platformFeeOere,
                     )
                 }
 

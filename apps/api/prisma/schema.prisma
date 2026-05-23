@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-
 }
 
 enum Role {
@@ -21,6 +20,7 @@ enum TripModel {
 
 enum TripStatus {
   ACTIVE
+  CONFIRMED
   CANCELLED
   COMPLETED
   THRESHOLD_NOT_MET
@@ -40,16 +40,22 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  mobilepayNumber String?
   pushTokens      PushToken[]
   tripsAsDriver   Trip[]    @relation("DriverTrips")
   bookings        Booking[]
   ratingsGiven    Rating[]  @relation("RaterRatings")
   ratingsReceived Rating[]  @relation("RateeRatings")
-  taxRecords      TaxRecord[]
   licence         DriverLicence?
   carDetails      CarDetails?
   notifications   Notification[]
-  isAdmin         Boolean   @default(false)
+  savedPlaces     SavedPlace[]
+  recentSearches  RecentSearch[]
+  chatMessages    ChatMessage[]
+  searchAlerts        SearchAlert[]
+  reportsSubmitted    UserReport[] @relation("ReporterReports")
+  reportsReceived     UserReport[] @relation("ReportedReports")
+  isAdmin             Boolean   @default(false)
 }
 
 model PushToken {
@@ -59,6 +65,8 @@ model PushToken {
   token     String   @unique
   platform  String
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Trip {
@@ -79,14 +87,17 @@ model Trip {
   minPassengers     Int?
   thresholdDeadline DateTime?
   distanceKm        Float?
-  recurringDays     Int[]
+  recurringDays     String[]
   isRecurring       Boolean   @default(false)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   bookings   Booking[]
-  taxRecords TaxRecord[]
+
+  @@index([driverId])
+  @@index([status, departureAt])
+  @@index([isActive, departureAt])
 }
 
 model Booking {
@@ -101,8 +112,11 @@ model Booking {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  payment     Payment?
-  taxRecord   TaxRecord?
+  settlement   RideSettlement?
+  chatMessages ChatMessage[]
+
+  @@index([tripId])
+  @@index([passengerId])
 }
 
 model Rating {
@@ -114,6 +128,8 @@ model Rating {
   score     Int
   comment   String?
   createdAt DateTime @default(now())
+
+  @@index([rateeId])
 }
 
 enum BookingStatus {
@@ -121,46 +137,21 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   REFUNDED
+  AWAITING_PAYMENT
+  COMPLETED
+  DISPUTED
 }
 
-enum PaymentProvider {
-  MOBILEPAY
-  STRIPE
-}
-
-enum PaymentStatus {
-  PENDING
-  HELD
-  CAPTURED
-  REFUNDED
-  FAILED
-}
-
-model Payment {
-  id          String          @id @default(uuid())
-  bookingId   String          @unique
-  booking     Booking         @relation(fields: [bookingId], references: [id])
-  amountOere  Int
-  provider    PaymentProvider
-  status      PaymentStatus   @default(PENDING)
-  providerRef String?
-  webhookData Json?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-}
-
-model TaxRecord {
-  id          String   @id @default(uuid())
-  driverId    String
-  driver      User     @relation(fields: [driverId], references: [id])
-  tripId      String
-  trip        Trip     @relation(fields: [tripId], references: [id])
-  bookingId   String   @unique
-  booking     Booking  @relation(fields: [bookingId], references: [id])
-  amountOere  Int
-  distanceKm  Float
-  ratePerKm   Float
-  recordedAt  DateTime @default(now())
+model RideSettlement {
+  bookingId          String    @id
+  booking            Booking   @relation(fields: [bookingId], references: [id])
+  suggestedAmountOere Int
+  mobilepayNumber    String
+  passengerPaidAt    DateTime?
+  driverConfirmedAt  DateTime?
+  disputedAt         DateTime?
+  disputeReason      String?
+  createdAt          DateTime  @default(now())
 }
 
 model DriverLicence {
@@ -190,12 +181,18 @@ model CarDetails {
 }
 
 enum NotificationType {
+  NEW_BOOKING
   BOOKING_CONFIRMED
   BOOKING_CANCELLED
   TRIP_REMINDER
   NEW_RATING
   THRESHOLD_MET
   CHAT_MESSAGE
+  SEARCH_ALERT
+  RIDE_AWAITING_PAYMENT
+  PAYMENT_MARKED_PAID
+  PAYMENT_CONFIRMED
+  PAYMENT_DISPUTED
   GENERAL
 }
 
@@ -209,4 +206,103 @@ model Notification {
   isRead     Boolean          @default(false)
   deepLinkId String?
   createdAt  DateTime         @default(now())
+
+  @@index([userId, isRead])
+}
+
+enum SavedPlaceKind {
+  HOME
+  WORK
+  CUSTOM
+}
+
+/**
+ * User-saved location for one-tap destination prefill on the home screen.
+ * Lat/lng are optional so a user can save a free-text label like "Mum's place"
+ * before geocoding lands.
+ */
+model SavedPlace {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  address   String
+  lat       Float?
+  lng       Float?
+  kind      SavedPlaceKind @default(CUSTOM)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId, createdAt])
+  @@unique([userId, label])
+}
+
+/**
+ * Persisted recent search rows surfaced on the home screen.
+ * Upserted on every successful trip search so the most-recent timestamp wins
+ * and the use-count grows for prioritisation.
+ */
+model RecentSearch {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originLabel String
+  destLabel   String
+  lastUsedAt  DateTime @default(now())
+  useCount    Int      @default(1)
+
+  @@unique([userId, originLabel, destLabel])
+  @@index([userId, lastUsedAt])
+}
+
+/**
+ * Real-time chat messages scoped to a booking.
+ * Both the passenger and the driver of the booking's trip can send messages.
+ * Messages are ordered by createdAt for history replay on reconnect.
+ */
+model ChatMessage {
+  id        String   @id @default(uuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
+}
+
+/**
+ * Driver-set alert: notify the driver when a new trip matching their
+ * saved origin/destination appears.
+ */
+model SearchAlert {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  origin    String
+  dest      String
+  seats     Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, origin, dest])
+  @@index([isActive, origin, dest])
+}
+
+/**
+ * User-submitted abuse report against another user.
+ * Stored for admin review; does not auto-ban.
+ */
+model UserReport {
+  id         String   @id @default(uuid())
+  reporterId String
+  reporter   User     @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedId String
+  reported   User     @relation("ReportedReports", fields: [reportedId], references: [id], onDelete: Cascade)
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@index([reportedId])
+  @@index([reporterId])
 }

@@ -1,436 +1,689 @@
+//
+//  PassengerHomeView.swift
+//  iosApp
+//
+//  PA-01 — Passenger Home (light-theme, 1:1 mirror of PassengerHomeScreen.kt)
+//
+
 import SwiftUI
 import Shared
 
-// MARK: — PA-01 Passenger Home ─────────────────────────────────────────────────
-//
-// Unified home screen for the passenger role.
-// Matches Android PassengerHomeScreen layout:
-//   • White search card with shadow (from/to fields + swap button + date chips + seats)
-//   • "Upcoming trips" section with TripCard list / loading / empty state
-// The role toggle switches to DR-01 Driver Home (handled by parent).
+// MARK: — LocationPickerField (Identifiable wrapper for fullScreenCover) ────
+
+fileprivate enum LocationPickerField: String, Identifiable {
+    case from
+    case to
+    var id: String { rawValue }
+}
+
+// MARK: — PassengerHomeView ─────────────────────────────────────────────────
 
 struct PassengerHomeView: View {
 
-    /// Called when the user taps "Find rides" — pushes PA-02 Search Results.
-    var onSearch: (_ origin: String, _ dest: String, _ date: String, _ seats: Int) -> Void
+    /// Forwarded by HomeView → HopTabView → HopNavigationStack so it can capture
+    /// search params before pushing `.searchResults`.
+    let onSearch: (_ origin: String, _ dest: String, _ date: String, _ seats: Int) -> Void
+    let onSwitchToDriver: () -> Void
+    let navigate: (HopRoute) -> Void
 
-    /// Called when the role toggle switches to driver mode.
-    var onSwitchToDriver: () -> Void
+    // ── ViewModels (Koin) ─────────────────────────────────────────────────
+    @StateObject private var statsWrapper  = HomeStatsViewModelWrapper()
+    @StateObject private var placesWrapper = SavedPlacesViewModelWrapper()
+    @StateObject private var tripsWrapper  = MyTripsPassengerViewModelWrapper()
+    @StateObject private var authWrapper   = AuthViewModelWrapper()
 
-    var navigate: (HopRoute) -> Void
+    // ── Local ephemeral form state ────────────────────────────────────────
+    @State private var fromLocation: String = ""
+    @State private var toLocation:   String = ""
+    @State private var selectedDate: String = "Today"
+    @State private var seats:        Int    = 1
+    @State private var showAddPlaceSheet: Bool = false
+    @State private var showDatePicker:    Bool = false
+    @State private var showSeatPicker:    Bool = false
+    @State private var locationPickerField: LocationPickerField? = nil   // .from / .to / nil
+    @State private var headerExpanded: Bool = true
+    @State private var snackbar: String? = nil
 
-    // ── Local form state ──────────────────────────────────────────────────────
-    @State private var origin       = ""
-    @State private var destination  = ""
-    @State private var selectedDate = "Today"
-    @State private var seats        = 1
-    @State private var selectedRole: HopRole = .passenger
+    // ── Derived helpers ───────────────────────────────────────────────────
+    private var firstName: String? {
+        let full = (authWrapper.state.currentUser?.fullName ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !full.isEmpty else { return nil }
+        return full.split(separator: " ").first.map(String.init)
+    }
 
-    @StateObject private var tripWrapper = TripViewModelWrapper()
-
-    private var canSearch: Bool {
-        !origin.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !destination.trimmingCharacters(in: .whitespaces).isEmpty
+    /// Soonest CONFIRMED upcoming trip from local list — fallback when the
+    /// server `activeBooking` hasn't loaded yet.
+    private var nextActiveFallback: TripUiModel? {
+        let upcoming = tripsWrapper.state.upcomingTrips
+        return upcoming.min { lhs, rhs in lhs.departsAt < rhs.departsAt }
     }
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color.hopSurface.ignoresSafeArea(.all, edges: .top)
+            Color.hopBackground.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
+            // Lime → background gradient band behind the greeting.
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.hopPrimaryLime.opacity(0.22),
+                    Color.hopBackground
+                ]),
+                startPoint: .top,
+                endPoint:   .bottom
+            )
+            .frame(height: 260)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .ignoresSafeArea(edges: .top)
 
-                    // ── Top bar: Hop logo + Role toggle ───────────────────────
-                    HStack {
-                        Text("HOP")
-                            .font(HopFont.headlineMedium(weight: .bold))
-                            .tracking(3)
-                            .foregroundColor(Color.hopPrimaryLime)
+            VStack(spacing: 0) {
+                // ── Greeting (collapses on scroll) ────────────────────────
+                if headerExpanded {
+                    GreetingBanner(firstName: firstName)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
-                        Spacer()
-
-                        RoleTogglePill(selectedRole: $selectedRole)
-                            .onChange(of: selectedRole) { _, newRole in
-                                if newRole == .driver { onSwitchToDriver() }
-                            }
+                // ── Scroll body ───────────────────────────────────────────
+                ScrollView {
+                    // Track scroll offset to collapse the header.
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: ScrollOffsetKey.self,
+                            value: proxy.frame(in: .named("home-scroll")).minY
+                        )
                     }
-                    .padding(.horizontal, HopSpacing.md)
-                    .padding(.top, HopSpacing.md)
-                    .padding(.bottom, HopSpacing.lg)
+                    .frame(height: 0)
 
-                    // ── Search card ───────────────────────────────────────────
-                    SearchCard(
-                        origin: $origin,
-                        destination: $destination,
-                        selectedDate: $selectedDate,
-                        seats: $seats,
-                        canSearch: canSearch,
-                        onSwap: {
-                            let tmp = origin
-                            origin = destination
-                            destination = tmp
-                        },
-                        onSearch: {
-                            onSearch(
-                                origin.trimmingCharacters(in: .whitespaces),
-                                destination.trimmingCharacters(in: .whitespaces),
-                                selectedDate,
-                                seats
+                    VStack(spacing: HopSpacing.md) {
+                        // Active-booking banner (server source preferred,
+                        // fall back to soonest local upcoming trip).
+                        if let active = statsWrapper.state.activeBooking {
+                            ActiveBookingBanner(
+                                departureIso: active.departsAt,
+                                origin: active.originName,
+                                destination: active.destName,
+                                onTap: { navigate(.tripDetailActive(bookingId: active.id)) }
+                            )
+                        } else if let fallback = nextActiveFallback {
+                            ActiveBookingBanner(
+                                departureIso: fallback.departsAt,
+                                origin: fallback.originName,
+                                destination: fallback.destName,
+                                onTap: { navigate(.tripDetailActive(bookingId: fallback.bookingId ?? fallback.id)) }
                             )
                         }
-                    )
-                    .padding(.horizontal, HopSpacing.md)
 
-                    // ── Upcoming trips heading ────────────────────────────────
-                    Text("Upcoming trips")
-                        .font(HopFont.labelMedium(weight: .semibold))
-                        .foregroundColor(Color.hopTextPrimary)
-                        .padding(.horizontal, HopSpacing.md)
-                        .padding(.top, HopSpacing.xl)
-                        .padding(.bottom, HopSpacing.sm)
-
-                    // ── Loading / empty / trip list ───────────────────────────
-                    if tripWrapper.state.isLoading {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
-                                .scaleEffect(1.2)
-                            Spacer()
-                        }
-                        .padding(.vertical, HopSpacing.xl)
-                    } else if tripWrapper.state.trips.isEmpty {
-                        EmptyState(
-                            systemImage: "car.2",
-                            headline: "No upcoming trips",
-                            subtitle: "Find a ride and book your first trip",
-                            ctaLabel: "Find rides",
-                            ctaAction: {
-                                onSearch(
-                                    origin.trimmingCharacters(in: .whitespaces),
-                                    destination.trimmingCharacters(in: .whitespaces),
-                                    selectedDate,
-                                    seats
-                                )
+                        // Search hero
+                        SearchHero(
+                            fromLocation: fromLocation,
+                            toLocation:   toLocation,
+                            selectedDate: selectedDate,
+                            seats:        seats,
+                            onFromClick: { locationPickerField = LocationPickerField.from },
+                            onToClick:   { locationPickerField = LocationPickerField.to },
+                            onSwap: {
+                                let tmp = fromLocation
+                                fromLocation = toLocation
+                                toLocation = tmp
+                                #if canImport(UIKit)
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                #endif
+                            },
+                            onPickDate:  { showDatePicker = true },
+                            onPickSeats: { showSeatPicker = true },
+                            onSearch: {
+                                #if canImport(UIKit)
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                #endif
+                                onSearch(fromLocation, toLocation, selectedDate, seats)
                             }
                         )
-                        .padding(.horizontal, HopSpacing.md)
-                    } else {
-                        VStack(spacing: HopSpacing.sm) {
-                            ForEach(tripWrapper.state.trips, id: \.id) { tripUi in
-                                TripCard(data: tripUi.toHomeCardData()) {
-                                    guard !tripUi.isBroken else { return }
-                                    navigate(.tripDetail(id: tripUi.id))
+
+                        // Tips & announcements pager
+                        TipsPager(tips: DefaultHomeTips)
+
+                        // Trust stats (rating × completed × CO₂)
+                        let userStats = statsWrapper.state.stats
+                        let ratingTimes10: Int = {
+                            guard let r = userStats?.averageRating else { return 0 }
+                            return Int(Double(truncating: r) * 10.0)
+                        }()
+                        let completed: Int = Int(userStats?.completedTrips ?? Int32(tripsWrapper.state.upcomingTrips.count))
+                        TrustStatsCard(
+                            ratingTimes10: ratingTimes10,
+                            completedTrips: completed,
+                            co2SavedKg: 0
+                        )
+
+                        // ── Section heading ──────────────────────────────
+                        HStack {
+                            Text("Upcoming trips")
+                                .font(HopFont.titleMedium())
+                                .foregroundColor(Color.hopAuthTextPrimary)
+                            Spacer()
+                        }
+                        .padding(.top, HopSpacing.xs)
+
+                        // Loading / empty / list
+                        if tripsWrapper.state.isLoading || tripsWrapper.state.upcomingTrips.isEmpty {
+                            AnimatedLoadingCar(
+                                caption: tripsWrapper.state.isLoading
+                                    ? "Finding rides..."
+                                    : "No upcoming trips yet — search above to find a ride."
+                            )
+                            .padding(.vertical, HopSpacing.lg)
+                        } else {
+                            VStack(spacing: HopSpacing.sm) {
+                                ForEach(tripsWrapper.state.upcomingTrips, id: \.id) { trip in
+                                    TripCardLight(
+                                        driverName: "Driver",
+                                        driverInitials: "D",
+                                        driverRating: 0.0,
+                                        originName: trip.originName,
+                                        destinationName: trip.destName,
+                                        departureTime: trip.formattedDepartsAt,
+                                        badgeStatus: trip.model == .a ? .modelA : .modelB,
+                                        pricePerSeatOere: Int(trip.priceOerePerSeat),
+                                        isBooked: trip.bookingId != nil,
+                                        onTap: {
+                                            let bookingId = trip.bookingId ?? trip.id
+                                            navigate(.tripDetailActive(bookingId: bookingId))
+                                        }
+                                    )
                                 }
-                                .opacity(tripUi.isBroken ? 0.6 : 1.0)
-                                .disabled(tripUi.isBroken)
-                                .accessibilityHint(tripUi.isBroken ? "This trip is unavailable" : "Double-tap to view details")
                             }
                         }
-                        .padding(.horizontal, HopSpacing.md)
-                    }
 
-                    Spacer().frame(height: HopSpacing.xxl)
+                        Spacer().frame(height: HopSpacing.md)
+                    }
+                    .padding(.horizontal, HopSpacing.md)
+                    .padding(.vertical, HopSpacing.md)
+                }
+                .coordinateSpace(name: "home-scroll")
+                .onPreferenceChange(ScrollOffsetKey.self) { value in
+                    let expanded = value > -200
+                    if expanded != headerExpanded {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            headerExpanded = expanded
+                        }
+                    }
+                }
+                .refreshable {
+                    statsWrapper.load()
+                    placesWrapper.load()
+                    tripsWrapper.load()
                 }
             }
         }
-        .navigationBarHidden(true)
-        .task {
-            tripWrapper.startObserving { _ in }
-            tripWrapper.loadMyTripsPassenger()
+        // ── Snackbar ──────────────────────────────────────────────────────
+        .overlay(alignment: .bottom) {
+            if let msg = snackbar {
+                Text(msg)
+                    .font(HopFont.bodySmall())
+                    .foregroundColor(Color.white)
+                    .padding(.horizontal, HopSpacing.md)
+                    .padding(.vertical, HopSpacing.sm)
+                    .background(Color.black.opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.bottom, HopSpacing.lg)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        // ── Sheets / overlays ─────────────────────────────────────────────
+        .sheet(isPresented: $showSeatPicker) {
+            SeatPickerSheet(currentSeats: seats) { picked in
+                seats = picked
+                showSeatPicker = false
+            }
+            .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showDatePicker) {
+            DatePickerSheet(currentDate: selectedDate) { picked in
+                selectedDate = picked
+                showDatePicker = false
+            }
+            .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showAddPlaceSheet) {
+            AddSavedPlaceSheet(
+                onSave: { label, address, kind in
+                    placesWrapper.add(
+                        label: label,
+                        address: address,
+                        kind: kind
+                    )
+                    showAddPlaceSheet = false
+                },
+                onDismiss: { showAddPlaceSheet = false }
+            )
+            .presentationDetents([.medium, .large])
+        }
+        .fullScreenCover(item: $locationPickerField) { (field: LocationPickerField) in
+            LocationPickerOverlay(
+                title: field == LocationPickerField.from ? "Where from?" : "Where to?",
+                initialText: field == LocationPickerField.from ? fromLocation : toLocation,
+                savedPlaces: placesWrapper.state.places,
+                recentSearches: statsWrapper.state.recentSearches,
+                onDismiss: { locationPickerField = nil },
+                onConfirm: { address in
+                    if field == LocationPickerField.from { fromLocation = address }
+                    else { toLocation = address }
+                    locationPickerField = nil
+                },
+                onRouteConfirm: { origin, dest in
+                    fromLocation = origin
+                    toLocation = dest
+                    locationPickerField = nil
+                },
+                onRequestAddPlace: {
+                    locationPickerField = nil
+                    showAddPlaceSheet = true
+                },
+                onDeleteRecentSearch: { recentId in
+                    statsWrapper.deleteRecentSearch(id: recentId)
+                }
+            )
+        }
+        .onAppear {
+            authWrapper.startObserving()
+            statsWrapper.startObserving { eff in
+                if let err = eff as? HomeStatsEffectShowError {
+                    showSnack(err.message)
+                }
+            }
+            placesWrapper.startObserving { eff in
+                if let err = eff as? SavedPlacesEffectShowError {
+                    showSnack(err.message)
+                }
+            }
+            tripsWrapper.startObserving { _ in }
+
+            statsWrapper.load()
+            placesWrapper.load()
+            tripsWrapper.load()
+        }
+    }
+
+    private func showSnack(_ msg: String) {
+        withAnimation { snackbar = msg }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            withAnimation { if snackbar == msg { snackbar = nil } }
         }
     }
 }
 
-// MARK: — SearchCard
+// MARK: — ScrollOffsetKey ───────────────────────────────────────────────────
 
-private struct SearchCard: View {
-    @Binding var origin: String
-    @Binding var destination: String
-    @Binding var selectedDate: String
-    @Binding var seats: Int
-    let canSearch: Bool
-    let onSwap: () -> Void
-    let onSearch: () -> Void
+private struct ScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+
+// MARK: — SearchHero ────────────────────────────────────────────────────────
+
+private struct SearchHero: View {
+    let fromLocation: String
+    let toLocation:   String
+    let selectedDate: String
+    let seats:        Int
+    let onFromClick:  () -> Void
+    let onToClick:    () -> Void
+    let onSwap:       () -> Void
+    let onPickDate:   () -> Void
+    let onPickSeats:  () -> Void
+    let onSearch:     () -> Void
+
+    private var canSearch: Bool {
+        !fromLocation.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !toLocation.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
-        let cardShape = RoundedRectangle(cornerRadius: 16)
-
         VStack(spacing: 0) {
+            // ── From / To with timeline rail + swap ──────────────────────
+            ZStack(alignment: .topLeading) {
+                TimelineRail()
+                    .padding(.top, 18)
+                    .padding(.bottom, 18)
 
-            // ── From / To block with swap button ─────────────────────────────
-            ZStack(alignment: .trailing) {
                 VStack(spacing: 0) {
-                    LocationFieldRow(
-                        icon: "location.fill",
-                        iconColor: Color.hopPrimaryGreen,
-                        placeholder: "From — city or address",
-                        text: $origin
-                    )
-
-                    Divider()
-                        .background(Color(hex: 0xEEEEEE))
-                        .padding(.leading, 40)
-
-                    LocationFieldRow(
-                        icon: "location.fill",
-                        iconColor: Color.hopError,
-                        placeholder: "To — city or address",
-                        text: $destination
-                    )
-                }
-
-                // Swap button — centred vertically on the divider
-                Button(action: onSwap) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 36, height: 36)
-                            .overlay(Circle().stroke(Color(hex: 0xDDDDDD), lineWidth: 1))
-
-                        Image(systemName: "arrow.up.arrow.down")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color(hex: 0x666666))
+                    Button(action: onFromClick) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("From")
+                                .font(HopFont.labelSmall())
+                                .foregroundColor(Color(hex: "#888888"))
+                            Text(fromLocation.isEmpty ? "Where from?" : fromLocation)
+                                .font(HopFont.bodyMedium(weight: fromLocation.isEmpty ? .regular : .medium))
+                                .foregroundColor(fromLocation.isEmpty
+                                    ? Color(hex: "#B8B8B8")
+                                    : Color(hex: "#1A1A1A"))
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, HopSpacing.sm)
+                        .padding(.bottom, HopSpacing.sm)
+                        .padding(.trailing, 44)
                     }
+                    .buttonStyle(.plain)
+
+                    Divider().background(Color(hex: "#EEEEEE"))
+
+                    Button(action: onToClick) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("To")
+                                .font(HopFont.labelSmall())
+                                .foregroundColor(Color(hex: "#888888"))
+                            Text(toLocation.isEmpty ? "Where to?" : toLocation)
+                                .font(HopFont.bodyMedium(weight: toLocation.isEmpty ? .regular : .medium))
+                                .foregroundColor(toLocation.isEmpty
+                                    ? Color(hex: "#B8B8B8")
+                                    : Color(hex: "#1A1A1A"))
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, HopSpacing.sm)
+                        .padding(.bottom, HopSpacing.sm)
+                        .padding(.trailing, 44)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
-                .padding(.trailing, HopSpacing.xs)
-                .accessibilityLabel("Swap origin and destination")
+                .padding(.leading, 28)
+
+                // Swap button (centred vertically on the right)
+                HStack {
+                    Spacer()
+                    Button(action: onSwap) {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color(hex: "#666666"))
+                            .frame(width: 36, height: 36)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color(hex: "#DDDDDD"), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, HopSpacing.xs)
+                }
+                .frame(maxHeight: .infinity)
             }
+            .frame(minHeight: 110)
 
-            Divider().background(Color(hex: 0xEEEEEE))
+            Divider().background(Color(hex: "#EEEEEE"))
+            Spacer().frame(height: HopSpacing.sm)
 
-            // ── Date chips row ────────────────────────────────────────────────
-            DateChipsRow(selectedDate: $selectedDate)
+            // ── Date + Seats pills ───────────────────────────────────────
+            HStack(spacing: HopSpacing.xs) {
+                DatePill(selectedDate: selectedDate, onClick: onPickDate)
+                SeatsPill(seats: seats, onClick: onPickSeats)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Divider().background(Color(hex: 0xEEEEEE))
+            Spacer().frame(height: HopSpacing.sm)
 
-            // ── Seats row ─────────────────────────────────────────────────────
-            SeatsRow(seats: $seats)
-
-            Spacer().frame(height: HopSpacing.md)
-
-            // ── Find rides CTA ────────────────────────────────────────────────
-            HopPrimaryButton(title: "Find rides", isEnabled: canSearch, action: onSearch)
-                .padding(.horizontal, HopSpacing.md)
-                .padding(.bottom, HopSpacing.md)
-        }
-        .background(Color.white)
-        .clipShape(cardShape)
-        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-    }
-}
-
-// MARK: — LocationFieldRow
-
-private struct LocationFieldRow: View {
-    let icon: String
-    let iconColor: Color
-    let placeholder: String
-    @Binding var text: String
-
-    var body: some View {
-        HStack(spacing: HopSpacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(iconColor)
-                .frame(width: 24)
-
-            TextField(placeholder, text: $text)
-                .font(HopFont.bodyMedium())
-                .foregroundColor(Color(hex: 0x1A1A1A))
-                .tint(Color.hopPrimaryGreen)
-                .submitLabel(.next)
-                .autocorrectionDisabled()
+            // ── Search CTA ───────────────────────────────────────────────
+            HopButton(
+                text: "Search",
+                variant: .primary,
+                isEnabled: canSearch,
+                action: onSearch
+            )
         }
         .padding(.horizontal, HopSpacing.md)
-        .padding(.trailing, 44) // leave room for the swap button
-        .padding(.vertical, HopSpacing.sm + 2)
+        .padding(.vertical, HopSpacing.md)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(0.10), radius: 6, x: 0, y: 2)
     }
 }
 
-// MARK: — DateChipsRow
+// MARK: — TimelineRail ──────────────────────────────────────────────────────
 
-private struct DateChipsRow: View {
-    @Binding var selectedDate: String
+private struct TimelineRail: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            Circle()
+                .fill(Color.hopPrimaryGreen)
+                .frame(width: 10, height: 10)
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.hopPrimaryGreen.opacity(0.35),
+                    Color.hopError.opacity(0.35)
+                ]),
+                startPoint: .top,
+                endPoint:   .bottom
+            )
+            .frame(width: 2, height: 34)
+            Image(systemName: "mappin.circle.fill")
+                .font(.system(size: 14))
+                .foregroundColor(Color.hopError)
+        }
+        .frame(width: 20)
+    }
+}
+
+// MARK: — DatePill ──────────────────────────────────────────────────────────
+
+private struct DatePill: View {
+    let selectedDate: String
+    let onClick: () -> Void
 
     var body: some View {
-        HStack(spacing: HopSpacing.sm) {
+        Button(action: onClick) {
             HStack(spacing: 4) {
                 Image(systemName: "calendar")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(Color(hex: 0x888888))
-                Text("Date")
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color(hex: 0x888888))
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                Text(selectedDate)
+                    .font(HopFont.labelMedium(weight: .medium))
+                    .foregroundColor(Color(hex: "#1A1A1A"))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color.hopAuthTextSecondary)
             }
-
-            Spacer()
-
-            HStack(spacing: HopSpacing.xs) {
-                DateChip(label: "Today",    isSelected: selectedDate == "Today")    { selectedDate = "Today" }
-                DateChip(label: "Tomorrow", isSelected: selectedDate == "Tomorrow") { selectedDate = "Tomorrow" }
-
-                // Custom date trigger (post-MVP)
-                Button {
-                    // Platform date picker — post-MVP
-                } label: {
-                    HStack(spacing: 2) {
-                        Text(selectedDate != "Today" && selectedDate != "Tomorrow" ? selectedDate : "Pick")
-                            .font(HopFont.labelSmall())
-                            .foregroundColor(Color(hex: 0x444444))
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(Color(hex: 0x888888))
-                    }
-                    .padding(.horizontal, HopSpacing.sm)
-                    .padding(.vertical, 4)
-                    .overlay(Capsule().stroke(Color(hex: 0xDDDDDD), lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.sm)
-    }
-}
-
-private struct DateChip: View {
-    let label: String
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            Text(label)
-                .font(isSelected ? HopFont.labelSmall(weight: .semibold) : HopFont.labelSmall(weight: .regular))
-                .foregroundColor(isSelected ? Color(hex: 0x1A1A1A) : Color(hex: 0x444444))
-                .padding(.horizontal, HopSpacing.sm)
-                .padding(.vertical, 4)
-                .background(isSelected ? Color.hopPrimaryLime : Color.clear)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(isSelected ? Color.hopPrimaryLime : Color(hex: 0xDDDDDD), lineWidth: 1))
+            .padding(.horizontal, HopSpacing.sm)
+            .padding(.vertical, 6)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color(hex: "#DDDDDD"), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: — SeatsRow
+// MARK: — SeatsPill ─────────────────────────────────────────────────────────
 
-private struct SeatsRow: View {
-    @Binding var seats: Int
-    private let range = 1...4
+private struct SeatsPill: View {
+    let seats: Int
+    let onClick: () -> Void
 
     var body: some View {
-        HStack {
-            Text("Seats")
-                .font(HopFont.bodyMedium(weight: .medium))
-                .foregroundColor(Color(hex: 0x444444))
+        Button(action: onClick) {
+            HStack(spacing: 4) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                Text(seats == 1 ? "1 seat" : "\(seats) seats")
+                    .font(HopFont.labelMedium(weight: .medium))
+                    .foregroundColor(Color(hex: "#1A1A1A"))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color.hopAuthTextSecondary)
+            }
+            .padding(.horizontal, HopSpacing.sm)
+            .padding(.vertical, 6)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color(hex: "#DDDDDD"), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
 
-            Spacer()
+// MARK: — SeatPickerSheet ──────────────────────────────────────────────────
 
+private struct SeatPickerSheet: View {
+    let currentSeats: Int
+    let onSeatsSelected: (Int) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("How many seats?")
+                .font(HopFont.titleMedium(weight: .semibold))
+                .foregroundColor(Color.hopAuthTextPrimary)
+                .padding(.top, HopSpacing.lg)
+                .padding(.horizontal, HopSpacing.lg)
+
+            Spacer().frame(height: HopSpacing.md)
+
+            ForEach(1...4, id: \.self) { n in
+                Button(action: { onSeatsSelected(n) }) {
+                    HStack(spacing: HopSpacing.md) {
+                        ZStack {
+                            Circle()
+                                .fill(n == currentSeats
+                                    ? Color.hopPrimaryLime
+                                    : Color.hopCardSurfaceMuted)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(n == currentSeats
+                                    ? Color(hex: "#1A1A1A")
+                                    : Color.hopAuthTextSecondary)
+                        }
+                        Text(n == 1 ? "1 seat" : "\(n) seats")
+                            .font(HopFont.bodyLarge(weight: n == currentSeats ? .semibold : .regular))
+                            .foregroundColor(Color.hopAuthTextPrimary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, HopSpacing.md)
+                    .padding(.vertical, HopSpacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(n == currentSeats
+                                ? Color.hopPrimaryLime.opacity(0.18)
+                                : Color.clear)
+                    )
+                    .padding(.horizontal, HopSpacing.lg)
+                }
+                .buttonStyle(.plain)
+
+                if n < 4 {
+                    Divider()
+                        .background(Color(hex: "#F0F0F0"))
+                        .padding(.leading, HopSpacing.lg + 48)
+                }
+            }
+            Spacer().frame(height: HopSpacing.xl)
+        }
+        .background(Color.white)
+    }
+}
+
+// MARK: — DatePickerSheet ──────────────────────────────────────────────────
+
+private struct DatePickerSheet: View {
+    let currentDate: String
+    let onDateSelected: (String) -> Void
+
+    @State private var pickerDate: Date = Date()
+
+    private static let monthNames = [
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec"
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HopSpacing.md) {
+            Text("Pick a date")
+                .font(HopFont.titleMedium(weight: .semibold))
+                .foregroundColor(Color.hopAuthTextPrimary)
+                .padding(.top, HopSpacing.lg)
+
+            // Quick chips
             HStack(spacing: HopSpacing.sm) {
-                // Decrease button
-                Button {
-                    if seats > range.lowerBound { seats -= 1 }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Circle().stroke(
-                                    seats > range.lowerBound ? Color(hex: 0xCCCCCC) : Color(hex: 0xEEEEEE),
-                                    lineWidth: 1
-                                )
-                            )
-                        Image(systemName: "minus")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(seats > range.lowerBound ? Color(hex: 0x1A1A1A) : Color(hex: 0xCCCCCC))
+                quickChip("Today")
+                quickChip("Tomorrow")
+            }
+
+            DatePicker(
+                "Date",
+                selection: $pickerDate,
+                in: Date()...,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .tint(Color.hopPrimaryGreen)
+
+            HStack {
+                Spacer()
+                Button("OK") {
+                    let cal = Calendar.current
+                    let comps = cal.dateComponents([.day, .month], from: pickerDate)
+                    if let day = comps.day, let month = comps.month, month >= 1, month <= 12 {
+                        onDateSelected("\(day) \(Self.monthNames[month - 1])")
                     }
                 }
-                .buttonStyle(.plain)
-                .disabled(seats <= range.lowerBound)
-
-                Text("\(seats)")
-                    .font(HopFont.bodyLarge(weight: .bold))
-                    .foregroundColor(Color(hex: 0x1A1A1A))
-                    .frame(width: 20, alignment: .center)
-
-                // Increase button
-                Button {
-                    if seats < range.upperBound { seats += 1 }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Circle().stroke(
-                                    seats < range.upperBound ? Color(hex: 0xCCCCCC) : Color(hex: 0xEEEEEE),
-                                    lineWidth: 1
-                                )
-                            )
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(seats < range.upperBound ? Color(hex: 0x1A1A1A) : Color(hex: 0xCCCCCC))
-                    }
-                }
-                .buttonStyle(.plain)
-                .disabled(seats >= range.upperBound)
+                .font(HopFont.labelLarge(weight: .semibold))
+                .foregroundColor(Color.hopPrimaryGreen)
             }
         }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.xs)
-    }
-}
-
-// MARK: — TripUiModel → TripCardData
-
-private extension TripUiModel {
-    func toHomeCardData() -> TripCardData {
-        TripCardData(
-            driverName:       trip.driverId,
-            driverImageURL:   nil,
-            driverRating:     4.5,
-            reviewCount:      0,
-            originName:       trip.originName,
-            destName:         trip.destName,
-            departsAt:        homeShortDate(iso: trip.departsAt),
-            badgeStatus:      trip.model == .b ? .modelB : .modelA,
-            priceOerePerSeat: Int(trip.priceOerePerSeat)
-        )
+        .padding(.horizontal, HopSpacing.lg)
+        .padding(.bottom, HopSpacing.lg)
+        .background(Color.white)
     }
 
-    private func homeShortDate(iso: String) -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-        fmt.timeZone = TimeZone(identifier: "UTC")
-        if let d = fmt.date(from: iso) {
-            let out = DateFormatter()
-            out.dateFormat = "d MMM, HH:mm"
-            return out.string(from: d)
+    @ViewBuilder
+    private func quickChip(_ label: String) -> some View {
+        Button(action: { onDateSelected(label) }) {
+            Text(label)
+                .font(HopFont.labelMedium(weight: .medium))
+                .foregroundColor(currentDate == label
+                    ? Color(hex: "#1A1A1A")
+                    : Color.hopAuthTextSecondary)
+                .padding(.horizontal, HopSpacing.md)
+                .padding(.vertical, 6)
+                .background(currentDate == label
+                    ? Color.hopPrimaryLime.opacity(0.25)
+                    : Color.hopCardSurfaceMuted)
+                .clipShape(Capsule())
         }
-        return iso
+        .buttonStyle(.plain)
     }
 }
 
-// MARK: — Previews
+// MARK: — Color hex helper (local) ─────────────────────────────────────────
 
-#Preview("PA-01 Passenger Home — Default") {
-    PassengerHomeView(
-        onSearch:         { _, _, _, _ in },
-        onSwitchToDriver: {},
-        navigate:         { _ in }
-    )
-    .background(Color.hopSurface)
+private extension Color {
+    init(hex: String) {
+        var clean = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if clean.hasPrefix("#") { clean.removeFirst() }
+        var rgb: UInt64 = 0
+        Scanner(string: clean).scanHexInt64(&rgb)
+        let r = Double((rgb & 0xFF0000) >> 16) / 255.0
+        let g = Double((rgb & 0x00FF00) >>  8) / 255.0
+        let b = Double( rgb & 0x0000FF       ) / 255.0
+        self = Color(red: r, green: g, blue: b)
+    }
 }
+import SwiftUI
+import Shared
 
-#Preview("PA-01 Passenger Home — Filled") {
-    PassengerHomeView(
-        onSearch:         { _, _, _, _ in },
-        onSwitchToDriver: {},
-        navigate:         { _ in }
-    )
-    .background(Color.hopSurface)
-}
+// MARK: — PA-01 Passenger Home ─────────────────────────────────────────────────
+//
+// Modern redesign to match Android counterpart:
+//   • Lime gradient header band behind greeting
+//   • SearchHero: tappable From/To rows with timeline rail + swap button
+//   • DatePill + SeatsPill inline below hero, full-width Search CTA
+//   • LocationPickerSheet: saved-place chips + recent-search rows at top
+//   • ActiveBookingBanner: white card, lime accent stripe, live dot
+//   • "Upcoming trips" section with TripCard list / loading / empty state
+

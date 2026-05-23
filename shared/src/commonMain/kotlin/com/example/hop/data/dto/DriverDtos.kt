@@ -15,7 +15,6 @@ data class SubmitLicenceRequestDto(
     @SerialName("license_plate") val licensePlate: String,
     @SerialName("colour") val colour: String,
     @SerialName("seats_available") val seatsAvailable: Int,
-    @SerialName("photo_url") val photoUrl: String,
 )
 
 // ─ Response ───────────────────────────────────────────────────────────────────
@@ -27,14 +26,13 @@ data class LicenceStatusDto(
 
 // ─ Mapping ────────────────────────────────────────────────────────────────────
 
-fun CarDetails.toSubmitLicenceRequestDto(photoUrl: String) = SubmitLicenceRequestDto(
+fun CarDetails.toSubmitLicenceRequestDto() = SubmitLicenceRequestDto(
     make = make,
     model = model,
     year = year,
     licensePlate = licensePlate,
     colour = colour,
     seatsAvailable = seatsAvailable,
-    photoUrl = photoUrl,
 )
 
 fun LicenceStatusDto.toDomain(): LicenceStatus = when (status.uppercase()) {

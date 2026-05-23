@@ -22,6 +22,7 @@ class DevAuthRepository : AuthRepository {
             isBanned = false,
             ratingDriver = 4.7,
             ratingPassenger = 4.9,
+            mobilepayNumber = "12345678",
         )
     }
 

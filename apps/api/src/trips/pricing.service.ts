@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common'
+import { SKAT_RATE_DKK_PER_KM } from '../common/tax-constants'
 
 @Injectable()
 export class PricingService {
-  // Danish tax authority allows DKK 0.27/km per passenger (2024 rate)
-  private readonly RATE_PER_KM = 0.27
+  // SKAT 2024 rate: DKK 2.28/km total trip cost
+  private readonly RATE_PER_KM = SKAT_RATE_DKK_PER_KM
 
-  // Returns price in oere (integer) — never floats
+  // Returns suggested price per seat in oere (integer) — SKAT rate only, no platform fee.
+  // Formula: (distanceKm × 2.28 DKK/km) / seats. Driver receives full amount.
   calculatePricePerSeat(distanceKm: number, seats: number): number {
-    const pricePerSeatDkk = distanceKm * this.RATE_PER_KM
-    const pricePerSeatOere = Math.round(pricePerSeatDkk * 100)
+    const totalTripCostOere = Math.round(distanceKm * this.RATE_PER_KM * 100)
+    const pricePerSeatOere = Math.floor(totalTripCostOere / seats)
     return Math.max(pricePerSeatOere, 100) // minimum 1 DKK
   }
 

@@ -56,4 +56,11 @@ struct HopFont {
     static let body       = Font.system(size: 16, weight: .regular,  design: .default)
     static let caption    = Font.system(size: 12, weight: .regular,  design: .default)
     static let label      = Font.system(size: 14, weight: .medium,   design: .default)
+
+    // MARK: — Mono (for monetary displays)
+
+    /// Monospaced digits used for price / payout displays so digits don't jitter.
+    static func mono(size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        .system(size: size, weight: weight, design: .monospaced)
+    }
 }

@@ -20,6 +20,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.Url
 import io.ktor.http.parseQueryString
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -38,7 +39,7 @@ class SupabaseAuthRepositoryImpl(
         // Store profile data as Supabase user metadata so the backend guard can
         // auto-create the Prisma profile on first login even if email confirmation
         // delays the initial profile POST.
-        supabase.auth.signUpWith(Email, redirectUrl = "hop://auth/callback") {
+        supabase.auth.signUpWith(Email, redirectUrl = "ridly://auth/callback") {
             this.email = email
             this.password = password
             this.data = buildJsonObject {
@@ -51,9 +52,11 @@ class SupabaseAuthRepositoryImpl(
         // Wait until the Auth plugin has committed the session to its StateFlow.
         // signUpWith is async-internal in supabase-kt v3 — poll sessionStatus until
         // it settles so currentSessionOrNull() is reliable before the first request.
-        val status = supabase.auth.sessionStatus.first {
-            it !is SessionStatus.Initializing
-        }
+        // 15-second timeout guards against a stall in the supabase-kt state machine
+        // (e.g. corrupt DataStore, library bug) that would otherwise block forever.
+        val status = withTimeoutOrNull(15_000L) {
+            supabase.auth.sessionStatus.first { it !is SessionStatus.Initializing }
+        } ?: throw Exception("Authentication timed out. Please check your connection and try again.")
         val token = (status as? SessionStatus.Authenticated)?.session?.accessToken
         if (token != null) {
             // When email confirmation is ON, Supabase may return a session whose
@@ -103,7 +106,10 @@ class SupabaseAuthRepositoryImpl(
         }
         // Wait for the session StateFlow to emit Authenticated before the GET so
         // AuthInterceptor can reliably read currentSessionOrNull().
-        supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+        // Timeout prevents the coroutine hanging forever if the state machine stalls.
+        withTimeoutOrNull(15_000L) {
+            supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+        } ?: throw Exception("Sign-in timed out. Please check your connection and try again.")
         val envelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
         val error = envelope.error
         if (error != null) throw Exception(error.message)
@@ -118,7 +124,9 @@ class SupabaseAuthRepositoryImpl(
         // On cold start in supabase-kt v3 / Android, the session is loaded from
         // DataStore asynchronously. Wait for that load to complete before reading
         // the session — otherwise currentSessionOrNull() races and returns null.
-        supabase.auth.sessionStatus.first { it !is SessionStatus.Initializing }
+        withTimeoutOrNull(15_000L) {
+            supabase.auth.sessionStatus.first { it !is SessionStatus.Initializing }
+        } ?: return ApiResponse.Error(-3, "Session restore timed out. Please log in again.")
         val session = supabase.auth.currentSessionOrNull()
             ?: return ApiResponse.Error(-1, "No stored session")
         return safeApiCall {
@@ -131,8 +139,8 @@ class SupabaseAuthRepositoryImpl(
 
     override suspend fun handleDeepLink(url: String): ApiResponse<User> = safeApiCall {
         // Supabase email-confirmation callbacks come in two flavours:
-        //  • Implicit flow  → hop://auth/callback#access_token=TOKEN&refresh_token=…
-        //  • PKCE / code flow → hop://auth/callback?code=CODE
+        //  • Implicit flow  → ridly://auth/callback#access_token=TOKEN&refresh_token=…
+        //  • PKCE / code flow → ridly://auth/callback?code=CODE
         val parsedUrl = Url(url)
         val code = parsedUrl.parameters["code"]
         if (code != null) {
@@ -146,10 +154,22 @@ class SupabaseAuthRepositoryImpl(
             val accessToken = fragmentParams["access_token"]
                 ?: error("No access_token in auth callback fragment")
             val refreshToken = fragmentParams["refresh_token"] ?: ""
-            supabase.auth.importAuthToken(accessToken, refreshToken, retrieveUser = false, autoRefresh = true)
+            // Implicit-flow confirmation links sometimes omit the refresh_token.
+            // Enabling autoRefresh with an empty token causes the library to attempt
+            // a silent refresh that will always fail, producing a phantom 401 and an
+            // unexpected logout when the access token expires. Only enable autoRefresh
+            // when we actually have a refresh token to use.
+            supabase.auth.importAuthToken(
+                accessToken,
+                refreshToken,
+                retrieveUser = false,
+                autoRefresh = refreshToken.isNotEmpty(),
+            )
         }
         // Wait for the Auth plugin to commit the newly imported session.
-        supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+        withTimeoutOrNull(15_000L) {
+            supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+        } ?: throw Exception("Authentication timed out. The link may have expired — please try again.")
         val envelope = httpClient.get("users/me").body<ApiEnvelope<UserDto>>()
         val error = envelope.error
         if (error != null) throw Exception(error.message)
@@ -168,17 +188,27 @@ class SupabaseAuthRepositoryImpl(
             val accessToken = fragmentParams["access_token"]
                 ?: error("No access_token in recovery callback fragment")
             val refreshToken = fragmentParams["refresh_token"] ?: ""
-            supabase.auth.importAuthToken(accessToken, refreshToken, retrieveUser = false, autoRefresh = true)
+            // Same guard as handleDeepLink: only enable autoRefresh when a refresh
+            // token is actually present so a missing token does not cause silent
+            // failed-refresh loops and a phantom SessionExpired event.
+            supabase.auth.importAuthToken(
+                accessToken,
+                refreshToken,
+                retrieveUser = false,
+                autoRefresh = refreshToken.isNotEmpty(),
+            )
         }
         // Wait for the session to be committed — recovery sessions are still
         // SessionStatus.Authenticated, but the JWT role is "recovery".
-        supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+        withTimeoutOrNull(15_000L) {
+            supabase.auth.sessionStatus.first { it is SessionStatus.Authenticated }
+        } ?: throw Exception("Password reset timed out. The link may have expired — please request a new one.")
     }
 
     override suspend fun requestPasswordReset(email: String): ApiResponse<Unit> = safeApiCall {
         supabase.auth.resetPasswordForEmail(
             email = email,
-            redirectUrl = "hop://auth/callback",
+            redirectUrl = "ridly://auth/callback",
         )
     }
 

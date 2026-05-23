@@ -16,6 +16,7 @@ export declare class BookingsController {
             updatedAt: Date;
             model: import("@prisma/client").$Enums.TripModel;
             driverId: string;
+            status: import("@prisma/client").$Enums.TripStatus;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -25,11 +26,10 @@ export declare class BookingsController {
             departureAt: Date;
             seats: number;
             pricePerSeat: number;
-            status: import("@prisma/client").$Enums.TripStatus;
             minPassengers: number | null;
             thresholdDeadline: Date | null;
             distanceKm: number | null;
-            recurringDays: number[];
+            recurringDays: string[];
             isRecurring: boolean;
             isActive: boolean;
         };
@@ -42,9 +42,9 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
+        seats: number;
         tripId: string;
         totalOere: number;
     }>;
@@ -62,6 +62,7 @@ export declare class BookingsController {
             updatedAt: Date;
             model: import("@prisma/client").$Enums.TripModel;
             driverId: string;
+            status: import("@prisma/client").$Enums.TripStatus;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -71,35 +72,64 @@ export declare class BookingsController {
             departureAt: Date;
             seats: number;
             pricePerSeat: number;
-            status: import("@prisma/client").$Enums.TripStatus;
             minPassengers: number | null;
             thresholdDeadline: Date | null;
             distanceKm: number | null;
-            recurringDays: number[];
+            recurringDays: string[];
             isRecurring: boolean;
             isActive: boolean;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
+        seats: number;
         tripId: string;
         totalOere: number;
     })[]>;
+    activeForMe(req: any): Promise<({
+        trip: {
+            driver: {
+                id: string;
+                firstName: string;
+                lastName: string;
+                avatarUrl: string | null;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            model: import("@prisma/client").$Enums.TripModel;
+            driverId: string;
+            status: import("@prisma/client").$Enums.TripStatus;
+            originLat: number;
+            originLng: number;
+            originAddress: string;
+            destLat: number;
+            destLng: number;
+            destAddress: string;
+            departureAt: Date;
+            seats: number;
+            pricePerSeat: number;
+            minPassengers: number | null;
+            thresholdDeadline: Date | null;
+            distanceKm: number | null;
+            recurringDays: string[];
+            isRecurring: boolean;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.BookingStatus;
+        passengerId: string;
+        seats: number;
+        tripId: string;
+        totalOere: number;
+    }) | null>;
     findOne(id: string): Promise<{
         trip: {
             id: string;
@@ -107,6 +137,7 @@ export declare class BookingsController {
             updatedAt: Date;
             model: import("@prisma/client").$Enums.TripModel;
             driverId: string;
+            status: import("@prisma/client").$Enums.TripStatus;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -116,11 +147,10 @@ export declare class BookingsController {
             departureAt: Date;
             seats: number;
             pricePerSeat: number;
-            status: import("@prisma/client").$Enums.TripStatus;
             minPassengers: number | null;
             thresholdDeadline: Date | null;
             distanceKm: number | null;
-            recurringDays: number[];
+            recurringDays: string[];
             isRecurring: boolean;
             isActive: boolean;
         };
@@ -130,35 +160,17 @@ export declare class BookingsController {
             lastName: string;
             avatarUrl: string | null;
         };
-        payment: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
-            bookingId: string;
-            amountOere: number;
-            provider: import("@prisma/client").$Enums.PaymentProvider;
-            providerRef: string | null;
-            webhookData: import("@prisma/client/runtime/client").JsonValue | null;
-        } | null;
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        seats: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         passengerId: string;
+        seats: number;
         tripId: string;
         totalOere: number;
     }>;
     cancel(id: string, req: any): Promise<{
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        seats: number;
-        status: import("@prisma/client").$Enums.BookingStatus;
-        passengerId: string;
-        tripId: string;
-        totalOere: number;
+        cancelled: boolean;
     }>;
 }

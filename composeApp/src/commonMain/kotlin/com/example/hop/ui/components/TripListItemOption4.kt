@@ -101,6 +101,7 @@ private fun statusDisplayName(status: com.example.hop.domain.model.TripStatus): 
         TripStatus.CONFIRMED -> "Confirmed"
         TripStatus.CANCELLED -> "Cancelled"
         TripStatus.COMPLETED -> "Completed"
+        TripStatus.THRESHOLD_NOT_MET -> "Threshold not met"
         TripStatus.UNKNOWN -> "—" // Fallback (should not appear if isBroken check works)
     }
 
@@ -113,6 +114,7 @@ private fun statusColor(status: com.example.hop.domain.model.TripStatus) =
         TripStatus.CONFIRMED -> HopColors.success
         TripStatus.CANCELLED -> HopColors.error
         TripStatus.COMPLETED -> HopColors.textSecondary
+        TripStatus.THRESHOLD_NOT_MET -> HopColors.warning
         TripStatus.UNKNOWN -> HopColors.textSecondary // Grey for unknown
     }
 

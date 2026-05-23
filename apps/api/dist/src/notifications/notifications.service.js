@@ -47,6 +47,7 @@ exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
+const node_fs_1 = require("node:fs");
 const apn = __importStar(require("apn"));
 const admin = __importStar(require("firebase-admin"));
 let NotificationsService = NotificationsService_1 = class NotificationsService {
@@ -62,35 +63,49 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         this.initFcm();
     }
     initApn() {
+        const keyPath = this.config.get('APNS_KEY_PATH');
+        const keyId = this.config.get('APNS_KEY_ID');
+        const teamId = this.config.get('APNS_TEAM_ID');
+        if (!keyPath || !keyId || !teamId || !(0, node_fs_1.existsSync)(keyPath)) {
+            this.logger.warn('APNs not initialised - credentials are missing in this environment');
+            return;
+        }
         try {
             this.apnProvider = new apn.Provider({
                 token: {
-                    key: this.config.getOrThrow('APNS_KEY_PATH'),
-                    keyId: this.config.getOrThrow('APNS_KEY_ID'),
-                    teamId: this.config.getOrThrow('APNS_TEAM_ID'),
+                    key: keyPath,
+                    keyId,
+                    teamId,
                 },
                 production: this.config.get('NODE_ENV') === 'production',
             });
         }
         catch (e) {
-            this.logger.warn('APNs not initialised — check APNS_KEY_PATH');
+            this.logger.error(`APNs not initialised - ${e.message}`);
         }
     }
     initFcm() {
+        const projectId = this.config.get('FIREBASE_PROJECT_ID');
+        const clientEmail = this.config.get('FIREBASE_CLIENT_EMAIL');
+        const privateKey = this.config.get('FIREBASE_PRIVATE_KEY');
+        if (!projectId || !clientEmail || !privateKey || privateKey === 'your_private_key') {
+            this.logger.warn('FCM not initialised - credentials are missing in this environment');
+            return;
+        }
         try {
             if (!admin.apps.length) {
                 admin.initializeApp({
                     credential: admin.credential.cert({
-                        projectId: this.config.getOrThrow('FIREBASE_PROJECT_ID'),
-                        clientEmail: this.config.getOrThrow('FIREBASE_CLIENT_EMAIL'),
-                        privateKey: this.config.getOrThrow('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
+                        projectId,
+                        clientEmail,
+                        privateKey: privateKey.replace(/\\n/g, '\n'),
                     }),
                 });
             }
             this.fcmInitialised = true;
         }
         catch (e) {
-            this.logger.warn('FCM not initialised — check Firebase credentials');
+            this.logger.error(`FCM not initialised - ${e.message}`);
         }
     }
     async sendToUser(userId, title, body, data) {
@@ -114,7 +129,13 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         note.payload = data ?? {};
         const result = await this.apnProvider.send(note, token);
         if (result.failed.length) {
-            this.logger.warn(`APNs failed: ${JSON.stringify(result.failed)}`);
+            this.logger.error(`APNs failed: ${JSON.stringify(result.failed)}`);
+            const unregistered = result.failed
+                .filter((f) => f.response?.reason === 'Unregistered' || f.response?.reason === 'BadDeviceToken')
+                .map((f) => f.device);
+            if (unregistered.length) {
+                await this.prisma.pushToken.deleteMany({ where: { token: { in: unregistered } } });
+            }
         }
     }
     async sendFcm(token, title, body, data) {
@@ -129,7 +150,11 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             });
         }
         catch (e) {
-            this.logger.warn(`FCM failed for token ${token}: ${e}`);
+            this.logger.error(`FCM failed for token ${token}: ${e?.message ?? e}`);
+            if (e?.code === 'messaging/registration-token-not-registered' ||
+                e?.code === 'messaging/invalid-registration-token') {
+                await this.prisma.pushToken.deleteMany({ where: { token } });
+            }
         }
     }
     async registerToken(userId, token, platform) {
@@ -148,6 +173,12 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             orderBy: { createdAt: 'desc' },
             take: 50,
         });
+    }
+    async unreadCount(userId) {
+        const count = await this.prisma.notification.count({
+            where: { userId, isRead: false },
+        });
+        return { count };
     }
     async markRead(notificationId, userId) {
         return this.prisma.notification.updateMany({

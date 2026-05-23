@@ -2,6 +2,7 @@ package com.example.hop.presentation.mytrips
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.hop.domain.model.BookingStatus
 import com.example.hop.domain.model.TripStatus
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
@@ -40,6 +41,8 @@ sealed interface MyTripsPassengerEvent {
 sealed interface MyTripsPassengerEffect {
     /** Navigate to the live/active trip view (PA-08). Carries the Booking.id. */
     data class NavigateToTripDetailActive(val bookingId: String) : MyTripsPassengerEffect
+    /** Navigate directly to the passenger settlement screen for an AWAITING_PAYMENT booking. */
+    data class NavigateToPassengerSettlement(val bookingId: String) : MyTripsPassengerEffect
     /** Navigate to the read-only trip detail for review of past trips. */
     data class NavigateToTripDetail(val tripId: String) : MyTripsPassengerEffect
     data class ShowSnackbar(val message: String) : MyTripsPassengerEffect
@@ -71,11 +74,11 @@ class MyTripsPassengerViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = tripRepository.getMyTripsAsPassenger()) {
                 is ApiResponse.Success -> {
-                    val all = response.data.toUiModels()
+                    val all = response.data.toUiModels().sortedBy { it.departsAt }
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        upcomingTrips = all.filter { it.status.isUpcoming() },
-                        pastTrips = all.filter { it.status.isPast() },
+                        upcomingTrips = all.filter { it.status.isUpcoming() || it.bookingStatus == BookingStatus.AWAITING_PAYMENT },
+                        pastTrips = all.filter { it.status.isPast() && it.bookingStatus != BookingStatus.AWAITING_PAYMENT },
                     )
                 }
                 is ApiResponse.Error -> {
@@ -91,13 +94,26 @@ class MyTripsPassengerViewModel(
 
 private fun selectUpcomingTrip(bookingId: String) {
         viewModelScope.launch {
-            _effect.send(MyTripsPassengerEffect.NavigateToTripDetailActive(bookingId))
+            // If the booking is AWAITING_PAYMENT, go straight to the settlement screen.
+            val trip = _state.value.upcomingTrips.firstOrNull { it.bookingId == bookingId }
+            if (trip?.bookingStatus == BookingStatus.AWAITING_PAYMENT) {
+                _effect.send(MyTripsPassengerEffect.NavigateToPassengerSettlement(bookingId))
+            } else {
+                _effect.send(MyTripsPassengerEffect.NavigateToTripDetailActive(bookingId))
+            }
         }
     }
 
     private fun selectPastTrip(tripId: String) {
         viewModelScope.launch {
-            _effect.send(MyTripsPassengerEffect.NavigateToTripDetail(tripId))
+            // Past trips have a bookingId (passenger-scoped list). Navigate to
+            // the booking detail — not TripDetail which is the "Book Seat" page.
+            val bookingId = _state.value.pastTrips.firstOrNull { it.id == tripId }?.bookingId
+            if (bookingId != null) {
+                _effect.send(MyTripsPassengerEffect.NavigateToTripDetailActive(bookingId))
+            } else {
+                _effect.send(MyTripsPassengerEffect.NavigateToTripDetail(tripId))
+            }
         }
     }
 }

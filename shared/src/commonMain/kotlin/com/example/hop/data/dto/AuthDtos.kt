@@ -2,6 +2,7 @@ package com.example.hop.data.dto
 
 import com.example.hop.domain.model.User
 import com.example.hop.domain.model.UserRole
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // ── Request bodies ────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ data class UserDto(
     val isBanned: Boolean = false,
     val ratingDriver: Double? = null,
     val ratingPassenger: Double? = null,
+    val mobilepayNumber: String? = null,
 )
 
 // ── Envelope ──────────────────────────────────────────────────────────────────
@@ -40,8 +42,9 @@ data class ApiEnvelope<T>(
 
 @Serializable
 data class ApiEnvelopeError(
-    val code: Int,
+    @SerialName("statusCode") val code: Int,
     val message: String,
+    val errorCode: String? = null,
 )
 
 // ── Mapping ───────────────────────────────────────────────────────────────────
@@ -59,4 +62,5 @@ fun UserDto.toDomain(): User = User(
     isBanned = isBanned,
     ratingDriver = ratingDriver,
     ratingPassenger = ratingPassenger,
+    mobilepayNumber = mobilepayNumber,
 )

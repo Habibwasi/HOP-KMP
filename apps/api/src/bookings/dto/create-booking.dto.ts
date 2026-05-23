@@ -1,5 +1,4 @@
-import { IsUUID, IsInt, Min, Max, IsEnum } from 'class-validator'
-import { PaymentProvider } from '@prisma/client'
+import { IsUUID, IsInt, Min, Max } from 'class-validator'
 
 export class CreateBookingDto {
   @IsUUID()
@@ -9,7 +8,4 @@ export class CreateBookingDto {
   @Min(1)
   @Max(8)
   seats: number
-
-  @IsEnum(PaymentProvider)
-  paymentProvider: PaymentProvider
 }

@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -47,14 +48,26 @@ export class TripsController {
     return this.trips.findByDriver(req.user.id)
   }
 
+  @Get(':id/bookings')
+  @UseGuards(SupabaseGuard)
+  getTripPassengers(@Param('id') id: string, @Req() req: any) {
+    return this.trips.getTripPassengers(id, req.user.id)
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.trips.findById(id)
   }
 
-  @Patch(':id/cancel')
+  @Delete(':id')
   @UseGuards(SupabaseGuard)
   cancel(@Param('id') id: string, @Req() req: any) {
     return this.trips.cancel(id, req.user.id)
+  }
+
+  @Post(':id/complete')
+  @UseGuards(SupabaseGuard)
+  complete(@Param('id') id: string, @Req() req: any) {
+    return this.trips.complete(id, req.user.id)
   }
 }

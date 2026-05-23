@@ -78,6 +78,10 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun SearchResultsRoute(
+    origin: String,
+    dest: String,
+    date: String,
+    seats: Int,
     onNavigateBack: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -87,10 +91,23 @@ fun SearchResultsRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Fire search when the screen mounts with non-empty params.
+    LaunchedEffect(origin, dest, date, seats) {
+        if (origin.isNotBlank() && dest.isNotBlank()) {
+            searchViewModel.onEvent(SearchEvent.Search(origin, dest, date, seats))
+        }
+    }
+
     LaunchedEffect(searchViewModel) {
         searchViewModel.effect.collectLatest { effect ->
             when (effect) {
                 is SearchEffect.NavigateToTripDetail -> onNavigateToTripDetail(effect.tripId)
+                is SearchEffect.AlertCreated -> scope.launch {
+                    snackbarHostState.showSnackbar("Alert set! We'll notify you when a ride appears.")
+                }
+                is SearchEffect.AlertError -> scope.launch {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
             }
         }
     }
@@ -111,8 +128,7 @@ fun SearchResultsRoute(
                 searchViewModel.onEvent(SearchEvent.SelectTrip(tripId))
             },
             onAlertMe = {
-                // Backend alert endpoint is post-MVP; surface feedback so the tap isn't silent.
-                scope.launch { snackbarHostState.showSnackbar("Coming soon") }
+                searchViewModel.onEvent(SearchEvent.AlertMe)
             },
             modifier = Modifier.padding(innerPadding),
         )
@@ -159,6 +175,16 @@ fun SearchResultsScreen(
 
         when {
             state.isLoading -> SearchResultsLoading(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            )
+
+            state.error != null -> EmptyState(
+                headline = "Couldn't load trips",
+                subtext = state.error,
+                ctaLabel = "Alert me when one appears",
+                onCtaClick = onAlertMe,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
@@ -353,7 +379,7 @@ private fun TripResultsList(
                 driverRating = 5.0f,
                 originName = tripUiModel.originName,
                 destinationName = tripUiModel.destName,
-                departureTime = tripUiModel.departsAt,
+                departureTime = tripUiModel.formattedDepartsAt,
                 tripModel = when (tripUiModel.model) {
                     TripModel.A -> BadgeType.ModelA
                     TripModel.B -> BadgeType.ModelB

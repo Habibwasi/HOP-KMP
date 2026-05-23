@@ -26,10 +26,12 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.NotificationImportant
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -80,6 +82,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun NotificationsRoute(
     onNavigateBack: () -> Unit,
     onNavigateToSearch: () -> Unit,
+    onNavigateToDriverSettlement: (String) -> Unit,
+    onNavigateToPassengerSettlement: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NotificationsViewModel = koinViewModel(),
 ) {
@@ -93,6 +97,10 @@ fun NotificationsRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is NotificationsEffect.NavigateToSearch -> onNavigateToSearch()
+                is NotificationsEffect.NavigateToDriverSettlement ->
+                    onNavigateToDriverSettlement(effect.bookingId)
+                is NotificationsEffect.NavigateToPassengerSettlement ->
+                    onNavigateToPassengerSettlement(effect.bookingId)
             }
         }
     }
@@ -167,9 +175,7 @@ fun NotificationsScreen(
             else -> NotificationsList(
                 notifications = state.notifications,
                 onNotificationClick = { notification ->
-                    if (!notification.isRead) {
-                        onEvent(NotificationsEvent.MarkRead(notification.id))
-                    }
+                    onEvent(NotificationsEvent.Tapped(notification))
                 },
                 modifier = Modifier
                     .fillMaxSize()
@@ -296,13 +302,18 @@ private fun NotificationIconChip(
 
 @Composable
 private fun iconForType(type: NotificationType): Pair<ImageVector, Color> = when (type) {
-    NotificationType.BOOKING_CONFIRMED -> Icons.Outlined.CheckCircle to HopColors.success
-    NotificationType.BOOKING_CANCELLED -> Icons.Outlined.Cancel to HopColors.error
-    NotificationType.TRIP_REMINDER     -> Icons.Outlined.Timer to HopColors.warning
-    NotificationType.NEW_RATING        -> Icons.Outlined.Star to HopColors.primaryLime
-    NotificationType.THRESHOLD_MET     -> Icons.Outlined.TaskAlt to HopColors.primaryGreen
-    NotificationType.CHAT_MESSAGE      -> Icons.Outlined.Chat to HopColors.authTextSecondary
-    NotificationType.GENERAL           -> Icons.Outlined.NotificationImportant to HopColors.authTextSecondary
+    NotificationType.BOOKING_CONFIRMED    -> Icons.Outlined.CheckCircle  to HopColors.success
+    NotificationType.BOOKING_CANCELLED    -> Icons.Outlined.Cancel        to HopColors.error
+    NotificationType.TRIP_REMINDER        -> Icons.Outlined.Timer         to HopColors.warning
+    NotificationType.NEW_RATING           -> Icons.Outlined.Star          to HopColors.primaryLime
+    NotificationType.THRESHOLD_MET        -> Icons.Outlined.TaskAlt       to HopColors.primaryGreen
+    NotificationType.CHAT_MESSAGE         -> Icons.Outlined.Chat          to HopColors.authTextSecondary
+    NotificationType.PAYMENT_MARKED_PAID  -> Icons.Outlined.Payments      to HopColors.primaryGreen
+    NotificationType.PAYMENT_CONFIRMED    -> Icons.Outlined.CheckCircle   to HopColors.primaryGreen
+    NotificationType.PAYMENT_DISPUTED     -> Icons.Outlined.Warning       to HopColors.error
+    NotificationType.RIDE_AWAITING_PAYMENT -> Icons.Outlined.Timer        to HopColors.warning
+    NotificationType.SEARCH_ALERT         -> Icons.Outlined.Search        to HopColors.primaryLime
+    NotificationType.GENERAL              -> Icons.Outlined.NotificationImportant to HopColors.authTextSecondary
 }
 
 /**

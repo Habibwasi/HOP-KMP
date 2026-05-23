@@ -35,10 +35,16 @@ class MainActivity : ComponentActivity() {
         Log.d("HopDeepLink", "handleDeepLinkIntent | url=$url")
         if (url == null) return
         if (url.startsWith("hop://auth/callback")) {
-            Log.d("HopDeepLink", "Queueing deep link: $url")
+            Log.d("HopDeepLink", "Queueing auth deep link: $url")
+            authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
+        } else if (url.startsWith("hop://driver-settlement/")) {
+            Log.d("HopDeepLink", "Queueing driver-settlement deep link: $url")
+            authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
+        } else if (url.startsWith("hop://passenger-settlement/")) {
+            Log.d("HopDeepLink", "Queueing passenger-settlement deep link: $url")
             authViewModel.onEvent(AuthEvent.QueueDeepLink(url))
         } else {
-            Log.w("HopDeepLink", "URL does not match hop://auth/callback — ignored: $url")
+            Log.w("HopDeepLink", "URL does not match any known scheme — ignored: $url")
         }
     }
 }

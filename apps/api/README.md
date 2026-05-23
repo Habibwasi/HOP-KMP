@@ -59,16 +59,43 @@ $ npm run test:cov
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+The API is deployed to [Railway](https://railway.app) with Postgres on
+[Supabase](https://supabase.com) and Redis as a Railway plugin.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### One-time setup
+
+1. **Supabase Postgres** — in the project's Database settings:
+   - Copy the **pooled** connection string (PgBouncer, port `6543`) → set as
+     `DATABASE_URL` (append `?pgbouncer=true&connection_limit=1`).
+   - Copy the **direct** connection string (port `5432`) → set as `DIRECT_URL`.
+     Used only by `prisma migrate`.
+2. **Railway project**:
+   - Add a service from this repo with root directory `apps/api`,
+     builder = Dockerfile.
+   - Add the Redis plugin; reference it from the API service as
+     `REDIS_URL=${{Redis.REDIS_URL}}`.
+   - Copy the remaining env vars from `.env.example` into the service
+     variables.
+   - `railway.json` (already committed) sets the start command to
+     `npx prisma migrate deploy && node dist/src/main` so migrations run on
+     every deploy, and configures the `/api/v1/health` healthcheck.
+
+### Day-to-day
+
+Pushing to the configured branch on GitHub triggers an automatic deploy.
+Manual deploys / logs via the Railway CLI:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm install -g @railway/cli
+railway login
+railway link            # select the hop project + api service
+railway up              # deploy current working tree
+railway logs            # tail logs
+railway run npm run …   # run a command with the service's env vars
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Local development still uses `docker-compose.yml` (Postgres + Redis) and the
+values in `.env`.
 
 ## Resources
 

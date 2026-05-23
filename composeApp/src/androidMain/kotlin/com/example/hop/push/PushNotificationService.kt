@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import com.example.hop.MainActivity
 import com.example.hop.domain.repository.UserRepository
@@ -32,7 +33,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         serviceScope.launch {
-            userRepository.savePushToken(token)
+            userRepository.savePushToken(token, "android")
         }
     }
 
@@ -43,11 +44,14 @@ class PushNotificationService : FirebaseMessagingService() {
         val body = message.notification?.body
             ?: message.data["body"]
             ?: ""
+        val type = message.data["type"]
+        val bookingId = message.data["bookingId"]
+        val recipientRole = message.data["recipientRole"]
 
-        showNotification(title = title, body = body)
+        showNotification(title = title, body = body, type = type, bookingId = bookingId, recipientRole = recipientRole)
     }
 
-    private fun showNotification(title: String, body: String) {
+    private fun showNotification(title: String, body: String, type: String? = null, bookingId: String? = null, recipientRole: String? = null) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Ensure the channel exists (required Android 8+)
@@ -60,9 +64,21 @@ class PushNotificationService : FirebaseMessagingService() {
         }
         manager.createNotificationChannel(channel)
 
-        // Tap opens the app at MainActivity
+        // Tap opens the app at MainActivity. For actionable notifications, include
+        // a deep-link URI so MainActivity can navigate directly to the right screen.
+        val deepLinkUri: Uri? = when {
+            type == "PAYMENT_MARKED_PAID" && !bookingId.isNullOrBlank() ->
+                Uri.parse("hop://driver-settlement/$bookingId")
+            type == "PAYMENT_CONFIRMED" && !bookingId.isNullOrBlank() ->
+                Uri.parse("hop://passenger-settlement/$bookingId")
+            type == "PAYMENT_DISPUTED" && !bookingId.isNullOrBlank() ->
+                if (recipientRole == "driver") Uri.parse("hop://driver-settlement/$bookingId")
+                else Uri.parse("hop://passenger-settlement/$bookingId")
+            else -> null
+        }
         val tapIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (deepLinkUri != null) data = deepLinkUri
         }
         val pendingIntent = PendingIntent.getActivity(
             this,

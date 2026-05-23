@@ -15,12 +15,15 @@ export declare class UsersService {
     }): Promise<User>;
     markVerified(userId: string): Promise<User>;
     updateProfile(userId: string, data: {
-        firstName: string;
-        lastName: string;
+        firstName?: string;
+        lastName?: string;
+        mobilepayNumber?: string;
     }): Promise<User>;
     reportUser(reportedId: string, reporterId: string, reason: string): Promise<void>;
     getCarDetails(userId: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         make: string;
         model: string;
@@ -28,7 +31,25 @@ export declare class UsersService {
         licensePlate: string;
         colour: string;
         seatsAvailable: number;
+    } | null>;
+    saveCarDetails(userId: string, data: {
+        make: string;
+        model: string;
+        year: number;
+        licensePlate: string;
+        colour: string;
+        seatsAvailable: number;
+    }): Promise<{
+        id: string;
         createdAt: Date;
         updatedAt: Date;
-    } | null>;
+        userId: string;
+        make: string;
+        model: string;
+        year: number;
+        licensePlate: string;
+        colour: string;
+        seatsAvailable: number;
+    }>;
+    completedTripCount(userId: string): Promise<number>;
 }

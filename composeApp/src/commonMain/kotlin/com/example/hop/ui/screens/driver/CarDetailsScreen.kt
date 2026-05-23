@@ -19,7 +19,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.domain.model.CarDetails
+import com.example.hop.presentation.auth.AuthEvent
+import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.presentation.driver.DriverEffect
 import com.example.hop.presentation.driver.DriverEvent
 import com.example.hop.presentation.driver.DriverUiState
@@ -70,10 +74,12 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun CarDetailsRoute(
-    onNavigateToLicenceUpload: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToReviewPending: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
+    authViewModel: AuthViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -82,7 +88,17 @@ fun CarDetailsRoute(
     LaunchedEffect(viewModel) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is DriverEffect.NavigateToLicenceUpload -> onNavigateToLicenceUpload()
+                is DriverEffect.NavigateToHome -> {
+                    // Refresh the cached user so hasDriverRole flips to true immediately.
+                    authViewModel.onEvent(AuthEvent.RefreshProfile)
+                    onNavigateToHome()
+                }
+                is DriverEffect.NavigateToReviewPending -> {
+                    // Refresh the cached user so hasDriverRole flips to true immediately,
+                    // then show the Review Pending screen.
+                    authViewModel.onEvent(AuthEvent.RefreshProfile)
+                    onNavigateToReviewPending()
+                }
                 is DriverEffect.ShowSnackbar ->
                     scope.launch { snackbarHostState.showSnackbar(effect.message) }
                 else -> Unit
@@ -109,7 +125,7 @@ fun CarDetailsRoute(
 /**
  * DR-02 — Car Details Screen.
  *
- * Step 1 of 3 in the driver onboarding flow. Collects car information and
+ * Step 1 of 1 in the driver onboarding flow. Collects car information and
  * dispatches [DriverEvent.SaveCarDetails] on Continue.
  */
 @Composable
@@ -125,6 +141,7 @@ fun CarDetailsScreen(
     var year by remember { mutableStateOf("") }
     var colour by remember { mutableStateOf("") }
     var plate by remember { mutableStateOf("") }
+    var seats by remember { mutableStateOf(4) }
 
     // ── Derived validation ────────────────────────────────────────────────────
     val yearInt = year.trim().toIntOrNull()
@@ -167,15 +184,6 @@ fun CarDetailsScreen(
             )
         }
 
-        // ── Step indicator ────────────────────────────────────────────────────
-        OnboardingStepIndicator(
-            currentStep = 1,
-            totalSteps = 3,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = HopSpacing.xl, vertical = HopSpacing.md),
-        )
-
         HorizontalDivider(color = HopColors.authInputBorder)
 
         Column(
@@ -204,6 +212,7 @@ fun CarDetailsScreen(
                 onValueChange = { make = it },
                 label = "Make",
                 placeholder = "e.g. Toyota",
+                lightSurface = true,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next,
@@ -214,6 +223,7 @@ fun CarDetailsScreen(
                 onValueChange = { model = it },
                 label = "Model",
                 placeholder = "e.g. Corolla",
+                lightSurface = true,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next,
@@ -225,6 +235,7 @@ fun CarDetailsScreen(
                 label = "Year",
                 placeholder = "e.g. 2020",
                 errorMessage = if (year.isNotEmpty() && !yearValid) "Enter a valid year" else null,
+                lightSurface = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next,
@@ -235,6 +246,7 @@ fun CarDetailsScreen(
                 onValueChange = { colour = it },
                 label = "Colour",
                 placeholder = "e.g. White",
+                lightSurface = true,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next,
@@ -245,11 +257,61 @@ fun CarDetailsScreen(
                 onValueChange = { plate = it.uppercase() },
                 label = "Plate Number",
                 placeholder = "e.g. AB 12 345",
+                lightSurface = true,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Characters,
                     imeAction = ImeAction.Done,
                 ),
             )
+
+            // ── Seats stepper ─────────────────────────────────────────────
+            Column {
+                Text(
+                    text = "Available Seats",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = HopColors.authTextSecondary,
+                    modifier = Modifier.padding(bottom = HopSpacing.xs),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(HopSpacing.md),
+                ) {
+                    IconButton(
+                        onClick = { if (seats > 1) seats-- },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(HopColors.authInputSurface),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Remove,
+                            contentDescription = "Decrease seats",
+                            tint = HopColors.authTextPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Text(
+                        text = "$seats",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = HopColors.authTextPrimary,
+                    )
+                    IconButton(
+                        onClick = { if (seats < 8) seats++ },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(HopColors.authInputSurface),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Add,
+                            contentDescription = "Increase seats",
+                            tint = HopColors.authTextPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
         }
 
         // ── Continue button ───────────────────────────────────────────────────
@@ -272,7 +334,7 @@ fun CarDetailsScreen(
                                 year = yearInt ?: 0,
                                 colour = colour.trim(),
                                 licensePlate = plate.trim(),
-                                seatsAvailable = 4,
+                                seatsAvailable = seats,
                             ),
                         ),
                     )

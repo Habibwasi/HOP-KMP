@@ -1,0 +1,115 @@
+import { HttpException, HttpStatus } from '@nestjs/common'
+import { ApiErrorCode } from './api-error-codes'
+
+const STATUS_MAP: Record<ApiErrorCode, HttpStatus> = {
+  [ApiErrorCode.UNAUTHORIZED]: HttpStatus.UNAUTHORIZED,
+  [ApiErrorCode.TOKEN_MISSING]: HttpStatus.UNAUTHORIZED,
+  [ApiErrorCode.TOKEN_INVALID]: HttpStatus.UNAUTHORIZED,
+  [ApiErrorCode.ACCOUNT_BANNED]: HttpStatus.UNAUTHORIZED,
+  [ApiErrorCode.PROFILE_NOT_FOUND]: HttpStatus.UNAUTHORIZED,
+  [ApiErrorCode.ADMIN_REQUIRED]: HttpStatus.FORBIDDEN,
+  [ApiErrorCode.VALIDATION_ERROR]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.INVALID_PHONE]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.INVALID_PARAM]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.USER_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ApiErrorCode.TRIP_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ApiErrorCode.BOOKING_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ApiErrorCode.PLACE_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ApiErrorCode.CAR_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ApiErrorCode.LICENCE_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ApiErrorCode.ALERT_NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [ApiErrorCode.NOT_YOUR_TRIP]: HttpStatus.FORBIDDEN,
+  [ApiErrorCode.NOT_A_PARTICIPANT]: HttpStatus.FORBIDDEN,
+  [ApiErrorCode.NOT_A_PARTY]: HttpStatus.FORBIDDEN,
+  [ApiErrorCode.DRIVER_ONLY]: HttpStatus.FORBIDDEN,
+  [ApiErrorCode.TRIP_NOT_ACTIVE]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.CANNOT_BOOK_OWN_TRIP]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.INSUFFICIENT_SEATS]: HttpStatus.CONFLICT,
+  [ApiErrorCode.ALREADY_BOOKED]: HttpStatus.CONFLICT,
+  [ApiErrorCode.BOOKING_NOT_PENDING]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.ALREADY_CANCELLED]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.TRIP_ALREADY_CANCELLED]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.MOBILEPAY_MISSING]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.TRIP_NOT_ACTIVE_FOR_COMPLETE]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.ALERT_ALREADY_EXISTS]: HttpStatus.CONFLICT,
+  [ApiErrorCode.MODEL_B_MISSING_MIN_PASSENGERS]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.MODEL_B_MISSING_DEADLINE]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.MODEL_B_DEADLINE_AFTER_DEPARTURE]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.MODEL_A_MISSING_RECURRING_DAYS]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.NO_OCCURRENCES]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.GEOCODING_NOT_CONFIGURED]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.GEOCODING_FAILED]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.GEOCODING_NO_RESULT]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.ROUTE_NOT_CONFIGURED]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.ROUTE_PARAMS_MISSING]: HttpStatus.BAD_REQUEST,
+  [ApiErrorCode.PHONE_TAKEN]: HttpStatus.CONFLICT,
+  [ApiErrorCode.EMAIL_TAKEN]: HttpStatus.CONFLICT,
+  [ApiErrorCode.FIELD_TAKEN]: HttpStatus.CONFLICT,
+  [ApiErrorCode.INTERNAL_ERROR]: HttpStatus.INTERNAL_SERVER_ERROR,
+  [ApiErrorCode.DANGLING_AUTH_USER]: HttpStatus.INTERNAL_SERVER_ERROR,
+}
+
+const MESSAGE_MAP: Record<ApiErrorCode, string> = {
+  [ApiErrorCode.UNAUTHORIZED]: 'Unauthorized',
+  [ApiErrorCode.TOKEN_MISSING]: 'Missing or malformed authorization token',
+  [ApiErrorCode.TOKEN_INVALID]: 'Invalid or expired token',
+  [ApiErrorCode.ACCOUNT_BANNED]: 'Account banned',
+  [ApiErrorCode.PROFILE_NOT_FOUND]: 'Profile not found. Please register again or contact support.',
+  [ApiErrorCode.ADMIN_REQUIRED]: 'Admin access required',
+  [ApiErrorCode.VALIDATION_ERROR]: 'Validation failed',
+  [ApiErrorCode.INVALID_PHONE]: 'Phone number must be in international format, e.g. +45 20 12 34 56',
+  [ApiErrorCode.INVALID_PARAM]: 'Invalid request parameter',
+  [ApiErrorCode.USER_NOT_FOUND]: 'User not found',
+  [ApiErrorCode.TRIP_NOT_FOUND]: 'Trip not found',
+  [ApiErrorCode.BOOKING_NOT_FOUND]: 'Booking not found',
+  [ApiErrorCode.PLACE_NOT_FOUND]: 'Place not found',
+  [ApiErrorCode.CAR_NOT_FOUND]: 'No car details found',
+  [ApiErrorCode.LICENCE_NOT_FOUND]: 'Licence not found',
+  [ApiErrorCode.ALERT_NOT_FOUND]: 'Alert not found',
+  [ApiErrorCode.NOT_YOUR_TRIP]: 'Not your trip',
+  [ApiErrorCode.NOT_A_PARTICIPANT]: 'Not a participant',
+  [ApiErrorCode.NOT_A_PARTY]: 'Not a party to this booking',
+  [ApiErrorCode.DRIVER_ONLY]: 'Only the trip driver can perform this action',
+  [ApiErrorCode.TRIP_NOT_ACTIVE]: 'Trip is not active',
+  [ApiErrorCode.CANNOT_BOOK_OWN_TRIP]: 'Cannot book your own trip',
+  [ApiErrorCode.INSUFFICIENT_SEATS]: 'Insufficient seats available',
+  [ApiErrorCode.ALREADY_BOOKED]: 'Already booked this trip',
+  [ApiErrorCode.BOOKING_NOT_PENDING]: 'Booking is not pending',
+  [ApiErrorCode.ALREADY_CANCELLED]: 'Already cancelled',
+  [ApiErrorCode.TRIP_ALREADY_CANCELLED]: 'Trip already cancelled',
+  [ApiErrorCode.MOBILEPAY_MISSING]: 'Please add your MobilePay number in your profile before creating a trip',
+  [ApiErrorCode.TRIP_NOT_ACTIVE_FOR_COMPLETE]: 'Trip must be ACTIVE to complete',
+  [ApiErrorCode.ALERT_ALREADY_EXISTS]: 'Alert already exists for this route',
+  [ApiErrorCode.MODEL_B_MISSING_MIN_PASSENGERS]: 'minPassengers is required for Model B trips',
+  [ApiErrorCode.MODEL_B_MISSING_DEADLINE]: 'thresholdDeadline is required for Model B trips',
+  [ApiErrorCode.MODEL_B_DEADLINE_AFTER_DEPARTURE]: 'thresholdDeadline must be before departureAt',
+  [ApiErrorCode.MODEL_A_MISSING_RECURRING_DAYS]: 'recurringDays is required for Model A trips',
+  [ApiErrorCode.NO_OCCURRENCES]: 'No occurrences found in the next 30 days for the selected days',
+  [ApiErrorCode.GEOCODING_NOT_CONFIGURED]: 'Geocoding is not configured on this server',
+  [ApiErrorCode.GEOCODING_FAILED]: 'Geocoding request failed',
+  [ApiErrorCode.GEOCODING_NO_RESULT]: 'No geocoding result for the provided address',
+  [ApiErrorCode.ROUTE_NOT_CONFIGURED]: 'Route calculation is not configured on this server',
+  [ApiErrorCode.ROUTE_PARAMS_MISSING]: 'origin and dest are required',
+  [ApiErrorCode.PHONE_TAKEN]: 'Phone number already in use',
+  [ApiErrorCode.EMAIL_TAKEN]: 'Email already in use',
+  [ApiErrorCode.FIELD_TAKEN]: 'Field already in use',
+  [ApiErrorCode.INTERNAL_ERROR]: 'Internal server error',
+  [ApiErrorCode.DANGLING_AUTH_USER]: 'Registration failed due to a partial state. Please contact support.',
+}
+
+export type ValidationDetail = { field: string; message: string }
+
+export class AppException extends HttpException {
+  readonly errorCode: ApiErrorCode
+
+  constructor(
+    errorCode: ApiErrorCode,
+    overrideMessage?: string,
+    details?: ValidationDetail[],
+  ) {
+    const status = STATUS_MAP[errorCode]
+    const message = overrideMessage ?? MESSAGE_MAP[errorCode]
+    super({ errorCode, message, details: details ?? null }, status)
+    this.errorCode = errorCode
+  }
+}

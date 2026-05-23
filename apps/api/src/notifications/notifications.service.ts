@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
+import { existsSync } from 'node:fs'
 import * as apn from 'apn'
 import * as admin from 'firebase-admin'
 
@@ -19,34 +20,52 @@ export class NotificationsService {
   }
 
   private initApn() {
+    const keyPath = this.config.get<string>('APNS_KEY_PATH')
+    const keyId = this.config.get<string>('APNS_KEY_ID')
+    const teamId = this.config.get<string>('APNS_TEAM_ID')
+
+    if (!keyPath || !keyId || !teamId || !existsSync(keyPath)) {
+      this.logger.warn('APNs not initialised - credentials are missing in this environment')
+      return
+    }
+
     try {
       this.apnProvider = new apn.Provider({
         token: {
-          key: this.config.getOrThrow('APNS_KEY_PATH'),
-          keyId: this.config.getOrThrow('APNS_KEY_ID'),
-          teamId: this.config.getOrThrow('APNS_TEAM_ID'),
+          key: keyPath,
+          keyId,
+          teamId,
         },
         production: this.config.get('NODE_ENV') === 'production',
       })
     } catch (e) {
-      this.logger.warn('APNs not initialised — check APNS_KEY_PATH')
+      this.logger.error(`APNs not initialised - ${(e as Error).message}`)
     }
   }
 
   private initFcm() {
+    const projectId = this.config.get<string>('FIREBASE_PROJECT_ID')
+    const clientEmail = this.config.get<string>('FIREBASE_CLIENT_EMAIL')
+    const privateKey = this.config.get<string>('FIREBASE_PRIVATE_KEY')
+
+    if (!projectId || !clientEmail || !privateKey || privateKey === 'your_private_key') {
+      this.logger.warn('FCM not initialised - credentials are missing in this environment')
+      return
+    }
+
     try {
       if (!admin.apps.length) {
         admin.initializeApp({
           credential: admin.credential.cert({
-            projectId: this.config.getOrThrow('FIREBASE_PROJECT_ID'),
-            clientEmail: this.config.getOrThrow('FIREBASE_CLIENT_EMAIL'),
-            privateKey: this.config.getOrThrow('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, '\n'),
           }),
         })
       }
       this.fcmInitialised = true
     } catch (e) {
-      this.logger.warn('FCM not initialised — check Firebase credentials')
+      this.logger.error(`FCM not initialised - ${(e as Error).message}`)
     }
   }
 
@@ -82,7 +101,14 @@ export class NotificationsService {
     note.payload = data ?? {}
     const result = await this.apnProvider.send(note, token)
     if (result.failed.length) {
-      this.logger.warn(`APNs failed: ${JSON.stringify(result.failed)}`)
+      this.logger.error(`APNs failed: ${JSON.stringify(result.failed)}`)
+      // Prune unregistered device tokens
+      const unregistered = result.failed
+        .filter((f) => f.response?.reason === 'Unregistered' || f.response?.reason === 'BadDeviceToken')
+        .map((f) => f.device)
+      if (unregistered.length) {
+        await this.prisma.pushToken.deleteMany({ where: { token: { in: unregistered } } })
+      }
     }
   }
 
@@ -100,8 +126,13 @@ export class NotificationsService {
         data: data ?? {},
         android: { priority: 'high' },
       })
-    } catch (e) {
-      this.logger.warn(`FCM failed for token ${token}: ${e}`)
+    } catch (e: any) {
+      this.logger.error(`FCM failed for token ${token}: ${e?.message ?? e}`)
+      // Prune unregistered tokens
+      if (e?.code === 'messaging/registration-token-not-registered' ||
+          e?.code === 'messaging/invalid-registration-token') {
+        await this.prisma.pushToken.deleteMany({ where: { token } })
+      }
     }
   }
 
@@ -113,8 +144,8 @@ export class NotificationsService {
     })
   }
 
-  async removeToken(token: string) {
-    return this.prisma.pushToken.deleteMany({ where: { token } })
+  async removeToken(token: string, userId: string) {
+    return this.prisma.pushToken.deleteMany({ where: { token, userId } })
   }
 
   async getForUser(userId: string) {
@@ -123,6 +154,13 @@ export class NotificationsService {
       orderBy: { createdAt: 'desc' },
       take: 50,
     })
+  }
+
+  async unreadCount(userId: string): Promise<{ count: number }> {
+    const count = await this.prisma.notification.count({
+      where: { userId, isRead: false },
+    })
+    return { count }
   }
 
   async markRead(notificationId: string, userId: string) {

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.Booking
 import com.example.hop.domain.repository.BookingRepository
+import com.example.hop.domain.repository.TripRepository
+import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,25 +14,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-// ─ Payment State ──────────────────────────────────────────────────────────────
-
-enum class PaymentState {
-    IDLE,
-    PROCESSING,
-    // Booking record created; user is in the MobilePay external flow.
-    // SUCCESS is only set once the app receives confirmation via ConfirmPaymentSuccess.
-    AWAITING_PAYMENT,
-    SUCCESS,
-    FAILED,
-}
-
 // ─ State ──────────────────────────────────────────────────────────────────────
 
 data class BookingUiState(
     val isLoading: Boolean = false,
     val booking: Booking? = null,
     val error: String? = null,
-    val paymentState: PaymentState = PaymentState.IDLE,
+    val driverName: String = "",
+    val driverInitials: String = "",
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -43,19 +34,12 @@ sealed interface BookingEvent {
         val stars: Int,
         val comment: String?,
     ) : BookingEvent
-    // Fired by MobilePayHandoffRoute on entry to prepare a fresh ViewModel instance
-    // for the handoff flow. Sets paymentState to AWAITING_PAYMENT so the subsequent
-    // ConfirmPaymentSuccess event passes the idempotency guard.
-    data class BeginHandoff(val bookingId: String) : BookingEvent
-    // Fired when the app returns from MobilePay (via deep-link or onResume callback).
-    // The UI layer is responsible for emitting this after confirming payment success.
-    data class ConfirmPaymentSuccess(val bookingId: String) : BookingEvent
+    data class LoadDriverForRating(val bookingId: String) : BookingEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
 
 sealed interface BookingEffect {
-    data class NavigateToMobilePay(val bookingId: String) : BookingEffect
     data class NavigateToSuccess(val bookingId: String) : BookingEffect
     data class NavigateToCancellationConfirmation(val bookingId: String) : BookingEffect
     data object NavigateToMyTripsPassenger : BookingEffect
@@ -66,6 +50,8 @@ sealed interface BookingEffect {
 
 class BookingViewModel(
     private val bookingRepository: BookingRepository,
+    private val tripRepository: TripRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BookingUiState())
@@ -79,62 +65,24 @@ class BookingViewModel(
             is BookingEvent.CreateBooking -> createBooking(event.tripId, event.seats)
             is BookingEvent.CancelBooking -> cancelBooking(event.id)
             is BookingEvent.SubmitRating -> submitRating(event.bookingId, event.stars, event.comment)
-            is BookingEvent.BeginHandoff -> beginHandoff(event.bookingId)
-            is BookingEvent.ConfirmPaymentSuccess -> confirmPaymentSuccess(event.bookingId)
+            is BookingEvent.LoadDriverForRating -> loadDriverForRating(event.bookingId)
         }
     }
 
     private fun createBooking(tripId: String, seats: Int) {
-        // Idempotency guard: prevent double-booking if the user taps the button
-        // before the PROCESSING state propagates back to the UI and disables it.
-        if (_state.value.paymentState == PaymentState.PROCESSING) return
+        if (_state.value.isLoading) return
         viewModelScope.launch {
-            _state.value = _state.value.copy(
-                isLoading = true,
-                error = null,
-                paymentState = PaymentState.PROCESSING,
-            )
+            _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = bookingRepository.createBooking(tripId, seats)) {
                 is ApiResponse.Success -> {
-                    // Booking record created. Payment is NOT complete yet.
-                    // Transition to AWAITING_PAYMENT and hand off to MobilePay.
-                    // SUCCESS is only set after ConfirmPaymentSuccess is received.
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        booking = response.data,
-                        paymentState = PaymentState.AWAITING_PAYMENT,
-                    )
-                    _effect.send(BookingEffect.NavigateToMobilePay(response.data.id))
+                    _state.value = _state.value.copy(isLoading = false, booking = response.data)
+                    _effect.send(BookingEffect.NavigateToSuccess(response.data.id))
                 }
                 is ApiResponse.Error -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        error = response.message,
-                        paymentState = PaymentState.FAILED,
-                    )
+                    _state.value = _state.value.copy(isLoading = false, error = response.message)
                     _effect.send(BookingEffect.ShowSnackbar(response.message))
                 }
             }
-        }
-    }
-
-    private fun beginHandoff(bookingId: String) {
-        // Prepares a fresh ViewModel (created for the MobilePayHandoff destination)
-        // to accept ConfirmPaymentSuccess once the user returns from the MobilePay app.
-        if (_state.value.paymentState == PaymentState.AWAITING_PAYMENT) return
-        _state.value = _state.value.copy(
-            paymentState = PaymentState.AWAITING_PAYMENT,
-            error = null,
-        )
-    }
-
-    private fun confirmPaymentSuccess(bookingId: String) {
-        // Idempotency guard: onResume can fire this multiple times during the MobilePay flow.
-        // Only proceed if we are still waiting for payment confirmation.
-        if (_state.value.paymentState != PaymentState.AWAITING_PAYMENT) return
-        _state.value = _state.value.copy(paymentState = PaymentState.SUCCESS)
-        viewModelScope.launch {
-            _effect.send(BookingEffect.NavigateToSuccess(bookingId))
         }
     }
 
@@ -144,17 +92,11 @@ class BookingViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = bookingRepository.cancelBooking(id)) {
                 is ApiResponse.Success -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        booking = null,
-                    )
+                    _state.value = _state.value.copy(isLoading = false, booking = null)
                     _effect.send(BookingEffect.NavigateToCancellationConfirmation(id))
                 }
                 is ApiResponse.Error -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        error = response.message,
-                    )
+                    _state.value = _state.value.copy(isLoading = false, error = response.message)
                     _effect.send(BookingEffect.ShowSnackbar(response.message))
                 }
             }
@@ -171,11 +113,55 @@ class BookingViewModel(
                     _effect.send(BookingEffect.NavigateToMyTripsPassenger)
                 }
                 is ApiResponse.Error -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        error = response.message,
-                    )
-                    _effect.send(BookingEffect.ShowSnackbar(response.message))
+                    // 409 means already rated — treat as success so the user isn't stuck
+                    if (response.code == 409) {
+                        _state.value = _state.value.copy(isLoading = false)
+                        _effect.send(BookingEffect.NavigateToMyTripsPassenger)
+                    } else {
+                        _state.value = _state.value.copy(isLoading = false, error = response.message)
+                        _effect.send(BookingEffect.ShowSnackbar(response.message))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadDriverForRating(bookingId: String) {
+        if (_state.value.isLoading) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            when (val bookingResponse = bookingRepository.getBooking(bookingId)) {
+                is ApiResponse.Success -> {
+                    val booking = bookingResponse.data
+                    when (val tripResponse = tripRepository.getTripById(booking.tripId)) {
+                        is ApiResponse.Success -> {
+                            val trip = tripResponse.data
+                            val driverUser = userRepository.getUserProfile(trip.driverId)
+                            val driverName = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.fullName
+                                is ApiResponse.Error -> ""
+                            }
+                            val driverInitials = driverName
+                                .split(" ")
+                                .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                                .take(2)
+                                .joinToString("")
+                                .ifEmpty { trip.driverId.take(2).uppercase() }
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                driverName = driverName,
+                                driverInitials = driverInitials,
+                            )
+                        }
+                        is ApiResponse.Error -> {
+                            _state.value = _state.value.copy(isLoading = false)
+                            _effect.send(BookingEffect.ShowSnackbar(tripResponse.message))
+                        }
+                    }
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isLoading = false)
+                    _effect.send(BookingEffect.ShowSnackbar(bookingResponse.message))
                 }
             }
         }

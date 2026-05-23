@@ -22,6 +22,7 @@ const ratings_service_1 = require("../ratings/ratings.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const create_profile_dto_1 = require("./dto/create-profile.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
+const create_car_details_dto_1 = require("./dto/create-car-details.dto");
 const class_validator_1 = require("class-validator");
 class ReportDto {
     reason;
@@ -85,10 +86,29 @@ let UsersController = UsersController_1 = class UsersController {
             throw new common_1.NotFoundException('User not found');
         return user;
     }
+    async getMyStats(req) {
+        const userId = req.user.id;
+        const [ratingSummary, completedTrips] = await Promise.all([
+            this.ratings.getUserRatings(userId),
+            this.users.completedTripCount(userId),
+        ]);
+        return {
+            averageRating: ratingSummary.averageScore,
+            totalRatings: ratingSummary.totalRatings,
+            completedTrips,
+        };
+    }
     async updateMe(req, dto) {
-        const [firstName, ...rest] = dto.fullName.trim().split(' ');
-        const lastName = rest.join(' ') || '.';
-        return this.users.updateProfile(req.user.id, { firstName, lastName });
+        const data = {};
+        if (dto.fullName?.trim()) {
+            const [firstName, ...rest] = dto.fullName.trim().split(' ');
+            data.firstName = firstName;
+            data.lastName = rest.join(' ') || '.';
+        }
+        if (dto.mobilepayNumber !== undefined) {
+            data.mobilepayNumber = dto.mobilepayNumber;
+        }
+        return this.users.updateProfile(req.user.id, data);
     }
     async savePushToken(req, dto) {
         const platform = dto.platform === 'ios' ? 'ios' : 'android';
@@ -116,6 +136,16 @@ let UsersController = UsersController_1 = class UsersController {
             throw new common_1.NotFoundException('No car details found');
         return car;
     }
+    async saveMyCarDetails(req, dto) {
+        return this.users.saveCarDetails(req.user.id, {
+            make: dto.make,
+            model: dto.model,
+            year: dto.year,
+            licensePlate: dto.license_plate,
+            colour: dto.colour,
+            seatsAvailable: dto.seats_available,
+        });
+    }
     async reportUser(req, id, dto) {
         await this.users.reportUser(id, req.user.id, dto.reason);
     }
@@ -137,6 +167,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getMe", null);
+__decorate([
+    (0, common_1.Get)('me/stats'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getMyStats", null);
 __decorate([
     (0, common_1.Patch)('me'),
     (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
@@ -178,6 +216,16 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getCarDetails", null);
+__decorate([
+    (0, common_1.Post)('me/car-details'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_car_details_dto_1.CreateCarDetailsDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "saveMyCarDetails", null);
 __decorate([
     (0, common_1.Post)(':id/report'),
     (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),

@@ -53,6 +53,7 @@ export declare class AdminController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     unban(id: string): Promise<{
@@ -68,6 +69,7 @@ export declare class AdminController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     makeAdmin(id: string): Promise<{
@@ -83,6 +85,7 @@ export declare class AdminController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     pendingLicences(): Promise<({
@@ -122,6 +125,7 @@ export declare class AdminController {
             updatedAt: Date;
             model: import("@prisma/client").$Enums.TripModel;
             driverId: string;
+            status: import("@prisma/client").$Enums.TripStatus;
             originLat: number;
             originLng: number;
             originAddress: string;
@@ -131,11 +135,10 @@ export declare class AdminController {
             departureAt: Date;
             seats: number;
             pricePerSeat: number;
-            status: import("@prisma/client").$Enums.TripStatus;
             minPassengers: number | null;
             thresholdDeadline: Date | null;
             distanceKm: number | null;
-            recurringDays: number[];
+            recurringDays: string[];
             isRecurring: boolean;
             isActive: boolean;
         })[];

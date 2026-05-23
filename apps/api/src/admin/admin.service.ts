@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 @Injectable()
 export class AdminService {
@@ -28,7 +30,7 @@ export class AdminService {
 
   async banUser(userId: string, durationDays: number | 'permanent') {
     const user = await this.prisma.user.findUnique({ where: { id: userId } })
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new AppException(ApiErrorCode.USER_NOT_FOUND)
 
     const banExpiresAt =
       durationDays === 'permanent'
@@ -69,7 +71,7 @@ export class AdminService {
 
   async reviewLicence(licenceId: string, adminId: string, approved: boolean) {
     const licence = await this.prisma.driverLicence.findUnique({ where: { id: licenceId } })
-    if (!licence) throw new NotFoundException('Licence not found')
+    if (!licence) throw new AppException(ApiErrorCode.LICENCE_NOT_FOUND)
 
     await this.prisma.driverLicence.update({
       where: { id: licenceId },

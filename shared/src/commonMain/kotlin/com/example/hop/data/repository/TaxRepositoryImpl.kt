@@ -25,7 +25,7 @@ class TaxRepositoryImpl(
             val envelope: ApiEnvelope<TaxReportSummaryDto> =
                 httpClient.get("tax/report/$year").body()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             val data = checkNotNull(envelope.data) { "Null data in tax report envelope" }
             ApiResponse.Success(data.toDomain())
         } catch (e: ClientRequestException) {
@@ -40,7 +40,7 @@ class TaxRepositoryImpl(
             val envelope: ApiEnvelope<TaxMonthlySummaryDto> =
                 httpClient.get("tax/summary/$year/$month").body()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             val data = checkNotNull(envelope.data) { "Null data in tax summary envelope" }
             ApiResponse.Success(data.toDomain())
         } catch (e: ClientRequestException) {
@@ -55,7 +55,7 @@ class TaxRepositoryImpl(
             val envelope: ApiEnvelope<List<TaxRecordDto>> =
                 httpClient.get("tax/records/$year").body()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             val data = checkNotNull(envelope.data) { "Null data in tax records envelope" }
             ApiResponse.Success(data.map { it.toDomain() })
         } catch (e: ClientRequestException) {
@@ -70,7 +70,7 @@ class TaxRepositoryImpl(
             val envelope: ApiEnvelope<TaxReportUrlDto> =
                 httpClient.get("tax/report-url/$year").body()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             val data = checkNotNull(envelope.data) { "Null data in tax report URL envelope" }
             ApiResponse.Success(data.url)
         } catch (e: ClientRequestException) {

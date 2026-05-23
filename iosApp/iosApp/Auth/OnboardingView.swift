@@ -1,175 +1,140 @@
 import SwiftUI
 
-// ── ON-01 Onboarding ──────────────────────────────────────────────────────────
-//
-// Three swipeable slides introducing Hop's value proposition.
-// Mirrors OnboardingScreen.kt — no ViewModel needed, purely navigational.
-//
-
-// MARK: - Data
+// MARK: - ON-01 Onboarding ───────────────────────────────────────────────────
+// Mirrors `OnboardingScreen.kt` 1:1.
+// Layout (matches Android Box + alignTopStart):
+//   • HopLogo pinned top-leading (status-bar safe via safeAreaInset top)
+//   • HorizontalPager fills the screen (TabView)
+//   • Bottom chrome: slide dots + Get Started + Log In
+// Background is white (HopColors.background) for the auth light theme.
 
 private struct OnboardingSlideData {
-    let illustrationDescription: String
+    let index: Int
     let headline: String
     let subheadline: String
 }
 
 private let onboardingSlides: [OnboardingSlideData] = [
-    OnboardingSlideData(
-        illustrationDescription: "Two cars side by side",
-        headline: "Travel cheaper.\nDrive smarter.",
-        subheadline: "Denmark's carpooling platform.\nCost-sharing, not taxi."
+    .init(
+        index: 0,
+        headline: "Fewer cars.\nBetter Journeys.",
+        subheadline: "Denmark's carpooling platform.\nShare a ride, shrink your footprint"
     ),
-    OnboardingSlideData(
-        illustrationDescription: "DKK coin illustration",
-        headline: "Earn while\nyou commute.",
-        subheadline: "Share your empty seats and\nlet SKAT-compliant earnings\nland straight in your pocket."
+    .init(
+        index: 1,
+        headline: "Every seat\nfilled matters.",
+        subheadline: "One shared trip can cut CO\u{2082}\nemissions in half. Small change,\nbig difference."
     ),
-    OnboardingSlideData(
-        illustrationDescription: "Driver dashboard illustration",
-        headline: "Tax-smart by\ndesign.",
-        subheadline: "Every trip is logged and priced\nwithin the SKAT rate of DKK 2.28/km.\nNo surprises at year-end."
+    .init(
+        index: 2,
+        headline: "Move together.\nLive lighter.",
+        subheadline: "Join thousands of Danes choosing\nsmarter, greener travel\none ride at a time."
     ),
 ]
 
-// MARK: - OnboardingView
-
 struct OnboardingView: View {
-
     var onNavigateToSignUp: () -> Void
-    var onNavigateToLogin: () -> Void
+    var onNavigateToLogin:  () -> Void
 
     @State private var currentPage = 0
+    @State private var chromeVisible = false
 
     var body: some View {
-        // ── Slide pager ────────────────────────────────────────────────────────
-        TabView(selection: $currentPage) {
-            ForEach(Array(onboardingSlides.enumerated()), id: \.offset) { index, slide in
-                OnboardingSlideView(slide: slide)
-                    .tag(index)
+        ZStack {
+            Color.hopBackground.ignoresSafeArea()
+
+            TabView(selection: $currentPage) {
+                ForEach(onboardingSlides, id: \.index) { slide in
+                    OnboardingSlideView(slide: slide)
+                        .tag(slide.index)
+                }
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .ignoresSafeArea(.all, edges: .top)   // extend under status bar only; bottom safe area stays intact
-        .background(Color.hopSurface.ignoresSafeArea())
-        // ── Bottom chrome inset: dots + CTAs ──────────────────────────────────
-        // safeAreaInset pushes slide content up automatically — no magic numbers.
+        .safeAreaInset(edge: .top, alignment: .leading, spacing: 0) {
+            HopLogo()
+                .padding(.horizontal, HopSpacing.md)
+                .padding(.vertical, HopSpacing.sm)
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: HopSpacing.md) {
-                OnboardingSlideDots(
-                    pageCount: onboardingSlides.count,
-                    currentPage: currentPage
-                )
-
+                OnboardingSlideDots(pageCount: onboardingSlides.count, currentPage: currentPage)
                 Spacer().frame(height: HopSpacing.sm)
-
-                HopPrimaryButton(title: "Get Started") {
-                    onNavigateToSignUp()
-                }
-
-                HopGhostButton(title: "Log In") {
-                    onNavigateToLogin()
-                }
+                HopButton(text: "Get Started", variant: .primary, action: onNavigateToSignUp)
+                HopButton(text: "Log In", variant: .ghost, lightSurface: true, action: onNavigateToLogin)
             }
             .padding(.horizontal, HopSpacing.lg)
-            .padding(.top, HopSpacing.lg)
-            .padding(.bottom, HopSpacing.xl)
-            .background(
-                // Fade from transparent to surface so slide content flows into CTA chrome
-                LinearGradient(
-                    colors: [Color.hopSurface.opacity(0), Color.hopSurface, Color.hopSurface],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea(edges: .bottom)
-            )
+            .padding(.bottom, HopSpacing.lg)
+            .opacity(chromeVisible ? 1 : 0)
+            .offset(y: chromeVisible ? 0 : 24)
+            .background(Color.hopBackground.ignoresSafeArea(edges: .bottom))
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.5)) { chromeVisible = true }
         }
     }
 }
-
-// MARK: - OnboardingSlideView
 
 private struct OnboardingSlideView: View {
     let slide: OnboardingSlideData
 
+    @State private var visible = false
+
     var body: some View {
-        VStack(alignment: .center, spacing: 0) {
-            Spacer()
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
 
-            // ── Illustration placeholder ──────────────────────────────────────
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.hopSurfaceElevated)
-                    .frame(width: 280, height: 200)
-
-                Text(slide.illustrationDescription)
-                    .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(HopSpacing.md)
-            }
-            .accessibilityLabel(slide.illustrationDescription)
+            OnboardingIllustration(index: slide.index)
+                .frame(width: 280, height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .scaleEffect(visible ? 1 : 0.85)
+                .opacity(visible ? 1 : 0)
 
             Spacer().frame(height: HopSpacing.xl)
 
-            // ── Headline ──────────────────────────────────────────────────────
             Text(slide.headline)
                 .font(HopFont.headlineLarge())
-                .foregroundColor(Color.hopTextPrimary)
+                .foregroundColor(Color.hopAuthTextPrimary)
                 .multilineTextAlignment(.center)
 
             Spacer().frame(height: HopSpacing.sm)
 
-            // ── Sub-headline ──────────────────────────────────────────────────
             Text(slide.subheadline)
                 .font(HopFont.bodyLarge())
-                .foregroundColor(Color.hopTextSecondary)
+                .foregroundColor(Color.hopAuthTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, HopSpacing.lg)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, HopSpacing.lg)
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                visible = true
+            }
+        }
     }
 }
-
-// MARK: - OnboardingSlideDots
 
 private struct OnboardingSlideDots: View {
     let pageCount: Int
     let currentPage: Int
 
     var body: some View {
-        HStack(spacing: HopSpacing.xs) {
+        HStack(spacing: HopSpacing.sm) {
             ForEach(0..<pageCount, id: \.self) { index in
+                let active = index == currentPage
                 Capsule()
-                    .fill(
-                        index == currentPage
-                            ? Color.hopPrimaryLime
-                            : Color.hopTextSecondary.opacity(0.4)
-                    )
-                    .frame(
-                        width: index == currentPage ? 24 : 8,
-                        height: 8
-                    )
-                    .animation(
-                        .spring(response: 0.3, dampingFraction: 0.7),
-                        value: currentPage
-                    )
+                    .fill(active ? Color.hopAuthAccent : Color.hopAuthTextSecondary.opacity(0.35))
+                    .frame(width: active ? 24 : 8, height: 8)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.75), value: currentPage)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Page \(currentPage + 1) of \(pageCount)")
+        .accessibilityLabel("Slide \(currentPage + 1) of \(pageCount)")
     }
 }
 
-// MARK: - Previews
-
-#Preview("Slide 1") {
+#Preview {
     OnboardingView(onNavigateToSignUp: {}, onNavigateToLogin: {})
-}
-
-#Preview("Slide 1 — dark") {
-    OnboardingView(onNavigateToSignUp: {}, onNavigateToLogin: {})
-        .preferredColorScheme(.dark)
 }

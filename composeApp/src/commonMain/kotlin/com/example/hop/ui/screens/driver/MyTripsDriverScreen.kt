@@ -1,8 +1,13 @@
 package com.example.hop.ui.screens.driver
 
+import kotlin.math.roundToInt
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +34,7 @@ import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -81,7 +87,22 @@ import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.hours
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.mutableStateOf
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -100,6 +121,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun MyTripsDriverRoute(
     onNavigateBack: () -> Unit,
     onNavigateToTripDetailActiveDriver: (tripId: String) -> Unit,
+    onNavigateToDriverSettlement: (tripId: String) -> Unit,
+    onNavigateToPastTripDetail: (tripId: String) -> Unit,
     onNavigateToPostTrip: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToChat: () -> Unit,
@@ -119,6 +142,8 @@ fun MyTripsDriverRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is DriverEffect.NavigateToTripDetail -> onNavigateToTripDetailActiveDriver(effect.tripId)
+                is DriverEffect.NavigateToDriverSettlement -> onNavigateToDriverSettlement(effect.tripId)
+                is DriverEffect.NavigateToPastTripDetail -> onNavigateToPastTripDetail(effect.tripId)
                 is DriverEffect.NavigateToPostTrip -> onNavigateToPostTrip()
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
@@ -173,9 +198,28 @@ fun MyTripsDriverScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(initialSelectedTab) }
     val tabs = listOf("Upcoming", "Past")
+    var filterDate by remember { mutableStateOf<Long?>(null) }
+    var filterModel by remember { mutableStateOf<TripModel?>(null) }
 
-    val upcomingTrips = remember(state.trips) { state.trips.filter { it.status.isUpcomingDriver() } }
-    val pastTrips = remember(state.trips) { state.trips.filter { it.status.isPastDriver() } }
+    val filterDateStr = remember(filterDate) {
+        filterDate?.let {
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            sdf.format(java.util.Date(it))
+        }
+    }
+    val upcomingTrips = remember(state.trips, filterDate, filterModel) {
+        state.trips
+            .filter { it.isUpcomingDriver() }
+            .let { list -> if (filterModel != null) list.filter { it.model == filterModel } else list }
+            .let { list -> if (filterDateStr != null) list.filter { it.departsAt.take(10) == filterDateStr } else list }
+    }
+    val pastTrips = remember(state.trips, filterDate, filterModel) {
+        state.trips
+            .filter { it.isPastDriver() }
+            .let { list -> if (filterModel != null) list.filter { it.model == filterModel } else list }
+            .let { list -> if (filterDateStr != null) list.filter { it.departsAt.take(10) == filterDateStr } else list }
+    }
 
     Column(
         modifier = modifier
@@ -218,7 +262,13 @@ fun MyTripsDriverScreen(
                 }
             }
         }
-
+        // ── Filter bar ──────────────────────────────────────────────────────────
+        TripsFilterBar(
+            filterDate = filterDate,
+            filterModel = filterModel,
+            onFilterDateChange = { filterDate = it },
+            onFilterModelChange = { filterModel = it },
+        )
         // ── Content ───────────────────────────────────────────────────────────
         Box(modifier = Modifier.weight(1f)) {
             when {
@@ -230,6 +280,7 @@ fun MyTripsDriverScreen(
                 )
                 else -> PastDriverTripsContent(
                     trips = pastTrips,
+                    onTripClick = { tripId -> onEvent(DriverEvent.SelectTrip(tripId)) },
                     onPostTrip = { onEvent(DriverEvent.RequestPostTrip) },
                 )
             }
@@ -322,6 +373,7 @@ private fun UpcomingDriverTripsContent(
 @Composable
 private fun PastDriverTripsContent(
     trips: List<TripUiModel>,
+    onTripClick: (String) -> Unit,
     onPostTrip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -337,7 +389,7 @@ private fun PastDriverTripsContent(
         DriverTripList(
             trips = trips,
             showThresholdBar = false,
-            onTripClick = {},
+            onTripClick = onTripClick,
             modifier = modifier,
         )
     }
@@ -381,13 +433,26 @@ private fun DriverTripCard(
     modifier: Modifier = Modifier,
 ) {
     val cardShape = RoundedCornerShape(12.dp)
+    // Suppress the "new booking" glow once the booking has moved to awaiting-payment
+    // state — at that point the blue badge already draws attention.
+    val isNew = tripUiModel.hasRecentBooking && tripUiModel.awaitingPaymentBookingId == null
+
+    val scale = remember { Animatable(if (isNew) 0.93f else 1f) }
+    LaunchedEffect(isNew) {
+        if (isNew) scale.animateTo(1f, animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f))
+    }
+
+    val elevation = if (isNew) 14.dp else 4.dp
+    val shadowColor = if (isNew) HopColors.primaryLime.copy(alpha = 0.55f) else Color(0x1A000000)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = cardShape, ambientColor = Color(0x1A000000))
+            .graphicsLayer { scaleX = scale.value; scaleY = scale.value }
+            .shadow(elevation = elevation, shape = cardShape, ambientColor = shadowColor, spotColor = shadowColor)
+            .then(if (isNew) Modifier.border(2.dp, HopColors.primaryLime, cardShape) else Modifier)
             .clip(cardShape)
-            .background(Color.White)
+            .background(if (isNew) HopColors.primaryLime.copy(alpha = 0.04f) else Color.White)
             .clickable(onClick = onClick),
     ) {
         Column(
@@ -412,10 +477,19 @@ private fun DriverTripCard(
                 Spacer(modifier = Modifier.width(HopSpacing.sm))
                 StatusBadge(
                     type = when (tripUiModel.status) {
-                        TripStatus.ACTIVE -> BadgeType.Confirmed
+                        TripStatus.ACTIVE -> BadgeType.Custom(
+                            label = "Active",
+                            background = HopColors.primaryLime.copy(alpha = 0.20f),
+                            contentColor = Color(0xFF1A1A1A),
+                        )
                         TripStatus.CONFIRMED -> BadgeType.Confirmed
                         TripStatus.CANCELLED -> BadgeType.Cancelled
                         TripStatus.COMPLETED -> BadgeType.Completed
+                        TripStatus.THRESHOLD_NOT_MET -> BadgeType.Custom(
+                            label = "Threshold not met",
+                            background = HopColors.warning.copy(alpha = 0.15f),
+                            contentColor = HopColors.warning,
+                        )
                         TripStatus.UNKNOWN -> BadgeType.Custom(
                             label = "UNKNOWN",
                             background = HopColors.authInputSurface,
@@ -424,6 +498,35 @@ private fun DriverTripCard(
                     },
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                // "Awaiting payment" badge — a passenger has not yet paid
+                if (tripUiModel.awaitingPaymentBookingId != null) {
+                    Text(
+                        text = "Awaiting payment",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = Color(0xFF3B82F6),
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF3B82F6).copy(alpha = 0.12f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                    Spacer(modifier = Modifier.width(HopSpacing.xs))
+                // "New booking" badge — shown when any booking was created in last 24 h
+                } else if (tripUiModel.hasRecentBooking) {
+                    Text(
+                        text = "New booking",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = HopColors.primaryGreen,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(HopColors.primaryGreen.copy(alpha = 0.12f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                    Spacer(modifier = Modifier.width(HopSpacing.xs))
+                }
                 Text(
                     text = "${tripUiModel.seatsBooked}/${tripUiModel.seatsTotal} seats",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -485,19 +588,41 @@ private fun DriverTripCard(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "Departs ${tripUiModel.departsAt}",
+                    text = "Departs ${tripUiModel.formattedDepartsAt}",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = Color(0xFF666666),
                     ),
                 )
                 Text(
-                    text = "DKK ${tripUiModel.trip.driverNetOere / 100}/seat",
+                    text = "DKK ${(tripUiModel.trip.driverNetOere / 100.0).roundToInt()}/seat",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = HopColors.authTextPrimary,
                         fontSize = 16.sp,
                     ),
                 )
+            }
+
+            // ── Row 4: Recurring days (Model A only) ──────────────────────────
+            val days = tripUiModel.recurrenceDays
+            if (tripUiModel.model == TripModel.A && !days.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(HopSpacing.xs))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.Repeat,
+                        contentDescription = null,
+                        tint = HopColors.primaryLime,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = days.joinToString(" · ") { it.take(2) },
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = HopColors.primaryLime,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    )
+                }
             }
         }
     }
@@ -690,13 +815,117 @@ private fun MyTripsDriverBottomNavBar(
     }
 }
 
+// ── Filter bar composable ────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TripsFilterBar(
+    filterDate: Long?,
+    filterModel: TripModel?,
+    onFilterDateChange: (Long?) -> Unit,
+    onFilterModelChange: (TripModel?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filterDate)
+    val dateLabel = filterDate?.let {
+        val sdf = java.text.SimpleDateFormat("d MMM", java.util.Locale.US)
+        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        sdf.format(java.util.Date(it))
+    } ?: "Date"
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
+    ) {
+        FilterChip(
+            selected = filterDate != null,
+            onClick = { showDatePicker = true },
+            label = { Text(text = dateLabel, style = MaterialTheme.typography.labelMedium) },
+            leadingIcon = if (filterDate == null) {
+                { Icon(Icons.Outlined.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) }
+            } else null,
+            trailingIcon = if (filterDate != null) {
+                {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = "Clear date filter",
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { onFilterDateChange(null) },
+                    )
+                }
+            } else null,
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+        FilterChip(
+            selected = filterModel == TripModel.A,
+            onClick = { onFilterModelChange(if (filterModel == TripModel.A) null else TripModel.A) },
+            label = { Text("Commute", style = MaterialTheme.typography.labelMedium) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+        FilterChip(
+            selected = filterModel == TripModel.B,
+            onClick = { onFilterModelChange(if (filterModel == TripModel.B) null else TripModel.B) },
+            label = { Text("Long Trip", style = MaterialTheme.typography.labelMedium) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onFilterDateChange(datePickerState.selectedDateMillis)
+                    showDatePicker = false
+                }) {
+                    Text("OK", color = HopColors.primaryLime)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", color = HopColors.authTextSecondary)
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-private fun TripStatus.isUpcomingDriver(): Boolean =
-    this == TripStatus.ACTIVE || this == TripStatus.CONFIRMED
+/** Trips that departed more than 2 hours ago are treated as past regardless of status. */
+private fun departsAtIsPast(departsAt: String): Boolean = try {
+    Instant.parse(departsAt) < Clock.System.now() - 2.hours
+} catch (_: Exception) { false }
 
-private fun TripStatus.isPastDriver(): Boolean =
-    this == TripStatus.COMPLETED || this == TripStatus.CANCELLED
+private fun TripUiModel.isUpcomingDriver(): Boolean {
+    if (departsAtIsPast(departsAt)) return false
+    return status == TripStatus.ACTIVE ||
+        status == TripStatus.CONFIRMED ||
+        status == TripStatus.THRESHOLD_NOT_MET ||
+        awaitingPaymentBookingId != null
+}
+
+private fun TripUiModel.isPastDriver(): Boolean {
+    val statusIsPast = status == TripStatus.COMPLETED || status == TripStatus.CANCELLED
+    val departedAndNotSettling = departsAtIsPast(departsAt) && awaitingPaymentBookingId == null
+    return statusIsPast || departedAndNotSettling
+}
 
 // ── Preview helpers ────────────────────────────────────────────────────────────
 

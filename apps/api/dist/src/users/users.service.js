@@ -88,10 +88,42 @@ let UsersService = UsersService_1 = class UsersService {
         });
     }
     async reportUser(reportedId, reporterId, reason) {
+        await this.prisma.userReport.create({
+            data: { reporterId, reportedId, reason },
+        });
         this.logger.log(`User ${reporterId} reported ${reportedId}: ${reason}`);
     }
     async getCarDetails(userId) {
         return this.prisma.carDetails.findUnique({ where: { userId } });
+    }
+    async saveCarDetails(userId, data) {
+        const [carDetails] = await this.prisma.$transaction([
+            this.prisma.carDetails.upsert({
+                where: { userId },
+                create: { userId, ...data },
+                update: data,
+            }),
+            this.prisma.user.update({
+                where: { id: userId },
+                data: {
+                    role: { set: 'DRIVER' },
+                },
+            }),
+        ]);
+        return carDetails;
+    }
+    async completedTripCount(userId) {
+        const [asDriver, asPassenger] = await Promise.all([
+            this.prisma.trip.count({ where: { driverId: userId, status: 'COMPLETED' } }),
+            this.prisma.booking.count({
+                where: {
+                    passengerId: userId,
+                    status: 'CONFIRMED',
+                    trip: { status: 'COMPLETED' },
+                },
+            }),
+        ]);
+        return asDriver + asPassenger;
     }
 };
 exports.UsersService = UsersService;

@@ -6,8 +6,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.offset
 import com.example.hop.ui.components.HopLogo
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -49,7 +51,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.domain.model.UserRole
 import com.example.hop.presentation.auth.AuthViewModel
 import com.example.hop.presentation.driver.DriverUiState
+import com.example.hop.presentation.home.HomeStatsEvent
+import com.example.hop.presentation.home.HomeStatsViewModel
 import com.example.hop.ui.components.RoleTogglePill
+import com.example.hop.ui.components.UnreadBadge
 import com.example.hop.ui.screens.driver.DriverHomeContent
 import com.example.hop.ui.screens.driver.DriverHomeScreen
 import com.example.hop.ui.screens.passenger.PassengerHomeContent
@@ -75,22 +80,37 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun HomeRoute(
-    onNavigateToSearchResults: () -> Unit,
+    onNavigateToSearchResults: (origin: String, dest: String, date: String, seats: Int) -> Unit,
     onNavigateToMyTripsPassenger: () -> Unit,
     onNavigateToMyTripsDriver: () -> Unit,
-    onNavigateToChat: () -> Unit,
+    onNavigateToChat: (bookingId: String?, isDriverRole: Boolean) -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
+    onNavigateToTripDetailActive: (bookingId: String) -> Unit,
+    onNavigateToTripDetailDriver: (tripId: String) -> Unit,
     onNavigateToPostTripModelSelect: () -> Unit,
     onNavigateToTaxDashboard: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToDriverRegistration: () -> Unit,
-    onNavigateToReviewPending: () -> Unit,
     modifier: Modifier = Modifier,
-    authViewModel: AuthViewModel = koinViewModel(),
+    /** Total unseen notifications — drives the bell icon badge. */
+    notificationsUnread: Int = 0,
+    /** Total unread chat messages — drives the bottom nav chat badge. */
+    chatUnread: Int = 0,
+    authViewModel: AuthViewModel,
+    homeStatsViewModel: HomeStatsViewModel = koinViewModel(),
 ) {
     val authState by authViewModel.state.collectAsStateWithLifecycle()
+    val homeStatsState by homeStatsViewModel.state.collectAsStateWithLifecycle()
     val hasDriverRole = authState.currentUser?.roles?.contains(UserRole.DRIVER) == true
+
+    // Fetch the unread notifications count once on first composition. The
+    // PassengerHomeContent owns its own HomeStatsViewModel instance for its
+    // own state (recent searches etc.), so this is a separate fetch — that's
+    // acceptable: the badge is small and refreshes on home re-entry.
+    LaunchedEffect(Unit) {
+        homeStatsViewModel.onEvent(HomeStatsEvent.Load)
+    }
 
     var selectedRole by rememberSaveable(
         stateSaver = Saver(
@@ -120,11 +140,13 @@ fun HomeRoute(
         HomeScreen(
             selectedRole = selectedRole,
             onRoleChange = { selectedRole = it },
+            notificationsUnread = homeStatsState.unreadCount.coerceAtLeast(notificationsUnread),
+            chatUnread = chatUnread,
             onMyTrips = {
                 if (selectedRole == UserRole.DRIVER) onNavigateToMyTripsDriver()
                 else onNavigateToMyTripsPassenger()
             },
-            onChat = onNavigateToChat,
+            onChat = { onNavigateToChat(homeStatsState.activeBooking?.id, selectedRole == UserRole.DRIVER) },
             onProfile = onNavigateToProfile,
             onNotifications = onNavigateToNotifications,
             modifier = Modifier.padding(innerPadding),
@@ -133,15 +155,15 @@ fun HomeRoute(
                     UserRole.DRIVER -> DriverHomeContent(
                         hasDriverRole = hasDriverRole,
                         onNavigateToPostTripModelSelect = onNavigateToPostTripModelSelect,
-                        onNavigateToTripDetail = onNavigateToTripDetail,
+                        onNavigateToTripDetail = onNavigateToTripDetailDriver,
                         onNavigateToTaxDashboard = onNavigateToTaxDashboard,
                         onNavigateToDriverRegistration = onNavigateToDriverRegistration,
-                        onNavigateToReviewPending = onNavigateToReviewPending,
                         snackbarHostState = snackbarHostState,
                     )
                     else -> PassengerHomeContent(
                         onNavigateToSearchResults = onNavigateToSearchResults,
                         onNavigateToTripDetail = onNavigateToTripDetail,
+                        onNavigateToTripDetailActive = onNavigateToTripDetailActive,
                         snackbarHostState = snackbarHostState,
                     )
                 }
@@ -169,6 +191,8 @@ fun HomeScreen(
     onProfile: () -> Unit,
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    notificationsUnread: Int = 0,
+    chatUnread: Int = 0,
     content: @Composable (role: UserRole) -> Unit,
 ) {
     Column(
@@ -180,8 +204,7 @@ fun HomeScreen(
         HomeTopBar(
             selectedRole = selectedRole,
             onRoleChange = onRoleChange,
-            onNotifications = onNotifications,
-        )
+            onNotifications = onNotifications,            notificationsUnread = notificationsUnread,        )
 
         // ── Animated content area ─────────────────────────────────────────────
         AnimatedContent(
@@ -202,8 +225,7 @@ fun HomeScreen(
         HomeBottomNavBar(
             onMyTrips = onMyTrips,
             onChat = onChat,
-            onProfile = onProfile,
-        )
+            onProfile = onProfile,            chatUnread = chatUnread,        )
     }
 }
 
@@ -215,6 +237,7 @@ private fun HomeTopBar(
     onRoleChange: (UserRole) -> Unit,
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    notificationsUnread: Int = 0,
 ) {
     Row(
         modifier = modifier
@@ -236,16 +259,24 @@ private fun HomeTopBar(
         )
         Spacer(modifier = Modifier.width(HopSpacing.sm))
 
-        // Bell icon
-        IconButton(
-            onClick = onNotifications,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Notifications,
-                contentDescription = "Notifications",
-                tint = HopColors.authTextSecondary,
-                modifier = Modifier.size(24.dp),
+        // Bell icon with unread badge overlay
+        Box(modifier = Modifier.size(40.dp)) {
+            IconButton(
+                onClick = onNotifications,
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Notifications,
+                    contentDescription = "Notifications",
+                    tint = HopColors.authTextSecondary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            UnreadBadge(
+                count = notificationsUnread,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-6).dp, y = 6.dp),
             )
         }
     }
@@ -259,6 +290,7 @@ private fun HomeBottomNavBar(
     onChat: () -> Unit,
     onProfile: () -> Unit,
     modifier: Modifier = Modifier,
+    chatUnread: Int = 0,
 ) {
     NavigationBar(
         modifier = modifier,
@@ -322,11 +354,19 @@ private fun HomeBottomNavBar(
             selected = false,
             onClick = onChat,
             icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Chat,
-                    contentDescription = "Chat",
-                    modifier = Modifier.size(24.dp),
-                )
+                Box {
+                    Icon(
+                        imageVector = Icons.Outlined.Chat,
+                        contentDescription = "Chat",
+                        modifier = Modifier.size(24.dp),
+                    )
+                    UnreadBadge(
+                        count = chatUnread,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 8.dp, y = (-4).dp),
+                    )
+                }
             },
             label = {
                 Text(
@@ -390,6 +430,7 @@ private fun HomeScreenPassengerOnlyPreview() {
                 isLoading = false,
                 onFindRides = { _, _, _, _ -> },
                 onTripClick = {},
+                onNavigateToTripDetailActive = {},
             )
         }
     }
@@ -412,6 +453,7 @@ private fun HomeScreenDriverRolePassengerPreview() {
                 isLoading = false,
                 onFindRides = { _, _, _, _ -> },
                 onTripClick = {},
+                onNavigateToTripDetailActive = {},
             )
         }
     }

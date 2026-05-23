@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -34,7 +36,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,7 +56,6 @@ import com.example.hop.domain.model.TripModel
 import com.example.hop.presentation.booking.BookingEffect
 import com.example.hop.presentation.booking.BookingEvent
 import com.example.hop.presentation.booking.BookingViewModel
-import com.example.hop.presentation.booking.PaymentState
 import com.example.hop.presentation.tripdetail.TripDetailEvent
 import com.example.hop.presentation.tripdetail.TripDetailUiState
 import com.example.hop.presentation.tripdetail.TripDetailViewModel
@@ -76,7 +80,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun BookingConfirmationRoute(
     tripId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToMobilePayHandoff: (bookingId: String) -> Unit,
+    onNavigateToSuccess: (bookingId: String) -> Unit,
     modifier: Modifier = Modifier,
     tripDetailViewModel: TripDetailViewModel = koinViewModel(),
     bookingViewModel: BookingViewModel = koinViewModel(),
@@ -84,6 +88,7 @@ fun BookingConfirmationRoute(
     val tripState by tripDetailViewModel.state.collectAsStateWithLifecycle()
     val bookingState by bookingViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var selectedSeats by rememberSaveable { mutableIntStateOf(1) }
 
     LaunchedEffect(tripId) {
         tripDetailViewModel.onEvent(TripDetailEvent.LoadTrip(tripId))
@@ -92,11 +97,10 @@ fun BookingConfirmationRoute(
     LaunchedEffect(bookingViewModel) {
         bookingViewModel.effect.collectLatest { effect ->
             when (effect) {
-                is BookingEffect.NavigateToMobilePay ->
-                    onNavigateToMobilePayHandoff(effect.bookingId)
-                is BookingEffect.NavigateToSuccess -> Unit // handled downstream
-                is BookingEffect.NavigateToCancellationConfirmation -> Unit // not reachable here
-                is BookingEffect.NavigateToMyTripsPassenger -> Unit     // not reachable here
+                is BookingEffect.NavigateToSuccess ->
+                    onNavigateToSuccess(effect.bookingId)
+                is BookingEffect.NavigateToCancellationConfirmation -> Unit
+                is BookingEffect.NavigateToMyTripsPassenger -> Unit
                 is BookingEffect.ShowSnackbar ->
                     snackbarHostState.showSnackbar(effect.message)
             }
@@ -110,11 +114,15 @@ fun BookingConfirmationRoute(
     ) { innerPadding ->
         BookingConfirmationScreen(
             tripState = tripState,
-            isProcessing = bookingState.paymentState == PaymentState.PROCESSING,
+            isProcessing = bookingState.isLoading,
             onBack = onNavigateBack,
-            onPay = {
+            selectedSeats = selectedSeats,
+            onSeatsChange = { seats ->
+                selectedSeats = seats.coerceIn(1, tripState.seatsAvailable.coerceAtLeast(1))
+            },
+            onConfirm = {
                 bookingViewModel.onEvent(
-                    BookingEvent.CreateBooking(tripId = tripId, seats = 1),
+                    BookingEvent.CreateBooking(tripId = tripId, seats = selectedSeats),
                 )
             },
             modifier = Modifier.padding(innerPadding),
@@ -141,8 +149,10 @@ fun BookingConfirmationRoute(
 fun BookingConfirmationScreen(
     tripState: TripDetailUiState,
     isProcessing: Boolean,
+    selectedSeats: Int,
+    onSeatsChange: (Int) -> Unit,
     onBack: () -> Unit,
-    onPay: () -> Unit,
+    onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -165,12 +175,22 @@ fun BookingConfirmationScreen(
                 ) {
                     item {
                         Spacer(modifier = Modifier.height(HopSpacing.md))
+                        SeatStepperRow(
+                            seats = selectedSeats,
+                            maxSeats = tripState.seatsAvailable.coerceAtLeast(1),
+                            onSeatsChange = onSeatsChange,
+                            modifier = Modifier.padding(horizontal = HopSpacing.md),
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(HopSpacing.md))
                         TripSummaryCard(
                             originName = tripState.originName,
                             destName = tripState.destName,
                             departsAt = tripState.departsAt,
                             driverName = tripState.driverName,
-                            seats = 1,
+                            seats = selectedSeats,
                             modifier = Modifier.padding(horizontal = HopSpacing.md),
                         )
                     }
@@ -179,8 +199,7 @@ fun BookingConfirmationScreen(
                         Spacer(modifier = Modifier.height(HopSpacing.md))
                         PriceSummaryCard(
                             priceOerePerSeat = tripState.priceOerePerSeat,
-                            platformFeeOere = tripState.platformFeeOere,
-                            seats = 1,
+                            seats = selectedSeats,
                             modifier = Modifier.padding(horizontal = HopSpacing.md),
                         )
                     }
@@ -194,6 +213,7 @@ fun BookingConfirmationScreen(
                             Spacer(modifier = Modifier.height(HopSpacing.md))
                             ModelBNoticeCard(
                                 seatsBooked = tripState.seatsBooked,
+                                seatsToBook = selectedSeats,
                                 minThreshold = minThreshold,
                                 modifier = Modifier.padding(horizontal = HopSpacing.md),
                             )
@@ -210,13 +230,12 @@ fun BookingConfirmationScreen(
                         .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                 ) {
                     HopButton(
-                        text = "Pay with MobilePay",
-                        onClick = onPay,
+                        text = "Confirm Booking",
+                        onClick = onConfirm,
                         isLoading = isProcessing,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .semantics { contentDescription = "Pay with MobilePay" },
-                        leadingIcon = { MobilePayLogo() },
+                            .semantics { contentDescription = "Confirm Booking" },
                     )
                 }
             }
@@ -360,12 +379,10 @@ private fun SummaryMetaItem(label: String, value: String) {
 @Composable
 private fun PriceSummaryCard(
     priceOerePerSeat: Int,
-    platformFeeOere: Int,
     seats: Int,
     modifier: Modifier = Modifier,
 ) {
     val totalOere = priceOerePerSeat * seats
-    val seatCostOere = priceOerePerSeat - platformFeeOere
 
     Column(
         modifier = modifier
@@ -394,8 +411,11 @@ private fun PriceSummaryCard(
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = HopColors.authTextPrimary,
             )
+            val kr = totalOere / 100
+            val ore = totalOere % 100
+            val totalText = if (ore == 0) "DKK $kr" else "DKK $kr,${ore.toString().padStart(2, '0')}"
             Text(
-                text = "DKK ${totalOere / 100}",
+                text = totalText,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontFamily = HopMonoFontFamily,
                     fontWeight = FontWeight.Bold,
@@ -411,12 +431,12 @@ private fun PriceSummaryCard(
 
         // Breakdown
         PriceBreakdownRow(
-            label = "${seats}× seat cost",
-            valueOere = seatCostOere * seats,
+            label = "${seats}× SKAT-rate per seat",
+            valueOere = priceOerePerSeat * seats,
         )
         PriceBreakdownRow(
-            label = "Platform fee",
-            valueOere = platformFeeOere * seats,
+            label = "Pay driver via MobilePay after ride",
+            valueOere = 0,
         )
     }
 }
@@ -432,8 +452,11 @@ private fun PriceBreakdownRow(label: String, valueOere: Int) {
             style = MaterialTheme.typography.bodySmall,
             color = HopColors.authTextSecondary,
         )
+        val kr = valueOere / 100
+        val ore = valueOere % 100
+        val priceText = if (ore == 0) "DKK $kr" else "DKK $kr,${ore.toString().padStart(2, '0')}"
         Text(
-            text = "DKK ${valueOere / 100}",
+            text = priceText,
             style = MaterialTheme.typography.bodySmall.copy(
                 fontFamily = HopMonoFontFamily,
                 fontWeight = FontWeight.Medium,
@@ -445,14 +468,96 @@ private fun PriceBreakdownRow(label: String, valueOere: Int) {
 
 // ── Model B notice card ───────────────────────────────────────────────────────
 
+// ── Seat stepper ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun SeatStepperRow(
+    seats: Int,
+    maxSeats: Int,
+    onSeatsChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(HopColors.authInputSurface)
+            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column {
+            Text(
+                text = "Seats",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = HopColors.authTextSecondary,
+            )
+            Text(
+                text = if (maxSeats == 1) "1 seat available" else "Up to $maxSeats seats available",
+                style = MaterialTheme.typography.labelSmall,
+                color = HopColors.authTextSecondary,
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = { onSeatsChange(seats - 1) },
+                enabled = seats > 1,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (seats > 1) HopColors.primaryLime.copy(alpha = 0.15f)
+                        else HopColors.authTextSecondary.copy(alpha = 0.08f)
+                    ),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Remove,
+                    contentDescription = "Decrease seats",
+                    tint = if (seats > 1) HopColors.primaryGreen else HopColors.authTextSecondary,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            Text(
+                text = "$seats",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = HopMonoFontFamily,
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = HopColors.authTextPrimary,
+                modifier = Modifier.padding(horizontal = HopSpacing.md),
+            )
+            IconButton(
+                onClick = { onSeatsChange(seats + 1) },
+                enabled = seats < maxSeats,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (seats < maxSeats) HopColors.primaryLime.copy(alpha = 0.15f)
+                        else HopColors.authTextSecondary.copy(alpha = 0.08f)
+                    ),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Increase seats",
+                    tint = if (seats < maxSeats) HopColors.primaryGreen else HopColors.authTextSecondary,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+    }
+}
+
+// ── Model B notice card ───────────────────────────────────────────────────────
+
 @Composable
 private fun ModelBNoticeCard(
     seatsBooked: Int,
+    seatsToBook: Int,
     minThreshold: Int,
     modifier: Modifier = Modifier,
 ) {
-    // Account for the 1 seat the user is about to book.
-    val seatsAfterBooking = seatsBooked + 1
+    val seatsAfterBooking = seatsBooked + seatsToBook
     val seatsNeeded = (minThreshold - seatsAfterBooking).coerceAtLeast(0)
     val progressAfterBooking = (seatsAfterBooking.toFloat() / minThreshold.toFloat()).coerceIn(0f, 1f)
 
@@ -508,7 +613,7 @@ private fun ModelBNoticeCard(
 
         // Threshold progress showing seats filled including the user's upcoming booking
         Text(
-            text = "$seatsAfterBooking of $minThreshold seats after your booking",
+            text = "$seatsAfterBooking of $minThreshold seats after your ${if (seatsToBook == 1) "booking" else "$seatsToBook-seat booking"}",
             style = MaterialTheme.typography.labelSmall,
             color = HopColors.authTextSecondary,
         )
@@ -588,8 +693,7 @@ private fun previewTripState(
     seatsBooked = seatsBooked,
     minThreshold = minThreshold,
     model = model,
-    priceOerePerSeat = 20_386,
-    platformFeeOere = 3_058,
+    priceOerePerSeat = 17_328,
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
@@ -599,8 +703,10 @@ private fun BookingConfirmationModelAPreview() {
         BookingConfirmationScreen(
             tripState = previewTripState(model = TripModel.A),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -616,8 +722,10 @@ private fun BookingConfirmationModelBPreview() {
                 minThreshold = 4,
             ),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -633,8 +741,10 @@ private fun BookingConfirmationModelBThresholdMetPreview() {
                 minThreshold = 4,
             ),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -646,8 +756,10 @@ private fun BookingConfirmationProcessingPreview() {
         BookingConfirmationScreen(
             tripState = previewTripState(model = TripModel.A),
             isProcessing = true,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }
@@ -659,8 +771,10 @@ private fun BookingConfirmationLoadingPreview() {
         BookingConfirmationScreen(
             tripState = previewTripState(isLoading = true),
             isProcessing = false,
+            selectedSeats = 1,
+            onSeatsChange = {},
             onBack = {},
-            onPay = {},
+            onConfirm = {},
         )
     }
 }

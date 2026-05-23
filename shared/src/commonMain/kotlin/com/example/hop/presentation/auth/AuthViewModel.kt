@@ -45,6 +45,8 @@ sealed interface AuthEvent {
     data class RequestPasswordReset(val email: String) : AuthEvent
     /** Fired from the Set New Password screen after the user enters a new password. */
     data class UpdatePassword(val newPassword: String) : AuthEvent
+    /** Re-fetches the current user profile — use after role changes (e.g. becoming a driver). */
+    data object RefreshProfile : AuthEvent
 }
 
 sealed interface AuthEffect {
@@ -59,6 +61,10 @@ sealed interface AuthEffect {
     data object NavigateToSetPassword : AuthEffect
     /** Emitted after the user successfully updates their password. */
     data object PasswordUpdated : AuthEffect
+    /** Emitted when a push-notification deep link targets the driver settlement screen. */
+    data class NavigateToDriverSettlement(val bookingId: String) : AuthEffect
+    /** Emitted when a push-notification deep link targets the passenger settlement screen. */
+    data class NavigateToPassengerSettlement(val bookingId: String) : AuthEffect
 }
 
 class AuthViewModel(
@@ -116,10 +122,22 @@ class AuthViewModel(
             }
             is AuthEvent.RequestPasswordReset -> requestPasswordReset(event.email)
             is AuthEvent.UpdatePassword -> updatePassword(event.newPassword)
+            is AuthEvent.RefreshProfile -> viewModelScope.launch { refreshUser() }
         }
     }
 
     private fun handleDeepLink(url: String) {
+        // Route push-notification deep links without hitting the auth callback logic.
+        if (url.startsWith("hop://driver-settlement/")) {
+            val bookingId = url.removePrefix("hop://driver-settlement/")
+            if (bookingId.isNotBlank()) _effect.tryEmit(AuthEffect.NavigateToDriverSettlement(bookingId))
+            return
+        }
+        if (url.startsWith("hop://passenger-settlement/")) {
+            val bookingId = url.removePrefix("hop://passenger-settlement/")
+            if (bookingId.isNotBlank()) _effect.tryEmit(AuthEffect.NavigateToPassengerSettlement(bookingId))
+            return
+        }
         viewModelScope.launch {
             val urlIndicatesRecovery = url.contains("type=recovery")
             val storedPending = tokenStorage.getRecoveryPending()
@@ -144,11 +162,15 @@ class AuthViewModel(
             when (val response = authRepository.handleRecoveryDeepLink(url)) {
                 is ApiResponse.Success -> {
                     println("[HopDeepLink] handleRecoveryDeepLink SUCCESS — emitting NavigateToSetPassword")
+                    // Clear the flag synchronously before emitting the navigation effect.
+                    // A fire-and-forget launch here could be killed before the write
+                    // completes if the app crashes immediately after navigation, leaving
+                    // a stale flag that mis-routes subsequent deep links.
+                    tokenStorage.saveRecoveryPending(false)
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isPasswordRecoveryPending = false,
                     )
-                    viewModelScope.launch { tokenStorage.saveRecoveryPending(false) }
                     _effect.tryEmit(AuthEffect.NavigateToSetPassword)
                 }
                 is ApiResponse.Error -> {
@@ -165,9 +187,13 @@ class AuthViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.handleDeepLink(url)) {
                 is ApiResponse.Success -> {
+                    // Clear any stale recoveryPending flag so a future email-confirmation
+                    // deep link is not mistakenly routed to the Set-New-Password screen.
+                    tokenStorage.saveRecoveryPending(false)
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isAuthenticated = true,
+                        isPasswordRecoveryPending = false,
                         currentUser = response.data,
                     )
                     _effect.tryEmit(AuthEffect.NavigateToHome)
@@ -234,6 +260,10 @@ class AuthViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.logout()) {
                 is ApiResponse.Success -> {
+                    // Always clear the recovery-pending flag on logout so it cannot
+                    // persist across separate sign-in sessions and mis-route a future
+                    // email-confirmation deep link to the Set-New-Password screen.
+                    tokenStorage.saveRecoveryPending(false)
                     _state.value = AuthUiState()
                     _effect.tryEmit(AuthEffect.NavigateToLogin)
                 }
@@ -277,7 +307,11 @@ class AuthViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = authRepository.updatePassword(newPassword)) {
                 is ApiResponse.Success -> {
-                    _state.value = _state.value.copy(isLoading = false)
+                    // Belt-and-suspenders: clear the recoveryPending flag here too in
+                    // case the user somehow reaches this screen without going through
+                    // handleRecoveryCallback (e.g. deep-link race on a fresh install).
+                    tokenStorage.saveRecoveryPending(false)
+                    _state.value = _state.value.copy(isLoading = false, isPasswordRecoveryPending = false)
                     _effect.tryEmit(AuthEffect.PasswordUpdated)
                 }
                 is ApiResponse.Error -> {
@@ -285,6 +319,19 @@ class AuthViewModel(
                     _effect.tryEmit(AuthEffect.ShowSnackbar(response.message))
                 }
             }
+        }
+    }
+
+    /**
+     * Silently re-fetches the current user after a role change (e.g. becoming a
+     * driver). Updates [currentUser] in state without emitting [AuthEffect.NavigateToHome].
+     */
+    private suspend fun refreshUser() {
+        when (val response = authRepository.restoreSession()) {
+            is ApiResponse.Success -> {
+                _state.value = _state.value.copy(currentUser = response.data)
+            }
+            is ApiResponse.Error -> Unit // Silently ignore — stay on current screen
         }
     }
 

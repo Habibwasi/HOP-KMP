@@ -187,7 +187,6 @@ fun TripDetailScreen(
                     item {
                         PriceBreakdownCard(
                             priceOerePerSeat = state.priceOerePerSeat,
-                            platformFeeOere = state.platformFeeOere,
                             model = state.model,
                             seatsBooked = state.seatsBooked,
                             minThreshold = state.minThreshold,
@@ -489,7 +488,6 @@ private fun SeatsAvailableChip(seatsAvailable: Int) {
 @Composable
 private fun PriceBreakdownCard(
     priceOerePerSeat: Int,
-    platformFeeOere: Int,
     model: TripModel,
     seatsBooked: Int,
     minThreshold: Int?,
@@ -512,8 +510,12 @@ private fun PriceBreakdownCard(
             color = HopColors.authTextSecondary,
         )
 
+        val priceKr = priceOerePerSeat / 100
+        val priceOre = priceOerePerSeat % 100
+        val priceText = if (priceOre == 0) "DKK $priceKr"
+                        else "DKK $priceKr,${priceOre.toString().padStart(2, '0')}"
         Text(
-            text = "DKK ${priceOerePerSeat / 100}",
+            text = priceText,
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontFamily = HopMonoFontFamily,
                 fontWeight = FontWeight.Bold,
@@ -522,7 +524,7 @@ private fun PriceBreakdownCard(
         )
 
         Text(
-            text = "Includes DKK ${platformFeeOere / 100} platform fee",
+            text = "SKAT-suggested rate · pay driver via MobilePay after the ride",
             style = MaterialTheme.typography.bodySmall,
             color = HopColors.authTextSecondary,
         )
@@ -612,8 +614,7 @@ private fun previewState(
     seatsBooked = seatsBooked,
     minThreshold = minThreshold,
     model = model,
-    priceOerePerSeat = 20_386,
-    platformFeeOere = 3_058,
+    priceOerePerSeat = 17_328,
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)

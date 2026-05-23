@@ -32,6 +32,7 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
     override val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
     private var socket: Socket? = null
+    private var currentBookingId: String = ""
 
     override fun connect(bookingId: String, token: String) {
         // Idempotency guard — avoid duplicate connections
@@ -39,18 +40,24 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
             _connectionState.value is ConnectionState.Connecting
         ) return
 
+        currentBookingId = bookingId
         _connectionState.value = ConnectionState.Connecting
 
         val opts = IO.Options().apply {
+            // Skip polling — server only accepts WebSocket transport.
+            // Without this the client tries HTTP polling first, gets 400,
+            // and never upgrades.
+            transports = arrayOf("websocket")
             // Pass JWT as socket.io auth payload (server reads from handshake.auth)
             auth = hashMapOf("token" to token)
         }
 
-        socket = IO.socket(URI.create("https://api.hop.dk"), opts).also { s ->
+        // Connect to the /chat namespace on the API host
+        socket = IO.socket(URI.create("https://hop.ridly.dk/chat"), opts).also { s ->
             s.on(Socket.EVENT_CONNECT) {
                 _connectionState.value = ConnectionState.Connected
-                // Join the booking-specific room
-                s.emit("join", bookingId)
+                // Join the booking-specific room — gateway expects { bookingId: string }
+                s.emit("join", JSONObject().put("bookingId", bookingId))
             }
 
             s.on(Socket.EVENT_DISCONNECT) {
@@ -78,6 +85,34 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
                 }
             }
 
+            s.on("history") { args ->
+                val jsonArray = args?.getOrNull(0) as? org.json.JSONArray ?: return@on
+                for (i in 0 until jsonArray.length()) {
+                    runCatching {
+                        val json = jsonArray.getJSONObject(i)
+                        Message(
+                            id = json.getString("id"),
+                            bookingId = json.getString("bookingId"),
+                            senderId = json.getString("senderId"),
+                            senderName = json.getString("senderName"),
+                            body = json.getString("body"),
+                            timestampMs = json.getLong("timestampMs"),
+                        )
+                    }.onSuccess { msg ->
+                        scope.launch { _messages.emit(msg) }
+                    }
+                }
+            }
+
+            // NestJS emits an "exception" event when a @SubscribeMessage handler
+            // throws a WsException (e.g. not a participant, auth failure).
+            // Without this listener the error is swallowed and the user sees nothing.
+            s.on("exception") { args ->
+                val message = (args?.getOrNull(0) as? org.json.JSONObject)
+                    ?.optString("message") ?: args?.getOrNull(0)?.toString() ?: "Unknown error"
+                _connectionState.value = ConnectionState.Error(message)
+            }
+
             s.connect()
         }
     }
@@ -91,7 +126,10 @@ internal class AndroidChatRepositoryImpl : ChatRepository {
 
     override fun sendMessage(body: String) {
         if (_connectionState.value !is ConnectionState.Connected) return
-        val payload = JSONObject().apply { put("body", body) }
+        val payload = JSONObject().apply {
+            put("bookingId", currentBookingId)
+            put("body", body)
+        }
         socket?.emit("message", payload)
     }
 }

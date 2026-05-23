@@ -3,6 +3,7 @@ package com.example.hop.presentation.notifications
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.HopNotification
+import com.example.hop.domain.model.NotificationType
 import com.example.hop.domain.repository.UserRepository
 import com.example.hop.network.ApiResponse
 import kotlinx.coroutines.channels.Channel
@@ -26,12 +27,15 @@ sealed interface NotificationsEvent {
     data object Load : NotificationsEvent
     data class MarkRead(val notificationId: String) : NotificationsEvent
     data object GoToSearchTapped : NotificationsEvent
+    data class Tapped(val notification: HopNotification) : NotificationsEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
 
 sealed interface NotificationsEffect {
     data object NavigateToSearch : NotificationsEffect
+    data class NavigateToDriverSettlement(val bookingId: String) : NotificationsEffect
+    data class NavigateToPassengerSettlement(val bookingId: String) : NotificationsEffect
 }
 
 // ─ ViewModel ──────────────────────────────────────────────────────────────────
@@ -53,6 +57,7 @@ class NotificationsViewModel(
             is NotificationsEvent.GoToSearchTapped -> viewModelScope.launch {
                 _effect.send(NotificationsEffect.NavigateToSearch)
             }
+            is NotificationsEvent.Tapped -> onNotificationTapped(event.notification)
         }
     }
 
@@ -69,6 +74,20 @@ class NotificationsViewModel(
                     isLoading = false,
                     error = response.message,
                 )
+            }
+        }
+    }
+
+    private fun onNotificationTapped(notification: HopNotification) {
+        markRead(notification.id)
+        val bookingId = notification.deepLinkId ?: return
+        viewModelScope.launch {
+            when (notification.type) {
+                NotificationType.PAYMENT_MARKED_PAID ->
+                    _effect.send(NotificationsEffect.NavigateToDriverSettlement(bookingId))
+                NotificationType.PAYMENT_CONFIRMED ->
+                    _effect.send(NotificationsEffect.NavigateToPassengerSettlement(bookingId))
+                else -> { /* no deep-link navigation for this type */ }
             }
         }
     }

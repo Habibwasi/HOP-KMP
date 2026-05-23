@@ -21,6 +21,22 @@ extension Color {
     static let hopWarning = Color(hex: 0xFBBF24)
     static let hopError   = Color(hex: 0xEF4444)
 
+    // ── Auth (light theme) ───────────────────────────────────────────────────
+    static let hopAuthTextPrimary    = Color(hex: 0x0D0D0D)
+    static let hopAuthTextSecondary  = Color(hex: 0x5F6368)
+    static let hopAuthAccent         = Color(hex: 0x167A30)
+    static let hopAuthInputSurface   = Color(hex: 0xF1F3F4)
+    static let hopAuthInputBorder    = Color(hex: 0xD1D5DB)
+
+    // ── Card / surface tokens (light theme) ───────────────────────────────────
+    static let hopCardSurface        = Color(hex: 0xFFFFFF)
+    static let hopCardSurfaceMuted   = Color(hex: 0xF5F5F5)
+    static let hopCardBorder         = Color(hex: 0xE5E5E5)
+    static let hopGradientDayStart   = Color(hex: 0xC8F135) // lime, top of header gradient
+    static let hopCo2Accent          = Color(hex: 0x10B981) // emerald for CO₂ stats
+    static let hopReferralStart      = Color(hex: 0xC8F135)
+    static let hopReferralEnd        = Color(hex: 0x1DB954)
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     init(hex: UInt, opacity: Double = 1) {
         self.init(

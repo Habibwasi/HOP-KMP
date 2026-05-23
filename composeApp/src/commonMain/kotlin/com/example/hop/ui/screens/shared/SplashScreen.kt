@@ -30,12 +30,19 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.Font
+import ridly.composeapp.generated.resources.Res
+import ridly.composeapp.generated.resources.nunito_black
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 private val SkyBlue     = Color(0xFFE3F2FD)
@@ -188,6 +195,7 @@ fun SplashScreen(onComplete: () -> Unit = {}) {
     )
 
     val textMeasurer = rememberTextMeasurer()
+    val syneFamily = FontFamily(Font(Res.font.nunito_black, FontWeight.Black))
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val sw = size.width
@@ -308,7 +316,7 @@ fun SplashScreen(onComplete: () -> Unit = {}) {
 
         // ── Logo (fade + slide in) ────────────────────────────────────────────
         withTransform({ translate(0f, g(logoOffY)) }) {
-            drawLogo(f = ::f, g = ::g, alpha = logoAlpha)
+            drawLogo(f = ::f, g = ::g, alpha = logoAlpha, textMeasurer = textMeasurer, syneFamily = syneFamily)
         }
 
         // ── Tagline 1 ─────────────────────────────────────────────────────────
@@ -417,39 +425,54 @@ private fun DrawScope.drawWheel(cx: Float, cy: Float, sx: Float) {
     drawLine(WheelSpk, Offset(cx - sx * 11f, cy), Offset(cx + sx * 11f, cy), strokeWidth = sx * 2.5f)
 }
 
-private fun DrawScope.drawLogo(f: (Float) -> Float, g: (Float) -> Float, alpha: Float) {
-    val logoStroke = Stroke(f(9f), cap = StrokeCap.Round, join = StrokeJoin.Round)
+private fun DrawScope.drawLogo(
+    f: (Float) -> Float,
+    g: (Float) -> Float,
+    alpha: Float,
+    textMeasurer: TextMeasurer,
+    syneFamily: FontFamily,
+) {
+    val lime  = Color(0xFFC5FF45).copy(alpha = alpha)
+    val dark  = Color(0xFF0B0B0B).copy(alpha = alpha)
     val white = LogoWhite.copy(alpha = alpha)
-    val accent = LogoAccent.copy(alpha = alpha)
 
-        // ── h ─────────────────────────────────────────────────────────────────────
-        drawRoundRect(white, Offset(f(86f),  g(508f)), Size(f(9f), g(48f)), CornerRadius(f(4.5f)))
-        drawRoundRect(white, Offset(f(122f), g(525f)), Size(f(9f), g(31f)), CornerRadius(f(4.5f)))
-        val hArch = Path().apply {
-            // Start ~64% down the left stem (matches HopLogo crossbar proportion).
-            // End 2 units into the right leg so the stroke cap overlaps the rect
-            // seamlessly — no gap.
-            // Control at ~29% x between stems, pulled above both endpoints.
-            moveTo(f(95f),  g(539f))
-            quadraticBezierTo(f(103f), g(514f), f(122f), g(529f))
+    // Icon: lime rounded-square pill at (88, 508), size ~44×44 SVG units
+    val iconSize = minOf(f(44f), g(44f))
+    val iconX    = f(88f)
+    val iconY    = g(508f)
+
+    // Lime pill background
+    val cr = CornerRadius(iconSize * 0.25f, iconSize * 0.25f)
+    drawRoundRect(lime, Offset(iconX, iconY), Size(iconSize, iconSize), cr)
+
+    // Chevron from 44×44 viewBox: M14 8 L30 22 L14 36
+    val scale = iconSize / 44f
+    withTransform({
+        translate(iconX, iconY)
+        scale(scale, scale, Offset.Zero)
+    }) {
+        val chevron = Path().apply {
+            moveTo(14f, 8f)
+            lineTo(30f, 22f)
+            lineTo(14f, 36f)
         }
-        drawPath(hArch, white, style = logoStroke)
-
-    // ── o ─────────────────────────────────────────────────────────────────────
-    drawCircle(white, radius = f(20f), center = Offset(f(160f), g(538f)), style = Stroke(f(9f)))
-    // Erase the horizontal through the ring, then draw teal dashes
-    drawLine(Overlay, Offset(f(141f), g(538f)), Offset(f(180f), g(538f)), strokeWidth = f(3.5f))
-    drawLine(accent, Offset(f(146f), g(538f)), Offset(f(154f), g(538f)), strokeWidth = f(2f), cap = StrokeCap.Round)
-    drawLine(accent, Offset(f(158f), g(538f)), Offset(f(166f), g(538f)), strokeWidth = f(2f), cap = StrokeCap.Round)
-    drawLine(accent, Offset(f(170f), g(538f)), Offset(f(177f), g(538f)), strokeWidth = f(2f), cap = StrokeCap.Round)
-
-    // ── p ─────────────────────────────────────────────────────────────────────
-    drawRoundRect(white, Offset(f(192f), g(526f)), Size(f(9f), g(42f)), CornerRadius(f(4.5f)))
-    val pBump = Path().apply {
-        moveTo(f(201f), g(534f))
-        quadraticBezierTo(f(201f), g(514f), f(220f), g(524f))
-        quadraticBezierTo(f(235f), g(532f), f(228f), g(546f))
-        quadraticBezierTo(f(221f), g(560f), f(201f), g(552f))
+        drawPath(chevron, dark, style = Stroke(7f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
-    drawPath(pBump, white, style = logoStroke)
+
+    // "ridly" wordmark in Nunito Black, vertically centred to icon
+    // fontSize scales with iconSize (same ratio as HopLogo: height * 0.9)
+    val fontSizeSp = (iconSize * 0.9f / density).sp
+    val measured = textMeasurer.measure(
+        text = "ridly",
+        style = TextStyle(
+            color = white,
+            fontFamily = syneFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = fontSizeSp,
+            letterSpacing = TextUnit(-0.03f, TextUnitType.Em),
+        ),
+    )
+    val textX = iconX + iconSize + f(10f)
+    val textY = iconY + (iconSize - measured.size.height) / 2f
+    drawText(measured, topLeft = Offset(textX, textY))
 }

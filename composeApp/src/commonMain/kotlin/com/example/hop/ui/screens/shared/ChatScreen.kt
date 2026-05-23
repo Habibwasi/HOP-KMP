@@ -67,6 +67,9 @@ import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.koin.compose.koinInject
@@ -102,7 +105,7 @@ fun ChatRoute(
     val currentUserId = authState.currentUser?.id.orEmpty()
 
     // Connect once when bookingId is available and we have a valid token.
-    // LaunchedEffect re-runs if bookingId changes (unlikely but correct).
+    // getAccessToken() reads from the live Supabase session on both platforms.
     LaunchedEffect(bookingId) {
         val token = tokenStorage.getAccessToken() ?: return@LaunchedEffect
         viewModel.onEvent(ChatEvent.Connect(bookingId = bookingId, token = token))
@@ -371,16 +374,12 @@ private fun MessageBubble(
 }
 
 /**
- * Formats an epoch-ms timestamp to a short `HH:mm` time string.
- * KMP-compatible: uses epoch arithmetic only, no java.time or NSDate.
+ * Formats an epoch-ms timestamp to a short `HH:mm` string in the device's local timezone.
  */
 private fun formatTimestamp(epochMs: Long): String {
-    val totalSeconds = epochMs / 1000
-    val totalMinutes = totalSeconds / 60
-    val totalHours   = totalMinutes / 60
-    val hours        = totalHours % 24
-    val minutes      = totalMinutes % 60
-    return "${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}"
+    val instant = Instant.fromEpochMilliseconds(epochMs)
+    val local   = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    return "${local.hour.toString().padStart(2, '0')}:${local.minute.toString().padStart(2, '0')}"
 }
 
 // ── Input row ─────────────────────────────────────────────────────────────────

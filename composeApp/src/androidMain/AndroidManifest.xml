@@ -5,6 +5,21 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ requires explicit POST_NOTIFICATIONS permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Location for Google Maps centering -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Android 11+ requires explicit package visibility declarations for startActivity -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mobilepay" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="vipps" />
+        </intent>
+    </queries>
 
     <application
         android:networkSecurityConfig="@xml/network_security_config"
@@ -24,12 +39,12 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Email-confirmation deep link: hop://auth/callback -->
+            <!-- Email-confirmation deep link: ridly://auth/callback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="hop" android:host="auth" android:pathPrefix="/callback" />
+                <data android:scheme="ridly" android:host="auth" android:pathPrefix="/callback" />
             </intent-filter>
         </activity>
 
@@ -49,6 +64,11 @@
             android:name="io.sentry.android.core.SentryInitProvider"
             android:authorities="${applicationId}.SentryInitProvider"
             tools:node="remove" />
+
+        <!-- Google Maps API key (value supplied via local.properties → MAPS_API_KEY) -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
     </application>
 
 </manifest>

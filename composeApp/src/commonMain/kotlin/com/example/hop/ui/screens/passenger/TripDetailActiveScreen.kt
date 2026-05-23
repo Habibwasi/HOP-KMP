@@ -34,6 +34,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -88,6 +92,7 @@ fun TripDetailActiveRoute(
     onNavigateBack: () -> Unit,
     onNavigateToChat: (bookingId: String) -> Unit,
     onNavigateToCancellationConfirmation: (bookingId: String) -> Unit,
+    onNavigateToPassengerSettlement: (bookingId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TripDetailActiveViewModel = koinViewModel(),
     bookingViewModel: BookingViewModel = koinViewModel(),
@@ -99,6 +104,26 @@ fun TripDetailActiveRoute(
 
     LaunchedEffect(bookingId) {
         viewModel.onEvent(TripDetailActiveEvent.Load(bookingId))
+    }
+
+    // Re-fetch booking status when the screen resumes (e.g. user returns from
+    // background after the driver completes the trip).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(TripDetailActiveEvent.Load(bookingId))
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Auto-navigate to settlement as soon as status becomes AWAITING_PAYMENT.
+    LaunchedEffect(state.bookingStatus) {
+        if (state.bookingStatus == BookingStatus.AWAITING_PAYMENT) {
+            onNavigateToPassengerSettlement(bookingId)
+        }
     }
 
     LaunchedEffect(viewModel) {
@@ -121,7 +146,6 @@ fun TripDetailActiveRoute(
                 is BookingEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
-                is BookingEffect.NavigateToMobilePay -> Unit
                 is BookingEffect.NavigateToSuccess -> Unit
                 is BookingEffect.NavigateToMyTripsPassenger -> Unit     // not reachable here
             }
@@ -138,6 +162,7 @@ fun TripDetailActiveRoute(
             isCancelling = bookingState.isLoading,
             onBack = onNavigateBack,
             onMessageDriver = { viewModel.onEvent(TripDetailActiveEvent.MessageDriver) },
+            onPayDriver = { onNavigateToPassengerSettlement(bookingId) },
             onCancelBookingConfirmed = {
                 bookingViewModel.onEvent(BookingEvent.CancelBooking(bookingId))
             },
@@ -165,6 +190,7 @@ fun TripDetailActiveScreen(
     isCancelling: Boolean,
     onBack: () -> Unit,
     onMessageDriver: () -> Unit,
+    onPayDriver: () -> Unit,
     onCancelBookingConfirmed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -234,8 +260,10 @@ fun TripDetailActiveScreen(
 
                 // Bottom action buttons
                 ActionButtonsSection(
+                    bookingStatus = state.bookingStatus,
                     isCancelling = isCancelling,
                     onMessageDriver = onMessageDriver,
+                    onPayDriver = onPayDriver,
                     onCancelBooking = { showCancelDialog = true },
                     modifier = Modifier.padding(
                         horizontal = HopSpacing.md,
@@ -400,8 +428,11 @@ private fun BookingStatusBadge(
 ) {
     val (label, color) = when (status) {
         BookingStatus.CONFIRMED -> "Confirmed" to HopColors.success
-        BookingStatus.PENDING   -> "Pending"   to HopColors.warning
-        else                    -> return
+        BookingStatus.PENDING -> "Pending" to HopColors.warning
+        BookingStatus.AWAITING_PAYMENT -> "Awaiting payment" to HopColors.warning
+        BookingStatus.COMPLETED -> "Completed" to HopColors.success
+        BookingStatus.DISPUTED -> "Disputed" to HopColors.error
+        else -> return
     }
     Box(
         modifier = modifier
@@ -452,8 +483,10 @@ private fun ThresholdSection(
 
 @Composable
 private fun ActionButtonsSection(
+    bookingStatus: BookingStatus,
     isCancelling: Boolean,
     onMessageDriver: () -> Unit,
+    onPayDriver: () -> Unit,
     onCancelBooking: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -474,12 +507,21 @@ private fun ActionButtonsSection(
                 )
             },
         )
-        HopButton(
-            text = "Cancel Booking",
-            onClick = onCancelBooking,
-            variant = HopButtonVariant.Destructive,
-            isLoading = isCancelling,
-        )
+        if (bookingStatus == BookingStatus.AWAITING_PAYMENT) {
+            HopButton(
+                text = "Pay Driver",
+                onClick = onPayDriver,
+            )
+        } else if (bookingStatus == BookingStatus.PENDING ||
+                   bookingStatus == BookingStatus.CONFIRMED) {
+            HopButton(
+                text = "Cancel Booking",
+                onClick = onCancelBooking,
+                variant = HopButtonVariant.Destructive,
+                isLoading = isCancelling,
+            )
+        }
+        // COMPLETED / CANCELLED / DISPUTED — no action button
     }
 }
 
@@ -548,6 +590,7 @@ private fun TripDetailActiveScreenConfirmedPreview() {
             isCancelling = false,
             onBack = {},
             onMessageDriver = {},
+            onPayDriver = {},
             onCancelBookingConfirmed = {},
         )
     }
@@ -575,6 +618,7 @@ private fun TripDetailActiveScreenModelBPendingPreview() {
             isCancelling = false,
             onBack = {},
             onMessageDriver = {},
+            onPayDriver = {},
             onCancelBookingConfirmed = {},
         )
     }
@@ -589,6 +633,7 @@ private fun TripDetailActiveScreenLoadingPreview() {
             isCancelling = false,
             onBack = {},
             onMessageDriver = {},
+            onPayDriver = {},
             onCancelBookingConfirmed = {},
         )
     }

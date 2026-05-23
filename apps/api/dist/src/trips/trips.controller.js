@@ -44,6 +44,9 @@ let TripsController = class TripsController {
     cancel(id, req) {
         return this.trips.cancel(id, req.user.id);
     }
+    complete(id, req) {
+        return this.trips.complete(id, req.user.id);
+    }
 };
 exports.TripsController = TripsController;
 __decorate([
@@ -102,6 +105,15 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], TripsController.prototype, "cancel", null);
+__decorate([
+    (0, common_1.Patch)(':id/complete'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], TripsController.prototype, "complete", null);
 exports.TripsController = TripsController = __decorate([
     (0, common_1.Controller)('trips'),
     __metadata("design:paramtypes", [trips_service_1.TripsService])

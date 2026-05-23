@@ -56,21 +56,20 @@ enum HopRoute: Hashable {
     case tripDetailActive(bookingId: String)
 
     /// PA-09 Rate Driver
-    case rateDriver(bookingId: String, driverName: String, driverInitials: String)
+    case rateDriver(bookingId: String)
 
     /// PA-10 Cancellation Confirmation
     case cancellationConfirmation(bookingId: String)
 
     // MARK: — Driver ──────────────────────────────────────────────────────────
 
-    /// DR-02 Car Details (Enable Driver – Step 1)
+    /// DR-02 Car Details (Enable Driver) — single-step onboarding.
+    /// Licence verification was dropped to match Android: completing this
+    /// screen flips the user's role to DRIVER and returns home.
     case enableDriverStep1
 
-    /// DR-03 Licence Upload (Enable Driver – Step 2)
+    /// DR-03 MobilePay Number (replaces defunct licence-upload step)
     case enableDriverStep2
-
-    /// DR-04 Review Pending (Enable Driver – Step 3)
-    case enableDriverStep3
 
     /// DR-05 Post Trip – Model Select
     case postTripModelSelect
@@ -94,7 +93,14 @@ enum HopRoute: Hashable {
     case markTripComplete(tripId: String, driverNetOere: Int)
 
     /// DR-12 Rate Passenger
-    case ratePassenger(bookingId: String, passengerName: String, passengerInitials: String)
+    case ratePassenger(
+        bookingId: String,
+        passengerName: String,
+        passengerInitials: String,
+        remainingBookingIds: [String] = [],
+        remainingPassengerNames: [String] = [],
+        remainingPassengerInitials: [String] = []
+    )
 
     /// DR-13 Tax Dashboard
     case taxDashboard
@@ -113,9 +119,26 @@ enum HopRoute: Hashable {
     /// SH-04 In-App Chat (per booking)
     case chat(bookingId: String)
 
+    /// SH-04b Chat List — all chats the user has had or is having
+    case chatList
+
     /// SH-05 Notifications
     case notifications
 
     /// SH-06 Settings
     case settings
+
+    // MARK: — Settlement ──────────────────────────────────────────────────────
+
+    /// SE-01 Passenger Settlement (pay driver via MobilePay)
+    case passengerSettlement(bookingId: String)
+
+    /// SE-02 Driver Settlement (all passengers for a trip)
+    case driverSettlement(tripId: String)
+
+    /// SE-02b Driver Settlement entry via notification deep-link (resolves tripId from bookingId)
+    case driverSettlementByBooking(bookingId: String)
+
+    /// DR-09b Past trip detail (driver read-only view)
+    case pastTripDetailDriver(tripId: String)
 }

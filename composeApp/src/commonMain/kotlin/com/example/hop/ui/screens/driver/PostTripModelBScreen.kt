@@ -53,6 +53,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hop.presentation.driver.DriverEffect
 import com.example.hop.presentation.driver.DriverEvent
@@ -60,7 +63,7 @@ import com.example.hop.presentation.driver.DriverUiState
 import com.example.hop.presentation.driver.DriverViewModel
 import com.example.hop.presentation.driver.ModelBDraft
 import com.example.hop.ui.components.HopButton
-import com.example.hop.ui.components.HopTextField
+import com.example.hop.ui.screens.passenger.LocationPickerOverlay
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
@@ -109,6 +112,9 @@ fun PostTripModelBRoute(
         PostTripModelBScreen(
             state = state,
             onSubmit = { draft -> viewModel.onEvent(DriverEvent.SubmitModelBDraft(draft)) },
+            onCalculateRoute = { origin, dest ->
+                viewModel.onEvent(DriverEvent.CalculateRouteDistance(origin, dest))
+            },
             onNavigateBack = onNavigateBack,
             modifier = Modifier.padding(innerPadding),
         )
@@ -129,6 +135,7 @@ fun PostTripModelBRoute(
 fun PostTripModelBScreen(
     state: DriverUiState,
     onSubmit: (ModelBDraft) -> Unit,
+    onCalculateRoute: (String, String) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -139,6 +146,7 @@ fun PostTripModelBScreen(
     var departureTime by remember { mutableStateOf("09:00") }
     var seatsTotal by remember { mutableIntStateOf(2) }
     var minThreshold by remember { mutableIntStateOf(1) }
+    var locationPickerField by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -152,11 +160,19 @@ fun PostTripModelBScreen(
         if (minThreshold > seatsTotal) minThreshold = seatsTotal
     }
 
+    // Auto-trigger route calculation when both addresses are set
+    LaunchedEffect(originName, destName) {
+        if (originName.isNotBlank() && destName.isNotBlank()) {
+            onCalculateRoute(originName, destName)
+        }
+    }
+
     fun validate(): Boolean {
         originError = if (originName.isBlank()) "Enter a departure location" else null
         destError = if (destName.isBlank()) "Enter a destination" else null
         dateError = if (selectedDate.isBlank()) "Pick a trip date" else null
-        return originError == null && destError == null && dateError == null
+        return originError == null && destError == null && dateError == null &&
+            state.routeDistanceMetres > 0
     }
 
     // ── Date picker ───────────────────────────────────────────────────────────
@@ -261,29 +277,32 @@ fun PostTripModelBScreen(
 
             // Route section
             FormSection(title = "Route") {
-                HopTextField(
-                    value = originName,
-                    onValueChange = {
-                        originName = it
-                        originError = null
-                    },
+                // From tappable row
+                AddressPickerRow(
                     label = "From",
+                    value = originName,
                     placeholder = "e.g. Aarhus C",
                     errorMessage = originError,
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { locationPickerField = "from" },
                 )
                 Spacer(modifier = Modifier.height(HopSpacing.sm))
-                HopTextField(
-                    value = destName,
-                    onValueChange = {
-                        destName = it
-                        destError = null
-                    },
+                // To tappable row
+                AddressPickerRow(
                     label = "To",
+                    value = destName,
                     placeholder = "e.g. Copenhagen Central",
                     errorMessage = destError,
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { locationPickerField = "to" },
                 )
+                // Route summary: spinner → distance + price preview
+                if (originName.isNotBlank() && destName.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(HopSpacing.sm))
+                    RouteSummaryRow(
+                        isCalculating = state.isCalculatingRoute,
+                        distanceMetres = state.routeDistanceMetres,
+                        seatsTotal = seatsTotal,
+                    )
+                }
             }
 
             // Date + time section
@@ -350,12 +369,49 @@ fun PostTripModelBScreen(
                                 departureTime = departureTime,
                                 seatsTotal = seatsTotal,
                                 minThreshold = minThreshold,
-                                distanceMetres = 0, // resolved via routing API post-MVP
+                                // distanceMetres and lat/lng are enriched by DriverViewModel.submitModelBDraft
+                                distanceMetres = 0,
                             )
                         )
                     }
                 },
+                enabled = !state.isCalculatingRoute,
                 modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+
+    // ── Location picker overlay ───────────────────────────────────────────────
+    locationPickerField?.let { field ->
+        Popup(
+            properties = PopupProperties(focusable = true),
+            onDismissRequest = { locationPickerField = null },
+        ) {
+            BackHandler { locationPickerField = null }
+            LocationPickerOverlay(
+                title = if (field == "from") "Where from?" else "Where to?",
+                initialText = if (field == "from") originName else destName,
+                savedPlaces = emptyList(),
+                recentSearches = emptyList(),
+                onDismiss = { locationPickerField = null },
+                onConfirm = { address ->
+                    if (field == "from") {
+                        originName = address
+                        originError = null
+                    } else {
+                        destName = address
+                        destError = null
+                    }
+                    locationPickerField = null
+                },
+                onRouteConfirm = { origin, dest ->
+                    originName = origin
+                    destName = dest
+                    originError = null
+                    destError = null
+                    locationPickerField = null
+                },
+                onRequestAddPlace = { locationPickerField = null },
             )
         }
     }
@@ -506,6 +562,7 @@ private fun PostTripModelBScreenPreview() {
         PostTripModelBScreen(
             state = DriverUiState(),
             onSubmit = {},
+            onCalculateRoute = { _, _ -> },
             onNavigateBack = {},
         )
     }

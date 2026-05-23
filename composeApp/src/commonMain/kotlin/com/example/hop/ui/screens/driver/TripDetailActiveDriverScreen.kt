@@ -28,6 +28,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,6 +65,7 @@ import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import com.example.hop.domain.model.Trip
+import com.example.hop.util.formatDeparture
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -84,7 +86,14 @@ fun TripDetailActiveDriverRoute(
     tripId: String,
     onNavigateBack: () -> Unit,
     onNavigateToMarkTripComplete: (tripId: String, driverNetOere: Int) -> Unit,
-    onNavigateToRatePassenger: (bookingId: String, passengerName: String, passengerInitials: String) -> Unit,
+    onNavigateToRatePassenger: (
+        bookingId: String,
+        passengerName: String,
+        passengerInitials: String,
+        remainingBookingIds: List<String>,
+        remainingPassengerNames: List<String>,
+        remainingPassengerInitials: List<String>,
+    ) -> Unit,
     onNavigateToChat: (bookingId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = koinViewModel(),
@@ -101,12 +110,18 @@ fun TripDetailActiveDriverRoute(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is DriverEffect.NavigateToRatePassenger -> {
-                    val passenger = state.activeTripDetail.passengers
-                        .firstOrNull { it.bookingId == effect.bookingId }
+                    val bookingIds = effect.bookingIds
+                    val passengers = state.activeTripDetail.passengers
+                    val firstId = bookingIds.first()
+                    val remaining = bookingIds.drop(1)
+                    val first = passengers.firstOrNull { it.bookingId == firstId }
                     onNavigateToRatePassenger(
-                        effect.bookingId,
-                        passenger?.fullName ?: "",
-                        passenger?.initials ?: "",
+                        firstId,
+                        first?.fullName ?: "",
+                        first?.initials ?: "",
+                        remaining,
+                        remaining.mapNotNull { id -> passengers.firstOrNull { it.bookingId == id }?.fullName },
+                        remaining.mapNotNull { id -> passengers.firstOrNull { it.bookingId == id }?.initials },
                     )
                 }
                 is DriverEffect.ShowSnackbar -> scope.launch {
@@ -227,7 +242,7 @@ fun TripDetailActiveDriverScreen(
                         TripHeaderSection(
                             originName = domainTrip.originName,
                             destName = domainTrip.destName,
-                            departsAt = domainTrip.departsAt,
+                            departsAt = formatDeparture(domainTrip.departsAt),
                             status = domainTrip.status,
                             modifier = Modifier.padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                         )
@@ -346,12 +361,17 @@ private fun TripHeaderSection(
             val badgeType = when (status) {
                 TripStatus.CONFIRMED -> BadgeType.Confirmed
                 TripStatus.ACTIVE -> BadgeType.Custom(
-                    label = "ACTIVE",
-                    background = HopColors.primaryLime,
-                    contentColor = HopColors.authTextPrimary,
+                    label = "Active",
+                    background = HopColors.primaryLime.copy(alpha = 0.20f),
+                    contentColor = Color(0xFF1A1A1A),
                 )
                 TripStatus.COMPLETED -> BadgeType.Completed
                 TripStatus.CANCELLED -> BadgeType.Cancelled
+                TripStatus.THRESHOLD_NOT_MET -> BadgeType.Custom(
+                    label = "Threshold not met",
+                    background = HopColors.warning.copy(alpha = 0.15f),
+                    contentColor = HopColors.warning,
+                )
                 TripStatus.UNKNOWN -> BadgeType.Pending
             }
             StatusBadge(type = badgeType)

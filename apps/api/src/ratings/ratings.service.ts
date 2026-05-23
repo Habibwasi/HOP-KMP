@@ -3,12 +3,10 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateRatingDto } from './dto/create-rating.dto'
-import { BookingStatus } from '@prisma/client'
-
-const RATING_WINDOW_HOURS = 48
 
 @Injectable()
 export class RatingsService {
@@ -19,15 +17,13 @@ export class RatingsService {
       throw new BadRequestException('Cannot rate yourself')
     }
 
-    // Verify rater was part of the trip
+    // Verify rater was part of the trip and resolve the valid ratee
     const trip = await this.prisma.trip.findUnique({
       where: { id: dto.tripId },
       include: {
         bookings: {
-          where: {
-            status: BookingStatus.CONFIRMED,
-            passengerId: raterId,
-          },
+          where: { passengerId: raterId },
+          select: { passengerId: true },
         },
       },
     })
@@ -41,11 +37,17 @@ export class RatingsService {
       throw new BadRequestException('You were not part of this trip')
     }
 
-    // Enforce 48hr rating window
-    const windowEnd = new Date(trip.departureAt)
-    windowEnd.setHours(windowEnd.getHours() + RATING_WINDOW_HOURS)
-    if (new Date() > windowEnd) {
-      throw new BadRequestException('Rating window has closed (48 hours after departure)')
+    // Validate that rateeId is the actual counterparty for this trip.
+    // Driver may only rate a passenger on this trip; passenger may only rate the driver.
+    if (isDriver) {
+      const passengerIds = new Set(trip.bookings.map((b) => b.passengerId))
+      if (!passengerIds.has(dto.rateeId)) {
+        throw new ForbiddenException('You can only rate passengers on this trip')
+      }
+    } else {
+      if (dto.rateeId !== trip.driverId) {
+        throw new ForbiddenException('You can only rate the driver of this trip')
+      }
     }
 
     // Prevent duplicate rating

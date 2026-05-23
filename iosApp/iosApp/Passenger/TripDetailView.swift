@@ -1,394 +1,223 @@
 import SwiftUI
 import Shared
 
-// MARK: — PA-03 Trip Detail ────────────────────────────────────────────────────
-//
-// Displays full trip info. Driver profile, route map placeholder, price breakdown,
-// seat availability, Model A/B badge. CTA: "Book this ride".
-// Uses TripViewModel.SelectTrip → state.selectedTrip to get detailed data.
-
+/// PA-03 — Trip Detail. Mirrors composeApp `TripDetailScreen.kt`.
 struct TripDetailView: View {
-
     let tripId: String
-    var onBook:    (String) -> Void   // tripId → PA-04 Booking Confirmation
-    var onBack:    () -> Void
+    let onBack: () -> Void
+    let onNavigateToOtherProfile: (_ driverId: String) -> Void
+    let onNavigateToBookingConfirmation: (_ tripId: String) -> Void
 
-    @StateObject private var wrapper = TripViewModelWrapper()
-
-    @State private var toastMessage: String? = nil
+    @StateObject private var wrapper = TripDetailViewModelWrapper()
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Color.hopSurface.ignoresSafeArea(.all, edges: .top)
-
-            if wrapper.state.isLoading {
-                loadingView
-            } else if let trip = wrapper.state.selectedTrip {
-                tripContent(trip)
-            } else {
-                errorView
-            }
-
-            // ── Toast ─────────────────────────────────────────────────────────
-            if let msg = toastMessage {
-                HopToast(message: msg)
-                    .padding(.bottom, HopSpacing.xxl)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                            withAnimation { toastMessage = nil }
-                        }
-                    }
-            }
-        }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
+        VStack(spacing: 0) {
+            HStack(spacing: HopSpacing.sm) {
                 Button(action: onBack) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(Color.hopTextPrimary)
-                }
-                .accessibilityLabel("Back")
-            }
-            ToolbarItem(placement: .principal) {
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                        .frame(width: 36, height: 36)
+                }.buttonStyle(.plain)
                 Text("Trip Details")
-                    .font(HopFont.bodyLarge(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .task {
-            wrapper.startObserving { _ in /* effects for detail: handled below */ }
-            wrapper.selectTrip(id: tripId)
-        }
-        .onChange(of: wrapper.state.error) { _, error in
-            if let error {
-                withAnimation { toastMessage = error }
-            }
-        }
-    }
-
-    // MARK: — Trip content
-
-    @ViewBuilder
-    private func tripContent(_ tripUi: TripUiModel) -> some View {
-        let trip = tripUi.trip
-        let availableSeats = Int(trip.seatsTotal) - Int(trip.seatsBooked)
-
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-
-                // ── Driver row ───────────────────────────────────────────────
-                driverRow(trip: trip)
-
-                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
-
-                // ── Route section ─────────────────────────────────────────────
-                routeBlock(trip: trip)
-
-                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
-
-                // ── Trip info section ─────────────────────────────────────────
-                tripInfoGrid(trip: trip)
-
-                // ── Model B threshold (if applicable) ─────────────────────────
-                if trip.model == .b, let threshold = trip.minThreshold {
-                    Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
-                    modelBThreshold(booked: Int(trip.seatsBooked), threshold: Int(truncating: threshold))
-                }
-
-                Divider().background(Color.hopSurfaceElevated).padding(.horizontal, HopSpacing.md)
-
-                // ── Price breakdown ───────────────────────────────────────────
-                priceSection(trip: trip)
-
-                Spacer().frame(height: HopSpacing.xxl + 56) // clear CTA button
-            }
-        }
-
-        // ── Sticky Book CTA ───────────────────────────────────────────────────
-        VStack(spacing: 0) {
-            Divider().background(Color.hopSurfaceElevated)
-            HopPrimaryButton(
-                title: "Book for DKK \(String(format: "%.0f", Double(Int(trip.priceOerePerSeat)) / 100.0))",
-                isEnabled: availableSeats > 0 && !tripUi.isBroken
-            ) {
-                onBook(tripId)
-            }
-            .padding(.horizontal, HopSpacing.md)
-            .padding(.vertical, HopSpacing.md)
-            .background(Color.hopSurface)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: — Driver row
-
-    private func driverRow(trip: Trip) -> some View {
-        HStack(spacing: HopSpacing.md) {
-            HopAvatar(name: trip.driverId, imageURL: nil, size: .large)
-            VStack(alignment: .leading, spacing: HopSpacing.xxs) {
-                Text(trip.driverId)
-                    .font(HopFont.labelMedium(weight: .semibold))
-                    .foregroundColor(Color.hopTextPrimary)
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.hopPrimaryLime)
-                    Text("4.9")
-                        .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
-                    Text("· Verified driver")
-                        .font(HopFont.bodySmall())
-                        .foregroundColor(Color.hopTextSecondary)
-                }
-            }
-            Spacer()
-            StatusBadge(status: trip.model == .b ? .modelB : .modelA)
-        }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.vertical, HopSpacing.md)
-    }
-
-    // MARK: — Route block
-
-    private func routeBlock(trip: Trip) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            RouteStopRow(
-                icon:   "circle.fill",
-                color:  Color.hopPrimaryGreen,
-                label:  trip.originName,
-                time:   HopDateFormatter.timeOnly(iso: trip.departsAt)
-            )
-
-            // Vertical connector line
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(Color.hopSurface.opacity(0.8))
-                    .frame(width: 2, height: 24)
-                    .padding(.leading, HopSpacing.md + 7) // align with icon centre
+                    .font(HopFont.titleMedium())
+                    .foregroundColor(Color.hopAuthTextPrimary)
                 Spacer()
             }
+            .padding(.horizontal, HopSpacing.sm)
+            .padding(.vertical, HopSpacing.xs)
 
-            RouteStopRow(
-                icon:   "mappin.circle.fill",
-                color:  Color.hopPrimaryLime,
-                label:  trip.destName,
-                time:   ""
-            )
-
-            HStack(spacing: HopSpacing.xs) {
-                Image(systemName: "road.lanes")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.hopTextSecondary)
-                Text("\(trip.distanceMetres / 1000) km")
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color.hopTextSecondary)
+            if wrapper.state.isLoading {
+                Spacer()
+                ProgressView().tint(Color.hopPrimaryGreen)
+                Spacer()
+            } else {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        DriverHeader(
+                            driverName: wrapper.state.driverName,
+                            driverInitials: wrapper.state.driverInitials,
+                            driverRating: Double(wrapper.state.driverRating),
+                            isVerified: wrapper.state.isDriverVerified,
+                            model: wrapper.state.model,
+                            onAvatarTap: { wrapper.viewDriverProfile() }
+                        )
+                        SectionDivider()
+                        RouteSection(
+                            originName: wrapper.state.originName,
+                            destName: wrapper.state.destName,
+                            departsAt: wrapper.state.departsAt
+                        )
+                        SectionDivider()
+                        MetaRow(
+                            distanceMetres: Int(wrapper.state.distanceMetres),
+                            estimatedDurationMinutes: Int(wrapper.state.estimatedDurationMinutes),
+                            seatsAvailable: Int(wrapper.state.seatsAvailable)
+                        )
+                        SectionDivider()
+                        PriceBreakdownCard(state: wrapper.state)
+                            .padding(HopSpacing.md)
+                        Spacer().frame(height: HopSpacing.md)
+                    }
+                }
             }
-            .padding(.top, HopSpacing.xs)
+
+            HopButton(text: "Book Seat", variant: .primary) {
+                wrapper.bookSeat()
+            }
+            .padding(HopSpacing.md)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.hopBackground.ignoresSafeArea())
+        .onAppear {
+            wrapper.startObserving { effect in
+                if let n = effect as? TripDetailEffectNavigateToBookingConfirmation {
+                    onNavigateToBookingConfirmation(n.tripId)
+                } else if let p = effect as? TripDetailEffectNavigateToOtherProfile {
+                    onNavigateToOtherProfile(p.driverId)
+                }
+            }
+            wrapper.loadTrip(tripId: tripId)
+        }
+    }
+}
+
+private struct DriverHeader: View {
+    let driverName: String
+    let driverInitials: String
+    let driverRating: Double
+    let isVerified: Bool
+    let model: TripModel
+    let onAvatarTap: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HopSpacing.md) {
+            Button(action: onAvatarTap) {
+                HopAvatar(name: driverName, size: .xlarge, isVerified: isVerified)
+            }
+            .buttonStyle(.plain)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(driverName)
+                    .font(HopFont.headlineSmall(weight: .semibold))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+                StarRatingDisplay(rating: driverRating, count: nil, starSize: 14)
+                ModelBadge(model: model)
+            }
+            Spacer()
         }
         .padding(HopSpacing.md)
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
-    }
-
-    // MARK: — Trip info grid
-
-    private func tripInfoGrid(trip: Trip) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HopSpacing.sm) {
-            InfoCell(icon: "calendar",      label: "Date",       value: HopDateFormatter.dayDate(iso: trip.departsAt))
-            InfoCell(icon: "clock",         label: "Departs",    value: HopDateFormatter.timeOnly(iso: trip.departsAt))
-            InfoCell(icon: "person.2",      label: "Seats left", value: "\(trip.seatsTotal - trip.seatsBooked) of \(trip.seatsTotal)")
-            InfoCell(icon: "tag",           label: "Type",       value: trip.model == .b ? "Long Trip" : "Commute")
-        }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
-    }
-
-    // MARK: — Model B threshold
-
-    private func modelBThreshold(booked: Int, threshold: Int) -> some View {
-        let met = booked >= threshold
-        return HStack(spacing: HopSpacing.sm) {
-            Image(systemName: met ? "checkmark.circle.fill" : "clock.badge.exclamationmark")
-                .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(met ? "Trip confirmed" : "Awaiting confirmation")
-                    .font(HopFont.labelMedium(weight: .medium))
-                    .foregroundColor(met ? Color.hopSuccess : Color.hopWarning)
-                Text("\(booked)/\(threshold) seats needed to confirm · Auto-cancels 6h before departure if threshold not met")
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color.hopTextSecondary)
-            }
-        }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
-    }
-
-    // MARK: — Price section
-
-    private func priceSection(trip: Trip) -> some View {
-        VStack(spacing: HopSpacing.sm) {
-            PriceRow(label: "Per seat", value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat) / 100.0))", isHighlighted: false)
-            Divider().background(Color.hopSurface)
-            PriceRow(label: "Total", value: "DKK \(String(format: "%.0f", Double(trip.priceOerePerSeat) / 100.0))", isHighlighted: true)
-        }
-        .padding(.horizontal, HopSpacing.md)
-        .padding(.bottom, HopSpacing.xs)
-    }
-
-    // MARK: — Helpers
-
-    private var loadingView: some View {
-        VStack {
-            Spacer()
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
-                .scaleEffect(1.2)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var errorView: some View {
-        EmptyState(
-            systemImage: "exclamationmark.triangle",
-            headline:    "Trip not found",
-            subtitle:    "The trip may no longer be available.",
-            ctaLabel:    "Go back",
-            ctaAction:   onBack
-        )
     }
 }
 
-// MARK: — RouteStopRow
-
-private struct RouteStopRow: View {
-    let icon:  String
-    let color: Color
-    let label: String
-    let time:  String
-
+private struct ModelBadge: View {
+    let model: TripModel
     var body: some View {
-        HStack(spacing: HopSpacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundColor(color)
-                .frame(width: 16)
-            Text(label)
-                .font(HopFont.bodyMedium(weight: .medium))
-                .foregroundColor(Color.hopTextPrimary)
-                .lineLimit(1)
-            Spacer()
-            if !time.isEmpty {
-                Text(time)
-                    .font(HopFont.labelMedium())
-                    .foregroundColor(Color.hopPrimaryLime)
-            }
-        }
+        let isB = model == .b
+        let bg: Color = isB ? Color.hopPrimaryGreen.opacity(0.15) : Color(hex: 0x1976D2).opacity(0.15)
+        let fg: Color = isB ? Color.hopPrimaryGreen : Color(hex: 0x1976D2)
+        let text: String = isB ? "Long Trip · Model B" : "Commute · Model A"
+        Text(text)
+            .font(HopFont.labelSmall(weight: .medium))
+            .foregroundColor(fg)
+            .padding(.horizontal, HopSpacing.sm)
+            .padding(.vertical, 4)
+            .background(bg)
+            .clipShape(Capsule())
     }
 }
 
-// MARK: — InfoCell
-
-private struct InfoCell: View {
-    let icon:  String
-    let label: String
-    let value: String
-
+private struct RouteSection: View {
+    let originName: String
+    let destName: String
+    let departsAt: String
     var body: some View {
-        VStack(alignment: .leading, spacing: HopSpacing.xxs) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.hopTextSecondary)
-                Text(label)
-                    .font(HopFont.bodySmall())
-                    .foregroundColor(Color.hopTextSecondary)
+        VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            HStack {
+                Circle().fill(Color.hopPrimaryLime).frame(width: 12, height: 12)
+                Text(originName).font(HopFont.bodyLarge()).foregroundColor(Color.hopAuthTextPrimary)
             }
-            Text(value)
-                .font(HopFont.labelMedium(weight: .medium))
-                .foregroundColor(Color.hopTextPrimary)
+            HStack {
+                Circle().fill(Color.hopAuthTextPrimary).frame(width: 12, height: 12)
+                Text(destName).font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopAuthTextPrimary)
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "calendar").font(.system(size: 12)).foregroundColor(Color.hopAuthTextSecondary)
+                Text(departsAt).font(HopFont.bodyMedium()).foregroundColor(Color.hopAuthTextSecondary)
+            }
         }
+        .padding(HopSpacing.md)
     }
 }
 
-// MARK: — PriceRow
-
-private struct PriceRow: View {
-    let label:         String
-    let value:         String
-    let isHighlighted: Bool
+private struct MetaRow: View {
+    let distanceMetres: Int
+    let estimatedDurationMinutes: Int
+    let seatsAvailable: Int
 
     var body: some View {
         HStack {
-            Text(label)
-                .font(isHighlighted ? HopFont.labelMedium(weight: .semibold) : HopFont.bodyMedium(weight: .regular))
-                .foregroundColor(isHighlighted ? Color.hopTextPrimary : Color.hopTextSecondary)
+            chip(systemImage: "ruler", text: "\(distanceMetres / 1000) km")
+            chip(systemImage: "clock", text: "\(estimatedDurationMinutes) min")
+            chip(systemImage: "person.2", text: "\(seatsAvailable) seat\(seatsAvailable == 1 ? "" : "s")")
             Spacer()
-            Text(value)
-                .font(isHighlighted ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .regular))
-                .foregroundColor(isHighlighted ? Color.hopPrimaryLime : Color.hopTextPrimary)
         }
+        .padding(.horizontal, HopSpacing.md)
+        .padding(.vertical, HopSpacing.sm)
+    }
+    private func chip(systemImage: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage).font(.system(size: 12)).foregroundColor(Color.hopAuthTextSecondary)
+            Text(text).font(HopFont.labelMedium()).foregroundColor(Color.hopAuthTextPrimary)
+        }
+        .padding(.horizontal, HopSpacing.sm)
+        .padding(.vertical, 6)
+        .background(Color.hopCardSurfaceMuted)
+        .clipShape(Capsule())
     }
 }
 
-// MARK: — SeatStepperInline
-
-private struct SeatStepperInline: View {
-    @Binding var seats: Int
-    let maxSeats: Int
+private struct PriceBreakdownCard: View {
+    let state: TripDetailUiState
 
     var body: some View {
-        HStack(spacing: HopSpacing.sm) {
-            Button {
-                if seats > 1 { seats -= 1 }
-            } label: {
-                Image(systemName: "minus.circle")
-                    .font(.system(size: 22, weight: .light))
-                    .foregroundColor(seats > 1 ? Color.hopPrimaryLime : Color.hopTextSecondary)
+        let perSeat = Int(state.priceOerePerSeat)
+        VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            Text("Price")
+                .font(HopFont.titleSmall())
+                .foregroundColor(Color.hopAuthTextPrimary)
+            HStack {
+                Text("Per seat").font(HopFont.bodyMedium()).foregroundColor(Color.hopAuthTextSecondary)
+                Spacer()
+                Text(dkk(perSeat))
+                    .font(HopFont.mono(size: 18, weight: .bold))
+                    .foregroundColor(Color.hopAuthTextPrimary)
             }
-            .buttonStyle(.plain).disabled(seats <= 1)
+            Text("SKAT-suggested rate · pay driver via MobilePay after the ride")
+                .font(HopFont.labelSmall())
+                .foregroundColor(Color.hopAuthTextSecondary)
 
-            Text("\(seats)")
-                .font(HopFont.bodyLarge(weight: .semibold))
-                .foregroundColor(Color.hopTextPrimary)
-                .frame(minWidth: 24, alignment: .center)
-
-            Button {
-                if seats < maxSeats { seats += 1 }
-            } label: {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 22, weight: .light))
-                    .foregroundColor(seats < maxSeats ? Color.hopPrimaryLime : Color.hopTextSecondary)
+            if state.model == .b, let minT = state.minThreshold?.intValue, minT > 0 {
+                Divider()
+                Text("\(state.seatsBooked) of \(minT) seats confirmed")
+                    .font(HopFont.bodySmall())
+                    .foregroundColor(Color.hopAuthTextSecondary)
+                ProgressView(value: Double(state.thresholdProgress))
+                    .tint(Color.hopPrimaryLime)
             }
-            .buttonStyle(.plain).disabled(seats >= maxSeats)
         }
+        .padding(HopSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.hopCardSurfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+    private func dkk(_ oere: Int) -> String {
+        let d = oere / 100, o = oere % 100
+        return String(format: "DKK %d,%02d", d, o)
     }
 }
 
-// MARK: — Previews
-
-#Preview("PA-03 Trip Detail — Loading") {
-    NavigationStack {
-        TripDetailView(
-            tripId: "trip-001",
-            onBook: { _ in },
-            onBack: {}
-        )
+private struct SectionDivider: View {
+    var body: some View {
+        Rectangle().fill(Color.hopCardBorder).frame(height: 1).padding(.horizontal, HopSpacing.md)
     }
-    .preferredColorScheme(.dark)
-}
-
-#Preview("PA-03 Trip Detail — Error") {
-    NavigationStack {
-        TripDetailView(
-            tripId: "trip-missing",
-            onBook: { _ in },
-            onBack: {}
-        )
-    }
-    .preferredColorScheme(.dark)
 }

@@ -33,10 +33,6 @@
           "value": "hop_refresh_secret_change_in_production_32"
         },
         {
-          "name": "STRIPE_SECRET_KEY",
-          "value": "sk_test_51TOQ40DXQislXJ1W9phS5WFoEGLEtTQ7oGdtsWdk8gCBLAUqgQZNjdDA2iG0ywTmyiKlzYK9CgtYDBJ4z5p3qY0Q00tbQWwteg"
-        },
-        {
           "name": "PORT",
           "value": "3000"
         },
@@ -47,10 +43,6 @@
         {
           "name": "REDIS_PORT",
           "value": "6379"
-        },
-        {
-          "name": "STRIPE_WEBHOOK_SECRET",
-          "value": "whsec_placeholder"
         },
         {
           "name": "JWT_REFRESH_EXPIRES_IN",

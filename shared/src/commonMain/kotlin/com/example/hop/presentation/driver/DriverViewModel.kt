@@ -5,19 +5,30 @@ import androidx.lifecycle.viewModelScope
 import com.example.hop.domain.model.CarDetails
 import com.example.hop.domain.model.LicenceStatus
 import com.example.hop.domain.model.PassengerSummary
+import com.example.hop.domain.model.TripStatus
 import com.example.hop.domain.repository.DriverRepository
 import com.example.hop.domain.repository.PostTripRequest
+import com.example.hop.domain.repository.RouteInfo
+import com.example.hop.domain.repository.RoutingRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
 import com.example.hop.presentation.model.toUiModel
 import com.example.hop.presentation.model.toUiModels
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlin.time.Duration.Companion.hours
+import kotlinx.datetime.toLocalDateTime
 
 // ─ Post-trip draft models ─────────────────────────────────────────────────────
 
@@ -27,13 +38,17 @@ import kotlinx.coroutines.launch
  */
 data class ModelADraft(
     val originName: String = "",
+    val originLat: Double = 0.0,
+    val originLng: Double = 0.0,
     val destName: String = "",
+    val destLat: Double = 0.0,
+    val destLng: Double = 0.0,
     /** ISO day abbreviations e.g. "MON", "TUE", "WED", "THU", "FRI" */
     val recurrenceDays: List<String> = emptyList(),
     /** "HH:mm" 24-hour format */
     val departureTime: String = "",
     val seatsTotal: Int = 1,
-    /** Metres — populated from a routing API; 0 until resolved. */
+    /** Metres — populated via Google Maps Directions API when the driver picks both addresses. */
     val distanceMetres: Int = 0,
 )
 
@@ -43,14 +58,18 @@ data class ModelADraft(
  */
 data class ModelBDraft(
     val originName: String = "",
+    val originLat: Double = 0.0,
+    val originLng: Double = 0.0,
     val destName: String = "",
+    val destLat: Double = 0.0,
+    val destLng: Double = 0.0,
     /** "YYYY-MM-DD" */
     val date: String = "",
     /** "HH:mm" 24-hour format */
     val departureTime: String = "",
     val seatsTotal: Int = 1,
     val minThreshold: Int = 1,
-    /** Metres — populated from a routing API; 0 until resolved. */
+    /** Metres — populated via Google Maps Directions API when the driver picks both addresses. */
     val distanceMetres: Int = 0,
 )
 
@@ -67,14 +86,16 @@ data class ActiveTripDetailUiState(
     val passengers: List<PassengerSummary> = emptyList(),
     val error: String? = null,
 ) {
-    /** First booking id — used to seed the RatePassenger flow. */
-    val firstBookingId: String? get() = passengers.firstOrNull()?.bookingId
+    /** All booking ids — used to seed the multi-passenger RatePassenger queue. */
+    val allBookingIds: List<String> get() = passengers.map { it.bookingId }
 }
 
 // ─ State ──────────────────────────────────────────────────────────────────────
 
 data class DriverUiState(
     val isLoading: Boolean = false,
+    /** True only while a user-initiated pull-to-refresh is in flight. */
+    val isRefreshing: Boolean = false,
     val trips: List<TripUiModel> = emptyList(),
     val error: String? = null,
     val licenceStatus: LicenceStatus? = null,
@@ -88,6 +109,14 @@ data class DriverUiState(
     val pendingModelADraft: ModelADraft? = null,
     val pendingModelBDraft: ModelBDraft? = null,
     val isPostingTrip: Boolean = false,
+    /** True while the Google Maps Directions API call is in flight. */
+    val isCalculatingRoute: Boolean = false,
+    /** Driving distance in metres returned by the Directions API. 0 until resolved. */
+    val routeDistanceMetres: Int = 0,
+    val routeOriginLat: Double = 0.0,
+    val routeOriginLng: Double = 0.0,
+    val routeDestLat: Double = 0.0,
+    val routeDestLng: Double = 0.0,
     val activeTripDetail: ActiveTripDetailUiState = ActiveTripDetailUiState(),
 )
 
@@ -95,12 +124,14 @@ data class DriverUiState(
 
 sealed interface DriverEvent {
     data object LoadDriverHome : DriverEvent
+    data object RefreshDriverHome : DriverEvent
     data object RequestPostTrip : DriverEvent
     data object SelectModelA : DriverEvent
     data object SelectModelB : DriverEvent
     data class SubmitModelADraft(val draft: ModelADraft) : DriverEvent
     data class SubmitModelBDraft(val draft: ModelBDraft) : DriverEvent
     data object ConfirmAndPostTrip : DriverEvent
+    data class CalculateRouteDistance(val originName: String, val destName: String) : DriverEvent
     data class PostTripModelA(val request: PostTripRequest) : DriverEvent
     data class PostTripModelB(val request: PostTripRequest) : DriverEvent
     data class CompleteTrip(val tripId: String) : DriverEvent
@@ -109,7 +140,6 @@ sealed interface DriverEvent {
     data class SelectTrip(val tripId: String) : DriverEvent
     data object TapEarningsBanner : DriverEvent
     data class SaveCarDetails(val carDetails: CarDetails) : DriverEvent
-    data class SubmitLicence(val photoUrl: String) : DriverEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -121,12 +151,16 @@ sealed interface DriverEffect {
     data object NavigateToPriceReview : DriverEffect
     data object NavigateToMyTrips : DriverEffect
     data class NavigateToTripDetail(val tripId: String) : DriverEffect
-    data class NavigateToRatePassenger(val bookingId: String) : DriverEffect
+    data class NavigateToRatePassenger(val bookingIds: List<String>) : DriverEffect
+    /** Navigates to the trip-level settlement screen (shows all passengers). */
+    data class NavigateToDriverSettlement(val tripId: String) : DriverEffect
+    data class NavigateToPastTripDetail(val tripId: String) : DriverEffect
     data class NavigateToMarkTripComplete(val tripId: String, val driverNetOere: Int) : DriverEffect
     data class ShowSnackbar(val message: String) : DriverEffect
     data object NavigateToTaxDashboard : DriverEffect
     data object NavigateToLicenceUpload : DriverEffect
     data object NavigateToReviewPending : DriverEffect
+    data object NavigateToHome : DriverEffect
 }
 
 // ─ Error message mapper ───────────────────────────────────────────────────────
@@ -172,6 +206,7 @@ private fun ApiResponse.Error.toUserMessage(context: String = "completing your r
 class DriverViewModel(
     private val tripRepository: TripRepository,
     private val driverRepository: DriverRepository,
+    private val routingRepository: RoutingRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DriverUiState())
@@ -186,12 +221,14 @@ class DriverViewModel(
     fun onEvent(event: DriverEvent) {
         when (event) {
             is DriverEvent.LoadDriverHome -> loadDriverHome()
+            is DriverEvent.RefreshDriverHome -> loadDriverHome(refresh = true)
             is DriverEvent.RequestPostTrip -> requestPostTrip()
             is DriverEvent.SelectModelA -> selectModel(modelA = true)
             is DriverEvent.SelectModelB -> selectModel(modelA = false)
             is DriverEvent.SubmitModelADraft -> submitModelADraft(event.draft)
             is DriverEvent.SubmitModelBDraft -> submitModelBDraft(event.draft)
             is DriverEvent.ConfirmAndPostTrip -> confirmAndPostTrip()
+            is DriverEvent.CalculateRouteDistance -> calculateRouteDistance(event.originName, event.destName)
             is DriverEvent.PostTripModelA -> postTrip(event.request)
             is DriverEvent.PostTripModelB -> postTrip(event.request)
             is DriverEvent.CompleteTrip -> completeTrip(event.tripId)
@@ -200,27 +237,34 @@ class DriverViewModel(
             is DriverEvent.SelectTrip -> selectTrip(event.tripId)
             is DriverEvent.TapEarningsBanner -> tapEarningsBanner()
             is DriverEvent.SaveCarDetails -> saveCarDetails(event.carDetails)
-            is DriverEvent.SubmitLicence -> submitLicence(event.photoUrl)
         }
     }
 
-    private fun loadDriverHome() {
-        if (_state.value.isLoading) return
+    private fun loadDriverHome(refresh: Boolean = false) {
+        if (_state.value.isLoading || _state.value.isRefreshing) return
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
-            when (val response = tripRepository.getMyTripsAsDriver()) {
+            _state.value = if (refresh) {
+                _state.value.copy(isRefreshing = true, error = null)
+            } else {
+                _state.value.copy(isLoading = true, error = null)
+            }
+            val tripsDeferred = async { tripRepository.getMyTripsAsDriver() }
+            val tripsResponse = tripsDeferred.await()
+            when (tripsResponse) {
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        trips = response.data.toUiModels(),
+                        isRefreshing = false,
+                        trips = tripsResponse.data.toUiModels(),
                     )
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = response.toUserMessage("loading your trips"),
+                        isRefreshing = false,
+                        error = tripsResponse.toUserMessage("loading your trips"),
                     )
-                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("loading your trips")))
+                    _effect.send(DriverEffect.ShowSnackbar(tripsResponse.toUserMessage("loading your trips")))
                 }
             }
         }
@@ -248,52 +292,156 @@ class DriverViewModel(
     }
 
     private fun submitModelADraft(draft: ModelADraft) {
+        val enriched = draft.copy(
+            originLat = _state.value.routeOriginLat,
+            originLng = _state.value.routeOriginLng,
+            destLat = _state.value.routeDestLat,
+            destLng = _state.value.routeDestLng,
+            distanceMetres = _state.value.routeDistanceMetres,
+        )
         _state.value = _state.value.copy(
-            pendingModelADraft = draft,
+            pendingModelADraft = enriched,
             pendingModelBDraft = null,
         )
         viewModelScope.launch { _effect.send(DriverEffect.NavigateToPriceReview) }
     }
 
     private fun submitModelBDraft(draft: ModelBDraft) {
+        val enriched = draft.copy(
+            originLat = _state.value.routeOriginLat,
+            originLng = _state.value.routeOriginLng,
+            destLat = _state.value.routeDestLat,
+            destLng = _state.value.routeDestLng,
+            distanceMetres = _state.value.routeDistanceMetres,
+        )
         _state.value = _state.value.copy(
-            pendingModelBDraft = draft,
+            pendingModelBDraft = enriched,
             pendingModelADraft = null,
         )
         viewModelScope.launch { _effect.send(DriverEffect.NavigateToPriceReview) }
+    }
+
+    // Tracks the in-flight route calculation so it can be cancelled when the user
+    // changes an address before the previous request completes.
+    private var routeCalcJob: Job? = null
+
+    private fun calculateRouteDistance(originName: String, destName: String) {
+        if (originName.isBlank() || destName.isBlank()) return
+        // Cancel any in-flight request so we never use a stale route.
+        routeCalcJob?.cancel()
+        routeCalcJob = viewModelScope.launch {
+            // Debounce: wait for the user to stop typing before hitting the network.
+            delay(400)
+            _state.value = _state.value.copy(
+                isCalculatingRoute = true,
+                routeDistanceMetres = 0,
+            )
+            // Single Directions API call returns distance + start/end coordinates.
+            // This replaces the previous pattern of calling the geocoding endpoint
+            // (which required a server-side Google API key) separately.
+            when (val result = routingRepository.getRouteInfo(originName, destName)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(
+                        isCalculatingRoute = false,
+                        routeDistanceMetres = result.data.distanceMetres,
+                        routeOriginLat = result.data.originLat,
+                        routeOriginLng = result.data.originLng,
+                        routeDestLat = result.data.destLat,
+                        routeDestLng = result.data.destLng,
+                    )
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isCalculatingRoute = false)
+                    _effect.send(DriverEffect.ShowSnackbar("Couldn't calculate route. Please check the addresses."))
+                }
+            }
+        }
     }
 
     private fun confirmAndPostTrip() {
         if (_state.value.isPostingTrip) return
         val modelADraft = _state.value.pendingModelADraft
         val modelBDraft = _state.value.pendingModelBDraft
+
+        // Reject the post if routing hasn't fully resolved.
+        // distanceMetres comes from the Directions API; lat/lng come from geocoding.
+        // Both must be valid — if either is missing the backend receives (0,0)→(0,0),
+        // Haversine returns 0 km, and the price floor (1 DKK) is applied.
+        val distanceMetres = modelADraft?.distanceMetres ?: modelBDraft?.distanceMetres ?: 0
+        val originLat = modelADraft?.originLat ?: modelBDraft?.originLat ?: 0.0
+        val originLng = modelADraft?.originLng ?: modelBDraft?.originLng ?: 0.0
+        val destLat = modelADraft?.destLat ?: modelBDraft?.destLat ?: 0.0
+        val destLng = modelADraft?.destLng ?: modelBDraft?.destLng ?: 0.0
+        val coordsReady = originLat != 0.0 && originLng != 0.0 && destLat != 0.0 && destLng != 0.0
+        if (distanceMetres == 0 || !coordsReady) {
+            viewModelScope.launch {
+                _effect.send(DriverEffect.ShowSnackbar("Route not yet calculated. Please wait a moment and try again."))
+            }
+            return
+        }
+
+        // Guard: for Model B, validate the date/time string and ensure the threshold
+        // deadline (departsAt − 6 h) is still in the future. If the deadline is already
+        // past when the trip is created, the BullMQ scheduler silently skips the job and
+        // the trip will never auto-cancel — drivers would be stranded with a ghost trip.
+        if (modelBDraft != null) {
+            val departsAtStr = "${modelBDraft.date}T${modelBDraft.departureTime}:00Z"
+            val departsInstant = try {
+                Instant.parse(departsAtStr)
+            } catch (e: IllegalArgumentException) {
+                viewModelScope.launch {
+                    _effect.send(DriverEffect.ShowSnackbar("Invalid date or time format. Please check your input."))
+                }
+                return
+            }
+            val thresholdInstant = departsInstant - 6.hours
+            if (thresholdInstant <= Clock.System.now()) {
+                viewModelScope.launch {
+                    _effect.send(DriverEffect.ShowSnackbar("Departure time is too soon — please choose a time at least 6 hours from now."))
+                }
+                return
+            }
+        }
+
         val request = when {
-            modelADraft != null -> PostTripRequest(
-                model = "A",
-                originName = modelADraft.originName,
-                originLat = 0.0,
-                originLng = 0.0,
-                destName = modelADraft.destName,
-                destLat = 0.0,
-                destLng = 0.0,
-                distanceMetres = modelADraft.distanceMetres,
-                departsAt = "${modelADraft.departureTime}:00Z",
-                seatsTotal = modelADraft.seatsTotal,
-                recurrenceDays = modelADraft.recurrenceDays,
-            )
-            modelBDraft != null -> PostTripRequest(
-                model = "B",
-                originName = modelBDraft.originName,
-                originLat = 0.0,
-                originLng = 0.0,
-                destName = modelBDraft.destName,
-                destLat = 0.0,
-                destLng = 0.0,
-                distanceMetres = modelBDraft.distanceMetres,
-                departsAt = "${modelBDraft.date}T${modelBDraft.departureTime}:00Z",
-                seatsTotal = modelBDraft.seatsTotal,
-                minThreshold = modelBDraft.minThreshold,
-            )
+            modelADraft != null -> {
+                // Use today's local date + driver's chosen time as the anchor datetime.
+                // The backend generates individual trip instances from this anchor using recurringDays.
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                PostTripRequest(
+                    model = "A",
+                    originName = modelADraft.originName,
+                    originLat = modelADraft.originLat,
+                    originLng = modelADraft.originLng,
+                    destName = modelADraft.destName,
+                    destLat = modelADraft.destLat,
+                    destLng = modelADraft.destLng,
+                    distanceMetres = modelADraft.distanceMetres,
+                    departsAt = "${today}T${modelADraft.departureTime}:00Z",
+                    seatsTotal = modelADraft.seatsTotal,
+                    recurrenceDays = modelADraft.recurrenceDays,
+                )
+            }
+            modelBDraft != null -> {
+                val departsAt = "${modelBDraft.date}T${modelBDraft.departureTime}:00Z"
+                // Backend requires thresholdDeadline < departureAt for Model B.
+                // Default: 6 hours before departure.
+                val thresholdDeadline = (Instant.parse(departsAt) - 6.hours).toString()
+                PostTripRequest(
+                    model = "B",
+                    originName = modelBDraft.originName,
+                    originLat = modelBDraft.originLat,
+                    originLng = modelBDraft.originLng,
+                    destName = modelBDraft.destName,
+                    destLat = modelBDraft.destLat,
+                    destLng = modelBDraft.destLng,
+                    distanceMetres = modelBDraft.distanceMetres,
+                    departsAt = departsAt,
+                    seatsTotal = modelBDraft.seatsTotal,
+                    minThreshold = modelBDraft.minThreshold,
+                    thresholdDeadline = thresholdDeadline,
+                )
+            }
             else -> return
         }
         viewModelScope.launch {
@@ -341,15 +489,15 @@ class DriverViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = tripRepository.completeTrip(tripId)) {
                 is ApiResponse.Success -> {
-                    val firstBookingId = _state.value.activeTripDetail.firstBookingId
                     _state.value = _state.value.copy(
                         isLoading = false,
                         trips = _state.value.trips.filterNot { it.id == tripId },
                     )
-                    if (firstBookingId != null) {
-                        _effect.send(DriverEffect.NavigateToRatePassenger(firstBookingId))
+                    val allBookingIds = _state.value.activeTripDetail.allBookingIds
+                    if (allBookingIds.isNotEmpty()) {
+                        _effect.send(DriverEffect.NavigateToRatePassenger(allBookingIds))
                     } else {
-                        _effect.send(DriverEffect.NavigateToMyTrips)
+                        _effect.send(DriverEffect.NavigateToDriverSettlement(tripId))
                     }
                 }
                 is ApiResponse.Error -> {
@@ -419,7 +567,15 @@ class DriverViewModel(
         if (isNavigating) return
         isNavigating = true
         viewModelScope.launch {
-            _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+            val trip = _state.value.trips.firstOrNull { it.id == tripId }
+            when {
+                trip?.awaitingPaymentBookingId != null ->
+                    _effect.send(DriverEffect.NavigateToDriverSettlement(tripId))
+                trip?.status == TripStatus.COMPLETED || trip?.status == TripStatus.CANCELLED ->
+                    _effect.send(DriverEffect.NavigateToPastTripDetail(tripId))
+                else ->
+                    _effect.send(DriverEffect.NavigateToTripDetail(tripId))
+            }
             isNavigating = false
         }
     }
@@ -431,25 +587,17 @@ class DriverViewModel(
     }
 
     private fun saveCarDetails(carDetails: CarDetails) {
-        _state.value = _state.value.copy(onboardingCarDetails = carDetails)
-        viewModelScope.launch {
-            _effect.send(DriverEffect.NavigateToLicenceUpload)
-        }
-    }
-
-    private fun submitLicence(photoUrl: String) {
-        val carDetails = _state.value.onboardingCarDetails ?: return
         if (_state.value.isSubmittingOnboarding) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isSubmittingOnboarding = true)
-            when (val response = driverRepository.submitLicence(carDetails, photoUrl)) {
+            when (val response = driverRepository.submitCarDetails(carDetails)) {
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(isSubmittingOnboarding = false)
                     _effect.send(DriverEffect.NavigateToReviewPending)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isSubmittingOnboarding = false)
-                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("submitting your application")))
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("submitting your car details")))
                 }
             }
         }

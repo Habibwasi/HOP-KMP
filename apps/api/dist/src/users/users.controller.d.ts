@@ -4,6 +4,7 @@ import { RatingsService } from '../ratings/ratings.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateCarDetailsDto } from './dto/create-car-details.dto';
 declare class ReportDto {
     reason: string;
 }
@@ -31,6 +32,7 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     getMe(req: any): Promise<{
@@ -46,7 +48,13 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
+    }>;
+    getMyStats(req: any): Promise<{
+        averageRating: number | null;
+        totalRatings: number;
+        completedTrips: number;
     }>;
     updateMe(req: any, dto: UpdateUserDto): Promise<{
         id: string;
@@ -61,6 +69,7 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     savePushToken(req: any, dto: PushTokenDto): Promise<void>;
@@ -77,6 +86,7 @@ export declare class UsersController {
         banExpiresAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        mobilepayNumber: string | null;
         isAdmin: boolean;
     }>;
     getUserReviews(id: string): Promise<{
@@ -87,6 +97,18 @@ export declare class UsersController {
         roleRated: string;
     }[]>;
     getCarDetails(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        make: string;
+        model: string;
+        year: number;
+        licensePlate: string;
+        colour: string;
+        seatsAvailable: number;
+    }>;
+    saveMyCarDetails(req: any, dto: CreateCarDetailsDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

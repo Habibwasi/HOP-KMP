@@ -76,6 +76,14 @@ fun AuthEffectHandler(
                         popUpTo(0) { inclusive = true }
                     }
                 }
+
+                is AuthEffect.NavigateToDriverSettlement -> {
+                    navController.navigate(HopRoutes.DriverSettlementByBooking(bookingId = effect.bookingId))
+                }
+
+                is AuthEffect.NavigateToPassengerSettlement -> {
+                    navController.navigate(HopRoutes.PassengerSettlement(bookingId = effect.bookingId))
+                }
             }
         }
     }

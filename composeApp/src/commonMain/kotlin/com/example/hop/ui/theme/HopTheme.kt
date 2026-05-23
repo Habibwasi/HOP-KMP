@@ -28,7 +28,7 @@ private val HopColorScheme = darkColorScheme(
 fun HopTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = HopColorScheme,
-        typography  = HopTypography,
+        typography  = hopTypography(),
         content     = content,
     )
 }

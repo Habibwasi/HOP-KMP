@@ -1,159 +1,158 @@
 import SwiftUI
 import Shared
 
-// ── ON-02 Sign Up ─────────────────────────────────────────────────────────────
+// MARK: - ON-02 Sign Up ──────────────────────────────────────────────────────
+// Mirrors `SignUpScreen.kt`. Light theme, 5-field form (firstName, lastName,
+// email, phone, password), terms-accept checkbox with annotated link text,
+// primary "Create account" button, ghost MitID button.
 
 struct SignUpView: View {
+    var onNavigateToHome:  () -> Void
+    var onNavigateToLogin: () -> Void
 
     @StateObject private var wrapper = AuthViewModelWrapper()
 
-    var onNavigateToHome: () -> Void
-    var onNavigateToLogin: () -> Void
-
-    // ── Local form state ──────────────────────────────────────────────────────
-    @State private var fullName    = ""
-    @State private var email       = ""
-    @State private var phone       = ""
-    @State private var password    = ""
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var email = ""
+    @State private var phone = ""
+    @State private var password = ""
     @State private var showPassword = false
     @State private var termsAccepted = false
+    @State private var toast: String? = nil
 
-    // ── Toast ─────────────────────────────────────────────────────────────────
-    @State private var toastMessage: String? = nil
-
-    // ── Derived validation ────────────────────────────────────────────────────
-    private var fullNameValid:  Bool { !fullName.trimmingCharacters(in: .whitespaces).isEmpty }
-    private var emailValid:     Bool { email.contains("@") && email.split(separator: "@").last?.contains(".") == true }
-    private var phoneValid:     Bool { phone.trimmingCharacters(in: .whitespaces).count >= 8 }
-    private var passwordValid:  Bool { password.count >= 8 }
+    private var firstNameValid: Bool { firstName.trimmingCharacters(in: .whitespaces).count >= 2 }
+    private var lastNameValid:  Bool { lastName.trimmingCharacters(in: .whitespaces).count >= 2 }
+    private var emailValid: Bool {
+        email.contains("@") && (email.split(separator: "@").last?.contains(".") ?? false)
+    }
+    private var phoneValid: Bool {
+        let trimmed = phone.trimmingCharacters(in: .whitespaces)
+        let pattern = #"^\+[1-9][\d\s\-]{6,14}$"#
+        return trimmed.range(of: pattern, options: .regularExpression) != nil
+    }
+    private var passwordValid: Bool { password.count >= 8 }
     private var canSubmit: Bool {
-        fullNameValid && emailValid && phoneValid && passwordValid && termsAccepted && !wrapper.state.isLoading
+        firstNameValid && lastNameValid && emailValid && phoneValid && passwordValid && termsAccepted && !wrapper.state.isLoading
     }
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            Color.hopBackground.ignoresSafeArea()
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    // ── Header ─────────────────────────────────────────────────
                     Spacer().frame(height: HopSpacing.xl)
 
                     Text("Create your account")
-                        .font(HopFont.heading)
-                        .foregroundColor(Color.hopTextPrimary)
+                        .font(HopFont.headlineSmall(weight: .bold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
 
                     Spacer().frame(height: HopSpacing.xs)
 
-                    Text("Start your Hop journey")
-                        .font(HopFont.body)
-                        .foregroundColor(Color.hopTextSecondary)
+                    Text("Start your Ridly journey")
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopAuthTextSecondary)
 
                     Spacer().frame(height: HopSpacing.xl)
 
-                    // ── Full name ──────────────────────────────────────────────
-                    HopTextField(
-                        label: "Full name",
-                        placeholder: "Jane Doe",
-                        text: $fullName,
-                        keyboardType: .default,
-                        isEnabled: !wrapper.state.isLoading
-                    )
+                    HopTextField(label: "First name", placeholder: "Jane",
+                                 text: $firstName, isEnabled: !wrapper.state.isLoading,
+                                 lightSurface: true)
+                    Spacer().frame(height: HopSpacing.md)
+
+                    HopTextField(label: "Last name", placeholder: "Doe",
+                                 text: $lastName, isEnabled: !wrapper.state.isLoading,
+                                 lightSurface: true)
+                    Spacer().frame(height: HopSpacing.md)
+
+                    HopTextField(label: "Email address", placeholder: "jane@example.com",
+                                 text: $email, keyboardType: .emailAddress,
+                                 isEnabled: !wrapper.state.isLoading, lightSurface: true)
+                    Spacer().frame(height: HopSpacing.md)
+
+                    HopTextField(label: "Phone number", placeholder: "+45 20 12 34 56",
+                                 text: $phone, keyboardType: .phonePad,
+                                 isEnabled: !wrapper.state.isLoading, lightSurface: true)
+                    Spacer().frame(height: HopSpacing.md)
+
+                    HopTextField(label: "Password", placeholder: "••••••••",
+                                 text: $password, isSecure: !showPassword,
+                                 isEnabled: !wrapper.state.isLoading,
+                                 trailingLabel: showPassword ? "Hide" : "Show",
+                                 trailingAction: { showPassword.toggle() },
+                                 submitLabel: .done, lightSurface: true)
 
                     Spacer().frame(height: HopSpacing.md)
 
-                    // ── Email ──────────────────────────────────────────────────
-                    HopTextField(
-                        label: "Email address",
-                        placeholder: "jane@example.com",
-                        text: $email,
-                        keyboardType: .emailAddress,
-                        isEnabled: !wrapper.state.isLoading
-                    )
+                    // Terms checkbox
+                    HStack(alignment: .top, spacing: HopSpacing.sm) {
+                        Button(action: { termsAccepted.toggle() }) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(termsAccepted ? Color.hopPrimaryLime : Color.hopAuthInputBorder, lineWidth: 1.5)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(termsAccepted ? Color.hopPrimaryLime : Color.clear)
+                                    )
+                                    .frame(width: 20, height: 20)
+                                if termsAccepted {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(Color.hopAuthTextPrimary)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
 
-                    Spacer().frame(height: HopSpacing.md)
-
-                    // ── Phone ──────────────────────────────────────────────────
-                    HopTextField(
-                        label: "Phone number",
-                        placeholder: "+45 20 12 34 56",
-                        text: $phone,
-                        keyboardType: .phonePad,
-                        isEnabled: !wrapper.state.isLoading
-                    )
-
-                    Spacer().frame(height: HopSpacing.md)
-
-                    // ── Password ───────────────────────────────────────────────
-                    HopTextField(
-                        label: "Password",
-                        placeholder: "••••••••",
-                        text: $password,
-                        isSecure: !showPassword,
-                        isEnabled: !wrapper.state.isLoading,
-                        trailingLabel: showPassword ? "Hide" : "Show",
-                        trailingAction: { showPassword.toggle() },
-                        submitLabel: .done
-                    )
-
-                    // Helper text
-                    Text("At least 8 characters")
-                        .font(HopFont.caption)
-                        .foregroundColor(
-                            !password.isEmpty && !passwordValid ? Color.hopError : Color.hopTextSecondary
-                        )
-                        .padding(.top, HopSpacing.xxs)
-                        .padding(.leading, HopSpacing.xs)
+                        termsLabel
+                    }
 
                     Spacer().frame(height: HopSpacing.lg)
 
-                    // ── Terms checkbox ─────────────────────────────────────────
-                    TermsCheckboxRow(
-                        checked: $termsAccepted,
-                        isEnabled: !wrapper.state.isLoading
+                    HopButton(
+                        text: "Create account",
+                        variant: .primary,
+                        isLoading: wrapper.state.isLoading,
+                        isEnabled: canSubmit,
+                        action: {
+                            wrapper.register(
+                                firstName: firstName.trimmingCharacters(in: .whitespaces),
+                                lastName:  lastName.trimmingCharacters(in: .whitespaces),
+                                email:     email.trimmingCharacters(in: .whitespaces),
+                                phone:     phone.trimmingCharacters(in: .whitespaces),
+                                password:  password
+                            )
+                        }
+                    )
+
+                    Spacer().frame(height: HopSpacing.md)
+
+                    HopButton(
+                        text: "Continue with MitID",
+                        variant: .ghost,
+                        isEnabled: false,
+                        lightSurface: true,
+                        action: {}
+                    )
+                    .overlay(
+                        Rectangle()
+                            .fill(Color.clear)
+                            .contentShape(Rectangle())
+                            .onTapGesture { showToast("Coming soon") }
                     )
 
                     Spacer().frame(height: HopSpacing.xl)
 
-                    // ── Continue ───────────────────────────────────────────────
-                    HopPrimaryButton(
-                        title: "Continue",
-                        isLoading: wrapper.state.isLoading,
-                        isEnabled: canSubmit
-                    ) {
-                        let parts = fullName.trimmingCharacters(in: .whitespaces)
-                            .split(separator: " ", maxSplits: 1)
-                        let firstName = parts.first.map(String.init) ?? fullName
-                        let lastName  = parts.count > 1 ? String(parts[1]) : ""
-                        wrapper.register(
-                            firstName: firstName,
-                            lastName: lastName,
-                            email: email.trimmingCharacters(in: .whitespaces),
-                            phone: phone.trimmingCharacters(in: .whitespaces).isEmpty ? nil
-                                   : phone.trimmingCharacters(in: .whitespaces),
-                            password: password
-                        )
-                    }
-
-                    Spacer().frame(height: HopSpacing.md)
-
-                    // ── Continue with MitID (disabled) ─────────────────────────
-                    HopGhostButton(title: "Continue with MitID", isEnabled: false) {
-                        toastMessage = "Coming soon"
-                    }
-                    .onTapGesture { toastMessage = "Coming soon" }
-
-                    Spacer().frame(height: HopSpacing.xl)
-
-                    // ── Footer link ────────────────────────────────────────────
-                    HStack {
+                    HStack(spacing: 4) {
                         Spacer()
-                        Text("Already have an account? ")
-                            .font(HopFont.body)
-                            .foregroundColor(Color.hopTextSecondary)
+                        Text("Already have an account?")
+                            .font(HopFont.bodyMedium())
+                            .foregroundColor(Color.hopAuthTextSecondary)
                         Button(action: onNavigateToLogin) {
                             Text("Log in")
-                                .font(HopFont.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(Color.hopPrimaryLime)
+                                .font(HopFont.bodyMedium(weight: .semibold))
+                                .foregroundColor(Color.hopAuthAccent)
                                 .underline()
                         }
                         Spacer()
@@ -164,19 +163,12 @@ struct SignUpView: View {
                 .padding(.horizontal, HopSpacing.md)
             }
 
-            // ── Toast overlay ──────────────────────────────────────────────────
-            if let msg = toastMessage {
+            if let msg = toast {
                 HopToast(message: msg)
                     .padding(.bottom, HopSpacing.xl)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                            withAnimation { toastMessage = nil }
-                        }
-                    }
             }
         }
-        .background(Color.hopSurface.ignoresSafeArea())
         .task { wrapper.startObserving() }
         .task {
             for await effect in wrapper.viewModel.effect {
@@ -185,79 +177,43 @@ struct SignUpView: View {
         }
     }
 
+    @ViewBuilder
+    private var termsLabel: some View {
+        // Annotated text — "By creating an account, you agree to our Terms of Service and Privacy Policy."
+        (Text("By creating an account, you agree to our ")
+            .foregroundColor(Color.hopAuthTextSecondary)
+         + Text("Terms of Service")
+            .foregroundColor(Color.hopAuthAccent).underline()
+         + Text(" and ")
+            .foregroundColor(Color.hopAuthTextSecondary)
+         + Text("Privacy Policy")
+            .foregroundColor(Color.hopAuthAccent).underline()
+         + Text(".")
+            .foregroundColor(Color.hopAuthTextSecondary))
+            .font(HopFont.bodySmall())
+    }
+
     @MainActor
     private func handleEffect(_ effect: AuthEffect) async {
         switch effect {
         case is AuthEffectNavigateToHome:
             onNavigateToHome()
         case let snack as AuthEffectShowSnackbar:
-            withAnimation { toastMessage = snack.message }
-            wrapper.clearError()
-        case is AuthEffectSessionExpired:
-            // Should not occur during fresh sign-up, but guard anyway.
-            withAnimation { toastMessage = "Session expired. Please try again." }
+            showToast(snack.message)
             wrapper.clearError()
         default:
             break
         }
     }
-}
 
-// MARK: - TermsCheckboxRow
-
-private struct TermsCheckboxRow: View {
-    @Binding var checked: Bool
-    var isEnabled: Bool = true
-
-    var body: some View {
-        Button {
-            if isEnabled { checked.toggle() }
-        } label: {
-            HStack(alignment: .top, spacing: HopSpacing.sm) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(checked ? Color.hopPrimaryLime : Color.hopTextSecondary, lineWidth: 1.5)
-                        .frame(width: 20, height: 20)
-                    if checked {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(Color.hopPrimaryLime)
-                    }
-                }
-                .padding(.top, 1)
-
-                Text("I agree to the ")
-                    .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
-                + Text("Terms of Service")
-                    .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopPrimaryLime)
-                + Text(" and ")
-                    .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopTextSecondary)
-                + Text("Privacy Policy")
-                    .font(HopFont.bodyMedium())
-                    .foregroundColor(Color.hopPrimaryLime)
-            }
+    private func showToast(_ message: String) {
+        withAnimation { toast = message }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation { toast = nil }
         }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
     }
 }
 
-// ── Previews ──────────────────────────────────────────────────────────────────
-
-#Preview("Default") {
-    SignUpView(
-        onNavigateToHome: {},
-        onNavigateToLogin: {}
-    )
-}
-
-#Preview("Loading") {
-    // Shown by injecting state — in real app wrapper drives this
-    SignUpView(
-        onNavigateToHome: {},
-        onNavigateToLogin: {}
-    )
+#Preview {
+    SignUpView(onNavigateToHome: {}, onNavigateToLogin: {})
 }

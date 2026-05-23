@@ -25,6 +25,9 @@ data class OwnProfileUiState(
     val isEditingName: Boolean = false,
     val nameDraft: String = "",
     val isSavingName: Boolean = false,
+    val isEditingMobilepay: Boolean = false,
+    val mobilepayDraft: String = "",
+    val isSavingMobilepay: Boolean = false,
     val error: String? = null,
 )
 
@@ -38,6 +41,10 @@ sealed interface OwnProfileEvent {
     data object CancelEditName : OwnProfileEvent
     data object AddPhoneTapped : OwnProfileEvent
     data object EditCarTapped : OwnProfileEvent
+    data object StartEditMobilepay : OwnProfileEvent
+    data class MobilepayDraftChanged(val number: String) : OwnProfileEvent
+    data object SaveMobilepay : OwnProfileEvent
+    data object CancelEditMobilepay : OwnProfileEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -77,6 +84,16 @@ class OwnProfileViewModel(
             is OwnProfileEvent.EditCarTapped -> viewModelScope.launch {
                 _effect.send(OwnProfileEffect.NavigateToEditCar)
             }
+            is OwnProfileEvent.StartEditMobilepay -> _state.value = _state.value.copy(
+                isEditingMobilepay = true,
+                mobilepayDraft = _state.value.user?.mobilepayNumber.orEmpty(),
+            )
+            is OwnProfileEvent.MobilepayDraftChanged -> _state.value = _state.value.copy(mobilepayDraft = event.number)
+            is OwnProfileEvent.SaveMobilepay -> saveMobilepay()
+            is OwnProfileEvent.CancelEditMobilepay -> _state.value = _state.value.copy(
+                isEditingMobilepay = false,
+                mobilepayDraft = _state.value.user?.mobilepayNumber.orEmpty(),
+            )
         }
     }
 
@@ -145,6 +162,35 @@ class OwnProfileViewModel(
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isSavingName = false)
+                    _effect.send(OwnProfileEffect.ShowSnackbar(response.message))
+                }
+            }
+        }
+    }
+
+    private fun saveMobilepay() {
+        if (_state.value.isSavingMobilepay) return
+        val draft = _state.value.mobilepayDraft.trim()
+        if (!draft.matches(Regex("""^\d{8}$"""))) {
+            viewModelScope.launch {
+                _effect.send(OwnProfileEffect.ShowSnackbar("MobilePay number must be exactly 8 digits"))
+            }
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isSavingMobilepay = true)
+            when (val response = userRepository.updateMobilepayNumber(draft)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(
+                        isSavingMobilepay = false,
+                        isEditingMobilepay = false,
+                        user = response.data,
+                        mobilepayDraft = response.data.mobilepayNumber.orEmpty(),
+                    )
+                    _effect.send(OwnProfileEffect.ShowSnackbar("MobilePay number updated"))
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isSavingMobilepay = false)
                     _effect.send(OwnProfileEffect.ShowSnackbar(response.message))
                 }
             }

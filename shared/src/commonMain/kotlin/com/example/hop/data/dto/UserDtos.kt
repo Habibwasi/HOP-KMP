@@ -53,6 +53,13 @@ data class UpdateNameRequest(
     val fullName: String,
 )
 
+// ── Update MobilePay ─────────────────────────────────────────────────────────
+
+@Serializable
+data class UpdateMobilepayRequest(
+    val mobilepayNumber: String,
+)
+
 // ── Report user ───────────────────────────────────────────────────────────────
 
 @Serializable

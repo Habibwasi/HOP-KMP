@@ -27,6 +27,8 @@ kotlin {
             // Firebase (Android only — no KMP artifact)
             implementation(libs.firebase.messaging)
             implementation(libs.sentry.android)
+            // Google Places (Android only — still used for nothing now; kept for future)
+            implementation(libs.google.places)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -39,6 +41,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
+            // Google Maps Compose — composeApp only targets Android so safe in commonMain
+            implementation(libs.maps.compose)
+            implementation(libs.play.services.maps)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.material.icons.extended)
             implementation(projects.shared)
@@ -65,6 +71,9 @@ android {
             "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY",
             "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+        buildConfigField("String", "MAPS_API_KEY",
+            "\"${project.findProperty("MAPS_API_KEY") ?: ""}\"")
+        manifestPlaceholders["MAPS_API_KEY"] = project.findProperty("MAPS_API_KEY") ?: ""
     }
     buildFeatures {
         buildConfig = true

@@ -1,136 +1,133 @@
 import SwiftUI
 import Shared
 
-// MARK: — PA-06 Booking Success ────────────────────────────────────────────────
-//
-// Shown after MobilePay confirms payment.
-// Displays booking ID, confirmation animation, CTAs: View My Trips / Back to Home.
-
+/// PA-06 — Booking Success. Mirrors composeApp `BookingSuccessScreen.kt`.
+/// Animated checkmark + Model A/B headline + trip summary + actions.
 struct BookingSuccessView: View {
-
     let bookingId: String
-    var tripModel: TripModel = .a   // .b → "Booking Pending" amber state
+    let onViewMyTrips: () -> Void
+    let onBackToHome: () -> Void
 
-    var onViewMyTrips: () -> Void   // → PA-07 My Trips
-    var onGoHome:      () -> Void   // → PA-01 Home
+    @StateObject private var wrapper = BookingSuccessViewModelWrapper()
 
-    @State private var circleScale:   CGFloat = 0.0
-    @State private var checkScale:    CGFloat = 0.0
-    @State private var contentOffset: CGFloat = 30
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .center, spacing: HopSpacing.lg) {
+                    Spacer().frame(height: HopSpacing.xxl)
+                    AnimatedCheckmark(color: headlineColor)
 
-    private var isModelB: Bool { tripModel == .b }
-    private var accentColor: Color { isModelB ? Color.hopWarning : Color.hopSuccess }
-    private var headline: String { isModelB ? "Booking Pending" : "Booking Confirmed!" }
-    private var subtitle: String {
-        isModelB
-            ? "Your seat is reserved. Payment will be charged when the trip is confirmed."
-            : "Your seat is reserved. Have a great trip!"
+                    Text(headline)
+                        .font(HopFont.headlineMedium(weight: .bold))
+                        .foregroundColor(headlineColor)
+                        .multilineTextAlignment(.center)
+
+                    Text(subhead)
+                        .font(HopFont.bodyLarge())
+                        .foregroundColor(Color.hopAuthTextSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, HopSpacing.lg)
+
+                    if !wrapper.state.isLoading {
+                        TripSummaryBox(
+                            originName: wrapper.state.originName,
+                            destName: wrapper.state.destName,
+                            departsAt: wrapper.state.departsAt,
+                            driverName: wrapper.state.driverName
+                        )
+                        .padding(.horizontal, HopSpacing.md)
+                    }
+                    Spacer().frame(height: HopSpacing.lg)
+                }
+                .frame(maxWidth: .infinity)
+            }
+
+            VStack(spacing: HopSpacing.sm) {
+                HopButton(text: "View My Trips", variant: .primary, action: onViewMyTrips)
+                HopButton(text: "Back to Home", variant: .ghost, lightSurface: true, action: onBackToHome)
+            }
+            .padding(HopSpacing.md)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.hopBackground.ignoresSafeArea())
+        .onAppear {
+            wrapper.startObserving()
+            wrapper.load(bookingId: bookingId)
+        }
     }
+
+    private var isModelB: Bool { wrapper.state.tripModel == .b }
+    private var headline: String { isModelB ? "Booking Pending" : "Booking Confirmed!" }
+    private var subhead: String {
+        isModelB
+            ? "We'll confirm your seat once enough passengers join. You'll be notified."
+            : "Your seat is reserved. We've sent the details to your inbox."
+    }
+    private var headlineColor: Color { isModelB ? Color.hopWarning : Color.hopSuccess }
+}
+
+private struct AnimatedCheckmark: View {
+    let color: Color
+    @State private var scale: CGFloat = 0
+    @State private var strokeProgress: CGFloat = 0
 
     var body: some View {
         ZStack {
-            Color.hopSurface.ignoresSafeArea(.all, edges: .top)
-
-            VStack(spacing: HopSpacing.xl) {
-                Spacer()
-
-                // ── Success animation ─────────────────────────────────────────
-                ZStack {
-                    Circle()
-                        .fill(accentColor.opacity(0.12))
-                        .frame(width: 140, height: 140)
-                        .scaleEffect(circleScale)
-
-                    Circle()
-                        .fill(accentColor.opacity(0.2))
-                        .frame(width: 110, height: 110)
-                        .scaleEffect(circleScale)
-
-                    Image(systemName: isModelB ? "clock.circle.fill" : "checkmark.circle.fill")
-                        .font(.system(size: 68, weight: .regular))
-                        .foregroundColor(accentColor)
-                        .scaleEffect(checkScale)
-                }
-
-                // ── Text block ────────────────────────────────────────────────
-                VStack(spacing: HopSpacing.sm) {
-                    Text(headline)
-                        .font(HopFont.headlineLarge(weight: .bold))
-                        .foregroundColor(accentColor)
-                        .multilineTextAlignment(.center)
-
-                    Text(subtitle)
-                        .font(HopFont.bodyMedium())
-                        .foregroundColor(Color.hopTextSecondary)
-                        .multilineTextAlignment(.center)
-
-                    // ── Booking ID pill ───────────────────────────────────────
-                    HStack(spacing: HopSpacing.xs) {
-                        Image(systemName: "ticket")
-                            .font(.system(size: 13))
-                            .foregroundColor(Color.hopTextSecondary)
-                        Text("Booking #\(bookingId.prefix(8).uppercased())")
-                            .font(HopFont.bodySmall())
-                            .foregroundColor(Color.hopTextSecondary)
-                    }
-                    .padding(.horizontal, HopSpacing.sm)
-                    .padding(.vertical, HopSpacing.xxs)
-                    .background(Color.hopSurfaceElevated)
-                    .clipShape(Capsule())
-                    .padding(.top, HopSpacing.xs)
-                }
-                .offset(y: contentOffset)
-
-                Spacer()
-
-                // ── CTAs ──────────────────────────────────────────────────────
-                VStack(spacing: HopSpacing.sm) {
-                    HopPrimaryButton(title: "View My Trips", action: onViewMyTrips)
-                    HopButton(text: "Back to Home", variant: .ghost, action: onGoHome)
-                }
-                .padding(.horizontal, HopSpacing.md)
-                .padding(.bottom, HopSpacing.xl)
-                .offset(y: contentOffset)
+            Circle()
+                .fill(color.opacity(0.15))
+                .frame(width: 96, height: 96)
+                .scaleEffect(scale)
+            Path { p in
+                p.move(to: CGPoint(x: 28, y: 50))
+                p.addLine(to: CGPoint(x: 44, y: 66))
+                p.addLine(to: CGPoint(x: 70, y: 36))
             }
+            .trim(from: 0, to: strokeProgress)
+            .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+            .frame(width: 96, height: 96)
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .frame(width: 96, height: 96)
         .onAppear {
-            // Staggered entrance animation
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) {
-                circleScale = 1.0
-            }
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.65).delay(0.3)) {
-                checkScale = 1.0
-            }
-            withAnimation(.easeOut(duration: 0.4).delay(0.35)) {
-                contentOffset = 0
+            withAnimation(.easeOut(duration: 0.35)) { scale = 1.1 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                withAnimation(.easeInOut(duration: 0.15)) { scale = 1.0 }
+                withAnimation(.easeInOut(duration: 0.4)) { strokeProgress = 1.0 }
             }
         }
     }
 }
 
-// MARK: — Previews
+private struct TripSummaryBox: View {
+    let originName: String
+    let destName: String
+    let departsAt: String
+    let driverName: String
 
-#Preview("PA-06 Booking Success") {
-    NavigationStack {
-        BookingSuccessView(
-            bookingId:   "booking-abc123def456",
-            onViewMyTrips: {},
-            onGoHome:      {}
-        )
+    var body: some View {
+        VStack(alignment: .leading, spacing: HopSpacing.sm) {
+            HStack {
+                Circle().fill(Color.hopPrimaryLime).frame(width: 10, height: 10)
+                Text(originName)
+                    .font(HopFont.bodyMedium(weight: .medium))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+            }
+            HStack {
+                Circle().fill(Color.hopAuthTextPrimary).frame(width: 10, height: 10)
+                Text(destName)
+                    .font(HopFont.bodyMedium(weight: .medium))
+                    .foregroundColor(Color.hopAuthTextPrimary)
+            }
+            Divider()
+            HStack {
+                Image(systemName: "calendar").font(.system(size: 12)).foregroundColor(Color.hopAuthTextSecondary)
+                Text(departsAt).font(HopFont.bodySmall()).foregroundColor(Color.hopAuthTextSecondary)
+                Spacer()
+                Image(systemName: "person.fill").font(.system(size: 12)).foregroundColor(Color.hopAuthTextSecondary)
+                Text(driverName).font(HopFont.bodySmall()).foregroundColor(Color.hopAuthTextSecondary)
+            }
+        }
+        .padding(HopSpacing.md)
+        .background(Color.hopCardSurfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
-    .preferredColorScheme(.dark)
-}
-
-#Preview("PA-06 Booking Success — Short ID") {
-    NavigationStack {
-        BookingSuccessView(
-            bookingId:   "bk-001",
-            onViewMyTrips: {},
-            onGoHome:      {}
-        )
-    }
-    .preferredColorScheme(.dark)
 }

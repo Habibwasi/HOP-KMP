@@ -5,13 +5,18 @@ import com.example.hop.presentation.booking.BookingViewModel
 import com.example.hop.presentation.profile.OtherProfileViewModel
 import com.example.hop.presentation.profile.OwnProfileViewModel
 import com.example.hop.presentation.driver.DriverViewModel
+import com.example.hop.presentation.home.DriverAggregatesViewModel
+import com.example.hop.presentation.home.HomeStatsViewModel
+import com.example.hop.presentation.home.SavedPlacesViewModel
 import com.example.hop.presentation.bookingsuccess.BookingSuccessViewModel
 import com.example.hop.presentation.cancellationconfirmation.CancellationConfirmationViewModel
 import com.example.hop.presentation.mytrips.MyTripsPassengerViewModel
 import com.example.hop.presentation.notifications.NotificationsViewModel
+import com.example.hop.presentation.settlement.SettlementViewModel
 import com.example.hop.presentation.settings.SettingsViewModel
 import com.example.hop.presentation.search.SearchViewModel
 import com.example.hop.presentation.chat.ChatViewModel
+import com.example.hop.presentation.chatlist.ChatListViewModel
 import com.example.hop.presentation.tax.TaxViewModel
 import com.example.hop.presentation.trip.TripViewModel
 import com.example.hop.presentation.tripdetail.TripDetailViewModel
@@ -34,8 +39,13 @@ val presentationModule = module {
     viewModelOf(::TripDetailActiveViewModel)
     viewModelOf(::TaxViewModel)
     viewModelOf(::ChatViewModel)
+    viewModelOf(::ChatListViewModel)
     viewModelOf(::OwnProfileViewModel)
     viewModelOf(::OtherProfileViewModel)
     viewModelOf(::NotificationsViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::SavedPlacesViewModel)
+    viewModelOf(::HomeStatsViewModel)
+    viewModelOf(::DriverAggregatesViewModel)
+    viewModelOf(::SettlementViewModel)
 }

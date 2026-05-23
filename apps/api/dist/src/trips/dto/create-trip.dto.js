@@ -20,6 +20,7 @@ class CreateTripDto {
     destLat;
     destLng;
     destAddress;
+    distanceMetres;
     departureAt;
     seats;
     recurringDays;
@@ -56,6 +57,12 @@ __decorate([
     __metadata("design:type", String)
 ], CreateTripDto.prototype, "destAddress", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateTripDto.prototype, "distanceMetres", void 0);
+__decorate([
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", String)
 ], CreateTripDto.prototype, "departureAt", void 0);
@@ -69,7 +76,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayMinSize)(1),
-    (0, class_validator_1.IsInt)({ each: true }),
+    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], CreateTripDto.prototype, "recurringDays", void 0);
 __decorate([

@@ -17,23 +17,10 @@ class PricingEngineTest {
     }
 
     @Test
-    fun aarhusCopenhagen_driverNetPerSeat() {
+    fun aarhusCopenhagen_pricePerSeat() {
+        // floor(304000 * 0.228) = 69312, / 4 seats = 17328
         val result = PricingEngine.calculate(AARHUS_CPH_METRES, SEATS)
-        assertEquals(17_328, result.driverNetPerSeatOere)
-    }
-
-    @Test
-    fun aarhusCopenhagen_passengerPaysPerSeat() {
-        // (17328 / 0.85).toInt() == 20385
-        val result = PricingEngine.calculate(AARHUS_CPH_METRES, SEATS)
-        assertEquals(20_385, result.passengerPaysPerSeatOere)
-    }
-
-    @Test
-    fun aarhusCopenhagen_platformFee() {
-        // 20385 - 17328 == 3057
-        val result = PricingEngine.calculate(AARHUS_CPH_METRES, SEATS)
-        assertEquals(3_057, result.platformFeeOere)
+        assertEquals(17_328, result.pricePerSeatOere)
     }
 
     @Test
@@ -42,9 +29,7 @@ class PricingEngineTest {
         assertEquals(
             PricingEngine.PriceResult(
                 totalTripCostOere = 69_312,
-                driverNetPerSeatOere = 17_328,
-                passengerPaysPerSeatOere = 20_385,
-                platformFeeOere = 3_057
+                pricePerSeatOere = 17_328,
             ),
             result
         )

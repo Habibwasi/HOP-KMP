@@ -22,6 +22,8 @@ struct HopButton: View {
     var variant: HopButtonVariant = .primary
     var isLoading: Bool = false
     var isEnabled: Bool = true
+    /// Use light theme (dark text on white) for ghost on auth screens.
+    var lightSurface: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -69,7 +71,9 @@ struct HopButton: View {
         case .primary:
             return (isEnabled && !isLoading) ? Color.hopSurface : Color.hopTextSecondary
         case .ghost:
-            return isEnabled ? Color.hopTextPrimary : Color.hopTextSecondary
+            let primary = lightSurface ? Color.hopAuthTextPrimary : Color.hopTextPrimary
+            let secondary = lightSurface ? Color.hopAuthTextSecondary : Color.hopTextSecondary
+            return isEnabled ? primary : secondary
         case .destructive:
             return isEnabled ? Color.hopError : Color.hopTextSecondary
         }
@@ -80,7 +84,9 @@ struct HopButton: View {
         case .primary:
             return .clear
         case .ghost:
-            return isEnabled ? Color.hopTextSecondary : Color.hopSurfaceElevated
+            let line = lightSurface ? Color.hopAuthInputBorder : Color.hopTextSecondary
+            let dim  = lightSurface ? Color.hopAuthInputBorder.opacity(0.4) : Color.hopSurfaceElevated
+            return isEnabled ? line : dim
         case .destructive:
             return isEnabled ? Color.hopError : Color.hopSurfaceElevated
         }
@@ -89,7 +95,7 @@ struct HopButton: View {
     private var spinnerColor: Color {
         switch variant {
         case .primary:     return Color.hopSurface
-        case .ghost:       return Color.hopTextPrimary
+        case .ghost:       return lightSurface ? Color.hopAuthTextPrimary : Color.hopTextPrimary
         case .destructive: return Color.hopError
         }
     }

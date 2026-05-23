@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, UseGuards, Req, Param,
-  Body, NotFoundException, UnauthorizedException, Logger,
+  Body, Logger,
   HttpCode, HttpStatus,
   Inject,
 } from '@nestjs/common'
@@ -11,7 +11,10 @@ import { RatingsService } from '../ratings/ratings.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { CreateProfileDto } from './dto/create-profile.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { CreateCarDetailsDto } from './dto/create-car-details.dto'
 import { IsString, MinLength } from 'class-validator'
+import { AppException } from '../common/errors/app-exception'
+import { ApiErrorCode } from '../common/errors/api-error-codes'
 
 class ReportDto {
   @IsString()
@@ -50,11 +53,11 @@ export class UsersController {
   @Post('profile')
   async createProfile(@Req() req: any, @Body() dto: CreateProfileDto) {
     const auth: string | undefined = req.headers?.authorization
-    if (!auth?.startsWith('Bearer ')) throw new UnauthorizedException()
+    if (!auth?.startsWith('Bearer ')) throw new AppException(ApiErrorCode.TOKEN_MISSING)
     const token = auth.slice(7)
 
     const { data: { user: supabaseUser }, error } = await this.supabase.auth.getUser(token)
-    if (error || !supabaseUser) throw new UnauthorizedException()
+    if (error || !supabaseUser) throw new AppException(ApiErrorCode.TOKEN_INVALID)
 
     try {
       return await this.users.createProfile(supabaseUser.id, {
@@ -67,12 +70,34 @@ export class UsersController {
       // Roll back on ANY profile-creation error (conflict, bad request, unexpected
       // Prisma error, etc.) — delete the Supabase auth user so the email/phone is
       // free for a corrected re-registration attempt.
-      const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id)
-      if (deleteError) {
-        this.logger.error(
-          `Failed to delete dangling Supabase user ${supabaseUser.id}: ${deleteError.message}`,
-        )
+      //
+      // Retry up to 3 times with exponential back-off (200ms, 400ms) because a
+      // transient network blip to Supabase's admin API must not leave a dangling
+      // auth user that permanently blocks re-registration with the same email.
+      const MAX_DELETE_ATTEMPTS = 3
+      let lastDeleteError: Error | null = null
+      for (let attempt = 1; attempt <= MAX_DELETE_ATTEMPTS; attempt++) {
+        const { error: deleteError } = await this.supabase.auth.admin.deleteUser(supabaseUser.id)
+        if (!deleteError) { lastDeleteError = null; break }
+        lastDeleteError = deleteError
+        if (attempt < MAX_DELETE_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, 200 * attempt))
+        }
       }
+
+      if (lastDeleteError) {
+        // All retries exhausted — the Supabase user is dangling. Log with full
+        // context so an operator can delete it manually, then surface a specific
+        // message to the client so the user knows to contact support rather than
+        // retrying indefinitely.
+        this.logger.error(
+          `DANGLING_AUTH_USER supabaseId=${supabaseUser.id} email=${supabaseUser.email} ` +
+          `deleteError="${lastDeleteError.message}" originalError="${(err as Error).message}" ` +
+          `— manual cleanup required in Supabase dashboard`,
+        )
+        throw new AppException(ApiErrorCode.DANGLING_AUTH_USER)
+      }
+
       throw err
     }
   }
@@ -81,16 +106,41 @@ export class UsersController {
   @UseGuards(SupabaseGuard)
   async getMe(@Req() req: any) {
     const user = await this.users.findById(req.user.id)
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new AppException(ApiErrorCode.USER_NOT_FOUND)
     return user
+  }
+
+  @Get('me/stats')
+  @UseGuards(SupabaseGuard)
+  async getMyStats(@Req() req: any) {
+    const userId = req.user.id
+    const [ratingSummary, completedTrips] = await Promise.all([
+      this.ratings.getUserRatings(userId),
+      this.users.completedTripCount(userId),
+    ])
+    return {
+      averageRating: ratingSummary.averageScore,
+      totalRatings: ratingSummary.totalRatings,
+      completedTrips,
+    }
   }
 
   @Patch('me')
   @UseGuards(SupabaseGuard)
   async updateMe(@Req() req: any, @Body() dto: UpdateUserDto) {
-    const [firstName, ...rest] = dto.fullName.trim().split(' ')
-    const lastName = rest.join(' ') || '.'
-    return this.users.updateProfile(req.user.id, { firstName, lastName })
+    const data: { firstName?: string; lastName?: string; mobilepayNumber?: string } = {}
+
+    if (dto.fullName?.trim()) {
+      const [firstName, ...rest] = dto.fullName.trim().split(' ')
+      data.firstName = firstName
+      data.lastName = rest.join(' ') || '.'
+    }
+
+    if (dto.mobilepayNumber !== undefined) {
+      data.mobilepayNumber = dto.mobilepayNumber
+    }
+
+    return this.users.updateProfile(req.user.id, data)
   }
 
   @Post('push-token')
@@ -105,7 +155,7 @@ export class UsersController {
   @UseGuards(SupabaseGuard)
   async getUserById(@Param('id') id: string) {
     const user = await this.users.findById(id)
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new AppException(ApiErrorCode.USER_NOT_FOUND)
     return user
   }
 
@@ -124,8 +174,22 @@ export class UsersController {
   @Get(':id/car')
   async getCarDetails(@Param('id') id: string) {
     const car = await this.users.getCarDetails(id)
-    if (!car) throw new NotFoundException('No car details found')
+    if (!car) throw new AppException(ApiErrorCode.CAR_NOT_FOUND)
     return car
+  }
+
+  @Post('me/car-details')
+  @UseGuards(SupabaseGuard)
+  @HttpCode(HttpStatus.OK)
+  async saveMyCarDetails(@Req() req: any, @Body() dto: CreateCarDetailsDto) {
+    return this.users.saveCarDetails(req.user.id, {
+      make: dto.make,
+      model: dto.model,
+      year: dto.year,
+      licensePlate: dto.license_plate,
+      colour: dto.colour,
+      seatsAvailable: dto.seats_available,
+    })
   }
 
   @Post(':id/report')

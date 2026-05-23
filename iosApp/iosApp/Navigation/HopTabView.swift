@@ -48,42 +48,60 @@ struct HopTabView: View {
     /// capture params before pushing .searchResults.
     var onSearch: (String, String, String, Int) -> Void
 
+    /// Called when the user logs out from the Settings tab.
+    var onLogout: () -> Void
+
+    /// Active booking ID bubbled up from HomeView so the Chat tab can go
+    /// straight to Chat(bookingId) when the user has a live booking.
+    @Binding var activeBookingId: String?
+
+    /// Current role (passenger/driver) from HomeView so the Chat tab routes
+    /// drivers to MyTripsDriver instead of a direct chat screen.
+    @Binding var selectedRole: HopRole
+
     @State private var selectedTab: HopTab = .home
 
     var body: some View {
         TabView(selection: $selectedTab) {
 
-            // ── Home ──────────────────────────────────────────────────────────
-            PassengerHomeView(
+            // ── Home (unified Passenger ↔ Driver) ────────────────────────────
+            HomeView(
+                navigate: navigate,
                 onSearch: onSearch,
-                onSwitchToDriver: { navigate(.postTripModelSelect) },
-                navigate: navigate
+                onLogout: onLogout,
+                activeBookingId: $activeBookingId,
+                selectedRole: $selectedRole
             )
             .tabItem { Label(HopTab.home.label, systemImage: HopTab.home.icon) }
             .tag(HopTab.home)
 
             // ── My Trips ─────────────────────────────────────────────────────
             MyTripsPassengerView(
-                onTripTapped: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
-                navigate:     navigate
+                onNavigateBack: { selectedTab = .home },
+                onNavigateToTripDetailActive: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
+                onNavigateToTripDetail: { tripId in navigate(.tripDetail(id: tripId)) },
+                onNavigateToPassengerSettlement: { bookingId in navigate(.passengerSettlement(bookingId: bookingId)) },
+                onNavigateToHome: { selectedTab = .home },
+                onNavigateToChat: { selectedTab = .chat },
+                onNavigateToProfile: { selectedTab = .profile },
+                onNavigateToFindRide: { selectedTab = .home },
+                inTab: true
             )
             .tabItem { Label(HopTab.myTrips.label, systemImage: HopTab.myTrips.icon) }
             .tag(HopTab.myTrips)
 
-            // ── Chat ─────────────────────────────────────────────────────────
-            HopTabPlaceholder(
-                title: "Chat",
-                subtitle: "SH-04",
-                navigate: navigate
+            // ── Chat list (SH-04b) ───────────────────────────────────────────
+            ChatListView(
+                onBack:           { selectedTab = .home },
+                onNavigateToChat: { bookingId in navigate(.chat(bookingId: bookingId)) }
             )
             .tabItem { Label(HopTab.chat.label, systemImage: HopTab.chat.icon) }
             .tag(HopTab.chat)
 
-            // ── Profile ───────────────────────────────────────────────────────
-            HopTabPlaceholder(
-                title: "Profile",
-                subtitle: "SH-02",
-                navigate: navigate
+            // ── Profile (own profile via SH-02) ──────────────────────────────
+            OwnProfileView(
+                navigate: navigate,
+                onBack:   { selectedTab = .home }
             )
             .tabItem { Label(HopTab.profile.label, systemImage: HopTab.profile.icon) }
             .tag(HopTab.profile)
@@ -98,12 +116,15 @@ struct HopTabView: View {
     private func applyTabBarAppearance() {
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(Color.hopSurface)
+        // Light theme: white background with subtle top border, matching the
+        // light auth/passenger surfaces and Android's NavigationBar styling.
+        appearance.backgroundColor = UIColor(Color.hopBackground)
+        appearance.shadowColor     = UIColor(Color.hopAuthInputBorder)
 
         // Normal item colour
-        appearance.stackedLayoutAppearance.normal.iconColor    = UIColor(Color.hopTextSecondary)
+        appearance.stackedLayoutAppearance.normal.iconColor    = UIColor(Color.hopAuthTextSecondary)
         appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor(Color.hopTextSecondary)
+            .foregroundColor: UIColor(Color.hopAuthTextSecondary)
         ]
         // Selected item colour
         appearance.stackedLayoutAppearance.selected.iconColor    = UIColor(Color.hopPrimaryLime)
@@ -149,11 +170,11 @@ private struct HopTabPlaceholder: View {
 // MARK: — Previews ─────────────────────────────────────────────────────────────
 
 #Preview("Default – Home selected") {
-    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in })
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {}, activeBookingId: .constant(nil), selectedRole: .constant(.passenger))
 }
 
 #Preview("My Trips selected") {
     // SwiftUI previews cannot drive @State from outside; the tab bar itself
     // controls selection.  Use the live preview to switch tabs interactively.
-    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in })
+    HopTabView(navigate: { _ in }, onSearch: { _, _, _, _ in }, onLogout: {}, activeBookingId: .constant(nil), selectedRole: .constant(.passenger))
 }

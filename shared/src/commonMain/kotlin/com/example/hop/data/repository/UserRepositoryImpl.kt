@@ -5,6 +5,7 @@ import com.example.hop.data.dto.CarDetailsDto
 import com.example.hop.data.dto.HopNotificationDto
 import com.example.hop.data.dto.PushTokenRequest
 import com.example.hop.data.dto.ReportUserRequest
+import com.example.hop.data.dto.UpdateMobilepayRequest
 import com.example.hop.data.dto.UpdateNameRequest
 import com.example.hop.data.dto.UserDto
 import com.example.hop.data.dto.UserReviewDto
@@ -63,7 +64,7 @@ class UserRepositoryImpl(
         return try {
             val envelope: ApiEnvelope<CarDetailsDto?> = httpClient.get("users/$userId/car").body()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             ApiResponse.Success(envelope.data?.toDomain())
         } catch (e: ClientRequestException) {
             if (e.response.status == HttpStatusCode.NotFound) {
@@ -88,6 +89,18 @@ class UserRepositoryImpl(
         }
     }
 
+    override suspend fun updateMobilepayNumber(number: String): ApiResponse<User> {
+        val response = safeEnvelopeCall<UserDto> {
+            httpClient.patch("users/me") {
+                setBody(UpdateMobilepayRequest(mobilepayNumber = number))
+            }.body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.toDomain())
+            is ApiResponse.Error -> response
+        }
+    }
+
     override suspend fun reportUser(userId: String, reason: String): ApiResponse<Unit> =
         safeApiCall {
             httpClient.post("users/$userId/report") {
@@ -96,10 +109,10 @@ class UserRepositoryImpl(
             Unit
         }
 
-    override suspend fun savePushToken(token: String): ApiResponse<Unit> =
+    override suspend fun savePushToken(token: String, platform: String): ApiResponse<Unit> =
         safeApiCall {
             httpClient.post("users/push-token") {
-                setBody(PushTokenRequest(token = token))
+                setBody(PushTokenRequest(token = token, platform = platform))
             }
             Unit
         }
@@ -128,7 +141,7 @@ class UserRepositoryImpl(
         return try {
             val envelope = block()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
         } catch (e: ClientRequestException) {
             ApiResponse.Error(e.response.status.value, e.message ?: "Client error")

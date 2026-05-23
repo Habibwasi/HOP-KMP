@@ -12,8 +12,8 @@ import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 
@@ -44,7 +44,7 @@ class BookingRepositoryImpl(
     }
 
     override suspend fun cancelBooking(id: String): ApiResponse<Unit> = safeApiCall {
-        httpClient.delete("bookings/$id")
+        httpClient.patch("bookings/$id/cancel")
         Unit
     }
 
@@ -67,8 +67,12 @@ class BookingRepositoryImpl(
         return try {
             val envelope = block()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
+        } catch (e: io.ktor.client.plugins.HttpRequestTimeoutException) {
+            ApiResponse.Error(ApiResponse.CODE_TIMEOUT, "Connection timed out. Please check your network and try again.")
+        } catch (e: io.ktor.client.plugins.ServerResponseException) {
+            ApiResponse.Error(e.response.status.value, "Server error (${e.response.status.value}). Please try again later.")
         } catch (e: ClientRequestException) {
             ApiResponse.Error(e.response.status.value, e.message ?: "Client error")
         } catch (e: Exception) {

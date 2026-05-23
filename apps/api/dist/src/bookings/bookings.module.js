@@ -12,6 +12,7 @@ const bullmq_1 = require("@nestjs/bullmq");
 const bookings_service_1 = require("./bookings.service");
 const bookings_controller_1 = require("./bookings.controller");
 const bookings_processor_1 = require("./bookings.processor");
+const notifications_module_1 = require("../notifications/notifications.module");
 let BookingsModule = class BookingsModule {
 };
 exports.BookingsModule = BookingsModule;
@@ -19,6 +20,7 @@ exports.BookingsModule = BookingsModule = __decorate([
     (0, common_1.Module)({
         imports: [
             bullmq_1.BullModule.registerQueue({ name: 'bookings' }),
+            notifications_module_1.NotificationsModule,
         ],
         providers: [bookings_service_1.BookingsService, bookings_processor_1.BookingsProcessor],
         controllers: [bookings_controller_1.BookingsController],

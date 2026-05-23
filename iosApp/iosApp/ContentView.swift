@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import Shared
 
 // ── App root ──────────────────────────────────────────────────────────────────
@@ -11,11 +12,23 @@ import Shared
 struct ContentView: View {
 
     @State private var isAuthenticated = false
+    @State private var showSplash = true
+    @State private var showSetNewPassword = false
     @StateObject private var authWrapper = AuthViewModelWrapper()
 
     var body: some View {
         Group {
-            if isAuthenticated {
+            if showSplash {
+                // Brand splash shown on cold start — parity with Android's
+                // `SplashRoute` (3-second animated scene before navigating
+                // forward to the auth or main-app root).
+                SplashView(onComplete: {
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        showSplash = false
+                    }
+                })
+                .transition(.opacity)
+            } else if isAuthenticated {
                 HopNavigationStack()
             } else {
                 AuthNavigationCoordinator {
@@ -25,7 +38,21 @@ struct ContentView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
+        // Auth + Passenger + Driver screens are light-themed (white background,
+        // hopAuth* tokens). Forcing light colour scheme keeps system controls
+        // (DatePicker, sheets, alerts) readable on white surfaces.
+        .preferredColorScheme(.light)
+        .fullScreenCover(isPresented: $showSetNewPassword) {
+            NavigationStack {
+                SetNewPasswordView(
+                    onPasswordUpdated: {
+                        showSetNewPassword = false
+                        withAnimation(.easeInOut) { isAuthenticated = true }
+                    },
+                    onBack: { showSetNewPassword = false }
+                )
+            }
+        }
         .task { authWrapper.startObserving() }
         .task {
             // Listen for NavigateToHome effects emitted by the silent session
@@ -33,10 +60,17 @@ struct ContentView: View {
             for await effect in authWrapper.viewModel.effect {
                 if effect is AuthEffectNavigateToHome {
                     withAnimation(.easeInOut) { isAuthenticated = true }
+                    // Re-register APNS token after login so the backend has the current token
+                    // even if didRegisterForRemoteNotificationsWithDeviceToken fired pre-login.
+                    UIApplication.shared.registerForRemoteNotifications()
                 } else if effect is AuthEffectNavigateToLogin {
                     // Only NavigateToLogin (explicit logout) flips back to auth screens.
                     // SessionExpired no longer forces the user out automatically.
                     withAnimation(.easeInOut) { isAuthenticated = false }
+                } else if effect is AuthEffectNavigateToSetPassword {
+                    // Recovery deep-link received — show the Set New Password screen
+                    // over whatever is currently displayed.
+                    showSetNewPassword = true
                 }
             }
         }

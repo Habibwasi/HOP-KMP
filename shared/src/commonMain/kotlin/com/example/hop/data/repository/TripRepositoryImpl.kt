@@ -19,6 +19,8 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
@@ -59,7 +61,28 @@ class TripRepositoryImpl(
         return when (date.lowercase().trim()) {
             "today" -> today.toString()
             "tomorrow" -> today.plus(1, DateTimeUnit.DAY).toString()
-            else -> date // assume already ISO
+            else -> {
+                // If already ISO format (yyyy-MM-dd) pass through unchanged.
+                if (Regex("""\d{4}-\d{2}-\d{2}""").matches(date.trim())) return date.trim()
+                // Attempt to parse display labels like "4 May" / "4 May 2026".
+                val monthNames = mapOf(
+                    "jan" to 1, "feb" to 2, "mar" to 3, "apr" to 4,
+                    "may" to 5, "jun" to 6, "jul" to 7, "aug" to 8,
+                    "sep" to 9, "oct" to 10, "nov" to 11, "dec" to 12,
+                    "january" to 1, "february" to 2, "march" to 3, "april" to 4,
+                    "june" to 6, "july" to 7, "august" to 8, "september" to 9,
+                    "october" to 10, "november" to 11, "december" to 12,
+                )
+                val parts = date.trim().split(Regex("""[\s,]+"""))
+                val day = parts.getOrNull(0)?.toIntOrNull()
+                val month = parts.getOrNull(1)?.lowercase()?.let { monthNames[it] }
+                val year = parts.getOrNull(2)?.toIntOrNull() ?: today.year
+                if (day != null && month != null) {
+                    "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+                } else {
+                    date // unchanged — let backend report the validation error
+                }
+            }
         }
     }
 
@@ -116,6 +139,7 @@ class TripRepositoryImpl(
                         seatsTotal = request.seatsTotal,
                         minThreshold = request.minThreshold,
                         recurrenceDays = request.recurrenceDays,
+                        thresholdDeadline = request.thresholdDeadline,
                     )
                 )
             }.body()
@@ -157,8 +181,12 @@ class TripRepositoryImpl(
         return try {
             val envelope = block()
             val error = envelope.error
-            if (error != null) return ApiResponse.Error(error.code, error.message)
+            if (error != null) return ApiResponse.Error(error.code, error.message, error.errorCode)
             ApiResponse.Success(checkNotNull(envelope.data) { "Null data in API envelope" })
+        } catch (e: HttpRequestTimeoutException) {
+            ApiResponse.Error(ApiResponse.CODE_TIMEOUT, "Connection timed out. Please check your network and try again.")
+        } catch (e: ServerResponseException) {
+            ApiResponse.Error(e.response.status.value, "Server error (${e.response.status.value}). Please try again later.")
         } catch (e: ClientRequestException) {
             ApiResponse.Error(e.response.status.value, e.message ?: "Client error")
         } catch (e: Exception) {

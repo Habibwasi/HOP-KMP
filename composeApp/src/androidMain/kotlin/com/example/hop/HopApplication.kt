@@ -15,22 +15,20 @@ class HopApplication : Application() {
         if (BuildConfig.SENTRY_DSN.isNotBlank()) {
             SentryAndroid.init(this) { options ->
                 options.dsn = BuildConfig.SENTRY_DSN
-                options.tracesSampleRate = 1.0
+                options.environment = if (BuildConfig.DEBUG) "debug" else "production"
+                options.tracesSampleRate = if (BuildConfig.DEBUG) 1.0 else 0.2
                 options.isEnableUserInteractionTracing = true
             }
         }
 //       val baseUrl = NetworkConstants.PRODUCTION_BASE_URL
 
-        val baseUrl = if (BuildConfig.DEBUG)
-            NetworkConstants.LOCAL_DEVICE_BASE_URL
-        else
-            NetworkConstants.PRODUCTION_BASE_URL
+        val baseUrl = NetworkConstants.PRODUCTION_BASE_URL
 
         startKoin {
             androidContext(this@HopApplication)
             modules(
-                if (BuildConfig.DEV_MODE) devAppModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY)
-                else appModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY)
+                if (BuildConfig.DEV_MODE) devAppModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY, BuildConfig.MAPS_API_KEY)
+                else appModules(baseUrl, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY, BuildConfig.MAPS_API_KEY)
             )
         }
     }

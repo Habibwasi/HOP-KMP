@@ -1,243 +1,192 @@
-# Hop Bug Checker Skill
+   ---
+name: hop-debug
+description: 'Expert bug-auditing and edge-case testing workflow for the Hop KMP carpooling app. Use when asked to "find bugs", "audit the codebase", "edge case test", "review for correctness", or "debug". Covers: Koin registration completeness, cross-module smart casts, ViewModel idempotency guards, auth phone propagation, monetary display safety, effect handler completeness, LaunchedEffect key correctness, Model B threshold math, and filter AND/OR semantics.'
+argument-hint: 'subsystem to audit (e.g. "auth flow", "payment", "matching")'
+---
 
-Expert bug-auditing workflow for the Hop KMP carpooling app. Use when asked to "find bugs", "audit the codebase", "edge case test", or "review for correctness".
+# Hop Bug-Audit & Edge-Case Testing Workflow
+
+## Core Principle
+
+> **Follow the data end-to-end, file by file, without stopping until every layer has been read.**  
+> Do NOT "check the skill catalogue and stop". Do NOT stop at a round number of findings.  
+> Do NOT wait for the user to say "Continue" — keep going autonomously until every file is done.  
+> The number of bugs found so far is never a ceiling.
+
+This principle comes from a real failure in the search-flow audit: the audit stopped at 7, then 10, then 12 findings — each time incorrectly — because it relied on a catalogue checklist instead of reading every file exhaustively. The correct method was stated explicitly: *"follow the data end-to-end, file by file, without stopping until every layer has been read."*
 
 ---
 
-## 1. Koin Registration Completeness
+## The Correct Audit Method (5 Rules)
 
-Every `koinViewModel<XViewModel>()` call in `composeApp/` must have a matching `viewModelOf(::XViewModel)` in `shared/.../di/PresentationModule.kt`. Missing entries crash at runtime with `NoBeanDefinitionException`.
+These rules replace any checklist-based approach. Apply them to every audit:
 
-**Audit steps:**
+### Rule 1 — Map every file first, using the diagram
+Read `hop-dataflow.drawio` **before opening any code file**. This diagram shows the canonical flow — which modules are in scope, what each step does, and how data moves. Starting without it means guessing scope from grep results, which always misses layers.
+
 ```
-grep -r "koinViewModel<" composeApp/src --include="*.kt" | sed 's/.*koinViewModel<\([^>]*\)>.*/\1/'
-grep "viewModelOf" shared/src/commonMain/.../di/PresentationModule.kt
+hop-dataflow.drawio → UI → ViewModel → Repository → Ktor HTTP →
+                      NestJS Controller → Service → Prisma → PostgreSQL
+                      and the return path: response → DTO mapping → domain model → UI state
 ```
-Diff the two lists. Any ViewModel used in UI but not registered in Koin is a crash.
+
+After reading the diagram, build an explicit checklist of every file the flow touches:
+- `[ ]` Shared KMP: ViewModels, repositories, DTOs, DI modules, utilities
+- `[ ]` Android Compose: screens, components, navigation graphs
+- `[ ]` iOS Swift: screens, components, `*ViewModelWrapper` files, navigation stack
+- `[ ]` Backend: NestJS controllers, services, DTOs, Prisma schema
+
+Check off each file as you read it. **Never declare done until every box is checked.**
+
+### Rule 2 — Read each file fully, not selectively
+Every function in every file in the flow. Do not skim. The `ClearFilters` bug was missed because only part of the `onEvent` `when` block was read. The `PassengerHomeView` wasted API call was missed because only one section of the file was read.
+
+**Never stop reading a file early because you already found the bug you were looking for.** Other bugs in the same file will be missed. Read to the end, then check off the file.
+
+### Rule 3 — Ask these questions at every line
+At every non-trivial line, ask:
+- Can this be `null`, blank, or empty unexpectedly?
+- What happens if this is called twice in quick succession (idempotency)?
+- What is the worst-case timing — race condition, cancellation, recomposition?
+- Is any value from user input ever unsanitised?
+- Does local time vs UTC matter here?
+- Is integer arithmetic hiding precision loss? (`oere / 100` drops the remainder)
+- Is this a factory-scoped VM — is the caller actually observing its results?
+
+### Rule 4 — Never stop at "it looks fine" — grep to verify
+Every assumption must be confirmed with a `grep_search`, not assumed from reading. If you think "that's probably fine", search for it.
+
+### Rule 5 — Fix as you go, then re-read the fixed file
+Fixes introduce new bugs. After every fix, re-read the surrounding 20+ lines for new issues before moving on.
+
+### Rule 6 — "Known limitation" is not an escape hatch for data-corruption issues
+A finding may only be labelled "known limitation — not fixed" if it affects **UX only** (cosmetic degradation, minor inconvenience) and **cannot cause wrong data to be submitted or persisted**. If incorrect data can reach the backend under any realistic usage scenario, it is a ❌ Bug regardless of how it was previously characterised. Reclassify and fix it.
+
+> **Origin of this rule:** `calculateRouteDistance()` was labelled "known limitation — drops new requests while one is in-flight" in the trip-creation audit. In reality a driver changing a destination mid-calculation would silently submit a trip with the wrong distance and route coordinates. It was a ❌ Bug and should have been fixed in the same pass.
+
+### Rule 7 — Ask the user before making design decisions; ask when stuck
+When a fix requires a **design choice** (layout options, UX behaviour, API contract change, naming), do not decide unilaterally. Present the options with trade-offs and ask the user to choose before writing any code.
+
+When genuinely blocked (two failed approaches, ambiguous requirements, missing context that cannot be found by searching), stop and ask the user rather than guessing or brute-forcing.
+
+Examples of decisions that require user input:
+- Layout variants (single row vs two rows for a chip picker)
+- Debounce duration (400 ms vs 600 ms)
+- Whether a breaking change to a public API is acceptable
+- Which of two conflicting data sources is the source of truth
 
 ---
 
-## 2. Cross-Module Smart Cast (Kotlin Compiler)
+## Phase 0 — Build the File Checklist
 
-**Pattern that fails:**
-```kotlin
-// In a different module from where TripDetailUiState is defined:
-if (tripState.minThreshold != null && tripState.minThreshold > 0) { ... }
-// Error: Smart cast to 'Int' is impossible — public API property in different module
-```
-
-**Fix — always capture public nullable props in a local val first:**
-```kotlin
-val minThreshold = tripState.minThreshold
-if (minThreshold != null && minThreshold > 0) { ... }
-```
-
-Search for this pattern:
-```
-grep -rn "\.([a-zA-Z]+) != null && \.\1" composeApp/src --include="*.kt"
-```
+1. Open `hop-dataflow.drawio` and read the target flow's full path.
+2. `grep_search` for every class name, composable name, screen name, and service name mentioned in the diagram.
+3. Produce the explicit `[ ]` file checklist. Do not proceed until the list is complete.
 
 ---
 
-## 3. ViewModel Action Idempotency
+## Phase 1 — Exhaustive File-by-File Reading
 
-Any `private fun` that fires a network call must guard against double-invocation. The button `enabled = !isProcessing` is not enough because state propagation is async — a fast double-tap fires two calls before the first recomposition.
+For each file on the checklist:
+1. Read the **entire file** (not just the function you expect to find the bug in).
+2. Apply Rules 3 and 4 to every function.
+3. Add any finding immediately to the triage table (even if you plan to fix it later).
+4. Check the file off the list.
+5. Move to the next file — do not stop, do not wait for confirmation.
 
-**Required guard pattern:**
-```kotlin
-private fun createBooking(tripId: String, seats: Int) {
-    if (_state.value.paymentState == PaymentState.PROCESSING) return  // idempotency guard
-    viewModelScope.launch { ... }
-}
-```
-
-Audit all `viewModelScope.launch` blocks inside event handlers — every one that mutates server state (create, confirm, cancel, rate) needs a guard.
+The Three-Lens mental model (Happy Path → Failure Points → Worst Case) is useful **within** each file read, but it is not the primary methodology — exhaustive file coverage is.
 
 ---
 
-## 4. Auth Flow Phone Propagation
+## Phase 2 — Triage Table
 
-**Bug pattern:** Registration collects fullName/email/password but omits phone. `AuthViewModel.register()` then navigates to OTP with `phone = ""`, causing OTP screen to say "We sent a code to " (blank) and the Twilio backend call to fail.
+Build as you read (do not wait until the end). One row per finding:
 
-**Checklist:**
-- `AuthEvent.Register` must include `phone: String`
-- `SignUpScreen` must have a `KeyboardType.Phone` field for phone
-- `AuthViewModel.register()` must pass `phone = event.phone` to `NavigateToOtpVerification`
-- `AuthUiState.pendingOtpPhone` stores the value if needed across state updates
+| # | File | Finding | Severity | Root Cause | Worst-Case Impact | Fix Summary |
+|---|------|---------|----------|------------|-------------------|-------------|
+| 1 | … | … | ❌/⚠️/✅ | … | … | … |
 
----
+**Severity guide**:
+- ❌ Bug — incorrect behaviour confirmed or near-certain in the field
+- ⚠️ Warning — incorrect under specific conditions; needs hardening
+- ✅ OK — correct as written, no action required
 
-## 5. Monetary Display Safety
-
-Amounts are **always `Int` in øre** (`seatCostOre`, `platformFeeOre`, etc.). Never store or pass as Float. Only divide at render time:
-
-```kotlin
-// CORRECT
-Text("${amount / 100} DKK")
-
-// WRONG — loses precision, introduces floating-point errors
-Text("${amount.toFloat() / 100f} DKK")
-```
-
-Audit: `grep -rn "\.toFloat()" shared/src --include="*.kt"` — any conversion on a monetary field is a bug.
+**Known false positives in the search flow** (confirmed correct, do not re-flag):
+- `TOP_RATED` chip not in `ALL_FILTER_CHIPS` — intentionally excluded; it is a UI placeholder with no filter predicate. Not a bug.
 
 ---
 
-## 6. Effect Handler Completeness
+## Phase 3 — Implement Fixes
 
-Every `sealed interface XEffect` branch must be handled in the Route's `LaunchedEffect(effect)` `when` block. Missing branches are compile warnings but silent no-ops at runtime.
+Work through the triage table in order: ❌ items first, then ⚠️.
 
-```kotlin
-// In XRoute:
-LaunchedEffect(Unit) {
-    viewModel.effect.collect { effect ->
-        when (effect) {
-            is XEffect.NavigateToY -> onNavigateToY()
-            is XEffect.ShowError  -> { /* handle */ }
-            // Missing branch = silent no-op
-        }
-    }
-}
-```
+**Per-fix workflow**:
+1. Read the target file with ≥ 20 lines of surrounding context before editing.
+2. Apply the edit with `multi_replace_string_in_file` (batch same-file edits in one call).
+3. Run `get_errors` on the edited file immediately.
+4. Re-read the 20 lines around the fix for new issues introduced.
+5. Do not add unrelated refactors, comments, or features.
 
-Audit: open each `*Effect.kt`, list all subclasses, cross-check against the Route's `when` block.
+### Hop-Specific Patterns to Fix
 
----
+Load [hop-specific-checks.md](./references/hop-specific-checks.md) for
+the full catalogue of known recurring bugs in this codebase.  
+Key patterns encountered to date:
 
-## 7. LaunchedEffect Key Correctness
-
-| Key | Behavior |
-|-----|----------|
-| `LaunchedEffect(Unit)` | Runs once on first composition — correct for load-once actions |
-| `LaunchedEffect(someVar)` | Re-runs whenever `someVar` changes — correct for reactive side effects |
-| `LaunchedEffect(true)` | Same as `Unit` but misleading — avoid |
-
-Two independent `LaunchedEffect(sameKey)` blocks are **fine** — they run in separate coroutines.
-
----
-
-## 8. Trip Model B Threshold Math
-
-```kotlin
-// seatsBooked = current paid seats (before this booking)
-val seatsAfterBooking = seatsBooked + 1          // includes THIS booking
-val seatsNeeded = (minThreshold - seatsAfterBooking).coerceAtLeast(0)
-```
-
-`coerceAtLeast(0)` prevents negative "0 more needed" display when threshold is already met.  
-Progress bar: `progress = seatsAfterBooking.toFloat() / minThreshold.toFloat()`, clamped to `[0f, 1f]`.
+| Pattern | Symptom | Fix |
+|---------|---------|-----|
+| `sessionStatus.first{}` with no timeout | Coroutine hangs forever on cold start or network drop | Wrap with `withTimeoutOrNull(15_000L)` |
+| `?: ""` fallback on `refreshToken` + `autoRefresh = true` | Session silently expires → unexpected 401-driven logout | `autoRefresh = refreshToken.isNotEmpty()` |
+| `recoveryPending` flag not cleared on all exit paths | Flag survives logout/crash → wrong screen shown on next launch | Clear in: success, logout, error, and app resume paths in `AuthViewModel` |
+| `deleteUser` call not retried | Dangling Supabase auth user if Prisma write fails | Retry loop (3 attempts, exponential backoff); log `DANGLING_AUTH_USER` on exhaustion |
+| `safeApiCall` catches all exceptions as `ApiError` | UI cannot distinguish "no network" from "server error" from "timeout" | Catch `HttpRequestTimeoutException`, `ServerResponseException`, and network heuristics separately |
+| **`safeEnvelopeCall` in individual repos also incomplete** | Same silent swallowing — `TripRepositoryImpl`, `SearchHistoryRepositoryImpl`, `PlacesRepositoryImpl` each have their own private `safeEnvelopeCall` that also lacks the full exception hierarchy | Apply the same three-branch catch to every private `safeEnvelopeCall` in every repository, not just the global `safeApiCall` |
+| Koin `single {}` missing for a dependency | `NoBeanDefFoundException` at runtime | Verify every constructor parameter has a corresponding Koin registration |
+| **Koin `factory {}` ViewModel scope** | `viewModelOf(::SearchViewModel)` uses factory scope — each call site gets a *separate* VM instance. A wrapper on Screen A calling `.search()` will NOT share results with the VM on Screen B. Results are silently discarded. | Never call `.search()` or mutate state on a factory-scoped VM that will not be shown on screen. Remove the wrapper entirely if the results are never observed. |
+| `LaunchedEffect(Unit)` instead of keyed effect | Effect does not re-run when state changes (stale closure) | Key on the relevant state variable |
+| **iOS `*ViewModelWrapper` re-entrancy** | `startObserving()` has no guard — each `.onAppear` spawns an additional `Task {}` against the same `Channel.receiveAsFlow()`. `receiveAsFlow()` is **single-consumer**: multiple Tasks consume events non-deterministically, causing effects to be silently dropped. | Add `private var stateTask: Task<Void, Never>?` and `effectTask` fields; call `.cancel()` on each before creating a new one. Apply to all `*ViewModelWrapper` files in the codebase. |
+| **Integer øre truncation** (`oere / 100`) | `pricePerSeatOere / 100` silently drops the øre remainder — e.g., 4950 øre shows as "DKK 49" instead of "DKK 49,50" | Split: `val kr = oere / 100; val rem = oere % 100; if (rem == 0) "DKK $kr" else "DKK $kr,${rem.toString().padStart(2,'0')}"`. Audit **every** file in the flow — this pattern appears independently in TripCard.kt, TripDetailScreen.kt, TripCard.swift, TripCardLight.swift, DriverAddressPickerComponents.swift, PriceReviewView.swift, BookingConfirmationScreen.kt — not just one place. |
+| **Filter AND vs OR semantics** | Selecting two model filters (e.g., `DAILY_COMMUTE` + `LONG_DISTANCE`) produces empty results because AND requires a trip to match *both* simultaneously | Use OR: `_allResults.filter { trip -> modelFilters.isEmpty() \|\| trip.model in modelFilters }`. For multi-type filter groups always default to OR within a group. |
+| **`sortFilters.first()` non-determinism** | When user applies multiple sort chips, `.first()` returns an arbitrary element depending on `Set` iteration order | Use `.last()` to reflect the user's most recent sort selection |
+| **`ClearFilters` not restoring backing results** | `ClearFilters` only clears `activeFilters` but leaves `results` as the filtered subset → re-filtering on the already-filtered list produces progressively fewer results | `ClearFilters` must set `results = _allResults` alongside clearing `activeFilters`. Maintain `_allResults` as an immutable copy from the last successful search. |
+| **Stale results behind spinner** | Previous search results remain visible during a new search → user sees wrong data while loading | Set `results = emptyList()` at the start of every new search, before the API call. |
+| **Concurrent search race** | Rapid search taps fire overlapping coroutines; whichever finishes last wins, not the most recent | Track `searchJob: Job?`; call `searchJob?.cancel()` before launching a new search coroutine. |
+| **Shadow API call** | A ViewModel wrapper calls `.search()` on a factory-scoped VM whose results are observed by no one (e.g., `searchWrapper` in `PassengerHomeView` before nav) | Delete the wrapper and its `.search()` / `.startObserving { _ in }` calls entirely. |
+| **Stale route from dropped address-change request** | `calculateRouteDistance()` guarded by `if (isCalculatingRoute) return` — a new address typed while a request is in-flight is silently dropped; the old route coordinates are submitted | Store `private var routeCalcJob: Job? = null`; call `routeCalcJob?.cancel()` then relaunch. Add `delay(400)` debounce at the top of the new coroutine so cancellation happens before any network call. This is a **data-corruption** issue (wrong distance/coordinates persisted), not a UX issue — classify as ❌ not ⚠️. |
 
 ---
 
-## 9. SearchViewModel Filter AND vs OR
+## Phase 4 — Cross-Check
 
-`applyFilters()` currently ANDs `DAILY_COMMUTE + LONG_DISTANCE` model filters, producing an empty list when both are selected. This is acceptable UX (deselect one to see results) but differs from typical multi-select OR semantics. If product requires OR, the fix is:
+After all fixes are applied, systematically verify completeness:
 
-```kotlin
-val modelMatch = activeModels.isEmpty() || trip.model in activeModels
-```
-
----
-
-## 10. GitHub Issue Workflow
-
-After every audit, create one GitHub issue per bug found. After each fix is applied, close the issue with a resolution comment. Repo: `Habibwasi/HOP-KMP`.
+1. Copy the original triage table.
+2. For each row:
+   - `grep_search` the relevant file(s) for the fix (function name, constant, pattern).
+   - If found and correct → mark ✅ Fixed.
+   - If not found → apply the missing fix now.
+   - If the review said "let me verify this is wired" → grep to confirm wiring, mark ✅ Already correct if confirmed.
+3. A row is not done until the fix is confirmed in the source, not just in memory.
 
 ---
 
-### 10a. Prerequisite Check
+## Phase 5 — Final Scorecard
 
-Before any issue operations, verify `gh` is authenticated:
+Output a table reproducing the triage table with every row now showing ✅ and a one-line explanation of the resolution:
 
-```powershell
-gh auth status
-```
+| # | Finding | Status | Resolution |
+|---|---------|--------|------------|
+| 1 | … | ✅ Fixed | Applied `withTimeoutOrNull(15_000L)` on all 5 call sites |
+| … | … | ✅ Already correct | Confirmed wired in `HttpClientFactory.kt` line 64–68 |
 
-If it fails, print this warning and **skip GitHub steps without blocking the audit**:
-
-> ⚠️ `gh` is not authenticated. Run `gh auth login` to enable automatic issue creation. Audit results are still shown above.
-
----
-
-### 10b. Create One Issue Per Bug
-
-Immediately after the audit findings table is shown, run one `gh issue create` per bug found:
-
-```powershell
-gh issue create `
-  --repo Habibwasi/HOP-KMP `
-  --title "[hop-audit] <Severity> — <short description>" `
-  --body "<body block — see template below>" `
-  --label "bug,hop-audit"
-```
-
-**Title format:**
-```
-[hop-audit] Critical — submitLicence safeEnvelopeCall<Unit> crashes on null data
-[hop-audit] High — postTrip missing idempotency guard
-```
-
-**Body template:**
-```
-## Bug Report — hop-audit
-
-**Severity:** Critical | High | Medium
-**Checklist item:** #N (e.g. #3 ViewModel Action Idempotency)
-**File:** `shared/src/…/FooViewModel.kt`
-**Function:** `postTrip()`
-
-### Symptom
-One-line description of what goes wrong at runtime.
-
-### Fix to apply
-Exact code change or pattern to apply (copy from audit output).
-```
-
-After each `gh issue create`, capture the returned issue URL and number and include it in the reply:
-> Created issue #42: https://github.com/Habibwasi/HOP-KMP/issues/42
+**Done condition**: every file on the Phase 0 checklist has been read AND every row in the scorecard is ✅. A count of N bugs found is never itself a done condition.
 
 ---
 
-### 10c. Close Issue After Fix
+## Tool Usage Guidelines
 
-Immediately after each fix is applied to the file, run:
-
-```powershell
-gh issue close <number> `
-  --repo Habibwasi/HOP-KMP `
-  --comment "Fixed: <one-line description of change applied, including file and function>"
-```
-
-**Example:**
-```powershell
-gh issue close 42 `
-  --repo Habibwasi/HOP-KMP `
-  --comment "Fixed: switched submitLicence to safeApiCall{} in DriverRepositoryImpl.kt to avoid checkNotNull crash on Unit envelope response"
-```
-
----
-
-### 10d. End-of-Session Summary
-
-After all fixes, print a summary table:
-
-| Issue | Title | Status |
-|-------|-------|--------|
-| #42 | [hop-audit] Critical — submitLicence crash | ✅ Closed |
-| #43 | [hop-audit] High — postTrip idempotency | ✅ Closed |
-
-If no bugs were found, print:
-> ✅ Audit complete — no issues found. No GitHub issues created.
-
----
-
-## Common File Locations
-
-| Concern | File |
-|---------|------|
-| Koin DI | `shared/src/commonMain/.../di/PresentationModule.kt` |
-| Auth ViewModel | `shared/src/commonMain/.../presentation/auth/AuthViewModel.kt` |
-| Booking ViewModel | `shared/src/commonMain/.../presentation/booking/BookingViewModel.kt` |
-| Navigation routes | `composeApp/src/commonMain/.../ui/navigation/HopRoutes.kt` |
-| NavGraph wiring | `composeApp/src/commonMain/.../ui/navigation/HopNavGraph.kt` |
-| Design tokens | `composeApp/src/commonMain/.../ui/theme/HopColors.kt` |
+- Use `grep_search` (not `semantic_search`) for exact-pattern verification of fixes.
+- Use `read_file` with ≥ 20 lines of surrounding context before editing.
+- Use `multi_replace_string_in_file` to batch all edits in one file into a single call.
+- Run `get_errors` after every file edit before proceeding.
+- Never apply speculative refactors outside the scope of a triage finding.

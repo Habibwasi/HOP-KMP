@@ -7,6 +7,55 @@ Parameters:
     NoEcho: true
   ImageUri:
     Type: String
+  CertificateArn:
+    Type: String
+    Description: ACM certificate ARN for the staging domain (required for wss:// WebSocket)
+  SupabaseUrl:
+    Type: String
+  SupabaseAnonKey:
+    Type: String
+    NoEcho: true
+  SupabaseServiceRoleKey:
+    Type: String
+    NoEcho: true
+  SupabaseJwtSecret:
+    Type: String
+    NoEcho: true
+  GoogleMapsApiKey:
+    Type: String
+    NoEcho: true
+  AdminSecret:
+    Type: String
+    NoEcho: true
+  TwilioAccountSid:
+    Type: String
+  TwilioAuthToken:
+    Type: String
+    NoEcho: true
+  TwilioVerifyServiceSid:
+    Type: String
+  FirebaseProjectId:
+    Type: String
+    Default: placeholder
+  FirebaseClientEmail:
+    Type: String
+    Default: placeholder@placeholder.iam.gserviceaccount.com
+  FirebasePrivateKey:
+    Type: String
+    NoEcho: true
+    Default: placeholder
+  ApnsKeyId:
+    Type: String
+    Default: placeholder
+  ApnsTeamId:
+    Type: String
+    Default: placeholder
+  ApnsBundleId:
+    Type: String
+    Default: com.example.hop
+  ApnsKeyPath:
+    Type: String
+    Default: ./apns.p8
 
 Resources:
 
@@ -218,12 +267,44 @@ Resources:
               Value: '3000'
             - Name: DATABASE_URL
               Value: !Sub
-                - postgresql://hop:@:5432/hop_db
+                - postgresql://hop:${DBPassword}@${DBEndpoint}:5432/hop_db
                 - DBEndpoint: !GetAtt Database.Endpoint.Address
             - Name: REDIS_HOST
               Value: !GetAtt RedisCluster.RedisEndpoint.Address
             - Name: REDIS_PORT
               Value: '6379'
+            - Name: SUPABASE_URL
+              Value: !Ref SupabaseUrl
+            - Name: SUPABASE_ANON_KEY
+              Value: !Ref SupabaseAnonKey
+            - Name: SUPABASE_SERVICE_ROLE_KEY
+              Value: !Ref SupabaseServiceRoleKey
+            - Name: SUPABASE_JWT_SECRET
+              Value: !Ref SupabaseJwtSecret
+            - Name: GOOGLE_MAPS_API_KEY
+              Value: !Ref GoogleMapsApiKey
+            - Name: ADMIN_SECRET
+              Value: !Ref AdminSecret
+            - Name: TWILIO_ACCOUNT_SID
+              Value: !Ref TwilioAccountSid
+            - Name: TWILIO_AUTH_TOKEN
+              Value: !Ref TwilioAuthToken
+            - Name: TWILIO_VERIFY_SERVICE_SID
+              Value: !Ref TwilioVerifyServiceSid
+            - Name: FIREBASE_PROJECT_ID
+              Value: !Ref FirebaseProjectId
+            - Name: FIREBASE_CLIENT_EMAIL
+              Value: !Ref FirebaseClientEmail
+            - Name: FIREBASE_PRIVATE_KEY
+              Value: !Ref FirebasePrivateKey
+            - Name: APNS_KEY_ID
+              Value: !Ref ApnsKeyId
+            - Name: APNS_TEAM_ID
+              Value: !Ref ApnsTeamId
+            - Name: APNS_BUNDLE_ID
+              Value: !Ref ApnsBundleId
+            - Name: APNS_KEY_PATH
+              Value: !Ref ApnsKeyPath
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -253,20 +334,50 @@ Resources:
       HealthCheckIntervalSeconds: 30
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 3
+      # Sticky sessions ensure Socket.io long-poll fallback always hits the
+      # same task. Pure websocket mode doesn't require this, but it is
+      # harmless and essential if polling is ever re-enabled.
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: 'true'
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: '86400'
 
-  ALBListener:
+  # ── HTTP → HTTPS redirect ────────────────────────────────────────────────────
+  ALBListenerHTTP:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
       Port: 80
       Protocol: HTTP
       DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: '443'
+            StatusCode: HTTP_301
+
+  # ── HTTPS listener (ws:// → wss:// upgrade handled here) ────────────────────
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref TargetGroup
 
   ECSService:
     Type: AWS::ECS::Service
-    DependsOn: ALBListener
+    DependsOn:
+      - ALBListener
+      - ALBListenerHTTP
     Properties:
       ServiceName: hop-api-staging
       Cluster: !Ref ECSCluster
@@ -285,5 +396,8 @@ Resources:
 
 Outputs:
   ALBURL:
+    Value: !Sub 'https://${ALB.DNSName}'
+    Description: Staging API base URL (HTTPS / WSS)
+  ALBDNSName:
     Value: !GetAtt ALB.DNSName
-    Description: Staging API URL
+    Description: Raw ALB DNS name (point your CNAME here)

@@ -24,13 +24,18 @@ data class PushTokenRequest(
 fun HopNotificationDto.toDomain(): HopNotification = HopNotification(
     id = id,
     type = when (type) {
-        "BOOKING_CONFIRMED" -> NotificationType.BOOKING_CONFIRMED
-        "BOOKING_CANCELLED" -> NotificationType.BOOKING_CANCELLED
-        "TRIP_REMINDER"     -> NotificationType.TRIP_REMINDER
-        "NEW_RATING"        -> NotificationType.NEW_RATING
-        "THRESHOLD_MET"     -> NotificationType.THRESHOLD_MET
-        "CHAT_MESSAGE"      -> NotificationType.CHAT_MESSAGE
-        else                -> NotificationType.GENERAL
+        "BOOKING_CONFIRMED"    -> NotificationType.BOOKING_CONFIRMED
+        "BOOKING_CANCELLED"    -> NotificationType.BOOKING_CANCELLED
+        "TRIP_REMINDER"        -> NotificationType.TRIP_REMINDER
+        "NEW_RATING"           -> NotificationType.NEW_RATING
+        "THRESHOLD_MET"        -> NotificationType.THRESHOLD_MET
+        "CHAT_MESSAGE"         -> NotificationType.CHAT_MESSAGE
+        "PAYMENT_MARKED_PAID" -> NotificationType.PAYMENT_MARKED_PAID
+        "PAYMENT_CONFIRMED"   -> NotificationType.PAYMENT_CONFIRMED
+        "PAYMENT_DISPUTED"    -> NotificationType.PAYMENT_DISPUTED
+        "RIDE_AWAITING_PAYMENT" -> NotificationType.RIDE_AWAITING_PAYMENT
+        "SEARCH_ALERT"        -> NotificationType.SEARCH_ALERT
+        else                  -> NotificationType.GENERAL
     },
     title = title,
     body = body,

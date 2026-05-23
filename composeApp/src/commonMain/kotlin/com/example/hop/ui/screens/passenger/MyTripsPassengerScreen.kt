@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.hop.domain.model.BookingStatus
 import com.example.hop.domain.model.Trip
 import com.example.hop.domain.model.TripModel
 import com.example.hop.domain.model.TripStatus
@@ -69,6 +70,20 @@ import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.mutableStateOf
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -84,6 +99,7 @@ fun MyTripsPassengerRoute(
     onNavigateBack: () -> Unit,
     onNavigateToTripDetailActive: (tripId: String) -> Unit,
     onNavigateToTripDetail: (tripId: String) -> Unit,
+    onNavigateToPassengerSettlement: (bookingId: String) -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToChat: () -> Unit,
     onNavigateToProfile: () -> Unit,
@@ -104,6 +120,8 @@ fun MyTripsPassengerRoute(
             when (effect) {
                 is MyTripsPassengerEffect.NavigateToTripDetailActive ->
                     onNavigateToTripDetailActive(effect.bookingId)
+                is MyTripsPassengerEffect.NavigateToPassengerSettlement ->
+                    onNavigateToPassengerSettlement(effect.bookingId)
                 is MyTripsPassengerEffect.NavigateToTripDetail ->
                     onNavigateToTripDetail(effect.tripId)
                 is MyTripsPassengerEffect.ShowSnackbar -> scope.launch {
@@ -154,6 +172,26 @@ fun MyTripsPassengerScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Upcoming", "Past")
+    var filterDate by remember { mutableStateOf<Long?>(null) }
+    var filterModel by remember { mutableStateOf<TripModel?>(null) }
+
+    val filterDateStr = remember(filterDate) {
+        filterDate?.let {
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            sdf.format(java.util.Date(it))
+        }
+    }
+    val filteredUpcoming = remember(state.upcomingTrips, filterDate, filterModel) {
+        state.upcomingTrips
+            .let { list -> if (filterModel != null) list.filter { it.model == filterModel } else list }
+            .let { list -> if (filterDateStr != null) list.filter { it.departsAt.take(10) == filterDateStr } else list }
+    }
+    val filteredPast = remember(state.pastTrips, filterDate, filterModel) {
+        state.pastTrips
+            .let { list -> if (filterModel != null) list.filter { it.model == filterModel } else list }
+            .let { list -> if (filterDateStr != null) list.filter { it.departsAt.take(10) == filterDateStr } else list }
+    }
 
     Column(
         modifier = modifier
@@ -197,17 +235,25 @@ fun MyTripsPassengerScreen(
             }
         }
 
+        // ── Filter bar ───────────────────────────────────────────────────────
+        TripsFilterBar(
+            filterDate = filterDate,
+            filterModel = filterModel,
+            onFilterDateChange = { filterDate = it },
+            onFilterModelChange = { filterModel = it },
+        )
+
         // ── Content ──────────────────────────────────────────────────────────
         Box(modifier = Modifier.weight(1f)) {
             when {
                 state.isLoading -> LoadingIndicator()
                 selectedTab == 0 -> UpcomingTripsContent(
-                    trips = state.upcomingTrips,
+                    trips = filteredUpcoming,
                     onTripClick = { bookingId -> onEvent(MyTripsPassengerEvent.SelectUpcomingTrip(bookingId)) },
                     onFindRide = onNavigateToFindRide,
                 )
                 else -> PastTripsContent(
-                    trips = state.pastTrips,
+                    trips = filteredPast,
                     onTripClick = { tripId -> onEvent(MyTripsPassengerEvent.SelectPastTrip(tripId)) },
                     onFindRide = onNavigateToFindRide,
                 )
@@ -349,8 +395,9 @@ private fun TripList(
                 driverRating = 5.0f,
                 originName = tripUiModel.originName,
                 destinationName = tripUiModel.destName,
-                departureTime = tripUiModel.departsAt,
-                tripModel = tripUiModel.status.toBadgeType(),
+                departureTime = tripUiModel.formattedDepartsAt,
+                tripModel = tripUiModel.bookingStatus?.toPassengerBadgeType()
+                    ?: tripUiModel.status.toBadgeType(),
                 pricePerSeatOere = tripUiModel.priceOerePerSeat,
                 onClick = if (tripUiModel.isBroken) ({}) else ({ onTripClick(clickId) }),
                 modifier = if (tripUiModel.isBroken) Modifier.alpha(0.6f) else Modifier,
@@ -440,13 +487,135 @@ private fun MyTripsBottomNavBar(
     }
 }
 
+// ── Filter bar composable ────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TripsFilterBar(
+    filterDate: Long?,
+    filterModel: TripModel?,
+    onFilterDateChange: (Long?) -> Unit,
+    onFilterModelChange: (TripModel?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filterDate)
+    val dateLabel = filterDate?.let {
+        val sdf = java.text.SimpleDateFormat("d MMM", java.util.Locale.US)
+        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        sdf.format(java.util.Date(it))
+    } ?: "Date"
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
+    ) {
+        FilterChip(
+            selected = filterDate != null,
+            onClick = { showDatePicker = true },
+            label = { Text(text = dateLabel, style = MaterialTheme.typography.labelMedium) },
+            leadingIcon = if (filterDate == null) {
+                { Icon(Icons.Outlined.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) }
+            } else null,
+            trailingIcon = if (filterDate != null) {
+                {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = "Clear date filter",
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { onFilterDateChange(null) },
+                    )
+                }
+            } else null,
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+        FilterChip(
+            selected = filterModel == TripModel.A,
+            onClick = { onFilterModelChange(if (filterModel == TripModel.A) null else TripModel.A) },
+            label = { Text("Commute", style = MaterialTheme.typography.labelMedium) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+        FilterChip(
+            selected = filterModel == TripModel.B,
+            onClick = { onFilterModelChange(if (filterModel == TripModel.B) null else TripModel.B) },
+            label = { Text("Long Trip", style = MaterialTheme.typography.labelMedium) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = HopColors.primaryLime.copy(alpha = 0.20f),
+                selectedLabelColor = HopColors.authTextPrimary,
+            ),
+        )
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onFilterDateChange(datePickerState.selectedDateMillis)
+                    showDatePicker = false
+                }) {
+                    Text("OK", color = HopColors.primaryLime)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", color = HopColors.authTextSecondary)
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+private fun BookingStatus.toPassengerBadgeType(): BadgeType = when (this) {
+    BookingStatus.PENDING          -> BadgeType.Pending
+    BookingStatus.CONFIRMED        -> BadgeType.Confirmed
+    BookingStatus.AWAITING_PAYMENT -> BadgeType.Custom(
+        label = "Pay now",
+        background = Color(0xFF3B82F6).copy(alpha = 0.15f),
+        contentColor = Color(0xFF3B82F6),
+    )
+    BookingStatus.CANCELLED        -> BadgeType.Cancelled
+    BookingStatus.COMPLETED        -> BadgeType.Completed
+    BookingStatus.DISPUTED         -> BadgeType.Custom(
+        label = "Disputed",
+        background = HopColors.error.copy(alpha = 0.15f),
+        contentColor = HopColors.error,
+    )
+    BookingStatus.UNKNOWN          -> BadgeType.Custom(
+        label = "Unknown",
+        background = HopColors.authInputSurface,
+        contentColor = HopColors.authTextSecondary,
+    )
+}
+
 private fun TripStatus.toBadgeType(): BadgeType = when (this) {
-    TripStatus.ACTIVE     -> BadgeType.Confirmed
+    TripStatus.ACTIVE     -> BadgeType.Custom(
+        label = "Active",
+        background = HopColors.primaryLime.copy(alpha = 0.20f),
+        contentColor = Color(0xFF1A1A1A),
+    )
     TripStatus.CONFIRMED  -> BadgeType.Confirmed
     TripStatus.COMPLETED  -> BadgeType.Completed
     TripStatus.CANCELLED  -> BadgeType.Cancelled
+    TripStatus.THRESHOLD_NOT_MET -> BadgeType.Custom(
+        label = "Threshold not met",
+        background = Color(0xFF332200),
+        contentColor = Color(0xFFFFAA00),
+    )
     TripStatus.UNKNOWN    -> BadgeType.Custom(
         label = "UNKNOWN",
         background = Color(0xFF242424),

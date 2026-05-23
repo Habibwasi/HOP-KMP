@@ -43,10 +43,13 @@ class DevUserRepository : UserRepository {
     override suspend fun updateFullName(name: String): ApiResponse<User> =
         ApiResponse.Success(DevAuthRepository.DEV_USER.copy(fullName = name))
 
+    override suspend fun updateMobilepayNumber(number: String): ApiResponse<User> =
+        ApiResponse.Success(DevAuthRepository.DEV_USER.copy(mobilepayNumber = number))
+
     override suspend fun reportUser(userId: String, reason: String): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
 
-    override suspend fun savePushToken(token: String): ApiResponse<Unit> =
+    override suspend fun savePushToken(token: String, platform: String): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
 
     override suspend fun getNotifications(): ApiResponse<List<HopNotification>> =

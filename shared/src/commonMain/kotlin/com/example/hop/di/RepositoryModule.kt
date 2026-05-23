@@ -1,13 +1,29 @@
 package com.example.hop.di
 
+import com.example.hop.data.repository.AggregatesRepositoryImpl
 import com.example.hop.data.repository.BookingRepositoryImpl
+import com.example.hop.data.repository.ChatListRepositoryImpl
 import com.example.hop.data.repository.DriverRepositoryImpl
+import com.example.hop.data.repository.HomeStatsRepositoryImpl
+import com.example.hop.data.repository.PlacesRepositoryImpl
+import com.example.hop.data.repository.RoutingRepositoryImpl
+import com.example.hop.data.repository.SearchAlertsRepositoryImpl
+import com.example.hop.data.repository.SearchHistoryRepositoryImpl
 import com.example.hop.data.repository.SupabaseAuthRepositoryImpl
 import com.example.hop.data.repository.TaxRepositoryImpl
 import com.example.hop.data.repository.TripRepositoryImpl
 import com.example.hop.domain.repository.AuthRepository
+import com.example.hop.domain.repository.AggregatesRepository
 import com.example.hop.domain.repository.BookingRepository
+import com.example.hop.domain.repository.ChatListRepository
 import com.example.hop.domain.repository.DriverRepository
+import com.example.hop.domain.repository.HomeStatsRepository
+import com.example.hop.domain.repository.PlacesRepository
+import com.example.hop.domain.repository.RoutingRepository
+import com.example.hop.domain.repository.SearchAlertsRepository
+import com.example.hop.domain.repository.SearchHistoryRepository
+import com.example.hop.data.repository.SettlementRepositoryImpl
+import com.example.hop.domain.repository.SettlementRepository
 import com.example.hop.data.repository.UserRepositoryImpl
 import com.example.hop.domain.repository.TaxRepository
 import com.example.hop.domain.repository.TripRepository
@@ -16,7 +32,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.ktor.client.HttpClient
 import org.koin.dsl.module
 
-val repositoryModule = module {
+fun repositoryModule(mapsApiKey: String) = module {
     single<AuthRepository> {
         SupabaseAuthRepositoryImpl(
             supabase = get<SupabaseClient>(),
@@ -30,6 +46,16 @@ val repositoryModule = module {
     }
     single<BookingRepository> {
         BookingRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<ChatListRepository> {
+        ChatListRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<SettlementRepository> {
+        SettlementRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
     }
@@ -47,5 +73,33 @@ val repositoryModule = module {
         UserRepositoryImpl(
             httpClient = get<HttpClient>(),
         )
+    }
+    single<PlacesRepository> {
+        PlacesRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<SearchHistoryRepository> {
+        SearchHistoryRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<HomeStatsRepository> {
+        HomeStatsRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<AggregatesRepository> {
+        AggregatesRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<SearchAlertsRepository> {
+        SearchAlertsRepositoryImpl(
+            httpClient = get<HttpClient>(),
+        )
+    }
+    single<RoutingRepository> {
+        RoutingRepositoryImpl(httpClient = get<HttpClient>())
     }
 }
