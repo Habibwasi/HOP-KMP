@@ -67,8 +67,11 @@ import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -377,9 +380,17 @@ private fun MessageBubble(
  * Formats an epoch-ms timestamp to a short `HH:mm` string in the device's local timezone.
  */
 private fun formatTimestamp(epochMs: Long): String {
+    val tz      = TimeZone.currentSystemDefault()
     val instant = Instant.fromEpochMilliseconds(epochMs)
-    val local   = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    return "${local.hour.toString().padStart(2, '0')}:${local.minute.toString().padStart(2, '0')}"
+    val local   = instant.toLocalDateTime(tz)
+    val today   = Clock.System.now().toLocalDateTime(tz).date
+    val h = local.hour.toString().padStart(2, '0')
+    val m = local.minute.toString().padStart(2, '0')
+    return when (local.date) {
+        today                          -> "$h:$m"
+        today.minus(1, DateTimeUnit.DAY) -> "Yesterday · $h:$m"
+        else -> "${local.dayOfMonth} ${local.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)} · $h:$m"
+    }
 }
 
 // ── Input row ─────────────────────────────────────────────────────────────────

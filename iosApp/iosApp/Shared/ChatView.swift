@@ -196,9 +196,16 @@ private struct MessageBubble: View {
 
     private func formatTimestamp(_ epochMs: Int64) -> String {
         let date = Date(timeIntervalSince1970: Double(epochMs) / 1000.0)
-        let df = DateFormatter()
-        df.dateFormat = "HH:mm"
+        let cal  = Calendar.current
+        let df   = DateFormatter()
         df.locale = Locale(identifier: "en_GB")
+        if cal.isDateInToday(date) {
+            df.dateFormat = "HH:mm"
+        } else if cal.isDateInYesterday(date) {
+            df.dateFormat = "'Yesterday · 'HH:mm"
+        } else {
+            df.dateFormat = "d MMM · HH:mm"
+        }
         return df.string(from: date)
     }
 }
