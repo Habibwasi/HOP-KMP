@@ -107,10 +107,16 @@ export class EmailHookController {
       throw new UnauthorizedException('Missing authorization token')
     }
 
-    // Supabase signs the hook request as a JWT using the hook secret
+    // Supabase hook secrets have the format "v1,whsec_<base64>".
+    // The actual HMAC-SHA256 signing key is the base64-decoded bytes of
+    // the part after "whsec_". Passing the raw string will always fail.
+    const b64 = hookSecret.replace(/^v\d+,whsec_/, '')
+    const signingKey = Buffer.from(b64, 'base64')
+
     try {
-      this.jwtService.verify(token, { secret: hookSecret })
-    } catch {
+      this.jwtService.verify(token, { secret: signingKey })
+    } catch (err) {
+      this.logger.warn(`Hook JWT verification failed: ${(err as Error).message}`)
       throw new UnauthorizedException('Invalid hook token')
     }
   }
