@@ -98,23 +98,20 @@ struct LoginView: View {
 
                     Spacer().frame(height: HopSpacing.md)
 
-                    HopButton(
-                        text: "Continue with Google",
-                        variant: .ghost,
+                    GoogleSignInButton(
                         isEnabled: !wrapper.state.isLoading,
                         action: { wrapper.signInWithGoogle() }
                     )
 
                     Spacer().frame(height: HopSpacing.sm)
 
-                    // Apple Sign-In — uses native ASAuthorizationAppleIDButton appearance
-                    // as required by App Store guideline 4.8. Tap triggers Supabase
-                    // browser-based OAuth (no native credential exchange needed).
+                    // Apple Sign-In — native ASAuthorizationAppleIDButton as required
+                    // by App Store guideline 4.8.
                     SignInWithAppleButton(.signIn, onRequest: { _ in }, onCompletion: { _ in })
                         .signInWithAppleButtonStyle(.black)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .cornerRadius(14)
+                        .frame(height: 52)
+                        .cornerRadius(12)
                         .allowsHitTesting(false)
                         .overlay(
                             Button(action: {
@@ -125,23 +122,24 @@ struct LoginView: View {
                         )
                         .opacity(wrapper.state.isLoading ? 0.5 : 1.0)
 
-                    Spacer().frame(height: HopSpacing.xl)
-
-                    HStack(spacing: 4) {
-                        Spacer()
-                        Text("Don't have an account?")
-                            .font(HopFont.bodyMedium())
-                            .foregroundColor(Color.hopAuthTextSecondary)
-                        Button(action: onNavigateToSignUp) {
-                            Text("Sign up")
-                                .font(HopFont.bodyMedium(weight: .semibold))
-                                .foregroundColor(Color.hopAuthAccent)
-                                .underline()
-                        }
-                        Spacer()
-                    }
-
                     Spacer().frame(height: HopSpacing.lg)
+
+                    Text("Don't have an account?")
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopAuthTextSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Spacer().frame(height: HopSpacing.xs)
+
+                    HopButton(
+                        text: "Create an account",
+                        variant: .ghost,
+                        isEnabled: !wrapper.state.isLoading,
+                        lightSurface: true,
+                        action: onNavigateToSignUp
+                    )
+
+                    Spacer().frame(height: HopSpacing.xl)
                 }
                 .padding(.horizontal, HopSpacing.md)
             }

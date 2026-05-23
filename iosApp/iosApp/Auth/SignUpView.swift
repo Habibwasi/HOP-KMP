@@ -130,9 +130,7 @@ struct SignUpView: View {
 
                     Spacer().frame(height: HopSpacing.md)
 
-                    HopButton(
-                        text: "Continue with Google",
-                        variant: .ghost,
+                    GoogleSignInButton(
                         isEnabled: !wrapper.state.isLoading,
                         action: { wrapper.signInWithGoogle() }
                     )
@@ -145,8 +143,8 @@ struct SignUpView: View {
                     SignInWithAppleButton(.signUp, onRequest: { _ in }, onCompletion: { _ in })
                         .signInWithAppleButtonStyle(.black)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .cornerRadius(14)
+                        .frame(height: 52)
+                        .cornerRadius(12)
                         .allowsHitTesting(false)
                         .overlay(
                             Button(action: {
@@ -159,19 +157,20 @@ struct SignUpView: View {
 
                     Spacer().frame(height: HopSpacing.xl)
 
-                    HStack(spacing: 4) {
-                        Spacer()
-                        Text("Already have an account?")
-                            .font(HopFont.bodyMedium())
-                            .foregroundColor(Color.hopAuthTextSecondary)
-                        Button(action: onNavigateToLogin) {
-                            Text("Log in")
-                                .font(HopFont.bodyMedium(weight: .semibold))
-                                .foregroundColor(Color.hopAuthAccent)
-                                .underline()
-                        }
-                        Spacer()
-                    }
+                    Text("Already have an account?")
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopAuthTextSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Spacer().frame(height: HopSpacing.xs)
+
+                    HopButton(
+                        text: "Log in",
+                        variant: .ghost,
+                        isEnabled: !wrapper.state.isLoading,
+                        lightSurface: true,
+                        action: onNavigateToLogin
+                    )
 
                     Spacer().frame(height: HopSpacing.lg)
                 }

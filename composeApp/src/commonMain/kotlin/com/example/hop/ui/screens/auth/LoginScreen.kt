@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,11 +38,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.hop.getPlatform
 import com.example.hop.presentation.auth.AuthEffect
 import com.example.hop.presentation.auth.AuthEvent
 import com.example.hop.presentation.auth.AuthUiState
 import com.example.hop.presentation.auth.AuthViewModel
+import com.example.hop.ui.components.GoogleSignInButton
 import com.example.hop.ui.components.HopButton
 import com.example.hop.ui.components.HopButtonVariant
 import com.example.hop.ui.components.HopTextField
@@ -246,19 +252,39 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(HopSpacing.md))
 
         // ── Social sign-in ────────────────────────────────────────────────────
-        HopButton(
-            text = "Continue with Google",
+        GoogleSignInButton(
             onClick = { onEvent(AuthEvent.SignInWithGoogle) },
-            variant = HopButtonVariant.Ghost,
             enabled = !state.isLoading,
             modifier = Modifier.fillMaxWidth(),
         )
 
         Spacer(modifier = Modifier.height(HopSpacing.sm))
 
+        // Apple Sign-In — iOS only (Google Play policies prohibit showing it on Android)
+        if (!getPlatform().name.startsWith("Android")) {
+            HopButton(
+                text = "Continue with Apple",
+                onClick = { onEvent(AuthEvent.SignInWithApple) },
+                variant = HopButtonVariant.Ghost,
+                enabled = !state.isLoading,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(HopSpacing.sm))
+        }
+
+        Spacer(modifier = Modifier.height(HopSpacing.lg))
+
+        // ── Footer link ───────────────────────────────────────────────────────
+        Text(
+            text = "Don't have an account?",
+            style = MaterialTheme.typography.bodyMedium,
+            color = HopColors.authTextSecondary,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(HopSpacing.xs))
         HopButton(
-            text = "Continue with Apple",
-            onClick = { onEvent(AuthEvent.SignInWithApple) },
+            text = "Create an account",
+            onClick = onNavigateToSignUp,
             variant = HopButtonVariant.Ghost,
             enabled = !state.isLoading,
             modifier = Modifier.fillMaxWidth(),
@@ -266,30 +292,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(HopSpacing.xl))
 
-        // ── Footer link ───────────────────────────────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Don't have an account? ",
-                style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.authTextSecondary,
-            )
-            TextButton(onClick = onNavigateToSignUp) {
-                Text(
-                    text = "Sign up",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = HopColors.authAccent,
-                    textDecoration = TextDecoration.Underline,
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(HopSpacing.lg))
     }
 }
 
