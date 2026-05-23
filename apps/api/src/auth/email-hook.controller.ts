@@ -10,6 +10,7 @@ import {
   Logger,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 import { MailService } from '../mail/mail.service'
 import {
   buildAuthEmail,
@@ -50,6 +51,7 @@ export class EmailHookController {
   constructor(
     private readonly mailService: MailService,
     private readonly config: ConfigService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post('email')
@@ -96,14 +98,20 @@ export class EmailHookController {
   private verifySecret(authHeader: string | undefined): void {
     const hookSecret = this.config.get<string>('SUPABASE_HOOK_SECRET')
     if (!hookSecret) {
-      // If no secret is configured, log a warning but allow through in dev
       this.logger.warn('SUPABASE_HOOK_SECRET is not set — hook is unprotected!')
       return
     }
 
     const token = authHeader?.replace(/^Bearer\s+/i, '')
-    if (!token || token !== hookSecret) {
-      throw new UnauthorizedException('Invalid hook secret')
+    if (!token) {
+      throw new UnauthorizedException('Missing authorization token')
+    }
+
+    // Supabase signs the hook request as a JWT using the hook secret
+    try {
+      this.jwtService.verify(token, { secret: hookSecret })
+    } catch {
+      throw new UnauthorizedException('Invalid hook token')
     }
   }
 }
