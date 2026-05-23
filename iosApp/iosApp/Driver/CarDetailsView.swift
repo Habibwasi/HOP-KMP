@@ -32,11 +32,11 @@ struct CarDetailsView: View {
                         .font(HopFont.headlineMedium(weight: .bold))
                         .foregroundColor(Color.hopAuthTextPrimary)
 
-                    HopTextField(label: "Make", placeholder: "e.g. Toyota", text: $make)
-                    HopTextField(label: "Model", placeholder: "e.g. Corolla", text: $model)
-                    HopTextField(label: "Year", placeholder: "2020", text: $year, keyboardType: .numberPad)
-                    HopTextField(label: "Licence plate", placeholder: "AB 12 345", text: $plate)
-                    HopTextField(label: "Colour", placeholder: "e.g. Silver", text: $colour)
+                    HopTextField(label: "Make", placeholder: "e.g. Toyota", text: $make, lightSurface: true)
+                    HopTextField(label: "Model", placeholder: "e.g. Corolla", text: $model, lightSurface: true)
+                    HopTextField(label: "Year", placeholder: "2020", text: $year, keyboardType: .numberPad, lightSurface: true)
+                    HopTextField(label: "Licence plate", placeholder: "AB 12 345", text: $plate, lightSurface: true)
+                    HopTextField(label: "Colour", placeholder: "e.g. Silver", text: $colour, lightSurface: true)
 
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Available seats (excluding driver)")

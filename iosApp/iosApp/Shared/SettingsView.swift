@@ -12,9 +12,12 @@ struct SettingsView: View {
 
     var onBack: () -> Void
     var onLoggedOut: () -> Void
+    var navigate: (HopRoute) -> Void
 
     @StateObject private var wrapper = SettingsViewModelWrapper()
     @StateObject private var auth    = AuthViewModelWrapper()
+
+    @Environment(\.openURL) private var openURL
 
     private let appVersion = "1.0"
 
@@ -97,9 +100,23 @@ struct SettingsView: View {
         }
         .task {
             wrapper.startObserving { effect in
-                if effect is SettingsEffectLogout {
+                switch effect {
+                case is SettingsEffectLogout:
                     auth.logout()
                     onLoggedOut()
+                case is SettingsEffectNavigateToEditProfile:
+                    navigate(.profile(userId: ""))
+                case is SettingsEffectNavigateToChangePassword:
+                    navigate(.forgotPassword)
+                case is SettingsEffectNavigateToHelpCentre:
+                    openURL(URL(string: "https://hop.ridly.dk/help")!)
+                case is SettingsEffectNavigateToContactUs:
+                    openURL(URL(string: "https://hop.ridly.dk/contact")!)
+                case is SettingsEffectNavigateToTermsOfService:
+                    openURL(URL(string: "https://hop.ridly.dk/terms")!)
+                case is SettingsEffectNavigateToPrivacyPolicy:
+                    openURL(URL(string: "https://hop.ridly.dk/privacy")!)
+                default: break
                 }
             }
         }

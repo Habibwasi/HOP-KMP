@@ -358,7 +358,8 @@ struct HopNavigationStack: View {
         case .settings:
             SettingsView(
                 onBack:      popBack,
-                onLoggedOut: goHome
+                onLoggedOut: goHome,
+                navigate:    navigate
             )
         }
     }
