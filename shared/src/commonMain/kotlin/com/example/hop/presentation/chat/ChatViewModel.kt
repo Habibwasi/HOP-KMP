@@ -66,7 +66,12 @@ class ChatViewModel(
     private fun collectMessages() {
         viewModelScope.launch {
             chatRepository.messages.collect { message ->
-                _state.update { it.copy(messages = it.messages + message) }
+                _state.update { state ->
+                    // Sort by timestampMs so messages always appear in chronological
+                    // order regardless of the arrival sequence from the socket.
+                    val sorted = (state.messages + message).sortedBy { it.timestampMs }
+                    state.copy(messages = sorted)
+                }
                 _effect.send(ChatEffect.ScrollToBottom)
             }
         }

@@ -153,8 +153,11 @@ internal class IosChatRepositoryImpl : ChatRepository {
                         }
                         else -> null
                     }
-                }.getOrNull()?.forEach { msg ->
-                    scope.launch { _messages.emit(msg) }
+                }.getOrNull()?.let { msgs ->
+                    // Emit all messages inside a single coroutine so ordering
+                    // is preserved. Spawning a separate launch per message lets
+                    // coroutines race and arrive out of order.
+                    scope.launch { msgs.forEach { _messages.emit(it) } }
                 }
             }
         }
