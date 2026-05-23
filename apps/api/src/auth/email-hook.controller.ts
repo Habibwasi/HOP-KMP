@@ -107,17 +107,41 @@ export class EmailHookController {
       throw new UnauthorizedException('Missing authorization token')
     }
 
-    // Supabase hook secrets have the format "v1,whsec_<base64>".
-    // The actual HMAC-SHA256 signing key is the base64-decoded bytes of
-    // the part after "whsec_". Passing the raw string will always fail.
-    const b64 = hookSecret.replace(/^v\d+,whsec_/, '')
-    const signingKey = Buffer.from(b64, 'base64')
+    const isJwt = (token.match(/\./g) ?? []).length === 2
 
-    try {
-      this.jwtService.verify(token, { secret: signingKey })
-    } catch (err) {
-      this.logger.warn(`Hook JWT verification failed: ${(err as Error).message}`)
-      throw new UnauthorizedException('Invalid hook token')
+    // Log diagnostics (safe — only first/last 6 chars of each)
+    this.logger.log(
+      `[hook-auth] token format: ${isJwt ? 'JWT' : 'raw'} | ` +
+      `token[0..6]="${token.slice(0, 6)}" | ` +
+      `secret[0..6]="${hookSecret.slice(0, 6)}" | ` +
+      `tokenLen=${token.length} secretLen=${hookSecret.length}`,
+    )
+
+    if (isJwt) {
+      // Supabase signs the hook request with HS256 using the base64-decoded
+      // bytes of the value after "v1,whsec_"
+      const b64 = hookSecret.replace(/^v\d+,whsec_/, '')
+      const signingKey = Buffer.from(b64, 'base64')
+      try {
+        this.jwtService.verify(token, { secret: signingKey })
+        return
+      } catch (err) {
+        this.logger.warn(`[hook-auth] JWT verify (decoded key) failed: ${(err as Error).message}`)
+      }
+
+      // Fallback: try with the raw secret string (in case Supabase uses it directly)
+      try {
+        this.jwtService.verify(token, { secret: hookSecret })
+        return
+      } catch (err) {
+        this.logger.warn(`[hook-auth] JWT verify (raw secret) failed: ${(err as Error).message}`)
+      }
+    } else {
+      // Raw bearer comparison
+      if (token === hookSecret) return
+      this.logger.warn(`[hook-auth] Raw secret mismatch`)
     }
+
+    throw new UnauthorizedException('Invalid hook token')
   }
 }
