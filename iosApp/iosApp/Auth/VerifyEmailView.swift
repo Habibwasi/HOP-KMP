@@ -78,6 +78,7 @@ struct VerifyEmailView: View {
                     text: canResend ? "Resend email" : "Resend in \(cooldown)s",
                     variant: .ghost,
                     isEnabled: canResend,
+                    lightSurface: true,
                     action: {
                         wrapper.resendVerificationEmail()
                     }

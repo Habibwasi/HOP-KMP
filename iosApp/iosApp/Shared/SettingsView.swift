@@ -18,6 +18,7 @@ struct SettingsView: View {
     @StateObject private var auth    = AuthViewModelWrapper()
 
     @Environment(\.openURL) private var openURL
+    @State private var showChangePassword = false
 
     private let appVersion = "1.0"
 
@@ -98,6 +99,9 @@ struct SettingsView: View {
         } message: {
             Text("You'll need to sign in again to use Hop.")
         }
+        .sheet(isPresented: $showChangePassword) {
+            ChangePasswordPlaceholderView(onDismiss: { showChangePassword = false })
+        }
         .task {
             wrapper.startObserving { effect in
                 switch effect {
@@ -107,7 +111,7 @@ struct SettingsView: View {
                 case is SettingsEffectNavigateToEditProfile:
                     navigate(.profile(userId: ""))
                 case is SettingsEffectNavigateToChangePassword:
-                    navigate(.forgotPassword)
+                    showChangePassword = true
                 case is SettingsEffectNavigateToHelpCentre:
                     openURL(URL(string: "https://hop.ridly.dk/help")!)
                 case is SettingsEffectNavigateToContactUs:
@@ -237,6 +241,43 @@ private struct SettingsDivider: View {
             .fill(Color.hopAuthInputBorder)
             .frame(height: 0.5)
             .padding(.leading, 52)
+    }
+}
+
+// MARK: — Change Password placeholder ─────────────────────────────────────────
+
+private struct ChangePasswordPlaceholderView: View {
+    var onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.hopBackground.ignoresSafeArea()
+
+                VStack(spacing: HopSpacing.lg) {
+                    Image(systemName: "lock.slash")
+                        .font(.system(size: 48, weight: .light))
+                        .foregroundColor(Color.hopTextSecondary)
+
+                    Text("Change password")
+                        .font(HopFont.headlineSmall(weight: .bold))
+                        .foregroundColor(Color.hopTextPrimary)
+
+                    Text("To change your password, log out and use \"Forgot password\" on the login screen.")
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopTextSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, HopSpacing.lg)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Close") { onDismiss() }
+                        .foregroundColor(Color.hopTextPrimary)
+                }
+            }
+        }
     }
 }
 
