@@ -136,26 +136,37 @@ class SupabaseAuthRepositoryImpl(
     }
 
     override suspend fun handleDeepLink(url: String): ApiResponse<User> = safeApiCall {
-        // Supabase email-confirmation callbacks come in two flavours:
-        //  • Implicit flow  → ridly://auth/callback#access_token=TOKEN&refresh_token=…
-        //  • PKCE / code flow → ridly://auth/callback?code=CODE
+        // Supabase email-confirmation callbacks come in three flavours:
+        //  • Server-side verify  → ridly://auth/callback?access_token=TOKEN&refresh_token=…
+        //  • PKCE / code flow    → ridly://auth/callback?code=CODE
+        //  • Implicit flow       → ridly://auth/callback#access_token=TOKEN&refresh_token=…
         val parsedUrl = Url(url)
+
+        // Ktor's Url parser may not populate .parameters for custom URL schemes on
+        // Kotlin/Native (iOS).  Parse the raw query string manually as a fallback so
+        // the same code works on both Android (JVM) and iOS (K/N).
+        val rawQuery = url.substringAfter("?", "").substringBefore("#")
+        fun queryParam(name: String): String? =
+            parsedUrl.parameters[name]
+                ?: rawQuery.split("&")
+                    .firstOrNull { it.startsWith("$name=") }
+                    ?.substringAfter("=")
+
         // Surface Supabase error redirects (e.g. otp_expired) as readable exceptions.
-        val errorParam = parsedUrl.parameters["error"]
+        val errorParam = queryParam("error")
         if (errorParam != null) {
-            val desc = parsedUrl.parameters["error_description"]
-                ?.replace('+', ' ') ?: errorParam
+            val desc = (queryParam("error_description") ?: errorParam).replace('+', ' ')
             error(desc)
         }
-        val code = parsedUrl.parameters["code"]
+        val code = queryParam("code")
         // access_token passed as a query parameter (server-side verification flow):
         // our /auth/confirm-email endpoint verifies the token_hash server-side and
         // redirects to ridly://auth/callback?access_token=...&refresh_token=...
-        val accessTokenParam = parsedUrl.parameters["access_token"]
+        val accessTokenParam = queryParam("access_token")
         if (code != null) {
             supabase.auth.exchangeCodeForSession(code)
         } else if (accessTokenParam != null) {
-            val refreshToken = parsedUrl.parameters["refresh_token"] ?: ""
+            val refreshToken = queryParam("refresh_token") ?: ""
             supabase.auth.importAuthToken(
                 accessTokenParam,
                 refreshToken,
