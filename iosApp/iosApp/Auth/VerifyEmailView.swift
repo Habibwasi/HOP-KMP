@@ -101,6 +101,7 @@ struct VerifyEmailView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .navigationBarBackButtonHidden(true)
         .task { wrapper.startObserving() }
         .task {
             for await effect in wrapper.viewModel.effect {

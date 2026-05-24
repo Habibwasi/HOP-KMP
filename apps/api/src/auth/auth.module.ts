@@ -4,12 +4,13 @@ import { ConfigService } from '@nestjs/config'
 import { PrismaModule } from '../prisma/prisma.module'
 import { MailModule } from '../mail/mail.module'
 import { SupabaseGuard } from './supabase.guard'
+import { AuthController } from './auth.controller'
 import { EmailHookController } from './email-hook.controller'
 
 @Global()
 @Module({
   imports: [PrismaModule, MailModule],
-  controllers: [EmailHookController],
+  controllers: [AuthController, EmailHookController],
   providers: [
     {
       provide: 'SUPABASE_CLIENT',

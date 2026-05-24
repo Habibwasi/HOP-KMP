@@ -35,7 +35,11 @@ fun initKoin(supabaseUrl: String, supabaseAnonKey: String, mapsApiKey: String = 
     modules(appModules(supabaseUrl = supabaseUrl, supabaseAnonKey = supabaseAnonKey, mapsApiKey = mapsApiKey))
 }
 
-fun getAuthViewModel(): AuthViewModel = KoinPlatform.getKoin().get()
+// AuthViewModel must be shared across all iOS views and the onOpenURL deep-link
+// handler. Koin's viewModelOf is a factory (new instance per get()), so we cache
+// the single instance here to guarantee all callers receive the same object.
+private val authViewModelInstance: AuthViewModel by lazy { KoinPlatform.getKoin().get() }
+fun getAuthViewModel(): AuthViewModel = authViewModelInstance
 
 fun getSearchTripsViewModel(): SearchTripsViewModel = KoinPlatform.getKoin().get()
 

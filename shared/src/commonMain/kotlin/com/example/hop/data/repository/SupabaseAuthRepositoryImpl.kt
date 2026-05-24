@@ -140,12 +140,33 @@ class SupabaseAuthRepositoryImpl(
         //  • Implicit flow  → ridly://auth/callback#access_token=TOKEN&refresh_token=…
         //  • PKCE / code flow → ridly://auth/callback?code=CODE
         val parsedUrl = Url(url)
+        // Surface Supabase error redirects (e.g. otp_expired) as readable exceptions.
+        val errorParam = parsedUrl.parameters["error"]
+        if (errorParam != null) {
+            val desc = parsedUrl.parameters["error_description"]
+                ?.replace('+', ' ') ?: errorParam
+            error(desc)
+        }
         val code = parsedUrl.parameters["code"]
+        // access_token passed as a query parameter (server-side verification flow):
+        // our /auth/confirm-email endpoint verifies the token_hash server-side and
+        // redirects to ridly://auth/callback?access_token=...&refresh_token=...
+        val accessTokenParam = parsedUrl.parameters["access_token"]
         if (code != null) {
             supabase.auth.exchangeCodeForSession(code)
+        } else if (accessTokenParam != null) {
+            val refreshToken = parsedUrl.parameters["refresh_token"] ?: ""
+            supabase.auth.importAuthToken(
+                accessTokenParam,
+                refreshToken,
+                retrieveUser = false,
+                autoRefresh = refreshToken.isNotEmpty(),
+            )
         } else {
             val fragment = url.substringAfter("#", "")
-            check(fragment.contains("access_token")) { "Unrecognised auth callback URL" }
+            check(fragment.contains("access_token")) {
+                "Unrecognised auth callback URL — received: $url"
+            }
             // supabase-kt v3 removed parseFragmentAndImportSession.
             // Parse the access_token / refresh_token from the fragment and import them directly.
             val fragmentParams = parseQueryString(fragment)

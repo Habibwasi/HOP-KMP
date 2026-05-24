@@ -1,6 +1,7 @@
 package com.example.hop.di
 
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
 import org.koin.dsl.module
 
@@ -15,6 +16,11 @@ fun supabaseModule(supabaseUrl: String, supabaseAnonKey: String) = module {
                 // callback so PKCE code exchange works correctly on Android/iOS.
                 scheme = "ridly"
                 host   = "auth"
+                // Explicitly enforce PKCE so the post-verification redirect uses
+                // ?code=CODE (query param) rather than #access_token=TOKEN (fragment).
+                // iOS Safari strips URL fragments from custom-scheme server redirects,
+                // so without PKCE the app would receive a bare ridly://auth/callback.
+                flowType = FlowType.PKCE
             }
         }
     }

@@ -18,6 +18,8 @@ export interface AuthEmailContext {
   redirectTo: string
   /** Your project's base URL e.g. https://app.ridly.com */
   siteUrl: string
+  /** Base URL of this API server, used to build the confirm-email redirect URL */
+  apiBaseUrl: string
 }
 
 // ── Subject lines ──────────────────────────────────────────────────────────
@@ -37,14 +39,13 @@ export function buildSubject(actionType: EmailActionType): string {
 // ── HTML templates ─────────────────────────────────────────────────────────
 
 export function buildAuthEmail(ctx: AuthEmailContext): string {
-  // Supabase Cloud sends site_url as "https://<project>.supabase.co/auth/v1"
-  // (already includes /auth/v1). Strip it so we don't double the path.
-  const supabaseBase = ctx.siteUrl.replace(/\/auth\/v\d+\/?$/, '')
+  // Route confirmation through our own API endpoint so the browser → app
+  // redirect is handled via JavaScript (more reliable than following a
+  // server-side 302 to a custom URL scheme across all email clients).
   const confirmUrl =
-    `${supabaseBase}/auth/v1/verify` +
-    `?token=${ctx.tokenHash}` +
-    `&type=${ctx.actionType}` +
-    `&redirect_to=${encodeURIComponent(ctx.redirectTo)}`
+    `${ctx.apiBaseUrl}/api/v1/auth/confirm-email` +
+    `?token_hash=${encodeURIComponent(ctx.tokenHash)}` +
+    `&type=${encodeURIComponent(ctx.actionType)}`
 
   const content = buildContent(ctx, confirmUrl)
 

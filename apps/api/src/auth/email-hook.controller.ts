@@ -74,6 +74,7 @@ export class EmailHookController {
     const actionType = emailData.email_action_type
 
     // ── 3. Build email content ─────────────────────────────────────────────
+    const apiBaseUrl = this.config.get<string>('API_BASE_URL', 'https://hop-kmp-production.up.railway.app')
     const html = buildAuthEmail({
       actionType,
       recipientEmail,
@@ -81,6 +82,7 @@ export class EmailHookController {
       tokenHash:  emailData.token_hash,
       redirectTo: emailData.redirect_to,
       siteUrl:    emailData.site_url,
+      apiBaseUrl,
     })
 
     const subject = buildSubject(actionType)
