@@ -9,7 +9,9 @@ struct MarkTripCompleteView: View {
     let driverNetOere: Int
 
     var onCompleted: (_ bookingId: String, _ passengerName: String, _ passengerInitials: String,
-                      _ remainingIds: [String], _ remainingNames: [String], _ remainingInitials: [String]) -> Void
+                      _ passengerAvatarUrl: String?,
+                      _ remainingIds: [String], _ remainingNames: [String], _ remainingInitials: [String],
+                      _ remainingAvatarUrls: [String?]) -> Void
     var onSettlementRequired: (_ bookingId: String) -> Void
     var onBack: () -> Void
 
@@ -76,13 +78,18 @@ struct MarkTripCompleteView: View {
                     let remInitials = remaining.map { id in
                         allPassengers.first(where: { $0.bookingId == id })?.initials ?? ""
                     }
+                    let remAvatarUrls: [String?] = remaining.map { id in
+                        allPassengers.first(where: { $0.bookingId == id })?.avatarUrl
+                    }
                     onCompleted(
                         firstId,
                         first?.fullName ?? "Passenger",
                         first?.initials ?? "P",
+                        first?.avatarUrl,
                         remaining,
                         remNames,
-                        remInitials
+                        remInitials,
+                        remAvatarUrls
                     )
                 case let nav as DriverEffectNavigateToDriverSettlement:
                     onSettlementRequired(nav.tripId)

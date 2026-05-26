@@ -37,6 +37,7 @@ struct TripDetailView: View {
                         DriverHeader(
                             driverName: wrapper.state.driverName,
                             driverInitials: wrapper.state.driverInitials,
+                            driverAvatarURL: wrapper.state.driverAvatarUrl.flatMap { URL(string: $0) },
                             driverRating: Double(wrapper.state.driverRating),
                             isVerified: wrapper.state.isDriverVerified,
                             model: wrapper.state.model,
@@ -85,6 +86,7 @@ struct TripDetailView: View {
 private struct DriverHeader: View {
     let driverName: String
     let driverInitials: String
+    let driverAvatarURL: URL?
     let driverRating: Double
     let isVerified: Bool
     let model: TripModel
@@ -93,7 +95,7 @@ private struct DriverHeader: View {
     var body: some View {
         HStack(alignment: .top, spacing: HopSpacing.md) {
             Button(action: onAvatarTap) {
-                HopAvatar(name: driverName, size: .xlarge, isVerified: isVerified)
+                HopAvatar(name: driverName, imageURL: driverAvatarURL, size: .xlarge, isVerified: isVerified)
             }
             .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 4) {

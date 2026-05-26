@@ -112,4 +112,5 @@ fun PassengerSummaryDto.toDomain(): PassengerSummary = PassengerSummary(
     fullName = fullName,
     rating = rating,
     seats = seats,
+    avatarUrl = avatarUrl,
 )

@@ -5,9 +5,10 @@ import Shared
 
 struct RatePassengerView: View {
 
-    let bookingId:         String
-    let passengerName:     String
-    let passengerInitials: String
+    let bookingId:          String
+    let passengerName:      String
+    let passengerInitials:  String
+    let passengerAvatarUrl: String?
 
     var onSubmitted: () -> Void
     var onSkip:      () -> Void
@@ -27,7 +28,7 @@ struct RatePassengerView: View {
 
             VStack(spacing: 0) {
                 VStack(spacing: HopSpacing.sm) {
-                    HopAvatar(name: passengerInitials, imageURL: nil, size: .xlarge)
+                    HopAvatar(name: passengerInitials, imageURL: passengerAvatarUrl.flatMap { URL(string: $0) }, size: .xlarge)
                         .padding(.top, HopSpacing.xxl)
                     Text("How was your trip with \(passengerName)?")
                         .font(HopFont.headlineMedium(weight: .bold))

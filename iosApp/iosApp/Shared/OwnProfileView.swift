@@ -105,7 +105,7 @@ struct OwnProfileView: View {
         ZStack(alignment: .bottomTrailing) {
             HopAvatar(
                 name: wrapper.state.user?.fullName ?? "",
-                imageURL: nil,
+                imageURL: wrapper.state.user?.avatarUrl.flatMap { URL(string: $0) },
                 size: .xlarge,
                 isVerified: wrapper.state.user?.phoneVerified == true
             )

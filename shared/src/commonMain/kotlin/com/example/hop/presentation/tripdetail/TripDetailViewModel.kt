@@ -25,6 +25,7 @@ data class TripDetailUiState(
     val driverId: String = "",
     val driverName: String = "",
     val driverInitials: String = "",
+    val driverAvatarUrl: String? = null,
     val driverRating: Float = 0f,
     val isDriverVerified: Boolean = false,
     val originName: String = "",
@@ -111,6 +112,10 @@ class TripDetailViewModel(
                         )
                         is ApiResponse.Error -> false
                     }
+                    val driverAvatarUrl = when (driverUser) {
+                        is ApiResponse.Success -> driverUser.data.avatarUrl
+                        is ApiResponse.Error -> null
+                    }
                     val initials = driverName
                         .split(" ")
                         .mapNotNull { it.firstOrNull()?.uppercaseChar() }
@@ -124,6 +129,7 @@ class TripDetailViewModel(
                         driverId = trip.driverId,
                         driverName = driverName,
                         driverInitials = initials,
+                        driverAvatarUrl = driverAvatarUrl,
                         driverRating = driverRating,
                         isDriverVerified = isDriverVerified,
                         originName = trip.originName,

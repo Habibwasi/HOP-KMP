@@ -121,7 +121,7 @@ private struct PassengerRow: View {
 
     var body: some View {
         HStack(spacing: HopSpacing.sm) {
-            HopAvatar(name: passenger.initials, imageURL: nil, size: .medium)
+            HopAvatar(name: passenger.initials, imageURL: passenger.avatarUrl.flatMap { URL(string: $0) }, size: .medium)
             VStack(alignment: .leading, spacing: 2) {
                 Text(passenger.fullName)
                     .font(HopFont.labelMedium(weight: .semibold))

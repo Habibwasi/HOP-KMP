@@ -97,9 +97,11 @@ enum HopRoute: Hashable {
         bookingId: String,
         passengerName: String,
         passengerInitials: String,
+        passengerAvatarUrl: String? = nil,
         remainingBookingIds: [String] = [],
         remainingPassengerNames: [String] = [],
-        remainingPassengerInitials: [String] = []
+        remainingPassengerInitials: [String] = [],
+        remainingPassengerAvatarUrls: [String?] = []
     )
 
     /// DR-13 Tax Dashboard

@@ -17,6 +17,7 @@ data class PassengerSummary(
     /** Passenger's current platform rating (1.0–5.0). 0 = no ratings yet. */
     val rating: Float,
     val seats: Int,
+    val avatarUrl: String? = null,
 ) {
     /** Two-letter initials derived from fullName (e.g., "Lars Eriksen" → "LE"). */
     val initials: String

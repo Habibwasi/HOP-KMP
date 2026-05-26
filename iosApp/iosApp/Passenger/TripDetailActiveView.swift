@@ -124,7 +124,7 @@ private struct DriverInfoSection: View {
     let state: TripDetailActiveUiState
     var body: some View {
         HStack(alignment: .center, spacing: HopSpacing.md) {
-            HopAvatar(name: state.driverName, size: .xlarge, isVerified: state.isDriverVerified)
+            HopAvatar(name: state.driverName, imageURL: state.driverAvatarUrl.flatMap { URL(string: $0) }, size: .xlarge, isVerified: state.isDriverVerified)
             VStack(alignment: .leading, spacing: 4) {
                 Text(state.driverName)
                     .font(HopFont.headlineSmall(weight: .semibold))

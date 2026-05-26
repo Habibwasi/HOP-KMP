@@ -502,6 +502,7 @@ export class TripsService {
             id: true,
             firstName: true,
             lastName: true,
+            avatarUrl: true,
             ratingsReceived: { select: { score: true } },
           },
         },
@@ -520,6 +521,7 @@ export class TripsService {
         fullName: `${b.passenger.firstName} ${b.passenger.lastName}`.trim(),
         rating: avgRating,
         seats: b.seats,
+        avatarUrl: b.passenger.avatarUrl ?? null,
       }
     })
   }

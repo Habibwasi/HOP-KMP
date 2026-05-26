@@ -30,6 +30,7 @@ data class UserDto(
     val ratingDriver: Double? = null,
     val ratingPassenger: Double? = null,
     val mobilepayNumber: String? = null,
+    val avatarUrl: String? = null,
 )
 
 // ── Envelope ──────────────────────────────────────────────────────────────────
@@ -63,4 +64,5 @@ fun UserDto.toDomain(): User = User(
     ratingDriver = ratingDriver,
     ratingPassenger = ratingPassenger,
     mobilepayNumber = mobilepayNumber,
+    avatarUrl = avatarUrl,
 )

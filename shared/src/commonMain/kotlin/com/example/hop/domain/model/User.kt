@@ -21,4 +21,5 @@ data class User(
     val ratingDriver: Double?,
     val ratingPassenger: Double?,
     val mobilepayNumber: String? = null,
+    val avatarUrl: String? = null,
 )

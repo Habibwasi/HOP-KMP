@@ -242,14 +242,16 @@ struct HopNavigationStack: View {
             MarkTripCompleteView(
                 tripId: tripId,
                 driverNetOere: driverNetOere,
-                onCompleted: { bookingId, name, initials, remIds, remNames, remInitials in
+                onCompleted: { bookingId, name, initials, avatarUrl, remIds, remNames, remInitials, remAvatarUrls in
                     navigate(.ratePassenger(
                         bookingId: bookingId,
                         passengerName: name,
                         passengerInitials: initials,
+                        passengerAvatarUrl: avatarUrl,
                         remainingBookingIds: remIds,
                         remainingPassengerNames: remNames,
-                        remainingPassengerInitials: remInitials
+                        remainingPassengerInitials: remInitials,
+                        remainingPassengerAvatarUrls: remAvatarUrls
                     ))
                 },
                 onSettlementRequired: { tripId in
@@ -262,20 +264,24 @@ struct HopNavigationStack: View {
             )
 
         case .ratePassenger(let bookingId, let passengerName, let passengerInitials,
-                            let remainingIds, let remainingNames, let remainingInitials):
+                            let passengerAvatarUrl, let remainingIds, let remainingNames,
+                            let remainingInitials, let remainingAvatarUrls):
             RatePassengerView(
-                bookingId:         bookingId,
-                passengerName:     passengerName,
-                passengerInitials: passengerInitials,
+                bookingId:          bookingId,
+                passengerName:      passengerName,
+                passengerInitials:  passengerInitials,
+                passengerAvatarUrl: passengerAvatarUrl,
                 onSubmitted: {
                     if !remainingIds.isEmpty {
                         navigate(.ratePassenger(
                             bookingId: remainingIds[0],
                             passengerName: remainingNames.count > 0 ? remainingNames[0] : "",
                             passengerInitials: remainingInitials.count > 0 ? remainingInitials[0] : "",
+                            passengerAvatarUrl: remainingAvatarUrls.count > 0 ? remainingAvatarUrls[0] : nil,
                             remainingBookingIds: Array(remainingIds.dropFirst()),
                             remainingPassengerNames: Array(remainingNames.dropFirst()),
-                            remainingPassengerInitials: Array(remainingInitials.dropFirst())
+                            remainingPassengerInitials: Array(remainingInitials.dropFirst()),
+                            remainingPassengerAvatarUrls: Array(remainingAvatarUrls.dropFirst())
                         ))
                         if path.count >= 2 { path.removeLast() }
                     } else {

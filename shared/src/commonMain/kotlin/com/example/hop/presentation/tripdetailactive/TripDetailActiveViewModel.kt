@@ -29,6 +29,7 @@ data class TripDetailActiveUiState(
     val bookingStatus: BookingStatus = BookingStatus.UNKNOWN,
     val driverName: String = "",
     val driverInitials: String = "",
+    val driverAvatarUrl: String? = null,
     val driverPhone: String = "",
     val driverRating: Float = 0f,
     val isDriverVerified: Boolean = false,
@@ -112,6 +113,10 @@ class TripDetailActiveViewModel(
                                 is ApiResponse.Success -> driverUser.data.roles.contains(UserRole.DRIVER)
                                 is ApiResponse.Error -> false
                             }
+                            val driverAvatarUrl = when (driverUser) {
+                                is ApiResponse.Success -> driverUser.data.avatarUrl
+                                is ApiResponse.Error -> null
+                            }
                             val initials = driverName
                                 .split(" ")
                                 .mapNotNull { it.firstOrNull()?.uppercaseChar() }
@@ -125,6 +130,7 @@ class TripDetailActiveViewModel(
                                 bookingStatus = booking.status,
                                 driverName = driverName,
                                 driverInitials = initials,
+                                driverAvatarUrl = driverAvatarUrl,
                                 driverPhone = driverPhone,
                                 driverRating = driverRating,
                                 isDriverVerified = isDriverVerified,

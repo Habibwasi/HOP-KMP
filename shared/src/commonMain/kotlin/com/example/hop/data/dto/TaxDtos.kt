@@ -90,4 +90,5 @@ data class PassengerSummaryDto(
     val fullName: String,
     val rating: Float = 0f,
     val seats: Int,
+    val avatarUrl: String? = null,
 )
