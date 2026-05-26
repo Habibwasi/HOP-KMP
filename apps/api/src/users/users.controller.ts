@@ -180,7 +180,8 @@ export class UsersController implements OnModuleInit {
       throw new AppException(ApiErrorCode.INTERNAL_ERROR)
     }
 
-    const { data: { publicUrl } } = this.supabase.storage.from('avatars').getPublicUrl(path)
+    const { data: { publicUrl: rawPublicUrl } } = this.supabase.storage.from('avatars').getPublicUrl(path)
+    const publicUrl = `${rawPublicUrl}?t=${Date.now()}`
     return this.users.updateAvatarUrl(req.user.id, publicUrl)
   }
 
