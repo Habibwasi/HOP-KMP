@@ -51,9 +51,18 @@ export class UsersController implements OnModuleInit {
       allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
       fileSizeLimit: 5 * 1024 * 1024,
     })
-    // 'already exists' is not an error
-    if (error && !error.message.toLowerCase().includes('already exist')) {
-      this.logger.warn(`avatars bucket: ${error.message}`)
+    if (error) {
+      if (error.message.toLowerCase().includes('already exist')) {
+        // Bucket pre-exists — ensure it is public regardless of how it was created
+        const { error: updateError } = await this.supabase.storage.updateBucket('avatars', {
+          public: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          fileSizeLimit: 5 * 1024 * 1024,
+        })
+        if (updateError) this.logger.warn(`avatars bucket update: ${updateError.message}`)
+      } else {
+        this.logger.warn(`avatars bucket: ${error.message}`)
+      }
     }
   }
 

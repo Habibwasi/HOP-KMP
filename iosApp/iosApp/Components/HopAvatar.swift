@@ -101,6 +101,7 @@ struct HopAvatar: View {
                         initialsView
                     }
                 }
+                .id(url)
             } else {
                 initialsView
             }
