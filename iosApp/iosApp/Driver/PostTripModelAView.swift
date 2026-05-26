@@ -120,8 +120,8 @@ struct PostTripModelAView: View {
                 .padding(HopSpacing.md)
             }
         }
-        .onChange(of: origin) { _ in triggerRouteCalcIfReady() }
-        .onChange(of: dest)   { _ in triggerRouteCalcIfReady() }
+        .onChange(of: origin) { triggerRouteCalcIfReady() }
+        .onChange(of: dest)   { triggerRouteCalcIfReady() }
         .fullScreenCover(item: $locationPickerField) { field in
             LocationPickerOverlay(
                 title: field == .from ? "Where from?" : "Where to?",

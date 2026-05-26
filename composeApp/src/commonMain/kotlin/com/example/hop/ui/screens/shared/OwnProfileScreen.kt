@@ -1,5 +1,8 @@
 package com.example.hop.ui.screens.shared
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -75,6 +78,7 @@ import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.ui.platform.LocalContext
 import org.koin.compose.viewmodel.koinViewModel
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -96,6 +100,18 @@ fun OwnProfileRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    val imageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes != null) {
+                viewModel.onEvent(OwnProfileEvent.UploadAvatar(bytes, "image/jpeg"))
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.onEvent(OwnProfileEvent.Load)
@@ -116,6 +132,11 @@ fun OwnProfileRoute(
         state = state,
         snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
+        onPickImage = {
+            imageLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        },
         onNavigateBack = onNavigateBack,
         onNavigateToSettings = onNavigateToSettings,
         modifier = modifier,
@@ -129,6 +150,7 @@ fun OwnProfileScreen(
     state: OwnProfileUiState,
     snackbarHostState: SnackbarHostState,
     onEvent: (OwnProfileEvent) -> Unit,
+    onPickImage: () -> Unit = {},
     onNavigateBack: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -169,6 +191,8 @@ fun OwnProfileScreen(
                 AvatarEditSection(
                     initials = state.user?.fullName?.toInitials().orEmpty(),
                     isVerified = state.user?.phoneVerified == true,
+                    isUploading = state.isUploadingAvatar,
+                    onPickImage = onPickImage,
                 )
             }
 
@@ -283,6 +307,8 @@ fun OwnProfileScreen(
 private fun AvatarEditSection(
     initials: String,
     isVerified: Boolean,
+    isUploading: Boolean = false,
+    onPickImage: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -304,14 +330,22 @@ private fun AvatarEditSection(
                     .clip(CircleShape)
                     .background(HopColors.primaryLime)
                     .semantics { contentDescription = "Edit profile photo" }
-                    .clickable { /* post-MVP: photo upload */ },
+                    .clickable(enabled = !isUploading) { onPickImage() },
             ) {
-                Icon(
-                    imageVector = Icons.Filled.CameraAlt,
-                    contentDescription = null,
-                    tint = HopColors.authTextPrimary,
-                    modifier = Modifier.size(16.dp),
-                )
+                if (isUploading) {
+                    CircularProgressIndicator(
+                        color = HopColors.authTextPrimary,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(14.dp),
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.CameraAlt,
+                        contentDescription = null,
+                        tint = HopColors.authTextPrimary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
             }
         }
     }

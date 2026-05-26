@@ -5,6 +5,7 @@ import {
   Inject,
   UseInterceptors,
   UploadedFile,
+  OnModuleInit,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { SupabaseClient } from '@supabase/supabase-js'
@@ -34,7 +35,7 @@ class PushTokenDto {
 }
 
 @Controller('users')
-export class UsersController {
+export class UsersController implements OnModuleInit {
   private readonly logger = new Logger(UsersController.name)
 
   constructor(
@@ -43,6 +44,18 @@ export class UsersController {
     private notifications: NotificationsService,
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
   ) {}
+
+  async onModuleInit() {
+    const { error } = await this.supabase.storage.createBucket('avatars', {
+      public: true,
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      fileSizeLimit: 5 * 1024 * 1024,
+    })
+    // 'already exists' is not an error
+    if (error && !error.message.toLowerCase().includes('already exist')) {
+      this.logger.warn(`avatars bucket: ${error.message}`)
+    }
+  }
 
   /**
    * Creates (or updates) the Prisma profile for a Supabase-authenticated user.
@@ -160,9 +173,12 @@ export class UsersController {
 
     const { error: uploadError } = await this.supabase.storage
       .from('avatars')
-      .upload(path, file.buffer, { contentType: file.mimetype, upsert: true })
+      .upload(path, file.buffer, { contentType: file.mimetype, upsert: true, cacheControl: '3600' })
 
-    if (uploadError) throw new AppException(ApiErrorCode.INTERNAL_ERROR)
+    if (uploadError) {
+      this.logger.error(`Supabase avatar upload failed: ${uploadError.message}`)
+      throw new AppException(ApiErrorCode.INTERNAL_ERROR)
+    }
 
     const { data: { publicUrl } } = this.supabase.storage.from('avatars').getPublicUrl(path)
     return this.users.updateAvatarUrl(req.user.id, publicUrl)

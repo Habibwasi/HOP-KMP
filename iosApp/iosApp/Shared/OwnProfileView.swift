@@ -18,6 +18,7 @@ struct OwnProfileView: View {
     @State private var toast: String? = nil
     @State private var showPhotoSourceSheet = false
     @State private var showCameraPicker = false
+    @State private var showLibraryPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
 
     var body: some View {
@@ -136,18 +137,14 @@ struct OwnProfileView: View {
         }
         .padding(.top, HopSpacing.xl)
         .confirmationDialog("Change profile photo", isPresented: $showPhotoSourceSheet, titleVisibility: .visible) {
-            PhotosPicker(
-                selection: $selectedPhotoItem,
-                matching: .images,
-                photoLibrary: .shared()
-            ) {
-                Label("Photo Library", systemImage: "photo.on.rectangle")
-            }
             Button("Camera") { showCameraPicker = true }
+            Button("Photo Library") { showLibraryPicker = true }
             Button("Cancel", role: .cancel) { }
         }
+        .photosPicker(isPresented: $showLibraryPicker, selection: $selectedPhotoItem, matching: .images)
         .sheet(isPresented: $showCameraPicker) {
             CameraPickerView { image in
+                showCameraPicker = false
                 handleSelectedImage(image)
             }
         }
