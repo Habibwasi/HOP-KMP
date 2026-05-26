@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Used to take a profile photo</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Used to choose a profile photo from your library</string>
 	<key>SENTRY_DSN</key>
 	<string>$(SENTRY_DSN)</string>
 	<key>SENTRY_ENV</key>

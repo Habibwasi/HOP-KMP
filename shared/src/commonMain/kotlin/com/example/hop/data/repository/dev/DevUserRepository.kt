@@ -77,4 +77,7 @@ class DevUserRepository : UserRepository {
 
     override suspend fun markNotificationRead(notificationId: String): ApiResponse<Unit> =
         ApiResponse.Success(Unit)
+
+    override suspend fun uploadAvatar(imageData: ByteArray, contentType: String): ApiResponse<User> =
+        ApiResponse.Success(DevAuthRepository.DEV_USER)
 }

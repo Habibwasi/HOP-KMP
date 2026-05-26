@@ -3,7 +3,10 @@ import {
   Body, Logger,
   HttpCode, HttpStatus,
   Inject,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { UsersService } from './users.service'
@@ -141,6 +144,28 @@ export class UsersController {
     }
 
     return this.users.updateProfile(req.user.id, data)
+  }
+
+  @Post('me/avatar')
+  @UseGuards(SupabaseGuard)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @HttpCode(HttpStatus.OK)
+  async uploadAvatar(@Req() req: any, @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined) {
+    if (!file) throw new AppException(ApiErrorCode.VALIDATION_ERROR)
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedMimes.includes(file.mimetype)) throw new AppException(ApiErrorCode.VALIDATION_ERROR)
+
+    const ext = file.mimetype === 'image/png' ? 'png' : file.mimetype === 'image/webp' ? 'webp' : 'jpg'
+    const path = `${req.user.id}/avatar.${ext}`
+
+    const { error: uploadError } = await this.supabase.storage
+      .from('avatars')
+      .upload(path, file.buffer, { contentType: file.mimetype, upsert: true })
+
+    if (uploadError) throw new AppException(ApiErrorCode.INTERNAL_ERROR)
+
+    const { data: { publicUrl } } = this.supabase.storage.from('avatars').getPublicUrl(path)
+    return this.users.updateAvatarUrl(req.user.id, publicUrl)
   }
 
   @Post('push-token')

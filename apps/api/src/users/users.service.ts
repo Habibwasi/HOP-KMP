@@ -103,6 +103,13 @@ export class UsersService {
     })
   }
 
+  async updateAvatarUrl(userId: string, avatarUrl: string): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    })
+  }
+
   async reportUser(reportedId: string, reporterId: string, reason: string): Promise<void> {
     await this.prisma.userReport.create({
       data: { reporterId, reportedId, reason },

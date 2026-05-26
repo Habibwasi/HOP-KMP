@@ -28,6 +28,7 @@ data class OwnProfileUiState(
     val isEditingMobilepay: Boolean = false,
     val mobilepayDraft: String = "",
     val isSavingMobilepay: Boolean = false,
+    val isUploadingAvatar: Boolean = false,
     val error: String? = null,
 )
 
@@ -45,6 +46,7 @@ sealed interface OwnProfileEvent {
     data class MobilepayDraftChanged(val number: String) : OwnProfileEvent
     data object SaveMobilepay : OwnProfileEvent
     data object CancelEditMobilepay : OwnProfileEvent
+    data class UploadAvatar(val imageData: ByteArray, val contentType: String) : OwnProfileEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -94,6 +96,7 @@ class OwnProfileViewModel(
                 isEditingMobilepay = false,
                 mobilepayDraft = _state.value.user?.mobilepayNumber.orEmpty(),
             )
+            is OwnProfileEvent.UploadAvatar -> uploadAvatar(event.imageData, event.contentType)
         }
     }
 
@@ -192,6 +195,25 @@ class OwnProfileViewModel(
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isSavingMobilepay = false)
                     _effect.send(OwnProfileEffect.ShowSnackbar(response.message))
+                }
+            }
+        }
+    }
+
+    private fun uploadAvatar(imageData: ByteArray, contentType: String) {
+        if (_state.value.isUploadingAvatar) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isUploadingAvatar = true)
+            when (val response = userRepository.uploadAvatar(imageData, contentType)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(
+                        isUploadingAvatar = false,
+                        user = response.data,
+                    )
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isUploadingAvatar = false)
+                    _effect.send(OwnProfileEffect.ShowSnackbar("Failed to upload photo"))
                 }
             }
         }

@@ -27,4 +27,6 @@ interface UserRepository {
     suspend fun getNotifications(): ApiResponse<List<HopNotification>>
     /** POST /notifications/:id/read — marks a single notification as read. */
     suspend fun markNotificationRead(notificationId: String): ApiResponse<Unit>
+    /** POST /users/me/avatar — uploads a new profile photo and returns the updated user. */
+    suspend fun uploadAvatar(imageData: ByteArray, contentType: String): ApiResponse<User>
 }

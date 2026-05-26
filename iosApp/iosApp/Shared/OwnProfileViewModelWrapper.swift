@@ -45,4 +45,15 @@ final class OwnProfileViewModelWrapper: ObservableObject {
     func mobilepayDraftChanged(_ number: String) {
         viewModel.onEvent(event: OwnProfileEventMobilepayDraftChanged(number: number))
     }
+
+    func uploadAvatar(data: Data) {
+        let kotlinArray = KotlinByteArray(size: Int32(data.count))
+        data.withUnsafeBytes { ptr in
+            let bytes = ptr.bindMemory(to: UInt8.self)
+            for (i, b) in bytes.enumerated() {
+                kotlinArray.set(index: Int32(i), value: Int8(bitPattern: b))
+            }
+        }
+        viewModel.onEvent(event: OwnProfileEventUploadAvatar(imageData: kotlinArray, contentType: "image/jpeg"))
+    }
 }

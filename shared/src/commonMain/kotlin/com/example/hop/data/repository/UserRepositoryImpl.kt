@@ -20,10 +20,14 @@ import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 
 class UserRepositoryImpl(
@@ -132,6 +136,29 @@ class UserRepositoryImpl(
             httpClient.post("notifications/$notificationId/read")
             Unit
         }
+
+    override suspend fun uploadAvatar(imageData: ByteArray, contentType: String): ApiResponse<User> {
+        val response = safeEnvelopeCall<UserDto> {
+            httpClient.post("users/me/avatar") {
+                setBody(MultiPartFormDataContent(
+                    formData {
+                        append(
+                            key = "file",
+                            value = imageData,
+                            headers = Headers.build {
+                                append(HttpHeaders.ContentType, contentType)
+                                append(HttpHeaders.ContentDisposition, "filename=avatar.jpg")
+                            }
+                        )
+                    }
+                ))
+            }.body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.toDomain())
+            is ApiResponse.Error -> response
+        }
+    }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 

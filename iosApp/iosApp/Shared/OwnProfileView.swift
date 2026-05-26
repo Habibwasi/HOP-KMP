@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import Shared
 
 // MARK: — SH-02 Own Profile ───────────────────────────────────────────────────
@@ -15,6 +16,9 @@ struct OwnProfileView: View {
 
     @StateObject private var wrapper = OwnProfileViewModelWrapper()
     @State private var toast: String? = nil
+    @State private var showPhotoSourceSheet = false
+    @State private var showCameraPicker = false
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -114,14 +118,55 @@ struct OwnProfileView: View {
                 Circle()
                     .fill(Color.hopPrimaryLime)
                     .frame(width: 28, height: 28)
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color.hopAuthTextPrimary)
+                if wrapper.state.isUploadingAvatar {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthTextPrimary))
+                        .scaleEffect(0.5)
+                        .frame(width: 28, height: 28)
+                } else {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.hopAuthTextPrimary)
+                }
             }
             .accessibilityLabel("Edit profile photo")
-            .onTapGesture { /* post-MVP: photo upload */ }
+            .onTapGesture {
+                if !wrapper.state.isUploadingAvatar { showPhotoSourceSheet = true }
+            }
         }
         .padding(.top, HopSpacing.xl)
+        .confirmationDialog("Change profile photo", isPresented: $showPhotoSourceSheet, titleVisibility: .visible) {
+            PhotosPicker(
+                selection: $selectedPhotoItem,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                Label("Photo Library", systemImage: "photo.on.rectangle")
+            }
+            Button("Camera") { showCameraPicker = true }
+            Button("Cancel", role: .cancel) { }
+        }
+        .sheet(isPresented: $showCameraPicker) {
+            CameraPickerView { image in
+                handleSelectedImage(image)
+            }
+        }
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let uiImage = UIImage(data: data),
+                   let jpeg = uiImage.jpegData(compressionQuality: 0.8) {
+                    wrapper.uploadAvatar(data: jpeg)
+                }
+                selectedPhotoItem = nil
+            }
+        }
+    }
+
+    private func handleSelectedImage(_ image: UIImage?) {
+        guard let image, let jpeg = image.jpegData(compressionQuality: 0.8) else { return }
+        wrapper.uploadAvatar(data: jpeg)
     }
 
     @ViewBuilder
