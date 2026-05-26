@@ -305,23 +305,13 @@ class AuthViewModel(
     private fun logout() {
         if (_state.value.isLoading) return
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
-            when (val response = authRepository.logout()) {
-                is ApiResponse.Success -> {
-                    // Always clear the recovery-pending flag on logout so it cannot
-                    // persist across separate sign-in sessions and mis-route a future
-                    // email-confirmation deep link to the Set-New-Password screen.
-                    tokenStorage.saveRecoveryPending(false)
-                    _state.value = AuthUiState()
-                    _effect.tryEmit(AuthEffect.NavigateToLogin)
-                }
-                is ApiResponse.Error -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        error = response.message,
-                    )
-                }
-            }
+            // Optimistically clear auth state immediately so the UI navigates to
+            // login without waiting for the Supabase network round-trip.
+            tokenStorage.saveRecoveryPending(false)
+            _state.value = AuthUiState()
+            _effect.tryEmit(AuthEffect.NavigateToLogin)
+            // Fire-and-forget: invalidate the Supabase session in the background.
+            authRepository.logout()
         }
     }
 
