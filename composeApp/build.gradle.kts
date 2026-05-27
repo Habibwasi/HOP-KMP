@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -57,12 +58,26 @@ kotlin {
     }
 }
 
+val localProps = Properties().also { props: Properties ->
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { stream -> props.load(stream) }
+}
+
 android {
     namespace = "com.example.hop"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
+    signingConfigs {
+        create("release") {
+            storeFile = localProps.getProperty("KEYSTORE_PATH")?.let { file(it) }
+            storePassword = localProps.getProperty("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = localProps.getProperty("KEY_ALIAS") ?: ""
+            keyPassword = localProps.getProperty("KEY_PASSWORD") ?: ""
+        }
+    }
+
     defaultConfig {
-        applicationId = "com.example.hop"
+        applicationId = "com.ridly.hop"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -92,6 +107,7 @@ android {
         getByName("release") {
             buildConfigField("boolean", "DEV_MODE", "false")
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -114,7 +130,7 @@ sentry {
 
     // Automatically upload ProGuard/R8 mapping file on release builds so that
     // Sentry crash reports show de-obfuscated class and method names.
-    autoUploadProguardMapping = true
+    autoUploadProguardMapping = false
 
     // Include source context lines around each stack frame in Sentry events.
     includeSourceContext = true

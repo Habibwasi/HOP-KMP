@@ -59,6 +59,8 @@ import com.example.hop.ui.screens.shared.ChatListRoute
 import com.example.hop.ui.screens.shared.OtherProfileRoute
 import com.example.hop.ui.screens.shared.OwnProfileRoute
 import com.example.hop.ui.screens.shared.SettingsRoute
+import com.example.hop.ui.screens.shared.PrivacyPolicyScreen
+import com.example.hop.ui.screens.shared.TermsOfServiceScreen
 import org.koin.compose.koinInject
 
 /**
@@ -638,9 +640,21 @@ fun HopNavGraph(
                 onNavigateToChangePassword = { navController.navigate(HopRoutes.ForgotPassword) },
                 onNavigateToHelpCentre = { uriHandler.openUri("https://ridly.dk/help") },
                 onNavigateToContactUs = { uriHandler.openUri("mailto:support@ridly.dk") },
-                onNavigateToTermsOfService = { uriHandler.openUri("https://ridly.dk/terms") },
-                onNavigateToPrivacyPolicy = { uriHandler.openUri("https://ridly.dk/privacy") },
+                onNavigateToTermsOfService = { navController.navigate(HopRoutes.TermsOfService) },
+                onNavigateToPrivacyPolicy = { navController.navigate(HopRoutes.PrivacyPolicy) },
                 onLogout = onLogout,
+            )
+        }
+
+        composable<HopRoutes.PrivacyPolicy> {
+            PrivacyPolicyScreen(
+                onNavigateBack = { navController.navigateUp() },
+            )
+        }
+
+        composable<HopRoutes.TermsOfService> {
+            TermsOfServiceScreen(
+                onNavigateBack = { navController.navigateUp() },
             )
         }
 

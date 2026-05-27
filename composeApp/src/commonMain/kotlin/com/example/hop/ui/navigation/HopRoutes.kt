@@ -187,6 +187,14 @@ sealed interface HopRoutes {
     @Serializable
     data object Settings : HopRoutes
 
+    /** SH-07 — Privacy Policy */
+    @Serializable
+    data object PrivacyPolicy : HopRoutes
+
+    /** SH-08 — Terms of Service */
+    @Serializable
+    data object TermsOfService : HopRoutes
+
     /** SE-01 — Passenger settlement (pay driver via MobilePay) */
     @Serializable
     data class PassengerSettlement(val bookingId: String) : HopRoutes

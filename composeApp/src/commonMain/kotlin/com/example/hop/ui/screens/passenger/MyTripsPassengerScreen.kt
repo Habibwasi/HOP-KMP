@@ -621,7 +621,7 @@ private fun TripStatus.toBadgeType(): BadgeType = when (this) {
         contentColor = Color(0xFFFFAA00),
     )
     TripStatus.UNKNOWN    -> BadgeType.Custom(
-        label = "UNKNOWN",
+        label = "Unknown",
         background = Color(0xFF242424),
         contentColor = Color(0xFFB3B3B3),
     )

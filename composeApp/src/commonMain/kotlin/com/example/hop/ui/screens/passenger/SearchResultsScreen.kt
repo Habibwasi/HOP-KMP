@@ -384,7 +384,7 @@ private fun TripResultsList(
                     TripModel.A -> BadgeType.ModelA
                     TripModel.B -> BadgeType.ModelB
                     TripModel.UNKNOWN -> BadgeType.Custom(
-                        label = "UNKNOWN",
+                        label = "Unknown",
                         background = HopColors.surfaceElevated,
                         contentColor = HopColors.authTextSecondary,
                     )

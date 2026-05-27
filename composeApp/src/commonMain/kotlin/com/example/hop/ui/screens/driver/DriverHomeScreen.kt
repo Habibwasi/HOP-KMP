@@ -555,7 +555,7 @@ private fun DriverTripCard(
                         TripModel.A -> BadgeType.ModelA
                         TripModel.B -> BadgeType.ModelB
                         TripModel.UNKNOWN -> BadgeType.Custom(
-                            label = "UNKNOWN",
+                            label = "Unknown",
                             background = HopColors.authInputSurface,
                             contentColor = HopColors.authTextSecondary,
                         )
@@ -578,7 +578,7 @@ private fun DriverTripCard(
                             contentColor = HopColors.warning,
                         )
                         TripStatus.UNKNOWN -> BadgeType.Custom(
-                            label = "UNKNOWN",
+                            label = "Unknown",
                             background = HopColors.authInputSurface,
                             contentColor = HopColors.authTextSecondary,
                         )
