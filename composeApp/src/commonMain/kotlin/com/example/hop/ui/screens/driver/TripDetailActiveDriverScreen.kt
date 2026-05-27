@@ -207,7 +207,7 @@ fun TripDetailActiveDriverScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = HopColors.primaryLime)
+                    CircularProgressIndicator(color = HopColors.authAccent)
                 }
             }
 
@@ -413,7 +413,7 @@ private fun SeatsSummarySection(
                     .fillMaxWidth()
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 trackColor = HopColors.authInputBorder,
             )
             Spacer(modifier = Modifier.height(HopSpacing.xs))
@@ -485,7 +485,7 @@ private fun PassengerRow(
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.Chat,
                 contentDescription = null,
-                tint = HopColors.primaryLime,
+                tint = HopColors.authAccent,
                 modifier = Modifier.size(20.dp),
             )
         }

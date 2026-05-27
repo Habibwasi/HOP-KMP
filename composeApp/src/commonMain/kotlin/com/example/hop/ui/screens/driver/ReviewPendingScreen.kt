@@ -123,12 +123,12 @@ fun ReviewPendingScreen(
                 modifier = Modifier
                     .size(96.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(HopColors.primaryLime.copy(alpha = 0.15f)),
+                    .background(HopColors.authAccent.copy(alpha = 0.12f)),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = null,
-                    tint = HopColors.primaryLime,
+                    tint = HopColors.authAccent,
                     modifier = Modifier.size(52.dp),
                 )
             }

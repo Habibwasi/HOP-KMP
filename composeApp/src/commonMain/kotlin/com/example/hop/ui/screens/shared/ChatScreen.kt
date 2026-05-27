@@ -443,11 +443,11 @@ private fun ChatInputRow(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor   = HopColors.authInputBorder,
                     unfocusedContainerColor = HopColors.authInputBorder,
-                    disabledContainerColor  = Color(0xFF252525),
+                    disabledContainerColor  = HopColors.surfaceElevated,
                     focusedIndicatorColor   = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor  = Color.Transparent,
-                    cursorColor             = HopColors.primaryLime,
+                    cursorColor             = HopColors.authAccent,
                     focusedTextColor        = HopColors.authTextPrimary,
                     unfocusedTextColor      = HopColors.authTextPrimary,
                 ),

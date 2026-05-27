@@ -85,10 +85,13 @@ import com.example.hop.ui.components.StatusBadge
 import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
+import com.example.hop.ui.util.formatDkk
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration.Companion.hours
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.compose.foundation.horizontalScroll
@@ -203,9 +206,8 @@ fun MyTripsDriverScreen(
 
     val filterDateStr = remember(filterDate) {
         filterDate?.let {
-            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-            sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
-            sdf.format(java.util.Date(it))
+            Instant.fromEpochMilliseconds(it)
+                .toLocalDateTime(TimeZone.UTC).date.toString()
         }
     }
     val upcomingTrips = remember(state.trips, filterDate, filterModel) {
@@ -238,7 +240,7 @@ fun MyTripsDriverScreen(
                 androidx.compose.material3.TabRowDefaults.PrimaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(selectedTab, matchContentSize = false),
                     height = 2.dp,
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                 )
             },
             divider = {},
@@ -256,7 +258,7 @@ fun MyTripsDriverScreen(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Normal,
                         ),
-                        color = if (selectedTab == index) HopColors.primaryLime else HopColors.authTextSecondary,
+                        color = if (selectedTab == index) HopColors.authAccent else HopColors.authTextSecondary,
                         modifier = Modifier.padding(vertical = HopSpacing.sm),
                     )
                 }
@@ -339,7 +341,7 @@ private fun DriverTripsLoadingIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             modifier = Modifier.size(36.dp),
         )
     }
@@ -503,12 +505,12 @@ private fun DriverTripCard(
                     Text(
                         text = "Awaiting payment",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color(0xFF3B82F6),
+                            color = HopColors.primaryGreen,
                             fontWeight = FontWeight.SemiBold,
                         ),
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFF3B82F6).copy(alpha = 0.12f))
+                            .background(HopColors.primaryGreen.copy(alpha = 0.12f))
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                     Spacer(modifier = Modifier.width(HopSpacing.xs))
@@ -530,14 +532,14 @@ private fun DriverTripCard(
                 Text(
                     text = "${tripUiModel.seatsBooked}/${tripUiModel.seatsTotal} seats",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = Color(0xFF666666),
+                        color = HopColors.authTextSecondary,
                         fontWeight = FontWeight.SemiBold,
                     ),
                 )
             }
 
             Spacer(modifier = Modifier.height(HopSpacing.sm))
-            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            HorizontalDivider(thickness = 1.dp, color = HopColors.cardBorder)
             Spacer(modifier = Modifier.height(HopSpacing.sm))
 
             // ── Row 2: Route ──────────────────────────────────────────────────
@@ -564,13 +566,13 @@ private fun DriverTripCard(
                         Text(
                             text = "${tripUiModel.seatsBooked} booked",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color(0xFF666666),
+                                color = HopColors.authTextSecondary,
                             ),
                         )
                         Text(
                             text = "Min $minThreshold to confirm",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color(0xFF666666),
+                                color = HopColors.authTextSecondary,
                             ),
                         )
                     }
@@ -578,7 +580,7 @@ private fun DriverTripCard(
             }
 
             Spacer(modifier = Modifier.height(HopSpacing.sm))
-            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            HorizontalDivider(thickness = 1.dp, color = HopColors.cardBorder)
             Spacer(modifier = Modifier.height(HopSpacing.sm))
 
             // ── Row 3: Departure time + Driver net per seat ───────────────────
@@ -590,11 +592,11 @@ private fun DriverTripCard(
                 Text(
                     text = "Departs ${tripUiModel.formattedDepartsAt}",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = Color(0xFF666666),
+                        color = HopColors.authTextSecondary,
                     ),
                 )
                 Text(
-                    text = "DKK ${(tripUiModel.trip.driverNetOere / 100.0).roundToInt()}/seat",
+                    text = "${formatDkk(tripUiModel.trip.driverNetOere)}/seat",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = HopColors.authTextPrimary,
@@ -611,14 +613,14 @@ private fun DriverTripCard(
                     Icon(
                         imageVector = Icons.Outlined.Repeat,
                         contentDescription = null,
-                        tint = HopColors.primaryLime,
+                        tint = HopColors.authAccent,
                         modifier = Modifier.size(14.dp),
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = days.joinToString(" · ") { it.take(2) },
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = HopColors.primaryLime,
+                            color = HopColors.authAccent,
                             fontWeight = FontWeight.SemiBold,
                         ),
                     )
@@ -749,8 +751,8 @@ private fun MyTripsDriverBottomNavBar(
         tonalElevation = 0.dp,
     ) {
         val chipColors = NavigationBarItemDefaults.colors(
-            selectedIconColor = HopColors.primaryLime,
-            selectedTextColor = HopColors.primaryLime,
+            selectedIconColor = HopColors.authAccent,
+            selectedTextColor = HopColors.authAccent,
             indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
             unselectedIconColor = HopColors.authTextSecondary,
             unselectedTextColor = HopColors.authTextSecondary,
@@ -829,9 +831,11 @@ private fun TripsFilterBar(
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filterDate)
     val dateLabel = filterDate?.let {
-        val sdf = java.text.SimpleDateFormat("d MMM", java.util.Locale.US)
-        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
-        sdf.format(java.util.Date(it))
+        val date = Instant.fromEpochMilliseconds(it)
+            .toLocalDateTime(TimeZone.UTC).date
+        val month = date.month.name.take(3)
+            .replaceFirstChar { c -> c.uppercaseChar() }
+        "${date.dayOfMonth} $month"
     } ?: "Date"
 
     Row(
@@ -892,7 +896,7 @@ private fun TripsFilterBar(
                     onFilterDateChange(datePickerState.selectedDateMillis)
                     showDatePicker = false
                 }) {
-                    Text("OK", color = HopColors.primaryLime)
+                    Text("OK", color = HopColors.authAccent)
                 }
             },
             dismissButton = {

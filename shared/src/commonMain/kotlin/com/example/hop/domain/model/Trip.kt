@@ -48,6 +48,11 @@ data class Trip(
     val awaitingPaymentBookingId: String? = null,
     // True if any booking on this trip was created within the last 24 hours (driver-scoped only).
     val hasRecentBooking: Boolean = false,
+    // Driver profile fields — populated on trip list and search endpoints when the API includes them.
+    // Empty / 0 when not yet returned by the backend.
+    val driverName: String = "",
+    val driverInitials: String = "",
+    val driverRating: Float = 0f,
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

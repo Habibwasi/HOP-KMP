@@ -62,6 +62,9 @@ import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -144,8 +147,10 @@ fun CarDetailsScreen(
     var seats by remember { mutableStateOf(4) }
 
     // ── Derived validation ────────────────────────────────────────────────────
+    val currentYear = Clock.System.now()
+        .toLocalDateTime(TimeZone.currentSystemDefault()).year
     val yearInt = year.trim().toIntOrNull()
-    val yearValid = yearInt != null && yearInt in 1980..2100
+    val yearValid = yearInt != null && yearInt in 1980..(currentYear + 1)
     val formValid = make.trim().isNotEmpty()
         && model.trim().isNotEmpty()
         && yearValid
@@ -399,7 +404,7 @@ internal fun OnboardingStepIndicator(
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = HopSpacing.xs),
-                    color = if (isCompleted) HopColors.primaryLime else HopColors.authInputBorder,
+                    color = if (isCompleted) HopColors.authAccent else HopColors.authInputBorder,
                     thickness = 2.dp,
                 )
             }

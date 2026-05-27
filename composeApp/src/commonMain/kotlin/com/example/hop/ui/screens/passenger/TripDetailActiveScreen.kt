@@ -1,6 +1,9 @@
 package com.example.hop.ui.screens.passenger
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +50,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
@@ -157,12 +161,17 @@ fun TripDetailActiveRoute(
         containerColor = HopColors.surface,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
+        val context = LocalContext.current
         TripDetailActiveScreen(
             state = state,
             isCancelling = bookingState.isLoading,
             onBack = onNavigateBack,
             onMessageDriver = { viewModel.onEvent(TripDetailActiveEvent.MessageDriver) },
             onPayDriver = { onNavigateToPassengerSettlement(bookingId) },
+            onCallDriver = { phone ->
+                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))
+                context.startActivity(intent)
+            },
             onCancelBookingConfirmed = {
                 bookingViewModel.onEvent(BookingEvent.CancelBooking(bookingId))
             },
@@ -191,6 +200,7 @@ fun TripDetailActiveScreen(
     onBack: () -> Unit,
     onMessageDriver: () -> Unit,
     onPayDriver: () -> Unit,
+    onCallDriver: (phone: String) -> Unit,
     onCancelBookingConfirmed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -223,6 +233,7 @@ fun TripDetailActiveScreen(
                         driverPhone = state.driverPhone,
                         driverRating = state.driverRating,
                         isVerified = state.isDriverVerified,
+                        onCallDriver = { onCallDriver(state.driverPhone) },
                     )
 
                     Spacer(modifier = Modifier.height(HopSpacing.lg))
@@ -320,7 +331,7 @@ private fun ActiveTripTopBar(
 private fun ActiveTripLoading(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             modifier = Modifier.semantics { contentDescription = "Loading trip details" },
         )
     }
@@ -333,6 +344,7 @@ private fun DriverInfoSection(
     driverPhone: String,
     driverRating: Float,
     isVerified: Boolean,
+    onCallDriver: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -355,17 +367,18 @@ private fun DriverInfoSection(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(HopSpacing.xs),
+                modifier = Modifier.clickable(onClick = onCallDriver),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Call,
-                    contentDescription = null,
-                    tint = HopColors.primaryLime,
+                    contentDescription = "Call driver",
+                    tint = HopColors.authAccent,
                     modifier = Modifier.size(16.dp),
                 )
                 Text(
                     text = driverPhone,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                 )
             }
         }
@@ -503,7 +516,7 @@ private fun ActionButtonsSection(
                     imageVector = Icons.AutoMirrored.Outlined.Chat,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = HopColors.primaryLime,
+                    tint = HopColors.authAccent,
                 )
             },
         )
@@ -591,6 +604,7 @@ private fun TripDetailActiveScreenConfirmedPreview() {
             onBack = {},
             onMessageDriver = {},
             onPayDriver = {},
+            onCallDriver = {},
             onCancelBookingConfirmed = {},
         )
     }
@@ -619,6 +633,7 @@ private fun TripDetailActiveScreenModelBPendingPreview() {
             onBack = {},
             onMessageDriver = {},
             onPayDriver = {},
+            onCallDriver = {},
             onCancelBookingConfirmed = {},
         )
     }
@@ -634,6 +649,7 @@ private fun TripDetailActiveScreenLoadingPreview() {
             onBack = {},
             onMessageDriver = {},
             onPayDriver = {},
+            onCallDriver = {},
             onCancelBookingConfirmed = {},
         )
     }

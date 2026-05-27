@@ -260,10 +260,10 @@ private fun HomeTopBar(
         Spacer(modifier = Modifier.width(HopSpacing.sm))
 
         // Bell icon with unread badge overlay
-        Box(modifier = Modifier.size(40.dp)) {
+        Box(modifier = Modifier.size(48.dp)) {
             IconButton(
                 onClick = onNotifications,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(48.dp),
             ) {
                 Icon(
                     imageVector = Icons.Filled.Notifications,
@@ -315,9 +315,9 @@ private fun HomeBottomNavBar(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                selectedIconColor = HopColors.authAccent,
+                selectedTextColor = HopColors.authAccent,
+                indicatorColor = HopColors.authAccent.copy(alpha = 0.12f),
                 unselectedIconColor = HopColors.authTextSecondary,
                 unselectedTextColor = HopColors.authTextSecondary,
             ),
@@ -341,9 +341,9 @@ private fun HomeBottomNavBar(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                selectedIconColor = HopColors.authAccent,
+                selectedTextColor = HopColors.authAccent,
+                indicatorColor = HopColors.authAccent.copy(alpha = 0.12f),
                 unselectedIconColor = HopColors.authTextSecondary,
                 unselectedTextColor = HopColors.authTextSecondary,
             ),
@@ -375,9 +375,9 @@ private fun HomeBottomNavBar(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                selectedIconColor = HopColors.authAccent,
+                selectedTextColor = HopColors.authAccent,
+                indicatorColor = HopColors.authAccent.copy(alpha = 0.12f),
                 unselectedIconColor = HopColors.authTextSecondary,
                 unselectedTextColor = HopColors.authTextSecondary,
             ),
@@ -401,9 +401,9 @@ private fun HomeBottomNavBar(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = HopColors.primaryLime,
-                selectedTextColor = HopColors.primaryLime,
-                indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+                selectedIconColor = HopColors.authAccent,
+                selectedTextColor = HopColors.authAccent,
+                indicatorColor = HopColors.authAccent.copy(alpha = 0.12f),
                 unselectedIconColor = HopColors.authTextSecondary,
                 unselectedTextColor = HopColors.authTextSecondary,
             ),

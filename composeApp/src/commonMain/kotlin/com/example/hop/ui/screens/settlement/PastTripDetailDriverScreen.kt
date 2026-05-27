@@ -47,6 +47,7 @@ import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
+import com.example.hop.ui.util.formatDkk
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -122,7 +123,7 @@ private fun PastTripDetailDriverScreen(
                 Spacer(Modifier.weight(1f))
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                 )
                 Spacer(Modifier.weight(1f))
             }
@@ -161,10 +162,9 @@ private fun PastTripDetailDriverScreen(
                             fontFamily = HopMonoFontFamily,
                             fontWeight = FontWeight.Bold,
                         ),
-                        color = HopColors.primaryLime,
+                        color = HopColors.authAccent,
                     )
                 }
-
                 LazyColumn(
                     modifier = Modifier.weight(1f).navigationBarsPadding(),
                     verticalArrangement = Arrangement.spacedBy(HopSpacing.sm),
@@ -185,8 +185,8 @@ private fun PastPassengerRow(
     modifier: Modifier = Modifier,
 ) {
     val statusColor = when (entry.paymentStatus) {
-        TripSettlementEntry.PaymentStatus.CONFIRMED -> HopColors.primaryLime
-        TripSettlementEntry.PaymentStatus.PAID -> Color(0xFFFFA726)
+        TripSettlementEntry.PaymentStatus.CONFIRMED -> HopColors.authAccent
+        TripSettlementEntry.PaymentStatus.PAID -> HopColors.warning
         TripSettlementEntry.PaymentStatus.WAITING -> HopColors.authTextSecondary
     }
     val statusLabel = when (entry.paymentStatus) {
@@ -212,13 +212,13 @@ private fun PastPassengerRow(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(HopColors.primaryLime.copy(alpha = 0.15f)),
+                    .background(HopColors.authAccent.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = entry.passengerInitials,
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                 )
             }
             Column {
@@ -245,11 +245,7 @@ private fun PastPassengerRow(
     }
 }
 
-private fun formatDkk(oere: Int): String {
-    val kr = oere / 100
-    val rem = oere % 100
-    return if (rem == 0) "DKK $kr" else "DKK $kr,${rem.toString().padStart(2, '0')}"
-}
+
 
 // Previews
 

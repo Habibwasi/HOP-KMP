@@ -162,7 +162,7 @@ fun TaxReportDownloadScreen(
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = HopColors.primaryLime)
+                    CircularProgressIndicator(color = HopColors.authAccent)
                 }
             }
 
@@ -219,7 +219,7 @@ fun TaxReportDownloadScreen(
                         text = "${state.year}",
                         style = MaterialTheme.typography.displaySmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = HopColors.primaryLime,
+                            color = HopColors.authAccent,
                         ),
                     )
 
@@ -266,7 +266,7 @@ fun TaxReportDownloadScreen(
                             label = "Total Taxable",
                             amountOere = state.totalTaxableOere,
                             labelColor = HopColors.authTextPrimary,
-                            amountColor = HopColors.primaryLime,
+                            amountColor = HopColors.authAccent,
                         )
                     }
 

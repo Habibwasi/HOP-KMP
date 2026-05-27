@@ -341,7 +341,7 @@ private fun SearchResultsLoading(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             modifier = Modifier.size(36.dp),
         )
     }
@@ -374,9 +374,9 @@ private fun TripResultsList(
 
         items(results, key = { it.id }) { tripUiModel ->
             TripCard(
-                driverName = "Driver",
-                driverInitials = "D",
-                driverRating = 5.0f,
+                driverName = tripUiModel.driverName.ifBlank { "—" },
+                driverInitials = tripUiModel.driverInitials.ifBlank { "?" },
+                driverRating = tripUiModel.driverRating,
                 originName = tripUiModel.originName,
                 destinationName = tripUiModel.destName,
                 departureTime = tripUiModel.formattedDepartsAt,

@@ -56,6 +56,7 @@ import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
+import com.example.hop.ui.util.formatDkk
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -262,14 +263,14 @@ private fun TripSummaryCard(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(HopColors.primaryLime.copy(alpha = 0.15f))
+                    .background(HopColors.authAccent.copy(alpha = 0.12f))
                     .padding(horizontal = 8.dp, vertical = 3.dp),
             ) {
                 Text(
                     text = if (isModelA) "Model A" else "Model B",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                     letterSpacing = 0.3.sp,
                 )
             }
@@ -366,7 +367,7 @@ private fun PriceBreakdownCard(
             Text(
                 text = "System-Calculated",
                 fontSize = 11.sp,
-                color = HopColors.primaryLime.copy(alpha = 0.7f),
+                color = HopColors.authAccent.copy(alpha = 0.7f),
             )
         }
 
@@ -482,10 +483,7 @@ private fun SystemPriceWarning(modifier: Modifier = Modifier) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Converts an Int in øre to a DKK display string, e.g. 2038 → "DKK 20.38". */
-private fun formatDkk(oere: Int): String {
-    val dkk = oere / 100.0
-    return "DKK %.2f".format(dkk)
-}
+
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 

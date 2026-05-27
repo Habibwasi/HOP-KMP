@@ -125,8 +125,7 @@ fun NotificationsScreen(
 ) {
     Scaffold(
         modifier = modifier
-            .background(HopColors.background)
-            .statusBarsPadding(),
+            .background(HopColors.background),
         containerColor = HopColors.background,
         topBar = {
             TopAppBar(
@@ -272,7 +271,7 @@ private fun NotificationRow(
                     .padding(top = 4.dp)
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(HopColors.primaryLime),
+                    .background(HopColors.authAccent),
             )
         }
     }
@@ -305,14 +304,14 @@ private fun iconForType(type: NotificationType): Pair<ImageVector, Color> = when
     NotificationType.BOOKING_CONFIRMED    -> Icons.Outlined.CheckCircle  to HopColors.success
     NotificationType.BOOKING_CANCELLED    -> Icons.Outlined.Cancel        to HopColors.error
     NotificationType.TRIP_REMINDER        -> Icons.Outlined.Timer         to HopColors.warning
-    NotificationType.NEW_RATING           -> Icons.Outlined.Star          to HopColors.primaryLime
+    NotificationType.NEW_RATING           -> Icons.Outlined.Star          to HopColors.authAccent
     NotificationType.THRESHOLD_MET        -> Icons.Outlined.TaskAlt       to HopColors.primaryGreen
     NotificationType.CHAT_MESSAGE         -> Icons.Outlined.Chat          to HopColors.authTextSecondary
     NotificationType.PAYMENT_MARKED_PAID  -> Icons.Outlined.Payments      to HopColors.primaryGreen
     NotificationType.PAYMENT_CONFIRMED    -> Icons.Outlined.CheckCircle   to HopColors.primaryGreen
     NotificationType.PAYMENT_DISPUTED     -> Icons.Outlined.Warning       to HopColors.error
     NotificationType.RIDE_AWAITING_PAYMENT -> Icons.Outlined.Timer        to HopColors.warning
-    NotificationType.SEARCH_ALERT         -> Icons.Outlined.Search        to HopColors.primaryLime
+    NotificationType.SEARCH_ALERT         -> Icons.Outlined.Search        to HopColors.authAccent
     NotificationType.GENERAL              -> Icons.Outlined.NotificationImportant to HopColors.authTextSecondary
 }
 
@@ -363,7 +362,7 @@ private fun NotificationsEmptyState(
             Icon(
                 imageVector = Icons.Outlined.Notifications,
                 contentDescription = null,
-                tint = HopColors.primaryLime,
+                tint = HopColors.authAccent,
                 modifier = Modifier.size(40.dp),
             )
         }
@@ -398,7 +397,7 @@ private fun NotificationsEmptyState(
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = HopColors.primaryLime,
-                contentColor = HopColors.background,
+                contentColor = HopColors.authTextPrimary,
             ),
         ) {
             Icon(
@@ -426,7 +425,7 @@ private fun NotificationsLoadingState(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             modifier = Modifier.size(40.dp),
         )
     }

@@ -45,6 +45,7 @@ import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
+import com.example.hop.ui.util.formatDkk
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -146,8 +147,6 @@ fun MarkTripCompleteScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val payoutDkk = driverNetOere / 100
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -227,15 +226,15 @@ fun MarkTripCompleteScreen(
                     )
                     Spacer(modifier = Modifier.height(HopSpacing.xs))
                     Text(
-                        text = "DKK $payoutDkk",
+                        text = formatDkk(driverNetOere),
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontFamily = HopMonoFontFamily,
                             fontWeight = FontWeight.Bold,
-                            color = HopColors.primaryLime,
+                            color = HopColors.authAccent,
                             fontSize = 36.sp,
                         ),
                         modifier = Modifier.semantics {
-                            contentDescription = "Payout amount: $payoutDkk Danish Kroner"
+                            contentDescription = "Payout amount: ${formatDkk(driverNetOere)}"
                         },
                     )
                 }

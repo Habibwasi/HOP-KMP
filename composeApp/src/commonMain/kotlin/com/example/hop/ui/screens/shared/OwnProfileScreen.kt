@@ -174,7 +174,7 @@ fun OwnProfileScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = HopColors.primaryLime)
+                CircularProgressIndicator(color = HopColors.authAccent)
             }
             return@Scaffold
         }
@@ -383,7 +383,7 @@ private fun NameRow(
             Icon(
                 imageVector = Icons.Filled.Edit,
                 contentDescription = "Edit name",
-                tint = HopColors.primaryLime,
+                tint = HopColors.authAccent,
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -419,13 +419,13 @@ private fun InlineNameEditor(
             ),
             keyboardActions = KeyboardActions(onDone = { onSave() }),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = HopColors.primaryLime,
+                focusedBorderColor = HopColors.authAccent,
                 unfocusedBorderColor = HopColors.authTextSecondary,
-                focusedLabelColor = HopColors.primaryLime,
+                focusedLabelColor = HopColors.authAccent,
                 unfocusedLabelColor = HopColors.authTextSecondary,
                 focusedTextColor = HopColors.authTextPrimary,
                 unfocusedTextColor = HopColors.authTextPrimary,
-                cursorColor = HopColors.primaryLime,
+                cursorColor = HopColors.authAccent,
                 focusedContainerColor = HopColors.authInputSurface,
                 unfocusedContainerColor = HopColors.authInputSurface,
             ),
@@ -443,11 +443,11 @@ private fun InlineNameEditor(
                 if (isSaving) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
-                        color = HopColors.primaryLime,
+                        color = HopColors.authAccent,
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("Save", color = HopColors.primaryLime, fontWeight = FontWeight.SemiBold)
+                    Text("Save", color = HopColors.authAccent, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -507,7 +507,7 @@ private fun PhoneRow(
             Text(
                 text = "Add phone number",
                 style = MaterialTheme.typography.bodyMedium,
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 fontWeight = FontWeight.Medium,
             )
         }
@@ -659,7 +659,7 @@ private fun CarDetailsSection(
         ) {
             SectionTitle("Car details", modifier = Modifier.weight(1f))
             TextButton(onClick = onEditClick) {
-                Text("Edit", color = HopColors.primaryLime, fontWeight = FontWeight.Medium)
+                Text("Edit", color = HopColors.authAccent, fontWeight = FontWeight.Medium)
             }
         }
         Spacer(modifier = Modifier.height(HopSpacing.sm))
@@ -748,7 +748,7 @@ private fun MobilepayRow(
                 Icon(
                     imageVector = Icons.Filled.Edit,
                     contentDescription = "Edit MobilePay number",
-                    tint = HopColors.primaryLime,
+                    tint = HopColors.authAccent,
                     modifier = Modifier.size(18.dp),
                 )
             }
@@ -801,13 +801,13 @@ private fun InlineMobilepayEditor(
             ),
             keyboardActions = KeyboardActions(onDone = { onSave() }),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = HopColors.primaryLime,
+                focusedBorderColor = HopColors.authAccent,
                 unfocusedBorderColor = HopColors.authTextSecondary,
-                focusedLabelColor = HopColors.primaryLime,
+                focusedLabelColor = HopColors.authAccent,
                 unfocusedLabelColor = HopColors.authTextSecondary,
                 focusedTextColor = HopColors.authTextPrimary,
                 unfocusedTextColor = HopColors.authTextPrimary,
-                cursorColor = HopColors.primaryLime,
+                cursorColor = HopColors.authAccent,
                 focusedContainerColor = HopColors.authInputSurface,
                 unfocusedContainerColor = HopColors.authInputSurface,
             ),
@@ -834,11 +834,11 @@ private fun InlineMobilepayEditor(
                 if (isSaving) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
-                        color = HopColors.primaryLime,
+                        color = HopColors.authAccent,
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("Save", color = HopColors.primaryLime, fontWeight = FontWeight.SemiBold)
+                    Text("Save", color = HopColors.authAccent, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

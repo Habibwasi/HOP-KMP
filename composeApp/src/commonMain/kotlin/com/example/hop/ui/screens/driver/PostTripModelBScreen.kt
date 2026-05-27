@@ -199,7 +199,7 @@ fun PostTripModelBScreen(
                         }
                         showDatePicker = false
                     },
-                ) { Text("OK", color = HopColors.primaryLime, fontWeight = FontWeight.Bold) }
+                ) { Text("OK", color = HopColors.authAccent, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
@@ -215,7 +215,7 @@ fun PostTripModelBScreen(
                 navigationContentColor = HopColors.authTextPrimary,
                 yearContentColor = HopColors.authTextPrimary,
                 disabledYearContentColor = HopColors.authTextSecondary.copy(alpha = 0.38f),
-                currentYearContentColor = HopColors.primaryLime,
+                currentYearContentColor = HopColors.authAccent,
                 selectedYearContentColor = HopColors.authTextPrimary,
                 selectedYearContainerColor = HopColors.primaryLime,
                 dayContentColor = HopColors.authTextPrimary,
@@ -223,8 +223,8 @@ fun PostTripModelBScreen(
                 selectedDayContentColor = HopColors.authTextPrimary,
                 disabledSelectedDayContentColor = HopColors.authTextPrimary.copy(alpha = 0.38f),
                 selectedDayContainerColor = HopColors.primaryLime,
-                todayContentColor = HopColors.primaryLime,
-                todayDateBorderColor = HopColors.primaryLime,
+                todayContentColor = HopColors.authAccent,
+                todayDateBorderColor = HopColors.authAccent,
                 dayInSelectionRangeContentColor = HopColors.authTextPrimary,
                 dayInSelectionRangeContainerColor = HopColors.primaryLime.copy(alpha = 0.2f),
             ),
@@ -447,7 +447,7 @@ private fun ModelBTopBar(onNavigateBack: () -> Unit) {
                 text = "Model B",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 letterSpacing = 0.5.sp,
             )
         }
@@ -494,7 +494,7 @@ private fun DatePickerRow(
             Text(
                 text = "Change",
                 fontSize = 13.sp,
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 fontWeight = FontWeight.SemiBold,
             )
         }

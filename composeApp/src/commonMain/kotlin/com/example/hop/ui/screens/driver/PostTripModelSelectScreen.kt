@@ -254,13 +254,13 @@ private fun TripModelCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(HopColors.primaryLime.copy(alpha = 0.15f)),
+                        .background(HopColors.authAccent.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = HopColors.primaryLime,
+                        tint = HopColors.authAccent,
                         modifier = Modifier.size(22.dp),
                     )
                 }
@@ -276,7 +276,7 @@ private fun TripModelCard(
                         text = modelLabel,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = HopColors.primaryLime,
+                        color = HopColors.authAccent,
                         letterSpacing = 0.5.sp,
                     )
                 }
@@ -310,7 +310,7 @@ private fun TripModelCard(
                                 .padding(top = 6.dp)
                                 .size(5.dp)
                                 .clip(CircleShape)
-                                .background(HopColors.primaryLime),
+                                .background(HopColors.authAccent),
                         )
                         Spacer(modifier = Modifier.width(HopSpacing.sm))
                         Text(

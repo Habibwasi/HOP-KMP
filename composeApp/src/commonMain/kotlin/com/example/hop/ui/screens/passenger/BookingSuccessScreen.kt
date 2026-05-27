@@ -156,7 +156,7 @@ fun BookingSuccessScreen(
             // ── Headline ──────────────────────────────────────────────────
 
             if (!state.isLoading) {
-                val headlineColor = if (state.tripModel == TripModel.B) HopColors.warning else HopColors.success
+                val headlineColor = if (state.tripModel == TripModel.B) HopColors.authTextPrimary else HopColors.success
                 val headlineText = if (state.tripModel == TripModel.B) "Booking Pending" else "Booking Confirmed!"
 
                 Text(

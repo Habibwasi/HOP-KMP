@@ -132,7 +132,7 @@ fun OtherProfileScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = HopColors.primaryLime)
+                CircularProgressIndicator(color = HopColors.authAccent)
             }
             return@Scaffold
         }
@@ -474,13 +474,13 @@ private fun ReportUserDialog(
                     enabled = !isSubmitting,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = HopColors.primaryLime,
+                        focusedBorderColor = HopColors.authAccent,
                         unfocusedBorderColor = HopColors.authTextSecondary,
-                        focusedLabelColor = HopColors.primaryLime,
+                        focusedLabelColor = HopColors.authAccent,
                         unfocusedLabelColor = HopColors.authTextSecondary,
                         focusedTextColor = HopColors.authTextPrimary,
                         unfocusedTextColor = HopColors.authTextPrimary,
-                        cursorColor = HopColors.primaryLime,
+                        cursorColor = HopColors.authAccent,
                         focusedContainerColor = HopColors.background,
                         unfocusedContainerColor = HopColors.background,
                     ),

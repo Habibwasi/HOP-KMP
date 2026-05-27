@@ -37,6 +37,10 @@ data class TripUiModel(
     val recurrenceDays: List<String>? get() = trip.recurrenceDays
     // True when any booking was created in the last 24 h — used for the driver "new booking" badge.
     val hasRecentBooking: Boolean get() = trip.hasRecentBooking
+    // Driver profile fields. Empty / 0 when the backend doesn't include them in the list response yet.
+    val driverName: String get() = trip.driverName
+    val driverInitials: String get() = trip.driverInitials
+    val driverRating: Float get() = trip.driverRating
 }
 
 /**

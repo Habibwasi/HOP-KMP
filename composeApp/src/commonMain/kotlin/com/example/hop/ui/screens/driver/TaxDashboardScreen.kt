@@ -63,7 +63,11 @@ private val MONTH_NAMES = arrayOf(
     "July", "August", "September", "October", "November", "December",
 )
 
-private fun formatDkk(oere: Int): String = "DKK ${oere / 100}"
+private fun formatDkk(oere: Int): String {
+    val kr = oere / 100
+    val rem = oere % 100
+    return if (rem == 0) "DKK $kr" else "DKK $kr,${rem.toString().padStart(2, '0')}"
+}
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -178,7 +182,7 @@ fun TaxDashboardScreen(
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = HopColors.primaryLime)
+                    CircularProgressIndicator(color = HopColors.authAccent)
                 }
             }
 
@@ -374,7 +378,7 @@ private fun SummaryCard(
                 ),
                 modifier = Modifier.semantics {
                     contentDescription =
-                        "Estimated tax: ${summary.estimatedTaxOere / 100} Danish Kroner"
+                        "Estimated tax: ${formatDkk(summary.estimatedTaxOere)}"
                 },
             )
 
@@ -443,7 +447,7 @@ private fun TaxBreakdownRow(
                 fontSize = 15.sp,
             ),
             modifier = Modifier.semantics {
-                contentDescription = "$label: ${amountOere / 100} Danish Kroner"
+                contentDescription = "$label: ${formatDkk(amountOere)}"
             },
         )
     }

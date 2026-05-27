@@ -229,14 +229,26 @@ fun BookingConfirmationScreen(
                         .navigationBarsPadding()
                         .padding(horizontal = HopSpacing.md, vertical = HopSpacing.md),
                 ) {
-                    HopButton(
-                        text = "Confirm Booking",
-                        onClick = onConfirm,
-                        isLoading = isProcessing,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .semantics { contentDescription = "Confirm Booking" },
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(HopSpacing.sm)) {
+                        if (tripState.seatsAvailable == 0) {
+                            Text(
+                                text = "This trip is fully booked.",
+                                color = HopColors.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                        }
+                        HopButton(
+                            text = "Confirm Booking",
+                            onClick = onConfirm,
+                            isLoading = isProcessing,
+                            enabled = tripState.seatsAvailable > 0,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { contentDescription = "Confirm Booking" },
+                        )
+                    }
                 }
             }
         }
@@ -420,7 +432,7 @@ private fun PriceSummaryCard(
                     fontFamily = HopMonoFontFamily,
                     fontWeight = FontWeight.Bold,
                 ),
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
             )
         }
 
@@ -664,7 +676,7 @@ private fun ConfirmationLoading(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             modifier = Modifier.size(36.dp),
         )
     }

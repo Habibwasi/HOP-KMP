@@ -465,8 +465,8 @@ private fun MetaSeparator() {
 private fun SeatsAvailableChip(seatsAvailable: Int) {
     val label = if (seatsAvailable == 1) "1 seat left" else "$seatsAvailable seats"
     val bg = if (seatsAvailable <= 1) HopColors.warning.copy(alpha = 0.15f)
-             else HopColors.primaryLime.copy(alpha = 0.15f)
-    val textColor = if (seatsAvailable <= 1) HopColors.warning else HopColors.primaryLime
+             else HopColors.authAccent.copy(alpha = 0.12f)
+    val textColor = if (seatsAvailable <= 1) HopColors.warning else HopColors.authAccent
 
     Box(
         contentAlignment = Alignment.Center,
@@ -561,7 +561,7 @@ private fun PriceBreakdownCard(
                     .fillMaxWidth()
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 trackColor = HopColors.surface,
                 strokeCap = StrokeCap.Round,
             )
@@ -587,7 +587,7 @@ private fun TripDetailLoading(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             modifier = Modifier.size(36.dp),
         )
     }

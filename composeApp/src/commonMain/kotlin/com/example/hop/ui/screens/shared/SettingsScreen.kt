@@ -263,6 +263,7 @@ fun SettingsScreen(
                     text = "Version $appVersion",
                     color = HopColors.authTextSecondary,
                     fontSize = 12.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = HopSpacing.xl)
@@ -380,7 +381,7 @@ private fun SettingsToggleRow(
             onCheckedChange = { onCheckedChange() },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = HopColors.background,
-                checkedTrackColor = HopColors.primaryLime,
+                checkedTrackColor = HopColors.authAccent,
                 uncheckedThumbColor = HopColors.authTextSecondary,
                 uncheckedTrackColor = HopColors.authInputSurface,
                 uncheckedBorderColor = HopColors.authTextSecondary,

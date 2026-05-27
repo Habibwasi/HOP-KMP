@@ -58,6 +58,7 @@ import com.example.hop.ui.theme.HopColors
 import com.example.hop.ui.theme.HopMonoFontFamily
 import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
+import com.example.hop.ui.util.formatDkk
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -150,7 +151,7 @@ private fun PassengerSettlementScreen(
 
         if (state.isLoading) {
             Spacer(Modifier.weight(1f))
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = HopColors.primaryLime)
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = HopColors.authAccent)
             Spacer(Modifier.weight(1f))
         } else {
             val settlement = state.settlement
@@ -177,7 +178,7 @@ private fun PassengerSettlementScreen(
                                 fontFamily = HopMonoFontFamily,
                                 fontWeight = FontWeight.Bold,
                             ),
-                            color = HopColors.primaryLime,
+                            color = HopColors.authAccent,
                         )
                         Text(
                             "SKAT-suggested rate - send directly to driver MobilePay",
@@ -228,12 +229,12 @@ private fun PassengerSettlementScreen(
                                 Icon(
                                     Icons.Outlined.ContentCopy,
                                     contentDescription = if (copied) "Copied" else "Copy number",
-                                    tint = if (copied) HopColors.primaryLime else HopColors.authTextSecondary,
+                                    tint = if (copied) HopColors.authAccent else HopColors.authTextSecondary,
                                 )
                                 Text(
                                     if (copied) "Copied!" else "Copy",
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = if (copied) HopColors.primaryLime else HopColors.authTextSecondary,
+                                    color = if (copied) HopColors.authAccent else HopColors.authTextSecondary,
                                 )
                             }
                         }
@@ -251,7 +252,7 @@ private fun PassengerSettlementScreen(
                         Text(
                             "You marked this as paid - waiting for driver to confirm",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = HopColors.primaryLime,
+                            color = HopColors.authAccent,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -305,11 +306,7 @@ private fun PassengerSettlementScreen(
     }
 }
 
-private fun formatDkk(oere: Int): String {
-    val kr = oere / 100
-    val rem = oere % 100
-    return if (rem == 0) "DKK $kr" else "DKK $kr,${rem.toString().padStart(2, '0')}"
-}
+
 
 // Previews
 

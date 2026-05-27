@@ -103,7 +103,7 @@ fun ChatListScreen(
         when {
             state.isLoading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = HopColors.primaryLime)
+                    CircularProgressIndicator(color = HopColors.authAccent)
                 }
             }
             state.error != null -> {
@@ -200,13 +200,13 @@ private fun ChatThreadRow(
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(HopColors.primaryLime.copy(alpha = 0.15f)),
+                .background(HopColors.authAccent.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.Chat,
                 contentDescription = null,
-                tint = HopColors.primaryLime,
+                tint = HopColors.authAccent,
                 modifier = Modifier.size(22.dp),
             )
         }
@@ -245,14 +245,14 @@ private fun ChatThreadRow(
                 .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                 .background(
                     if (thread.myRole == "DRIVER") HopColors.primaryGreen.copy(alpha = 0.15f)
-                    else HopColors.primaryLime.copy(alpha = 0.15f)
+                    else HopColors.authAccent.copy(alpha = 0.12f)
                 )
                 .padding(horizontal = HopSpacing.sm, vertical = 2.dp),
         ) {
             Text(
                 text = if (thread.myRole == "DRIVER") "Driver" else "Passenger",
                 style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
-                    color = if (thread.myRole == "DRIVER") HopColors.primaryGreen else HopColors.primaryLime,
+                    color = if (thread.myRole == "DRIVER") HopColors.primaryGreen else HopColors.authAccent,
                     fontWeight = FontWeight.Medium,
                 ),
             )

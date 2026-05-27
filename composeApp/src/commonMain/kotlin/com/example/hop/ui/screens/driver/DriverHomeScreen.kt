@@ -604,14 +604,14 @@ private fun DriverTripCard(
                 Text(
                     text = "${tripUiModel.seatsBooked}/${tripUiModel.seatsTotal} seats",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = Color(0xFF666666),
+                        color = HopColors.authTextSecondary,
                         fontWeight = FontWeight.SemiBold,
                     ),
                 )
             }
 
             Spacer(modifier = Modifier.height(HopSpacing.sm))
-            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            HorizontalDivider(thickness = 1.dp, color = HopColors.cardBorder)
             Spacer(modifier = Modifier.height(HopSpacing.sm))
 
             // ── Row 2: Route ──────────────────────────────────────────────────
@@ -621,7 +621,7 @@ private fun DriverTripCard(
             )
 
             Spacer(modifier = Modifier.height(HopSpacing.sm))
-            HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+            HorizontalDivider(thickness = 1.dp, color = HopColors.cardBorder)
             Spacer(modifier = Modifier.height(HopSpacing.sm))
 
             // ── Row 3: Departure time + Driver net per seat ───────────────────
@@ -633,7 +633,7 @@ private fun DriverTripCard(
                 Text(
                     text = "Departs ${tripUiModel.formattedDepartsAt}",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = Color(0xFF666666),
+                        color = HopColors.authTextSecondary,
                     ),
                 )
                 Text(
@@ -654,14 +654,14 @@ private fun DriverTripCard(
                     Icon(
                         imageVector = Icons.Outlined.Repeat,
                         contentDescription = null,
-                        tint = HopColors.primaryLime,
+                        tint = HopColors.authAccent,
                         modifier = Modifier.size(14.dp),
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = days.joinToString(" · ") { it.take(2) },
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = HopColors.primaryLime,
+                            color = HopColors.authAccent,
                             fontWeight = FontWeight.SemiBold,
                         ),
                     )
@@ -790,8 +790,8 @@ private fun RowScope.DriverNavItem(
             )
         },
         colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = HopColors.primaryLime,
-            selectedTextColor = HopColors.primaryLime,
+            selectedIconColor = HopColors.authAccent,
+            selectedTextColor = HopColors.authAccent,
             indicatorColor = Color.Transparent,
             unselectedIconColor = HopColors.authTextSecondary,
             unselectedTextColor = HopColors.authTextSecondary,

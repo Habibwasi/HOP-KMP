@@ -254,11 +254,11 @@ fun RatePassengerScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = HopColors.authTextPrimary,
                         unfocusedTextColor = HopColors.authTextPrimary,
-                        focusedBorderColor = HopColors.primaryLime,
+                        focusedBorderColor = HopColors.authAccent,
                         unfocusedBorderColor = HopColors.authInputBorder,
                         focusedContainerColor = HopColors.background,
                         unfocusedContainerColor = HopColors.background,
-                        cursorColor = HopColors.primaryLime,
+                        cursorColor = HopColors.authAccent,
                     ),
                     maxLines = 5,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(

@@ -69,6 +69,9 @@ import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -177,9 +180,8 @@ fun MyTripsPassengerScreen(
 
     val filterDateStr = remember(filterDate) {
         filterDate?.let {
-            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-            sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
-            sdf.format(java.util.Date(it))
+            Instant.fromEpochMilliseconds(it)
+                .toLocalDateTime(TimeZone.UTC).date.toString()
         }
     }
     val filteredUpcoming = remember(state.upcomingTrips, filterDate, filterModel) {
@@ -210,7 +212,7 @@ fun MyTripsPassengerScreen(
                 androidx.compose.material3.TabRowDefaults.PrimaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(selectedTab, matchContentSize = false),
                     height = 2.dp,
-                    color = HopColors.primaryLime,
+                    color = HopColors.authAccent,
                 )
             },
             divider = {},
@@ -228,7 +230,7 @@ fun MyTripsPassengerScreen(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Normal,
                         ),
-                        color = if (selectedTab == index) HopColors.primaryLime else HopColors.authTextSecondary,
+                        color = if (selectedTab == index) HopColors.authAccent else HopColors.authTextSecondary,
                         modifier = Modifier.padding(vertical = HopSpacing.sm),
                     )
                 }
@@ -313,7 +315,7 @@ private fun LoadingIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             modifier = Modifier.size(36.dp),
         )
     }
@@ -421,9 +423,9 @@ private fun MyTripsBottomNavBar(
         tonalElevation = 0.dp,
     ) {
         val chipColors = NavigationBarItemDefaults.colors(
-            selectedIconColor = HopColors.primaryLime,
-            selectedTextColor = HopColors.primaryLime,
-            indicatorColor = HopColors.primaryLime.copy(alpha = 0.12f),
+            selectedIconColor = HopColors.authAccent,
+            selectedTextColor = HopColors.authAccent,
+            indicatorColor = HopColors.authAccent.copy(alpha = 0.12f),
             unselectedIconColor = HopColors.authTextSecondary,
             unselectedTextColor = HopColors.authTextSecondary,
         )
@@ -501,9 +503,11 @@ private fun TripsFilterBar(
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filterDate)
     val dateLabel = filterDate?.let {
-        val sdf = java.text.SimpleDateFormat("d MMM", java.util.Locale.US)
-        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
-        sdf.format(java.util.Date(it))
+        val date = Instant.fromEpochMilliseconds(it)
+            .toLocalDateTime(TimeZone.UTC).date
+        val month = date.month.name.take(3)
+            .replaceFirstChar { c -> c.uppercaseChar() }
+        "${date.dayOfMonth} $month"
     } ?: "Date"
 
     Row(
@@ -564,7 +568,7 @@ private fun TripsFilterBar(
                     onFilterDateChange(datePickerState.selectedDateMillis)
                     showDatePicker = false
                 }) {
-                    Text("OK", color = HopColors.primaryLime)
+                    Text("OK", color = HopColors.authAccent)
                 }
             },
             dismissButton = {
@@ -585,8 +589,8 @@ private fun BookingStatus.toPassengerBadgeType(): BadgeType = when (this) {
     BookingStatus.CONFIRMED        -> BadgeType.Confirmed
     BookingStatus.AWAITING_PAYMENT -> BadgeType.Custom(
         label = "Pay now",
-        background = Color(0xFF3B82F6).copy(alpha = 0.15f),
-        contentColor = Color(0xFF3B82F6),
+        background = HopColors.primaryGreen.copy(alpha = 0.15f),
+        contentColor = HopColors.primaryGreen,
     )
     BookingStatus.CANCELLED        -> BadgeType.Cancelled
     BookingStatus.COMPLETED        -> BadgeType.Completed

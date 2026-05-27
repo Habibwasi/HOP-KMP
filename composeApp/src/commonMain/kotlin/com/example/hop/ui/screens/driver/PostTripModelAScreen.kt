@@ -383,7 +383,7 @@ private fun ModelFormTopBar(
                 text = "Model A",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 letterSpacing = 0.5.sp,
             )
         }
@@ -495,7 +495,7 @@ internal fun TimePickerRow(
         Text(
             text = "Change",
             fontSize = 13.sp,
-            color = HopColors.primaryLime,
+            color = HopColors.authAccent,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -537,7 +537,7 @@ internal fun SeatCounter(
                 .size(36.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(
-                    if (seats > min) HopColors.primaryLime.copy(alpha = 0.15f)
+                    if (seats > min) HopColors.authAccent.copy(alpha = 0.12f)
                     else HopColors.authTextSecondary.copy(alpha = 0.08f),
                 )
                 .clickable(enabled = seats > min, onClickLabel = "Decrease $label") { onDecrement() },
@@ -546,7 +546,7 @@ internal fun SeatCounter(
             Icon(
                 imageVector = Icons.Outlined.Remove,
                 contentDescription = "Decrease $label",
-                tint = if (seats > min) HopColors.primaryLime else HopColors.authTextSecondary.copy(alpha = 0.4f),
+                tint = if (seats > min) HopColors.authAccent else HopColors.authTextSecondary.copy(alpha = 0.4f),
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -557,7 +557,7 @@ internal fun SeatCounter(
                 .size(36.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(
-                    if (seats < max) HopColors.primaryLime.copy(alpha = 0.15f)
+                    if (seats < max) HopColors.authAccent.copy(alpha = 0.12f)
                     else HopColors.authTextSecondary.copy(alpha = 0.08f),
                 )
                 .clickable(enabled = seats < max, onClickLabel = "Increase $label") { onIncrement() },
@@ -566,7 +566,7 @@ internal fun SeatCounter(
             Icon(
                 imageVector = Icons.Outlined.Add,
                 contentDescription = "Increase $label",
-                tint = if (seats < max) HopColors.primaryLime else HopColors.authTextSecondary.copy(alpha = 0.4f),
+                tint = if (seats < max) HopColors.authAccent else HopColors.authTextSecondary.copy(alpha = 0.4f),
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -608,16 +608,16 @@ internal fun TimePickerDialog(
                     clockDialColor = HopColors.authInputSurface,
                     clockDialSelectedContentColor = HopColors.authTextPrimary,
                     clockDialUnselectedContentColor = HopColors.authTextSecondary,
-                    selectorColor = HopColors.primaryLime,
+                    selectorColor = HopColors.authAccent,
                     containerColor = HopColors.background,
-                    periodSelectorBorderColor = HopColors.primaryLime.copy(alpha = 0.3f),
-                    periodSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.2f),
+                    periodSelectorBorderColor = HopColors.authAccent.copy(alpha = 0.3f),
+                    periodSelectorSelectedContainerColor = HopColors.authAccent.copy(alpha = 0.15f),
                     periodSelectorUnselectedContainerColor = Color.Transparent,
-                    periodSelectorSelectedContentColor = HopColors.primaryLime,
+                    periodSelectorSelectedContentColor = HopColors.authAccent,
                     periodSelectorUnselectedContentColor = HopColors.authTextSecondary,
-                    timeSelectorSelectedContainerColor = HopColors.primaryLime.copy(alpha = 0.15f),
+                    timeSelectorSelectedContainerColor = HopColors.authAccent.copy(alpha = 0.12f),
                     timeSelectorUnselectedContainerColor = HopColors.background,
-                    timeSelectorSelectedContentColor = HopColors.primaryLime,
+                    timeSelectorSelectedContentColor = HopColors.authAccent,
                     timeSelectorUnselectedContentColor = HopColors.authTextSecondary,
                 ),
             )
@@ -631,7 +631,7 @@ internal fun TimePickerDialog(
                 }
                 Spacer(modifier = Modifier.width(HopSpacing.sm))
                 androidx.compose.material3.TextButton(onClick = onConfirm) {
-                    Text("OK", color = HopColors.primaryLime, fontWeight = FontWeight.Bold)
+                    Text("OK", color = HopColors.authAccent, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -682,7 +682,7 @@ internal fun AddressPickerRow(
             Text(
                 text = "Search",
                 fontSize = 13.sp,
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -710,7 +710,7 @@ internal fun RouteSummaryRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(HopColors.primaryLime.copy(alpha = 0.08f))
+            .background(HopColors.authAccent.copy(alpha = 0.08f))
             .padding(horizontal = HopSpacing.md, vertical = HopSpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -718,7 +718,7 @@ internal fun RouteSummaryRow(
             CircularProgressIndicator(
                 modifier = Modifier.size(16.dp),
                 strokeWidth = 2.dp,
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
             )
             Spacer(modifier = Modifier.width(HopSpacing.sm))
             Text(
@@ -752,7 +752,7 @@ internal fun RouteSummaryRow(
                 text = priceText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = HopColors.primaryLime,
+                color = HopColors.authAccent,
             )
         }
     }
