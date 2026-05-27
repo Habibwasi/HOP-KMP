@@ -75,7 +75,7 @@ private struct HomeTopBar: View {
 
     var body: some View {
         HStack(spacing: HopSpacing.sm) {
-            HopLogo()
+            HopLogo(height: 30)
                 .accessibilityIdentifier("HomeHopLogo")
 
             Spacer(minLength: 0)

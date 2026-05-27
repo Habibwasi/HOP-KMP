@@ -42,6 +42,8 @@ struct HopLogo: View {
                 .font(.custom("Nunito-Black", size: height * 0.9))
                 .foregroundColor(textColor)
                 .kerning(height * 0.9 * -0.03)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .accessibilityLabel("Ridly")
     }
