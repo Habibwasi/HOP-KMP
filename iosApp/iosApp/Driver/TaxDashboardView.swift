@@ -28,7 +28,9 @@ struct TaxDashboardView: View {
                         Button { wrapper.previousMonth() } label: {
                             Image(systemName: "chevron.left")
                                 .foregroundColor(Color.hopAuthTextPrimary)
-                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
+                                .frame(width: 44, height: 44)
+                                .background(Color.hopCardSurfaceMuted)
+                                .clipShape(Circle())
                         }.buttonStyle(.plain)
 
                         Spacer()
@@ -40,13 +42,15 @@ struct TaxDashboardView: View {
                         Button { wrapper.nextMonth() } label: {
                             Image(systemName: "chevron.right")
                                 .foregroundColor(Color.hopAuthTextPrimary)
-                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
+                                .frame(width: 44, height: 44)
+                                .background(Color.hopCardSurfaceMuted)
+                                .clipShape(Circle())
                         }.buttonStyle(.plain)
                     }
 
                     if s.isLoadingDashboard {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                            .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, HopSpacing.xl)
                     } else if let summary = s.summary {
@@ -55,7 +59,7 @@ struct TaxDashboardView: View {
                             Text("Gross earnings")
                                 .font(HopFont.labelSmall())
                                 .foregroundColor(Color.hopAuthTextPrimary.opacity(0.7))
-                            Text("DKK \(Int(summary.grossOere) / 100)")
+                            Text(formatDkk(Int(summary.grossOere)))
                                 .font(HopFont.displayLarge(weight: .bold))
                                 .foregroundColor(Color.hopAuthTextPrimary)
                         }
@@ -92,7 +96,7 @@ struct TaxDashboardView: View {
                         )
                     }
 
-                    HopButton(text: "Open annual tax report", variant: .ghost, action: onOpenAnnualReport)
+                    HopButton(text: "Open annual tax report", variant: .ghost, lightSurface: true, action: onOpenAnnualReport)
                         .padding(.top, HopSpacing.md)
                 }
                 .padding(HopSpacing.md)
@@ -123,9 +127,15 @@ struct TaxDashboardView: View {
                 .font(HopFont.bodyMedium())
                 .foregroundColor(Color.hopAuthTextSecondary)
             Spacer()
-            Text("DKK \(oere / 100)")
+            Text(formatDkk(oere))
                 .font(highlight ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .semibold))
-                .foregroundColor(highlight ? Color.hopPrimaryLime : Color.hopAuthTextPrimary)
+                .foregroundColor(highlight ? Color.hopAuthAccent : Color.hopAuthTextPrimary)
         }
+    }
+
+    private func formatDkk(_ oere: Int) -> String {
+        let kr = oere / 100
+        let rem = oere % 100
+        return rem == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", rem))"
     }
 }

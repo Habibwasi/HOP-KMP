@@ -29,7 +29,7 @@ struct DriverSettlementView: View {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 18, weight: .regular))
                             .foregroundColor(Color.hopAuthTextPrimary)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("Back")
 
@@ -46,7 +46,7 @@ struct DriverSettlementView: View {
                 if wrapper.state.isLoading {
                     Spacer()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                         .scaleEffect(1.3)
                     Spacer()
                 } else if wrapper.state.entries.isEmpty {
@@ -81,7 +81,7 @@ struct DriverSettlementView: View {
                              ? "All passengers have marked as paid"
                              : "\(waitingCount) passenger\(waitingCount > 1 ? "s" : "") still to pay")
                             .font(HopFont.labelSmall())
-                            .foregroundColor(waitingCount == 0 ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                            .foregroundColor(waitingCount == 0 ? Color.hopAuthAccent : Color.hopAuthTextSecondary)
                         Spacer()
                     }
                     .padding(HopSpacing.md)
@@ -95,7 +95,7 @@ struct DriverSettlementView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { wrapper.refresh() }
         }
@@ -133,8 +133,8 @@ private struct PassengerSettlementCard: View {
 
     var statusColor: Color {
         switch entry.paymentStatus {
-        case .confirmed: return Color.hopPrimaryLime
-        case .paid:      return Color(red: 1, green: 0.655, blue: 0.149) // amber
+        case .confirmed: return Color.hopAuthAccent
+        case .paid:      return Color.hopWarning
         default:         return Color.hopAuthTextSecondary
         }
     }
@@ -159,11 +159,11 @@ private struct PassengerSettlementCard: View {
                 // Avatar
                 ZStack {
                     Circle()
-                        .fill(Color.hopPrimaryLime.opacity(0.15))
-                        .frame(width: 40, height: 40)
+                        .fill(Color.hopAuthAccent.opacity(0.12))
+                        .frame(width: 44, height: 44)
                     Text(entry.passengerInitials)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Color.hopPrimaryLime)
+                        .foregroundColor(Color.hopAuthAccent)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

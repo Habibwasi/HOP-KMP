@@ -25,7 +25,7 @@ struct PastTripDetailDriverView: View {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 18, weight: .regular))
                             .foregroundColor(Color.hopAuthTextPrimary)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("Back")
 
@@ -65,7 +65,7 @@ struct PastTripDetailDriverView: View {
                         Spacer()
                         Text(formatDkk(totalOere))
                             .font(.system(size: 20, weight: .bold, design: .monospaced))
-                            .foregroundColor(Color.hopPrimaryLime)
+                            .foregroundColor(Color.hopAuthAccent)
                     }
                     .padding(.horizontal, HopSpacing.md)
                     .padding(.vertical, HopSpacing.sm)
@@ -87,7 +87,7 @@ struct PastTripDetailDriverView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             wrapper.startObserving { effect in
                 switch effect {
@@ -111,8 +111,8 @@ private struct PastPassengerRow: View {
 
     var statusColor: Color {
         switch entry.paymentStatus {
-        case .confirmed: return Color.hopPrimaryLime
-        case .paid:      return Color(red: 1, green: 0.655, blue: 0.149)
+        case .confirmed: return Color.hopAuthAccent
+        case .paid:      return Color.hopWarning
         default:         return Color.hopAuthTextSecondary
         }
     }
@@ -129,13 +129,12 @@ private struct PastPassengerRow: View {
         HStack {
             ZStack {
                 Circle()
-                    .fill(Color.hopPrimaryLime.opacity(0.15))
-                    .frame(width: 40, height: 40)
+                        .fill(Color.hopAuthAccent.opacity(0.12))
+                        .frame(width: 44, height: 44)
                 Text(entry.passengerInitials)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(Color.hopPrimaryLime)
+                    .foregroundColor(Color.hopAuthAccent)
             }
-
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.passengerName)
                     .font(HopFont.bodyMedium(weight: .medium))

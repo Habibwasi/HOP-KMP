@@ -24,7 +24,9 @@ struct TaxReportDownloadView: View {
                         Button { year -= 1; wrapper.loadTaxReport(year: year) } label: {
                             Image(systemName: "chevron.left")
                                 .foregroundColor(Color.hopAuthTextPrimary)
-                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
+                                .frame(width: 44, height: 44)
+                                .background(Color.hopCardSurfaceMuted)
+                                .clipShape(Circle())
                         }.buttonStyle(.plain)
                         Spacer()
                         Text("Tax Year \(year)")
@@ -34,13 +36,15 @@ struct TaxReportDownloadView: View {
                         Button { year += 1; wrapper.loadTaxReport(year: year) } label: {
                             Image(systemName: "chevron.right")
                                 .foregroundColor(Color.hopAuthTextPrimary)
-                                .padding(8).background(Color.hopCardSurfaceMuted).clipShape(Circle())
+                                .frame(width: 44, height: 44)
+                                .background(Color.hopCardSurfaceMuted)
+                                .clipShape(Circle())
                         }.buttonStyle(.plain)
                     }
 
                     if s.isLoading {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                            .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, HopSpacing.xl)
                     } else if let err = s.error {
@@ -66,7 +70,7 @@ struct TaxReportDownloadView: View {
                             HopButton(text: "Download PDF", variant: .primary) {
                                 if let u = URL(string: url) { UIApplication.shared.open(u) }
                             }
-                            HopButton(text: "Share", variant: .ghost) {
+                            HopButton(text: "Share", variant: .ghost, lightSurface: true) {
                                 if let u = URL(string: url) {
                                     let av = UIActivityViewController(activityItems: [u], applicationActivities: nil)
                                     UIApplication.shared.connectedScenes
@@ -104,9 +108,15 @@ struct TaxReportDownloadView: View {
                 .font(HopFont.bodyMedium())
                 .foregroundColor(Color.hopAuthTextSecondary)
             Spacer()
-            Text("DKK \(oere / 100)")
+            Text(formatDkk(oere))
                 .font(highlight ? HopFont.headlineSmall(weight: .bold) : HopFont.bodyMedium(weight: .semibold))
-                .foregroundColor(highlight ? Color.hopPrimaryLime : Color.hopAuthTextPrimary)
+                .foregroundColor(highlight ? Color.hopAuthAccent : Color.hopAuthTextPrimary)
         }
+    }
+
+    private func formatDkk(_ oere: Int) -> String {
+        let kr = oere / 100
+        let rem = oere % 100
+        return rem == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", rem))"
     }
 }

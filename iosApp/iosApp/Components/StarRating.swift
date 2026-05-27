@@ -10,6 +10,9 @@ struct StarRatingDisplay: View {
     var count: Int? = nil
     /// Star size in points.
     var starSize: CGFloat = 14
+    /// Pass `true` when the card/surface is light (white/gray) so stars use
+    /// hopWarning (amber) instead of lime — avoids near-zero contrast on white.
+    var lightSurface: Bool = false
 
     var body: some View {
         HStack(spacing: 2) {
@@ -18,7 +21,7 @@ struct StarRatingDisplay: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: starSize, height: starSize)
-                    .foregroundColor(Color.hopPrimaryLime)
+                    .foregroundColor(lightSurface ? Color.hopWarning : Color.hopPrimaryLime)
             }
             if let count {
                 Text("(\(count))")
@@ -59,6 +62,9 @@ struct StarRatingDisplay: View {
 struct StarRatingInput: View {
     /// Selected star count 0–5. 0 means no rating set yet.
     @Binding var rating: Int
+    /// Pass `true` when rendered on a light/white background so filled stars
+    /// use hopWarning (amber) instead of lime — avoids near-zero contrast.
+    var lightSurface: Bool = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -67,7 +73,9 @@ struct StarRatingInput: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 28, height: 28)
-                    .foregroundColor(star <= rating ? Color.hopPrimaryLime : Color.hopTextSecondary)
+                    .foregroundColor(star <= rating
+                        ? (lightSurface ? Color.hopWarning : Color.hopPrimaryLime)
+                        : Color.hopTextSecondary)
                     // 44 pt touch target
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())

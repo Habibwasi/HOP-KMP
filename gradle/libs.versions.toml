@@ -30,6 +30,7 @@ supabase-kt = "3.1.4"
 maps-compose = "4.3.3"
 play-services-maps = "19.2.0"
 google-places = "4.1.0"
+coil = "3.1.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -79,6 +80,8 @@ supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt", ve
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "play-services-maps" }
 google-places = { module = "com.google.android.libraries.places:places", version.ref = "google-places" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

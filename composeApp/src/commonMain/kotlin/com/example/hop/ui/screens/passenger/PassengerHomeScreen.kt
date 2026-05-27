@@ -221,7 +221,7 @@ fun PassengerHomeContent(
         ?.substringBefore(' ')
 
     PassengerHomeScreen(
-        trips = tripState.trips,
+        trips = tripState.upcomingTrips,
         isLoading = tripState.isLoading,
         isRefreshing = tripState.isRefreshing,
         firstName = firstName,

@@ -23,7 +23,7 @@ struct RateDriverView: View {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(Color.hopAuthTextPrimary)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                 }.buttonStyle(.plain)
                 Text("Rate your trip")
                     .font(HopFont.titleMedium())
@@ -43,7 +43,7 @@ struct RateDriverView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, HopSpacing.lg)
 
-                    StarRatingInput(rating: $rating)
+                    StarRatingInput(rating: $rating, lightSurface: true)
 
                     VStack(alignment: .leading, spacing: 4) {
                         TextEditor(text: $comment)

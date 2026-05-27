@@ -17,7 +17,7 @@ struct TripDetailView: View {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(Color.hopAuthTextPrimary)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                 }.buttonStyle(.plain)
                 Text("Trip Details")
                     .font(HopFont.titleMedium())
@@ -102,7 +102,7 @@ private struct DriverHeader: View {
                 Text(driverName)
                     .font(HopFont.headlineSmall(weight: .semibold))
                     .foregroundColor(Color.hopAuthTextPrimary)
-                StarRatingDisplay(rating: driverRating, count: nil, starSize: 14)
+                StarRatingDisplay(rating: driverRating, count: nil, starSize: 14, lightSurface: true)
                 ModelBadge(model: model)
             }
             Spacer()
@@ -115,8 +115,8 @@ private struct ModelBadge: View {
     let model: TripModel
     var body: some View {
         let isB = model == .b
-        let bg: Color = isB ? Color.hopPrimaryGreen.opacity(0.15) : Color(hex: 0x1976D2).opacity(0.15)
-        let fg: Color = isB ? Color.hopPrimaryGreen : Color(hex: 0x1976D2)
+        let bg: Color = isB ? Color.hopPrimaryGreen.opacity(0.15) : Color.hopAuthAccent.opacity(0.12)
+        let fg: Color = isB ? Color.hopPrimaryGreen : Color.hopAuthAccent
         let text: String = isB ? "Long Trip · Model B" : "Commute · Model A"
         Text(text)
             .font(HopFont.labelSmall(weight: .medium))

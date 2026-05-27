@@ -24,7 +24,7 @@ struct GreetingBanner: View {
             ZStack {
                 Circle()
                     .fill(Color.white.opacity(0.55))
-                    .frame(width: 36, height: 36)
+                    .frame(width: 44, height: 44)
                 Text(String((resolvedName?.first?.uppercased() ?? "H")))
                     .font(HopFont.titleMedium())
                     .foregroundColor(Color.hopAuthTextPrimary)

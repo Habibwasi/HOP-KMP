@@ -29,7 +29,7 @@ struct AddressPickerRowView: View {
 
                     Text("Search")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.hopPrimaryLime)
+                        .foregroundColor(Color.hopAuthAccent)
                 }
                 .padding(.horizontal, HopSpacing.md)
                 .padding(.vertical, 14)
@@ -81,13 +81,13 @@ struct RouteSummaryRowView: View {
                     .foregroundColor(Color.hopAuthTextSecondary)
                 Text(priceDisplay)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color.hopPrimaryLime)
+                    .foregroundColor(Color.hopAuthAccent)
             }
         }
         .padding(.horizontal, HopSpacing.md)
         .padding(.vertical, HopSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hopPrimaryLime.opacity(0.08))
+        .background(Color.hopAuthAccent.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

@@ -36,7 +36,7 @@ struct PassengerSettlementView: View {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 18, weight: .regular))
                             .foregroundColor(Color.hopAuthTextPrimary)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("Back")
 
@@ -53,7 +53,7 @@ struct PassengerSettlementView: View {
                 if wrapper.state.isLoading {
                     Spacer()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                         .scaleEffect(1.3)
                     Spacer()
                 } else if let settlement = wrapper.state.settlement {
@@ -66,7 +66,7 @@ struct PassengerSettlementView: View {
                                     .foregroundColor(Color.hopAuthTextSecondary)
                                 Text(formatDkk(Int(settlement.suggestedAmountOere)))
                                     .font(.system(size: 32, weight: .bold, design: .monospaced))
-                                    .foregroundColor(Color.hopPrimaryLime)
+                                    .foregroundColor(Color.hopAuthTextPrimary)
                                 Text("SKAT-suggested rate · send directly to driver's MobilePay")
                                     .font(HopFont.bodySmall())
                                     .foregroundColor(Color.hopAuthTextSecondary)
@@ -96,10 +96,10 @@ struct PassengerSettlementView: View {
                                         HStack(spacing: 4) {
                                             Image(systemName: "doc.on.doc")
                                                 .font(.system(size: 14))
-                                                .foregroundColor(copied ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                                                .foregroundColor(copied ? Color.hopAuthAccent : Color.hopAuthTextSecondary)
                                             Text(copied ? "Copied!" : "Copy")
                                                 .font(HopFont.labelSmall())
-                                                .foregroundColor(copied ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                                                .foregroundColor(copied ? Color.hopAuthAccent : Color.hopAuthTextSecondary)
                                         }
                                     }
                                 }
@@ -119,10 +119,10 @@ struct PassengerSettlementView: View {
                             if settlement.passengerPaidAt != nil {
                                 HStack(spacing: HopSpacing.sm) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(Color.hopPrimaryLime)
+                                        .foregroundColor(Color.hopAuthAccent)
                                     Text("You marked this as paid — waiting for driver to confirm")
                                         .font(HopFont.bodyMedium())
-                                        .foregroundColor(Color.hopPrimaryLime)
+                                        .foregroundColor(Color.hopAuthAccent)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -175,7 +175,7 @@ struct PassengerSettlementView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 if isOpeningMobilepay {

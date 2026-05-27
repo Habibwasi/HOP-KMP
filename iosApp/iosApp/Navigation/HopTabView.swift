@@ -76,17 +76,28 @@ struct HopTabView: View {
             .tag(HopTab.home)
 
             // ── My Trips ─────────────────────────────────────────────────────
-            MyTripsPassengerView(
-                onNavigateBack: { selectedTab = .home },
-                onNavigateToTripDetailActive: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
-                onNavigateToTripDetail: { tripId in navigate(.tripDetail(id: tripId)) },
-                onNavigateToPassengerSettlement: { bookingId in navigate(.passengerSettlement(bookingId: bookingId)) },
-                onNavigateToHome: { selectedTab = .home },
-                onNavigateToChat: { selectedTab = .chat },
-                onNavigateToProfile: { selectedTab = .profile },
-                onNavigateToFindRide: { selectedTab = .home },
-                inTab: true
-            )
+            Group {
+                if selectedRole == .driver {
+                    MyTripsDriverView(
+                        onTripTapped: { tripId in navigate(.tripDetailActiveDriver(tripId: tripId)) },
+                        onSettlementTapped: { tripId in navigate(.driverSettlement(tripId: tripId)) },
+                        onPastTripTapped: { tripId in navigate(.pastTripDetailDriver(tripId: tripId)) },
+                        onBack: { selectedTab = .home }
+                    )
+                } else {
+                    MyTripsPassengerView(
+                        onNavigateBack: { selectedTab = .home },
+                        onNavigateToTripDetailActive: { bookingId in navigate(.tripDetailActive(bookingId: bookingId)) },
+                        onNavigateToTripDetail: { tripId in navigate(.tripDetail(id: tripId)) },
+                        onNavigateToPassengerSettlement: { bookingId in navigate(.passengerSettlement(bookingId: bookingId)) },
+                        onNavigateToHome: { selectedTab = .home },
+                        onNavigateToChat: { selectedTab = .chat },
+                        onNavigateToProfile: { selectedTab = .profile },
+                        onNavigateToFindRide: { selectedTab = .home },
+                        inTab: true
+                    )
+                }
+            }
             .tabItem { Label(HopTab.myTrips.label, systemImage: HopTab.myTrips.icon) }
             .tag(HopTab.myTrips)
 
@@ -106,7 +117,7 @@ struct HopTabView: View {
             .tabItem { Label(HopTab.profile.label, systemImage: HopTab.profile.icon) }
             .tag(HopTab.profile)
         }
-        .tint(Color.hopPrimaryLime)
+        .tint(Color.hopAuthAccent)
         // Dark tab-bar background to match the app's surface colour
         .onAppear { applyTabBarAppearance() }
     }
@@ -127,9 +138,9 @@ struct HopTabView: View {
             .foregroundColor: UIColor(Color.hopAuthTextSecondary)
         ]
         // Selected item colour
-        appearance.stackedLayoutAppearance.selected.iconColor    = UIColor(Color.hopPrimaryLime)
+        appearance.stackedLayoutAppearance.selected.iconColor    = UIColor(Color.hopAuthAccent)
         appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor(Color.hopPrimaryLime)
+            .foregroundColor: UIColor(Color.hopAuthAccent)
         ]
 
         UITabBar.appearance().standardAppearance   = appearance

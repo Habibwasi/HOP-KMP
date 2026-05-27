@@ -26,7 +26,7 @@ struct MobilepayOnboardingView: View {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 18, weight: .regular))
                             .foregroundColor(Color.hopAuthTextPrimary)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("Back")
 
@@ -96,7 +96,7 @@ struct MobilepayOnboardingView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             wrapper.startObserving { effect in
                 switch effect {

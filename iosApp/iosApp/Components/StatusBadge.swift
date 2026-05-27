@@ -35,22 +35,23 @@ enum HopBadgeStatus {
     var foregroundColor: Color {
         switch self {
         case .confirmed:       return Color.hopSuccess
-        case .active:          return Color(hex: 0x1A1A1A)
+        case .active:          return Color.hopSurface
         case .pending:         return Color.hopWarning
-        case .awaitingPayment: return Color(hex: 0x3B82F6)
+        case .awaitingPayment: return Color.hopPrimaryGreen
         case .cancelled:       return Color.hopError
         case .completed:       return Color.hopAuthTextSecondary
         case .disputed:        return Color.hopError
         case .thresholdNotMet: return Color.hopWarning
-        case .modelA:          return Color.hopPrimaryLime
+        case .modelA:          return Color.hopAuthAccent   // #167A30 — readable on light surfaces
         case .modelB:          return Color.hopPrimaryGreen
         }
     }
 
     var backgroundColor: Color {
         switch self {
-        case .active: return Color.hopPrimaryLime.opacity(0.20)
-        default:      return foregroundColor.opacity(0.15)
+        case .active:  return Color.hopPrimaryLime.opacity(0.20)
+        case .modelA:  return Color.hopAuthAccent.opacity(0.12)
+        default:       return foregroundColor.opacity(0.15)
         }
     }
 }

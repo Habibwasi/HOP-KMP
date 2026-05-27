@@ -18,7 +18,25 @@ struct OtherProfileView: View {
         ZStack(alignment: .bottom) {
             Color.hopSurface.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                // Inline top bar — toolbar(.hidden) in HopNavigationStack hides ToolbarItem
+                HStack(spacing: 0) {
+                    Button(action: onBack) {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundColor(Color.hopTextPrimary)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Navigate back")
+                    Text("Profile")
+                        .font(HopFont.bodyLarge(weight: .semibold))
+                        .foregroundColor(Color.hopTextPrimary)
+                    Spacer()
+                }
+                .padding(.horizontal, HopSpacing.xs)
+                .background(Color.hopSurface)
+
+                ScrollView(showsIndicators: false) {
                 VStack(spacing: HopSpacing.lg) {
                     if let user = wrapper.state.user {
                         HopAvatar(name: user.fullName, size: .xlarge, isVerified: user.phoneVerified)
@@ -59,7 +77,7 @@ struct OtherProfileView: View {
 
                     } else if wrapper.state.isLoading {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                            .progressViewStyle(CircularProgressViewStyle(tint: Color.hopTextPrimary))
                             .scaleEffect(1.3)
                             .padding(.top, HopSpacing.xxl)
                     } else if let err = wrapper.state.error {
@@ -69,7 +87,8 @@ struct OtherProfileView: View {
                     Spacer().frame(height: HopSpacing.xxl)
                 }
                 .padding(.horizontal, HopSpacing.md)
-            }
+                } // end ScrollView
+            } // end VStack (top bar + scroll)
 
             if let msg = toast {
                 HopToast(message: msg)
@@ -78,18 +97,6 @@ struct OtherProfileView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left").foregroundColor(Color.hopTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Profile").font(HopFont.bodyLarge(weight: .semibold)).foregroundColor(Color.hopTextPrimary)
-            }
-        }
-        .toolbarBackground(Color.hopSurface, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .sheet(isPresented: Binding(
             get: { wrapper.state.isReportDialogVisible },
             set: { if !$0 { wrapper.dismissReportDialog() } }

@@ -34,7 +34,7 @@ struct ForgotPasswordView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task { wrapper.startObserving() }
         .task {
             for await effect in wrapper.viewModel.effect {

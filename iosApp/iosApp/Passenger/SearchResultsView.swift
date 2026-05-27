@@ -27,7 +27,7 @@ struct SearchResultsView: View {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(Color.hopAuthTextPrimary)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                 }.buttonStyle(.plain)
 
                 let route = wrapper.state.origin.isEmpty || wrapper.state.dest.isEmpty

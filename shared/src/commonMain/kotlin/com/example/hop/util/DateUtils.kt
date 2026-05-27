@@ -39,12 +39,10 @@ fun formatDeparture(isoString: String): String {
     val timeStr = "$hour:$minute"
 
     val tomorrow = today.plus(1, DateTimeUnit.DAY)
-    val in7Days = today.plus(7, DateTimeUnit.DAY)
 
     return when {
         date == today    -> "Today · $timeStr"
         date == tomorrow -> "Tomorrow · $timeStr"
-        date < in7Days   -> "${date.dayOfWeek.shortName()} · $timeStr"
         else             -> "${date.dayOfWeek.shortName()} ${date.dayOfMonth} ${date.month.shortName()} · $timeStr"
     }
 }

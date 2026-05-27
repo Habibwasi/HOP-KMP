@@ -399,7 +399,7 @@ private struct SearchHero: View {
                         Image(systemName: "arrow.up.arrow.down")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(hex: "#666666"))
-                            .frame(width: 36, height: 36)
+                            .frame(width: 44, height: 44)
                             .background(Color.white)
                             .clipShape(Circle())
                             .overlay(Circle().stroke(Color(hex: "#DDDDDD"), lineWidth: 1))
@@ -552,7 +552,7 @@ private struct SeatPickerSheet: View {
                                 .fill(n == currentSeats
                                     ? Color.hopPrimaryLime
                                     : Color.hopCardSurfaceMuted)
-                                .frame(width: 32, height: 32)
+                                .frame(width: 44, height: 44)
                             Image(systemName: "person.fill")
                                 .font(.system(size: 14))
                                 .foregroundColor(n == currentSeats

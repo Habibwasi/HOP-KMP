@@ -92,20 +92,24 @@ struct SignUpView: View {
                         Button(action: { termsAccepted.toggle() }) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 4)
-                                    .stroke(termsAccepted ? Color.hopPrimaryLime : Color.hopAuthInputBorder, lineWidth: 1.5)
+                                    .stroke(termsAccepted ? Color.hopAuthAccent : Color.hopAuthInputBorder, lineWidth: 1.5)
                                     .background(
                                         RoundedRectangle(cornerRadius: 4)
-                                            .fill(termsAccepted ? Color.hopPrimaryLime : Color.clear)
+                                            .fill(termsAccepted ? Color.hopAuthAccent : Color.clear)
                                     )
                                     .frame(width: 20, height: 20)
                                 if termsAccepted {
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(Color.hopAuthTextPrimary)
+                                        .foregroundColor(Color.white)
                                 }
                             }
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(termsAccepted ? "Terms accepted" : "Accept terms")
+                        .accessibilityAddTraits(termsAccepted ? .isSelected : [])
 
                         termsLabel
                     }

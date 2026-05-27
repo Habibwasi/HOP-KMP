@@ -190,6 +190,7 @@ fun OwnProfileScreen(
             item {
                 AvatarEditSection(
                     initials = state.user?.fullName?.toInitials().orEmpty(),
+                    avatarUrl = state.user?.avatarUrl,
                     isVerified = state.user?.phoneVerified == true,
                     isUploading = state.isUploadingAvatar,
                     onPickImage = onPickImage,
@@ -307,6 +308,7 @@ fun OwnProfileScreen(
 private fun AvatarEditSection(
     initials: String,
     isVerified: Boolean,
+    avatarUrl: String? = null,
     isUploading: Boolean = false,
     onPickImage: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -320,6 +322,7 @@ private fun AvatarEditSection(
         Box(contentAlignment = Alignment.BottomEnd) {
             HopAvatar(
                 initials = initials,
+                imageUrl = avatarUrl,
                 size = AvatarSize.Lg,
                 isVerified = isVerified,
             )

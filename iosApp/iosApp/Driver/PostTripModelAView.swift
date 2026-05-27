@@ -73,7 +73,7 @@ struct PostTripModelAView: View {
                                     Text(label)
                                         .font(HopFont.labelMedium(weight: .semibold))
                                         .foregroundColor(isOn ? Color.hopSurface : Color.hopAuthTextPrimary)
-                                        .frame(width: 36, height: 36)
+                                        .frame(width: 44, height: 44)
                                         .background(isOn ? Color.hopPrimaryLime : Color.hopCardSurfaceMuted)
                                         .clipShape(Circle())
                                 }
@@ -82,7 +82,7 @@ struct PostTripModelAView: View {
                         }
                     }
 
-                    HopTextField(label: "Departure time (HH:mm)", placeholder: "08:00", text: $time)
+                    HopTextField(label: "Departure time (HH:mm)", placeholder: "08:00", text: $time, lightSurface: true)
 
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Seats")

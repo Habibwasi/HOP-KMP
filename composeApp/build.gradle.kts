@@ -47,6 +47,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.material.icons.extended)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.okhttp)
             implementation(projects.shared)
         }
         commonTest.dependencies {

@@ -107,7 +107,7 @@ struct MyTripsDriverView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, HopSpacing.sm)
                                 Rectangle()
-                                    .fill(selectedFilter == f ? Color.hopPrimaryLime : Color.clear)
+                                    .fill(selectedFilter == f ? Color.hopAuthAccent : Color.clear)
                                     .frame(height: 2)
                             }
                         }
@@ -135,7 +135,7 @@ struct MyTripsDriverView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(filterDate != nil ? Color.hopPrimaryLime.opacity(0.20) : Color(hex: 0x2A2A2A))
-                            .foregroundColor(Color.hopAuthTextPrimary)
+                            .foregroundColor(filterDate != nil ? Color.hopAuthAccent : Color.hopTextPrimary)
                             .clipShape(Capsule())
                             .overlay(Capsule().stroke(filterDate != nil ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
                         }
@@ -147,7 +147,7 @@ struct MyTripsDriverView: View {
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(filterModel == .commute ? Color.hopPrimaryLime.opacity(0.20) : Color(hex: 0x2A2A2A))
-                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .foregroundColor(filterModel == .commute ? Color.hopAuthAccent : Color.hopTextPrimary)
                                 .clipShape(Capsule())
                                 .overlay(Capsule().stroke(filterModel == .commute ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
                         }
@@ -159,7 +159,7 @@ struct MyTripsDriverView: View {
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(filterModel == .longTrip ? Color.hopPrimaryLime.opacity(0.20) : Color(hex: 0x2A2A2A))
-                                .foregroundColor(Color.hopAuthTextPrimary)
+                                .foregroundColor(filterModel == .longTrip ? Color.hopAuthAccent : Color.hopTextPrimary)
                                 .clipShape(Capsule())
                                 .overlay(Capsule().stroke(filterModel == .longTrip ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
                         }
@@ -182,7 +182,7 @@ struct MyTripsDriverView: View {
                             displayedComponents: .date
                         )
                         .datePickerStyle(.graphical)
-                        .accentColor(Color.hopPrimaryLime)
+                        .accentColor(Color.hopAuthAccent)
                         HStack {
                             if filterDate != nil {
                                 Button("Clear") { filterDate = nil; showDatePicker = false }
@@ -190,7 +190,7 @@ struct MyTripsDriverView: View {
                             }
                             Spacer()
                             Button("Done") { showDatePicker = false }
-                                .foregroundColor(Color.hopPrimaryLime)
+                                .foregroundColor(Color.hopAuthAccent)
                                 .fontWeight(.semibold)
                         }
                         .padding(.horizontal)
@@ -270,10 +270,10 @@ private struct DriverTripDetailRow: View {
                 // Model A / B chip
                 Text(trip.model == .a ? "Commute" : "Long Trip")
                     .font(HopFont.labelSmall(weight: .medium))
-                    .foregroundColor(trip.model == .a ? Color.hopPrimaryLime : Color.hopPrimaryGreen)
+                    .foregroundColor(trip.model == .a ? Color.hopAuthAccent : Color.hopPrimaryGreen)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background((trip.model == .a ? Color.hopPrimaryLime : Color.hopPrimaryGreen).opacity(0.15))
+                    .background((trip.model == .a ? Color.hopAuthAccent : Color.hopPrimaryGreen).opacity(0.12))
                     .clipShape(Capsule())
                 Text(trip.trip.departsAt)
                     .font(HopFont.bodySmall())
@@ -282,10 +282,10 @@ private struct DriverTripDetailRow: View {
                 if isAwaitingPayment {
                     Text("Awaiting payment")
                         .font(HopFont.labelSmall(weight: .semibold))
-                        .foregroundColor(Color(hex: 0x3B82F6))
+                        .foregroundColor(Color.hopPrimaryGreen)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(Color(hex: 0x3B82F6).opacity(0.12))
+                        .background(Color.hopPrimaryGreen.opacity(0.12))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                     Spacer().frame(width: 4)
                 } else if isNew {
@@ -300,7 +300,7 @@ private struct DriverTripDetailRow: View {
                 }
                 Text("\(trip.trip.seatsBooked)/\(trip.trip.seatsTotal) seats")
                     .font(HopFont.bodySmall(weight: .semibold))
-                    .foregroundColor(Color.hopPrimaryLime)
+                    .foregroundColor(Color.hopAuthAccent)
             }
             // Row 3: threshold progress bar (Model B only)
             if showThreshold, let minThreshold = trip.trip.minThreshold {
@@ -313,7 +313,7 @@ private struct DriverTripDetailRow: View {
                         ZStack(alignment: .leading) {
                             // Track
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color(hex: 0xE8E8E8))
+                                .fill(Color.hopCardBorder)
                                 .frame(height: 8)
                             // Lime fill
                             RoundedRectangle(cornerRadius: 4)
@@ -361,7 +361,7 @@ private struct DriverTripDetailRow: View {
     @ViewBuilder
     private var statusBadge: some View {
         switch trip.trip.status {
-        case TripStatus.active:          Badge(text: "Active",            color: Color.hopPrimaryLime)
+        case TripStatus.active:          Badge(text: "Active",            color: Color.hopAuthAccent)
         case TripStatus.confirmed:       Badge(text: "Confirmed",         color: Color.hopSuccess)
         case TripStatus.completed:       Badge(text: "Completed",         color: Color.hopAuthTextSecondary)
         case TripStatus.cancelled:       Badge(text: "Cancelled",         color: Color.hopError)

@@ -116,10 +116,10 @@ struct MyTripsPassengerView: View {
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(filterDate != nil ? Color.hopPrimaryLime.opacity(0.20) : Color.hopCardSurfaceMuted)
+                        .background(filterDate != nil ? Color.hopAuthAccent.opacity(0.10) : Color.hopCardSurfaceMuted)
                         .foregroundColor(Color.hopAuthTextPrimary)
                         .clipShape(Capsule())
-                        .overlay(Capsule().stroke(filterDate != nil ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                        .overlay(Capsule().stroke(filterDate != nil ? Color.hopAuthAccent : Color.clear, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
 
@@ -129,10 +129,10 @@ struct MyTripsPassengerView: View {
                             .font(HopFont.labelSmall(weight: .medium))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(filterModel == .commute ? Color.hopPrimaryLime.opacity(0.20) : Color.hopCardSurfaceMuted)
+                            .background(filterModel == .commute ? Color.hopAuthAccent.opacity(0.10) : Color.hopCardSurfaceMuted)
                             .foregroundColor(Color.hopAuthTextPrimary)
                             .clipShape(Capsule())
-                            .overlay(Capsule().stroke(filterModel == .commute ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                            .overlay(Capsule().stroke(filterModel == .commute ? Color.hopAuthAccent : Color.clear, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
 
@@ -142,10 +142,10 @@ struct MyTripsPassengerView: View {
                             .font(HopFont.labelSmall(weight: .medium))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(filterModel == .longTrip ? Color.hopPrimaryLime.opacity(0.20) : Color.hopCardSurfaceMuted)
+                            .background(filterModel == .longTrip ? Color.hopAuthAccent.opacity(0.10) : Color.hopCardSurfaceMuted)
                             .foregroundColor(Color.hopAuthTextPrimary)
                             .clipShape(Capsule())
-                            .overlay(Capsule().stroke(filterModel == .longTrip ? Color.hopPrimaryLime : Color.clear, lineWidth: 1))
+                            .overlay(Capsule().stroke(filterModel == .longTrip ? Color.hopAuthAccent : Color.clear, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }
@@ -166,7 +166,7 @@ struct MyTripsPassengerView: View {
                         displayedComponents: .date
                     )
                     .datePickerStyle(.graphical)
-                    .accentColor(Color.hopPrimaryLime)
+                    .accentColor(Color.hopAuthAccent)
                     HStack {
                         if filterDate != nil {
                             Button("Clear") { filterDate = nil; showDatePicker = false }
@@ -174,7 +174,7 @@ struct MyTripsPassengerView: View {
                         }
                         Spacer()
                         Button("Done") { showDatePicker = false }
-                            .foregroundColor(Color.hopPrimaryLime)
+                            .foregroundColor(Color.hopAuthAccent)
                             .fontWeight(.semibold)
                     }
                     .padding(.horizontal)
@@ -252,9 +252,9 @@ struct MyTripsPassengerView: View {
             VStack(spacing: 6) {
                 Text(title)
                     .font(HopFont.bodyMedium(weight: active ? .semibold : .regular))
-                    .foregroundColor(active ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                    .foregroundColor(active ? Color.hopAuthAccent : Color.hopAuthTextSecondary)
                 Rectangle()
-                    .fill(active ? Color.hopPrimaryLime : Color.clear)
+                    .fill(active ? Color.hopAuthAccent : Color.clear)
                     .frame(height: 2)
             }
             .padding(.vertical, HopSpacing.sm)
@@ -376,10 +376,10 @@ struct MyTripsBottomNavBar: View {
             VStack(spacing: 2) {
                 Image(systemName: systemImage)
                     .font(.system(size: 20))
-                    .foregroundColor(active ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                    .foregroundColor(active ? Color.hopAuthAccent : Color.hopAuthTextSecondary)
                 Text(label)
                     .font(HopFont.labelSmall(weight: active ? .semibold : .medium))
-                    .foregroundColor(active ? Color.hopPrimaryLime : Color.hopAuthTextSecondary)
+                    .foregroundColor(active ? Color.hopAuthAccent : Color.hopAuthTextSecondary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)

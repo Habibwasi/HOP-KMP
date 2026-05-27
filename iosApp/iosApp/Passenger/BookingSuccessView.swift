@@ -15,11 +15,11 @@ struct BookingSuccessView: View {
             ScrollView {
                 VStack(alignment: .center, spacing: HopSpacing.lg) {
                     Spacer().frame(height: HopSpacing.xxl)
-                    AnimatedCheckmark(color: headlineColor)
+                    AnimatedCheckmark(color: accentColor)
 
                     Text(headline)
                         .font(HopFont.headlineMedium(weight: .bold))
-                        .foregroundColor(headlineColor)
+                        .foregroundColor(Color.hopAuthTextPrimary)
                         .multilineTextAlignment(.center)
 
                     Text(subhead)
@@ -63,7 +63,8 @@ struct BookingSuccessView: View {
             ? "We'll confirm your seat once enough passengers join. You'll be notified."
             : "Your seat is reserved. We've sent the details to your inbox."
     }
-    private var headlineColor: Color { isModelB ? Color.hopWarning : Color.hopSuccess }
+    /// Accent color used for the checkmark icon only.
+    private var accentColor: Color { isModelB ? Color.hopWarning : Color.hopSuccess }
 }
 
 private struct AnimatedCheckmark: View {

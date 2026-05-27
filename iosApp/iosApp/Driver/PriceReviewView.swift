@@ -125,7 +125,7 @@ private struct TripSummaryCard: View {
                 .foregroundColor(Color.hopAuthTextSecondary)
 
             HStack(spacing: HopSpacing.xs) {
-                Image(systemName: "mappin.circle.fill").foregroundColor(Color.hopPrimaryLime)
+                Image(systemName: "mappin.circle.fill").foregroundColor(Color.hopAuthAccent)
                 Text("\(summary.origin) → \(summary.dest)")
                     .font(HopFont.labelMedium(weight: .semibold))
                     .foregroundColor(Color.hopAuthTextPrimary)

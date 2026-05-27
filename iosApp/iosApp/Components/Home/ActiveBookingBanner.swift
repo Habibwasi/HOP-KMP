@@ -53,7 +53,7 @@ struct ActiveBookingBanner: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.hopPrimaryLime.opacity(0.2))
-                                .frame(width: 36, height: 36)
+                                .frame(width: 44, height: 44)
                             Image(systemName: "clock.fill")
                                 .font(.system(size: 18))
                                 .foregroundColor(Color.hopPrimaryGreen)

@@ -35,7 +35,7 @@ struct OwnProfileView: View {
                                 Image(systemName: "gearshape")
                                     .font(.system(size: 20))
                                     .foregroundColor(Color.hopAuthTextPrimary)
-                                    .frame(width: 40, height: 40)
+                                    .frame(width: 44, height: 44)
                             }
                             .accessibilityLabel("Settings")
                         )
@@ -45,7 +45,7 @@ struct OwnProfileView: View {
                 if wrapper.state.isLoading && wrapper.state.user == nil {
                     Spacer()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                         .scaleEffect(1.3)
                     Spacer()
                 } else {
@@ -81,7 +81,7 @@ struct OwnProfileView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             wrapper.startObserving { effect in
                 switch effect {
@@ -196,13 +196,13 @@ struct OwnProfileView: View {
                     Button(action: wrapper.saveName) {
                         if wrapper.state.isSavingName {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                                 .scaleEffect(0.8)
                                 .frame(width: 16, height: 16)
                         } else {
                             Text("Save")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Color.hopPrimaryLime)
+                                .foregroundColor(Color.hopAuthAccent)
                         }
                     }
                     .disabled(wrapper.state.isSavingName || wrapper.state.nameDraft.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -217,8 +217,8 @@ struct OwnProfileView: View {
                 Button(action: wrapper.startEditName) {
                     Image(systemName: "pencil")
                         .font(.system(size: 16))
-                        .foregroundColor(Color.hopPrimaryLime)
-                        .frame(width: 32, height: 32)
+                        .foregroundColor(Color.hopAuthAccent)
+                        .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Edit name")
             }
@@ -268,7 +268,7 @@ struct OwnProfileView: View {
                         .frame(width: 18, height: 18)
                     Text("Add phone number")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color.hopPrimaryLime)
+                        .foregroundColor(Color.hopAuthAccent)
                     Spacer()
                 }
                 .padding(.horizontal, HopSpacing.md)
@@ -328,7 +328,7 @@ struct OwnProfileView: View {
                     Button(action: wrapper.editCar) {
                         Text("Edit")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color.hopPrimaryLime)
+                            .foregroundColor(Color.hopAuthAccent)
                     }
                     .padding(.trailing, HopSpacing.md)
                 }
@@ -376,8 +376,8 @@ struct OwnProfileView: View {
                     Button(action: wrapper.startEditMobilepay) {
                         Image(systemName: "pencil")
                             .font(.system(size: 16))
-                            .foregroundColor(Color.hopPrimaryLime)
-                            .frame(width: 32, height: 32)
+                            .foregroundColor(Color.hopAuthAccent)
+                            .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("Edit MobilePay number")
                     .padding(.trailing, HopSpacing.md)
@@ -424,13 +424,13 @@ struct OwnProfileView: View {
                             Button(action: wrapper.saveMobilepay) {
                                 if wrapper.state.isSavingMobilepay {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                                         .scaleEffect(0.8)
                                         .frame(width: 16, height: 16)
                                 } else {
                                     Text("Save")
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(Color.hopPrimaryLime)
+                                        .foregroundColor(Color.hopAuthAccent)
                                 }
                             }
                             .disabled(wrapper.state.isSavingMobilepay || wrapper.state.mobilepayDraft.count != 8)
@@ -472,7 +472,7 @@ struct ProfileTopBar: View {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 18, weight: .regular))
                     .foregroundColor(Color.hopAuthTextPrimary)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Back")
 

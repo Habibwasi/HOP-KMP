@@ -391,9 +391,9 @@ private struct DriverTripCard: View {
                 }
                 Text("\(trip.seatsBooked)/\(trip.seatsTotal) seats")
                     .font(HopFont.labelSmall(weight: .semibold))
-                    .foregroundColor(Color(hex: 0x666666))
+                    .foregroundColor(Color.hopAuthTextSecondary)
             }
-            Divider().background(Color(hex: 0xF0F0F0))
+            Divider().background(Color.hopCardBorder)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: HopSpacing.sm) {
@@ -416,12 +416,12 @@ private struct DriverTripCard: View {
                 }
             }
 
-            Divider().background(Color(hex: 0xF0F0F0))
+            Divider().background(Color.hopCardBorder)
 
             HStack {
                 Text("Departs \(trip.formattedDepartsAt)")
                     .font(HopFont.bodySmall())
-                    .foregroundColor(Color(hex: 0x666666))
+                    .foregroundColor(Color.hopAuthTextSecondary)
                 Spacer()
                 Text("DKK \(Int(trip.trip.driverNetOere) / 100)/seat")
                     .font(HopFont.bodyLarge(weight: .bold))

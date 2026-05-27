@@ -37,7 +37,7 @@ struct NotificationsView: View {
                 }
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             wrapper.startObserving { effect in
                 if effect is NotificationsEffectNavigateToSearch {
@@ -82,7 +82,7 @@ private struct NotificationsTopBar: View {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 18, weight: .regular))
                     .foregroundColor(Color.hopAuthTextPrimary)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Navigate back")
 
@@ -148,7 +148,7 @@ private struct NotificationRow: View {
 
                 if !notification.isRead {
                     Circle()
-                        .fill(Color.hopPrimaryLime)
+                        .fill(Color.hopAuthAccent)
                         .frame(width: 8, height: 8)
                         .padding(.top, 4)
                 }
@@ -181,7 +181,7 @@ private struct NotificationIconChip: View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.hopBackground)
-                .frame(width: 40, height: 40)
+                .frame(width: 44, height: 44)
             Image(systemName: icon)
                 .font(.system(size: 20, weight: .regular))
                 .foregroundColor(tint)
@@ -193,14 +193,14 @@ private struct NotificationIconChip: View {
         case NotificationType.bookingConfirmed:    return ("checkmark.circle",              Color.hopSuccess)
         case NotificationType.bookingCancelled:    return ("xmark.circle",                  Color.hopError)
         case NotificationType.tripReminder:        return ("clock",                          Color.hopWarning)
-        case NotificationType.newRating:           return ("star",                           Color.hopPrimaryLime)
+        case NotificationType.newRating:           return ("star",                           Color.hopWarning)
         case NotificationType.thresholdMet:        return ("checkmark.seal",                 Color.hopPrimaryGreen)
         case NotificationType.chatMessage:         return ("bubble.left",                    Color.hopAuthTextSecondary)
         case NotificationType.paymentMarkedPaid:   return ("dollarsign.circle",              Color.hopPrimaryGreen)
         case NotificationType.paymentConfirmed:    return ("checkmark.circle.fill",          Color.hopSuccess)
         case NotificationType.paymentDisputed:     return ("exclamationmark.circle",         Color.hopError)
         case NotificationType.rideAwaitingPayment: return ("clock.badge.exclamationmark",    Color.hopWarning)
-        case NotificationType.searchAlert:         return ("magnifyingglass",                Color.hopPrimaryLime)
+        case NotificationType.searchAlert:         return ("magnifyingglass",                Color.hopAuthAccent)
         default:                                   return ("bell.badge",                    Color.hopAuthTextSecondary)
         }
     }
@@ -222,8 +222,8 @@ private struct NotificationsEmptyState: View {
                 Image(systemName: "bell")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 40, height: 40)
-                    .foregroundColor(Color.hopPrimaryLime)
+                    .frame(width: 44, height: 44)
+                    .foregroundColor(Color.hopAuthAccent)
             }
 
             Spacer().frame(height: HopSpacing.lg)
@@ -250,7 +250,7 @@ private struct NotificationsEmptyState: View {
                     Text("Go to search")
                         .font(.system(size: 15, weight: .semibold))
                 }
-                .foregroundColor(Color.hopBackground)
+                .foregroundColor(Color.hopAuthTextPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
                 .background(Color.hopPrimaryLime)
@@ -272,7 +272,7 @@ private struct NotificationsLoadingState: View {
         VStack {
             Spacer()
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopPrimaryLime))
+                .progressViewStyle(CircularProgressViewStyle(tint: Color.hopAuthAccent))
                 .scaleEffect(1.4)
             Spacer()
         }

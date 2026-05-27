@@ -18,7 +18,7 @@ struct ChatListView: View {
             if wrapper.state.isLoading {
                 Spacer()
                 ProgressView()
-                    .tint(Color.hopPrimaryLime)
+                    .tint(Color.hopAuthAccent)
                 Spacer()
             } else if let _ = wrapper.state.error {
                 Spacer()
@@ -54,7 +54,7 @@ struct ChatListView: View {
             }
         }
         .background(Color.hopBackground.ignoresSafeArea())
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             wrapper.startObserving { _ in }
             wrapper.load()
@@ -97,11 +97,11 @@ private struct ChatThreadRow: View {
                 // Avatar placeholder
                 ZStack {
                     Circle()
-                        .fill(Color.hopPrimaryLime.opacity(0.15))
+                        .fill(Color.hopAuthAccent.opacity(0.12))
                         .frame(width: 44, height: 44)
                     Image(systemName: "bubble.left.and.bubble.right")
                         .font(.system(size: 18))
-                        .foregroundColor(Color.hopPrimaryLime)
+                        .foregroundColor(Color.hopAuthAccent)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -123,14 +123,14 @@ private struct ChatThreadRow: View {
                 // Role badge
                 Text(thread.myRole == "DRIVER" ? "Driver" : "Passenger")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(thread.myRole == "DRIVER" ? Color.hopPrimaryGreen : Color.hopPrimaryLime)
+                    .foregroundColor(thread.myRole == "DRIVER" ? Color.hopPrimaryGreen : Color.hopAuthAccent)
                     .padding(.horizontal, HopSpacing.sm)
                     .padding(.vertical, 3)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
                             .fill(thread.myRole == "DRIVER"
                                   ? Color.hopPrimaryGreen.opacity(0.15)
-                                  : Color.hopPrimaryLime.opacity(0.15))
+                                  : Color.hopAuthAccent.opacity(0.12))
                     )
             }
             .padding(.horizontal, HopSpacing.md)

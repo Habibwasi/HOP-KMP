@@ -26,17 +26,17 @@ struct MarkTripCompleteView: View {
                 Spacer()
 
                 ZStack {
-                    Circle().fill(Color.hopPrimaryLime.opacity(0.15)).frame(width: 96, height: 96)
+                    Circle().fill(Color.hopAuthAccent.opacity(0.12)).frame(width: 96, height: 96)
                     Image(systemName: "checkmark.seal.fill")
                         .resizable().scaledToFit().frame(width: 44, height: 44)
-                        .foregroundColor(Color.hopPrimaryLime)
+                        .foregroundColor(Color.hopAuthAccent)
                 }
 
                 VStack(spacing: HopSpacing.xs) {
                     Text("Mark trip complete?")
                         .font(HopFont.headlineMedium(weight: .bold))
                         .foregroundColor(Color.hopAuthTextPrimary)
-                    Text("You'll receive DKK \(driverNetOere / 100) net per seat.")
+                    Text("You'll receive \(formatDkk(driverNetOere)) net per seat.")
                         .font(HopFont.bodyMedium())
                         .foregroundColor(Color.hopAuthTextSecondary)
                         .multilineTextAlignment(.center)
@@ -53,7 +53,7 @@ struct MarkTripCompleteView: View {
                     ) {
                         wrapper.completeTrip(tripId: tripId)
                     }
-                    HopButton(text: "Cancel", variant: .ghost, action: onBack)
+                    HopButton(text: "Cancel", variant: .ghost, lightSurface: true, action: onBack)
                 }
                 .padding(HopSpacing.md)
             }
@@ -104,5 +104,11 @@ struct MarkTripCompleteView: View {
         DriverTopBar(title: "Mark trip complete", onBack: onBack)
             .background(Color.hopBackground)
     }
+    }
+
+    private func formatDkk(_ oere: Int) -> String {
+        let kr = oere / 100
+        let rem = oere % 100
+        return rem == 0 ? "DKK \(kr)" : "DKK \(kr),\(String(format: "%02d", rem))"
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.SubcomposeAsyncImage
 import com.example.hop.ui.theme.HopColors
 
 /**
@@ -44,6 +46,7 @@ enum class AvatarSize(val dp: Dp, val initialsSize: TextUnit) {
 fun HopAvatar(
     initials: String,
     modifier: Modifier = Modifier,
+    imageUrl: String? = null,
     painter: Painter? = null,
     size: AvatarSize = AvatarSize.Sm,
     isVerified: Boolean = false,
@@ -63,7 +66,40 @@ fun HopAvatar(
                 .background(HopColors.surfaceElevated),
             contentAlignment = Alignment.Center,
         ) {
-            if (painter != null) {
+            if (imageUrl != null) {
+                SubcomposeAsyncImage(
+                    model = imageUrl,
+                    contentDescription = "Avatar",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(size.dp)
+                        .clip(CircleShape),
+                    loading = {
+                        Box(
+                            modifier = Modifier
+                                .size(size.dp)
+                                .background(HopColors.surfaceElevated),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size((size.dp.value / 3).dp),
+                                color = HopColors.primaryLime,
+                                strokeWidth = 1.5.dp,
+                            )
+                        }
+                    },
+                    error = {
+                        Text(
+                            text = initials.take(2).uppercase(),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = size.initialsSize,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = HopColors.primaryLime,
+                        )
+                    },
+                )
+            } else if (painter != null) {
                 Image(
                     painter = painter,
                     contentDescription = "Avatar",

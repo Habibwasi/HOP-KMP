@@ -40,7 +40,7 @@ struct TripDetailActiveDriverView: View {
                                 .foregroundColor(Color.hopAuthTextSecondary)
                             Text("\(trip.seatsBooked)/\(trip.seatsTotal) seats booked")
                                 .font(HopFont.bodySmall(weight: .semibold))
-                                .foregroundColor(Color.hopPrimaryLime)
+                                .foregroundColor(Color.hopAuthAccent)
                         }
                         .padding(HopSpacing.md)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,7 +97,7 @@ struct TripDetailActiveDriverView: View {
     private func tripStatusBadge(_ status: TripStatus) -> some View {
         let (label, color): (String, Color) = {
             switch status {
-            case .active:          return ("Active",            Color.hopPrimaryLime)
+            case .active:          return ("Active",            Color.hopAuthAccent)
             case .confirmed:       return ("Confirmed",         Color.hopSuccess)
             case .completed:       return ("Completed",         Color.hopAuthTextSecondary)
             case .cancelled:       return ("Cancelled",         Color.hopError)
@@ -127,7 +127,7 @@ private struct PassengerRow: View {
                     .font(HopFont.labelMedium(weight: .semibold))
                     .foregroundColor(Color.hopAuthTextPrimary)
                 HStack(spacing: 4) {
-                    Image(systemName: "star.fill").font(.system(size: 10)).foregroundColor(Color.hopPrimaryLime)
+                    Image(systemName: "star.fill").font(.system(size: 10)).foregroundColor(Color.hopWarning)
                     Text(String(format: "%.1f", passenger.rating))
                         .font(HopFont.bodySmall())
                         .foregroundColor(Color.hopAuthTextSecondary)
@@ -139,7 +139,7 @@ private struct PassengerRow: View {
             Spacer()
             Button(action: onMessage) {
                 Image(systemName: "bubble.left")
-                    .foregroundColor(Color.hopPrimaryLime)
+                    .foregroundColor(Color.hopAuthAccent)
                     .padding(8)
                     .background(Color.hopCardSurfaceMuted)
                     .clipShape(Circle())

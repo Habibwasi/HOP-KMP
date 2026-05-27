@@ -58,8 +58,8 @@ struct PostTripModelBView: View {
                         )
                     }
 
-                    HopTextField(label: "Date (YYYY-MM-DD)", placeholder: "2026-05-20", text: $date)
-                    HopTextField(label: "Departure time (HH:mm)", placeholder: "08:00", text: $time)
+                    HopTextField(label: "Date (YYYY-MM-DD)", placeholder: "2026-05-20", text: $date, lightSurface: true)
+                    HopTextField(label: "Departure time (HH:mm)", placeholder: "08:00", text: $time, lightSurface: true)
 
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Total seats")

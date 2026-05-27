@@ -20,7 +20,9 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var showChangePassword = false
 
-    private let appVersion = "1.0"
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
 
     var body: some View {
         ZStack {
@@ -89,7 +91,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .alert("Log out?", isPresented: Binding(
             get: { wrapper.state.showLogoutDialog },
             set: { if !$0 { wrapper.logoutDismissed() } }
@@ -101,6 +103,7 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showChangePassword) {
             ChangePasswordPlaceholderView(onDismiss: { showChangePassword = false })
+                .presentationDetents([.medium])
         }
         .task {
             wrapper.startObserving { effect in
@@ -113,13 +116,13 @@ struct SettingsView: View {
                 case is SettingsEffectNavigateToChangePassword:
                     showChangePassword = true
                 case is SettingsEffectNavigateToHelpCentre:
-                    openURL(URL(string: "https://hop.ridly.dk/help")!)
+                    if let url = URL(string: "https://hop.ridly.dk/help") { openURL(url) }
                 case is SettingsEffectNavigateToContactUs:
-                    openURL(URL(string: "https://hop.ridly.dk/contact")!)
+                    if let url = URL(string: "https://hop.ridly.dk/contact") { openURL(url) }
                 case is SettingsEffectNavigateToTermsOfService:
-                    openURL(URL(string: "https://hop.ridly.dk/terms")!)
+                    if let url = URL(string: "https://hop.ridly.dk/terms") { openURL(url) }
                 case is SettingsEffectNavigateToPrivacyPolicy:
-                    openURL(URL(string: "https://hop.ridly.dk/privacy")!)
+                    if let url = URL(string: "https://hop.ridly.dk/privacy") { openURL(url) }
                 default: break
                 }
             }
@@ -138,7 +141,7 @@ private struct SettingsTopBar: View {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 18, weight: .regular))
                     .foregroundColor(Color.hopAuthTextPrimary)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Navigate back")
 
@@ -225,7 +228,7 @@ private struct SettingsToggleRow: View {
             Spacer()
             Toggle("", isOn: Binding(get: { checked }, set: { _ in onToggle() }))
                 .labelsHidden()
-                .tint(Color.hopPrimaryLime)
+                .tint(Color.hopPrimaryGreen)
         }
         .padding(.horizontal, HopSpacing.md)
         .padding(.vertical, HopSpacing.sm)
@@ -257,15 +260,15 @@ private struct ChangePasswordPlaceholderView: View {
                 VStack(spacing: HopSpacing.lg) {
                     Image(systemName: "lock.slash")
                         .font(.system(size: 48, weight: .light))
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
 
                     Text("Change password")
                         .font(HopFont.headlineSmall(weight: .bold))
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthTextPrimary)
 
                     Text("To change your password, log out and use \"Forgot password\" on the login screen.")
                         .font(HopFont.bodyMedium())
-                        .foregroundColor(Color.hopTextSecondary)
+                        .foregroundColor(Color.hopAuthTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, HopSpacing.lg)
                 }
@@ -274,7 +277,7 @@ private struct ChangePasswordPlaceholderView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Close") { onDismiss() }
-                        .foregroundColor(Color.hopTextPrimary)
+                        .foregroundColor(Color.hopAuthAccent)
                 }
             }
         }

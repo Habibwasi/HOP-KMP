@@ -81,7 +81,7 @@ private struct CancellationIcon: View {
                 height: radius * 2 * circleProgress
             ))
             ctx.stroke(circlePath,
-                       with: .color(.red),
+                       with: .color(.hopError),
                        style: StrokeStyle(lineWidth: 4, lineCap: .round))
 
             if strokeProgress > 0 {
@@ -96,7 +96,7 @@ private struct CancellationIcon: View {
                 p1.move(to: CGPoint(x: cx, y: cy))
                 p1.addLine(to: CGPoint(x: cx + armLen, y: cy - armLen))
                 ctx.stroke(p1,
-                           with: .color(.red),
+                           with: .color(.hopError),
                            style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
             }
         }

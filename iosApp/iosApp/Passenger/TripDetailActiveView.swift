@@ -21,7 +21,7 @@ struct TripDetailActiveView: View {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(Color.hopAuthTextPrimary)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                 }.buttonStyle(.plain)
                 Text("Trip Details")
                     .font(HopFont.titleMedium())
@@ -107,12 +107,12 @@ struct TripDetailActiveView: View {
             }
             wrapper.load(bookingId: bookingId)
         }
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 wrapper.load(bookingId: bookingId)
             }
         }
-        .onChange(of: wrapper.state.bookingStatus) { status in
+        .onChange(of: wrapper.state.bookingStatus) { _, status in
             if status == .awaitingPayment {
                 onNavigateToPassengerSettlement(bookingId)
             }
@@ -134,7 +134,7 @@ private struct DriverInfoSection: View {
                         .font(HopFont.bodyMedium())
                         .foregroundColor(Color.hopAuthAccent)
                 }
-                StarRatingDisplay(rating: Double(state.driverRating), count: nil, starSize: 14)
+                StarRatingDisplay(rating: Double(state.driverRating), count: nil, starSize: 14, lightSurface: true)
             }
             Spacer()
             if !state.driverPhone.isEmpty,

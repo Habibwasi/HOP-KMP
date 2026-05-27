@@ -14,6 +14,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 
 // ─ State ──────────────────────────────────────────────────────────────────────
 
@@ -74,11 +79,22 @@ class MyTripsPassengerViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             when (val response = tripRepository.getMyTripsAsPassenger()) {
                 is ApiResponse.Success -> {
+                    // CONFIRMED trips whose departure is more than 2 h in the past are
+                    // treated as stale (server missed the status transition) and moved
+                    // to pastTrips so the upcoming list only shows genuinely future trips.
+                    val graceCutoff = Clock.System.now().minus(2, DateTimeUnit.HOUR, TimeZone.UTC)
                     val all = response.data.toUiModels().sortedBy { it.departsAt }
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        upcomingTrips = all.filter { it.status.isUpcoming() || it.bookingStatus == BookingStatus.AWAITING_PAYMENT },
-                        pastTrips = all.filter { it.status.isPast() && it.bookingStatus != BookingStatus.AWAITING_PAYMENT },
+                        upcomingTrips = all.filter { trip ->
+                            val isActive = trip.status == TripStatus.ACTIVE
+                            val isConfirmedFuture = trip.status == TripStatus.CONFIRMED &&
+                                !tripDepartedBeyondGrace(trip.departsAt, graceCutoff)
+                            val isAwaitingPaymentNonPast = trip.bookingStatus == BookingStatus.AWAITING_PAYMENT &&
+                                !trip.status.isPast()
+                            isActive || isConfirmedFuture || isAwaitingPaymentNonPast
+                        },
+                        pastTrips = all.filter { it.status.isPast() },
                     )
                 }
                 is ApiResponse.Error -> {
@@ -123,3 +139,10 @@ private fun selectUpcomingTrip(bookingId: String) {
 private fun TripStatus.isUpcoming(): Boolean = this == TripStatus.ACTIVE || this == TripStatus.CONFIRMED
 
 private fun TripStatus.isPast(): Boolean = this == TripStatus.COMPLETED || this == TripStatus.CANCELLED
+
+/** Returns true if [departsAt] ISO string is before [cutoff], i.e. the grace window has elapsed. */
+private fun tripDepartedBeyondGrace(departsAt: String, cutoff: Instant): Boolean = try {
+    Instant.parse(departsAt) < cutoff
+} catch (_: Exception) {
+    false
+}

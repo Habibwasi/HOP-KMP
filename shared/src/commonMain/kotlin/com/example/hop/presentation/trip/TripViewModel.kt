@@ -2,6 +2,8 @@ package com.example.hop.presentation.trip
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.hop.domain.model.BookingStatus
+import com.example.hop.domain.model.TripStatus
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.network.ApiResponse
 import com.example.hop.presentation.model.TripUiModel
@@ -13,6 +15,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 
 // ─ State ──────────────────────────────────────────────────────────────────────
 
@@ -23,6 +30,8 @@ data class TripUiState(
      *  rather than replacing them with skeletons. */
     val isRefreshing: Boolean = false,
     val trips: List<TripUiModel> = emptyList(),
+    /** Passenger upcoming trips — ACTIVE always, CONFIRMED only within 2-hour grace window. */
+    val upcomingTrips: List<TripUiModel> = emptyList(),
     val error: String? = null,
     val selectedTrip: TripUiModel? = null,
 )
@@ -77,11 +86,20 @@ class TripViewModel(
             }
             when (val response = tripRepository.getMyTripsAsPassenger()) {
                 is ApiResponse.Success -> {
+                    val graceCutoff = Clock.System.now().minus(2, DateTimeUnit.HOUR, TimeZone.UTC)
                     val uiModels = response.data.toUiModels().sortedBy { it.departsAt }
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
                         trips = uiModels,
+                        upcomingTrips = uiModels.filter { trip ->
+                            val isActive = trip.status == TripStatus.ACTIVE
+                            val isConfirmedFuture = trip.status == TripStatus.CONFIRMED &&
+                                !tripDepartedBeyondGrace(trip.departsAt, graceCutoff)
+                            val isAwaitingPaymentNonPast = trip.bookingStatus == BookingStatus.AWAITING_PAYMENT &&
+                                trip.status != TripStatus.COMPLETED && trip.status != TripStatus.CANCELLED
+                            isActive || isConfirmedFuture || isAwaitingPaymentNonPast
+                        },
                     )
                 }
                 is ApiResponse.Error -> {
@@ -170,4 +188,10 @@ class TripViewModel(
             }
         }
     }
+}
+
+private fun tripDepartedBeyondGrace(departsAt: String, cutoff: Instant): Boolean = try {
+    Instant.parse(departsAt) < cutoff
+} catch (_: Exception) {
+    false
 }

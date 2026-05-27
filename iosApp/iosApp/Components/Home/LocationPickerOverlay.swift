@@ -114,7 +114,7 @@ struct LocationPickerOverlay: View {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(Color.hopAuthTextPrimary)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 44, height: 44)
             }.buttonStyle(.plain)
 
             TextField("", text: $query, prompt:

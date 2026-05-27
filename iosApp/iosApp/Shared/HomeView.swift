@@ -54,7 +54,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .animation(.easeInOut(duration: 0.2), value: selectedRole)
         .onChange(of: statsWrapper.state.activeBooking?.id) { _, newId in
             activeBookingId = newId
@@ -88,14 +88,14 @@ private struct HomeTopBar: View {
                     Image(systemName: "bell.fill")
                         .font(.system(size: 22, weight: .regular))
                         .foregroundColor(Color.hopAuthTextSecondary)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Notifications")
 
                 UnreadBadge(count: notificationsUnread)
                     .offset(x: -4, y: 4)
             }
-            .frame(width: 40, height: 40)
+            .frame(width: 44, height: 44)
         }
         .padding(.horizontal, HopSpacing.md)
         .padding(.vertical, HopSpacing.xs)
