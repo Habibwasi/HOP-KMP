@@ -13,6 +13,8 @@ struct RateDriverView: View {
     @State private var comment: String = ""
     private let commentMax = 280
 
+    @State private var toast: String? = nil
+
     private var driverName: String { wrapper.state.driverName }
     private var driverInitials: String { wrapper.state.driverInitials }
 
@@ -80,7 +82,7 @@ struct RateDriverView: View {
                 text: "Submit",
                 variant: .primary,
                 isLoading: wrapper.state.isLoading,
-                isEnabled: rating > 0
+                isEnabled: rating > 0 && !wrapper.state.isLoading
             ) {
                 wrapper.submitRating(
                     bookingId: bookingId,
@@ -102,13 +104,32 @@ struct RateDriverView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.hopBackground.ignoresSafeArea())
+        .overlay(alignment: .bottom) {
+            if let msg = toast {
+                HopToast(message: msg)
+                    .padding(.bottom, HopSpacing.xxl)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: toast)
         .onAppear {
             wrapper.loadDriverForRating(bookingId: bookingId)
+        }
+        .task {
             wrapper.startObserving { effect in
-                // Submit success → screen pops via Route layer; here we just navigate.
-                if effect is BookingEffectShowSnackbar { return }
-                onSubmitted()
+                if effect is BookingEffectNavigateToMyTripsPassenger {
+                    onSubmitted()
+                } else if let snack = effect as? BookingEffectShowSnackbar {
+                    showToast(snack.message)
+                }
             }
+        }
+    }
+
+    private func showToast(_ message: String) {
+        withAnimation { toast = message }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation { if toast == message { toast = nil } }
         }
     }
 }

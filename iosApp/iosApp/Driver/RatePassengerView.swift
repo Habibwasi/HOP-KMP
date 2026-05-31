@@ -18,6 +18,7 @@ struct RatePassengerView: View {
 
     @State private var stars:   Int    = 0
     @State private var comment: String = ""
+    @State private var toast:   String? = nil
 
     private var canSubmit: Bool { stars > 0 && !wrapper.state.isLoading }
     private let commentMaxChars = 280
@@ -97,10 +98,20 @@ struct RatePassengerView: View {
                 .padding(.bottom, HopSpacing.md)
             }
         }
+        .overlay(alignment: .bottom) {
+            if let msg = toast {
+                HopToast(message: msg)
+                    .padding(.bottom, HopSpacing.xxl)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: toast)
         .task {
             wrapper.startObserving { effect in
                 if effect is BookingEffectNavigateToMyTripsPassenger {
                     onSubmitted()
+                } else if let snack = effect as? BookingEffectShowSnackbar {
+                    showToast(snack.message)
                 }
             }
         }
@@ -108,5 +119,12 @@ struct RatePassengerView: View {
         DriverTopBar(title: "Rate passenger", onBack: onBack)
             .background(Color.hopBackground)
     }
+    }
+
+    private func showToast(_ message: String) {
+        withAnimation { toast = message }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation { if toast == message { toast = nil } }
+        }
     }
 }
