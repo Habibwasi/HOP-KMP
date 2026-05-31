@@ -91,6 +91,7 @@ import com.example.hop.ui.components.home.GoalsRingCard
 import com.example.hop.ui.components.home.RepostTripTemplate
 import com.example.hop.ui.components.home.RepostTripsRow
 import com.example.hop.ui.components.home.TipsPager
+import com.example.hop.ui.util.formatDkk
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -641,7 +642,7 @@ private fun DriverTripCard(
                     ),
                 )
                 Text(
-                    text = "DKK ${(tripUiModel.trip.driverNetOere / 100.0).roundToInt()}/seat",
+                    text = "${formatDkk(tripUiModel.trip.driverNetOere)}/seat",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = HopColors.authTextPrimary,

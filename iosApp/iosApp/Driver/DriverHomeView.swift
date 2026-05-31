@@ -436,7 +436,12 @@ private struct DriverTripCard: View {
                     .font(HopFont.bodySmall())
                     .foregroundColor(Color.hopAuthTextSecondary)
                 Spacer()
-                Text("DKK \(Int(trip.trip.driverNetOere) / 100)/seat")
+                Text({
+                    let oere = Int(trip.trip.driverNetOere)
+                    let kr = oere / 100
+                    let rem = oere % 100
+                    return rem == 0 ? "DKK \(kr)/seat" : "DKK \(kr),\(String(format: "%02d", rem))/seat"
+                }())
                     .font(HopFont.bodyLarge(weight: .bold))
                     .foregroundColor(Color.hopAuthTextPrimary)
             }
