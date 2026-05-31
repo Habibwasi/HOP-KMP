@@ -130,6 +130,15 @@ enum HopRoute: Hashable {
     /// SH-06 Settings
     case settings
 
+    /// SH-07 Privacy Policy
+    case privacyPolicy
+
+    /// SH-08 Terms of Service
+    case termsOfService
+
+    /// SH-09 Help Centre
+    case helpCenter
+
     // MARK: — Settlement ──────────────────────────────────────────────────────
 
     /// SE-01 Passenger Settlement (pay driver via MobilePay)

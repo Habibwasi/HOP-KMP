@@ -15,6 +15,7 @@ import com.example.hop.presentation.search.SearchViewModel
 import com.example.hop.presentation.notifications.NotificationsViewModel
 import com.example.hop.presentation.profile.OtherProfileViewModel
 import com.example.hop.presentation.profile.OwnProfileViewModel
+import com.example.hop.presentation.helpcenter.HelpCenterViewModel
 import com.example.hop.presentation.settings.SettingsViewModel
 import com.example.hop.presentation.settlement.SettlementViewModel
 import com.example.hop.presentation.tax.TaxViewModel
@@ -80,6 +81,8 @@ fun getSavedPlacesViewModel(): SavedPlacesViewModel = KoinPlatform.getKoin().get
 fun getSearchViewModel(): SearchViewModel = KoinPlatform.getKoin().get()
 
 fun getSettlementViewModel(): SettlementViewModel = KoinPlatform.getKoin().get()
+
+fun getHelpCenterViewModel(): HelpCenterViewModel = KoinPlatform.getKoin().get()
 
 fun getDriverAggregatesViewModel(): DriverAggregatesViewModel = KoinPlatform.getKoin().get()
 

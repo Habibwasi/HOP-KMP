@@ -116,13 +116,13 @@ struct SettingsView: View {
                 case is SettingsEffectNavigateToChangePassword:
                     showChangePassword = true
                 case is SettingsEffectNavigateToHelpCentre:
-                    if let url = URL(string: "https://hop.ridly.dk/help") { openURL(url) }
+                    navigate(.helpCenter)
                 case is SettingsEffectNavigateToContactUs:
-                    if let url = URL(string: "https://hop.ridly.dk/contact") { openURL(url) }
+                    if let url = URL(string: "mailto:support@ridly.dk") { openURL(url) }
                 case is SettingsEffectNavigateToTermsOfService:
-                    if let url = URL(string: "https://hop.ridly.dk/terms") { openURL(url) }
+                    navigate(.termsOfService)
                 case is SettingsEffectNavigateToPrivacyPolicy:
-                    if let url = URL(string: "https://hop.ridly.dk/privacy") { openURL(url) }
+                    navigate(.privacyPolicy)
                 default: break
                 }
             }

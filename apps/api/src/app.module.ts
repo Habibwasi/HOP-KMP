@@ -17,6 +17,7 @@ import { PlacesModule } from './places/places.module'
 import { SearchHistoryModule } from './search-history/search-history.module'
 import { AggregatesModule } from './aggregates/aggregates.module'
 import { ChatModule } from './chat/chat.module'
+import { HelpCenterModule } from './help-center/help-center.module'
 import { HealthController } from './health.controller'
 
 @Module({
@@ -58,6 +59,7 @@ import { HealthController } from './health.controller'
     SearchHistoryModule,
     AggregatesModule,
     ChatModule,
+    HelpCenterModule,
   ],
 })
 export class AppModule {}

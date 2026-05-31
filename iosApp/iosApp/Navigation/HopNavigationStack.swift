@@ -367,6 +367,15 @@ struct HopNavigationStack: View {
                 onLoggedOut: goHome,
                 navigate:    navigate
             )
+
+        case .helpCenter:
+            HelpCenterView(onBack: popBack)
+
+        case .privacyPolicy:
+            PrivacyPolicyView(onBack: popBack)
+
+        case .termsOfService:
+            TermsOfServiceView(onBack: popBack)
         }
     }
 }

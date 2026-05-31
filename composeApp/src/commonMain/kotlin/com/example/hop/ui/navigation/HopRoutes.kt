@@ -195,6 +195,10 @@ sealed interface HopRoutes {
     @Serializable
     data object TermsOfService : HopRoutes
 
+    /** SH-09 — Help Centre */
+    @Serializable
+    data object HelpCenter : HopRoutes
+
     /** SE-01 — Passenger settlement (pay driver via MobilePay) */
     @Serializable
     data class PassengerSettlement(val bookingId: String) : HopRoutes

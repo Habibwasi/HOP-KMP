@@ -26,6 +26,8 @@ import com.example.hop.data.repository.SettlementRepositoryImpl
 import com.example.hop.domain.repository.SettlementRepository
 import com.example.hop.data.repository.UserRepositoryImpl
 import com.example.hop.domain.repository.TaxRepository
+import com.example.hop.data.repository.HelpCenterRepositoryImpl
+import com.example.hop.domain.repository.HelpCenterRepository
 import com.example.hop.domain.repository.TripRepository
 import com.example.hop.domain.repository.UserRepository
 import io.github.jan.supabase.SupabaseClient
@@ -101,5 +103,8 @@ fun repositoryModule(mapsApiKey: String) = module {
     }
     single<RoutingRepository> {
         RoutingRepositoryImpl(httpClient = get<HttpClient>())
+    }
+    single<HelpCenterRepository> {
+        HelpCenterRepositoryImpl(httpClient = get<HttpClient>())
     }
 }
