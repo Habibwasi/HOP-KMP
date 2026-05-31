@@ -97,7 +97,10 @@ export class HelpCenterService {
       topic: 'Driver onboarding',
       question: 'How do I post a trip?',
       answer:
-        'In Driver mode, tap "Post a trip". Enter the origin, destination, departure date and time, number of available seats, and your price. Choose your pricing model (fixed or per-seat) and publish. Your trip will appear in search results immediately.',
+        'In Driver mode, tap "Post a trip" and choose your trip type. ' +
+        '"Daily Commute" (Model A) is for recurring routes: pick your origin and destination, select which days of the week you drive, set your departure time using the time picker, choose your rolling window (how many days ahead your trips are visible — 7 to 90 days), and set your seat count. ' +
+        '"One-off Long Distance" (Model B) is for a single trip on a specific date: enter the route, pick the date and departure time, set total seats, and the minimum number of passengers needed for the trip to run. ' +
+        'After choosing your settings, review the calculated price and confirm to publish.',
     },
     {
       id: 'dr-03',
@@ -111,7 +114,9 @@ export class HelpCenterService {
       topic: 'Driver onboarding',
       question: 'Can I edit or cancel a trip I have posted?',
       answer:
-        'You can cancel a trip from "My Trips" (driver view) as long as no passengers have booked it yet. Once passengers are confirmed, cancelling the trip will notify them and may affect your reliability rating. You cannot edit trip details after posting — cancel and repost instead.',
+        'Yes — you can edit a trip\'s route or departure time from "My Trips" (driver view) by tapping the trip and selecting "Edit trip". Changes only affect future instances; past trips and confirmed bookings are not altered. ' +
+        'To cancel, open the trip and tap "Cancel trip". If passengers are already confirmed, they will be notified immediately. Cancelling close to departure may affect your reliability rating. ' +
+        'For recurring (Model A) trips you can cancel individual days rather than the entire route.',
     },
     {
       id: 'dr-05',
@@ -119,6 +124,15 @@ export class HelpCenterService {
       question: 'Do I need a special licence to drive on Hop?',
       answer:
         'No special licence is needed — a standard Danish driving licence is sufficient. Hop is a carpooling platform, not a taxi or ride-hailing service. Drivers share costs with passengers for trips they were already planning to take.',
+    },
+    {
+      id: 'dr-06',
+      topic: 'Driver onboarding',
+      question: 'What is the rolling window for recurring trips?',
+      answer:
+        'When you post a Daily Commute (Model A) trip, the rolling window controls how many days ahead your trip instances are visible to passengers — you can choose 7, 14, 30, 60, or 90 days. ' +
+        'For example, with a 30-day window, passengers can always see and book your trips up to 30 days in the future. As old instances pass, new ones are automatically created to maintain the window. ' +
+        'A shorter window (e.g. 7 days) means less commitment and fewer instances shown at once; a longer window (e.g. 90 days) gives passengers more lead time to plan. You set this once when posting — it stays fixed for that route.',
     },
 
     // ── Account & profile ────────────────────────────────────────────────────
