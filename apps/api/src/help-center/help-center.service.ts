@@ -134,6 +134,16 @@ export class HelpCenterService {
         'For example, with a 30-day window, passengers can always see and book your trips up to 30 days in the future. As old instances pass, new ones are automatically created to maintain the window. ' +
         'A shorter window (e.g. 7 days) means less commitment and fewer instances shown at once; a longer window (e.g. 90 days) gives passengers more lead time to plan. You set this once when posting — it stays fixed for that route.',
     },
+    {
+      id: 'dr-07',
+      topic: 'Driver onboarding',
+      question: 'How do I stop a recurring commute route?',
+      answer:
+        'Open My Trips and swipe left on any instance of the recurring route. Tap "Stop route" (the orange button). ' +
+        'This cancels all upcoming trips on that route and stops the rolling window from creating new ones — no new instances will ever appear. ' +
+        'Any passengers who have booked future trips will be automatically refunded and notified. ' +
+        'If you only want to cancel a single day rather than the whole route, swipe left and tap "Cancel" instead.',
+    },
 
     // ── Account & profile ────────────────────────────────────────────────────
     {
