@@ -17,8 +17,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
@@ -140,7 +141,7 @@ fun PostTripModelSelectScreen(
 
             // Section subtitle
             Text(
-                text = "How do you want to post this trip?",
+                text = "Choose the type of trip you want to offer.",
                 fontSize = 15.sp,
                 color = HopColors.authTextSecondary,
                 modifier = Modifier.padding(horizontal = HopSpacing.xs),
@@ -152,15 +153,12 @@ fun PostTripModelSelectScreen(
             TripModelCard(
                 icon = Icons.Outlined.Repeat,
                 title = "Daily Commute",
-                modelLabel = "Model A",
-                description = "You drive the same route on recurring days — Mon to Fri. " +
-                    "The system creates a trip for each day in your chosen rolling window (7–90 days). " +
-                    "Passengers book and pay instantly. " +
-                    "The trip runs regardless of how many seats fill — you absorb the occupancy risk.",
-                bulletPoints = listOf(
-                    "Confirmed bookings, immediate payment",
-                    "Auto-extends every rolling window period",
-                    "Cancel individual days up to 2 h before departure",
+                badge = "Model A",
+                bullets = listOf(
+                    "Same route, repeating weekly",
+                    "Pick the days you drive",
+                    "Passengers book per ride",
+                    "Best for commuters",
                 ),
                 onClick = onSelectModelA,
             )
@@ -168,16 +166,13 @@ fun PostTripModelSelectScreen(
             // ── Model B card ──────────────────────────────────────────────────
             TripModelCard(
                 icon = Icons.Outlined.CalendarMonth,
-                title = "One-Off Trip",
-                modelLabel = "Model B",
-                description = "You set a single date, route, and minimum passenger threshold. " +
-                    "Payments are held until the threshold is met. " +
-                    "If not enough passengers book by 6 h before departure, " +
-                    "the trip cancels automatically and everyone is refunded.",
-                bulletPoints = listOf(
-                    "Trip only runs when enough passengers commit",
-                    "Payments held — no charge unless confirmed",
-                    "Great for long-distance or ad-hoc routes",
+                title = "One-off Long Distance",
+                badge = "Model B",
+                bullets = listOf(
+                    "Single trip on a chosen date",
+                    "Set a minimum passengers threshold",
+                    "Trip auto-cancels if not met",
+                    "Best for inter-city journeys",
                 ),
                 onClick = onSelectModelB,
             )
@@ -221,106 +216,133 @@ private fun PostTripSelectTopBar(
 private fun TripModelCard(
     icon: ImageVector,
     title: String,
-    modelLabel: String,
-    description: String,
-    bulletPoints: List<String>,
+    badge: String,
+    bullets: List<String>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val subtitle = bullets.firstOrNull() ?: ""
+    val checkmarks = bullets.drop(1)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(HopColors.authInputSurface)
+            .background(HopColors.cardSurface)
             .border(
                 width = 1.dp,
-                color = HopColors.authTextSecondary.copy(alpha = 0.15f),
+                color = HopColors.cardBorder,
                 shape = RoundedCornerShape(16.dp),
             )
             .clickable(
                 onClickLabel = "Select $title",
-                role = androidx.compose.ui.semantics.Role.Button,
+                role = Role.Button,
             ) { onClick() }
             .padding(HopSpacing.md),
     ) {
-        Column {
-            // Header row: icon + model badge
+        Column(verticalArrangement = Arrangement.spacedBy(HopSpacing.sm)) {
+            // ── Header: icon + title + badge ──────────────────────────────
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(HopSpacing.sm),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                // Icon circle
+                // Icon tile
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(HopColors.authAccent.copy(alpha = 0.12f)),
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(HopColors.primaryLime.copy(alpha = 0.25f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = HopColors.authAccent,
-                        modifier = Modifier.size(22.dp),
+                        tint = HopColors.authTextPrimary,
+                        modifier = Modifier.size(28.dp),
                     )
                 }
-                Spacer(modifier = Modifier.width(HopSpacing.md))
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = title,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = HopColors.authTextPrimary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            text = badge,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = HopColors.authTextPrimary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(HopColors.primaryLime)
+                                .padding(horizontal = HopSpacing.xs, vertical = 2.dp),
+                        )
+                    }
                     Text(
-                        text = title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = HopColors.authTextPrimary,
-                    )
-                    Text(
-                        text = modelLabel,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = HopColors.authAccent,
-                        letterSpacing = 0.5.sp,
+                        text = subtitle,
+                        fontSize = 13.sp,
+                        color = HopColors.authTextSecondary,
                     )
                 }
-                Icon(
-                    imageVector = Icons.Outlined.ChevronRight,
-                    contentDescription = null,
-                    tint = HopColors.authTextSecondary,
-                    modifier = Modifier.size(20.dp),
-                )
             }
 
-            Spacer(modifier = Modifier.height(HopSpacing.md))
+            // ── Divider ───────────────────────────────────────────────────
+            HorizontalDivider(color = HopColors.cardBorder)
 
-            // Description
-            Text(
-                text = description,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                color = HopColors.authTextSecondary,
-            )
-
-            if (bulletPoints.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(HopSpacing.sm))
-                bulletPoints.forEach { point ->
+            // ── Checkmark bullets ─────────────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                checkmarks.forEach { item ->
                     Row(
-                        modifier = Modifier.padding(top = HopSpacing.xs),
                         verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(HopSpacing.xs),
                     ) {
-                        Box(
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            tint = HopColors.primaryGreen,
                             modifier = Modifier
-                                .padding(top = 6.dp)
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(HopColors.authAccent),
+                                .padding(top = 1.dp)
+                                .size(15.dp),
                         )
-                        Spacer(modifier = Modifier.width(HopSpacing.sm))
                         Text(
-                            text = point,
+                            text = item,
                             fontSize = 13.sp,
                             lineHeight = 19.sp,
-                            color = HopColors.authTextSecondary,
+                            color = HopColors.authTextPrimary,
                         )
                     }
                 }
+            }
+
+            // ── Choose → footer ───────────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Choose",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HopColors.authTextPrimary,
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Outlined.ChevronRight,
+                    contentDescription = null,
+                    tint = HopColors.authTextPrimary,
+                    modifier = Modifier.size(14.dp),
+                )
             }
         }
     }
