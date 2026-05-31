@@ -47,6 +47,7 @@ const STATUS_MAP: Record<ApiErrorCode, HttpStatus> = {
   [ApiErrorCode.FIELD_TAKEN]: HttpStatus.CONFLICT,
   [ApiErrorCode.INTERNAL_ERROR]: HttpStatus.INTERNAL_SERVER_ERROR,
   [ApiErrorCode.DANGLING_AUTH_USER]: HttpStatus.INTERNAL_SERVER_ERROR,
+  [ApiErrorCode.TRIP_HAS_BOOKINGS]: HttpStatus.CONFLICT,
 }
 
 const MESSAGE_MAP: Record<ApiErrorCode, string> = {
@@ -95,6 +96,7 @@ const MESSAGE_MAP: Record<ApiErrorCode, string> = {
   [ApiErrorCode.FIELD_TAKEN]: 'Field already in use',
   [ApiErrorCode.INTERNAL_ERROR]: 'Internal server error',
   [ApiErrorCode.DANGLING_AUTH_USER]: 'Registration failed due to a partial state. Please contact support.',
+  [ApiErrorCode.TRIP_HAS_BOOKINGS]: 'Trip cannot be edited because it has passengers booked.',
 }
 
 export type ValidationDetail = { field: string; message: string }
