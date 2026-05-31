@@ -155,6 +155,7 @@ fun DriverHomeContent(
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
+                is DriverEffect.NavigateToEditTrip -> Unit
                 // Post-trip flow effects owned by their own route VMs.
                 is DriverEffect.NavigateToMyTrips -> Unit
                 is DriverEffect.NavigateToRatePassenger -> Unit

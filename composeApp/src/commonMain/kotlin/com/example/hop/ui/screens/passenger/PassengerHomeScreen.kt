@@ -495,17 +495,17 @@ fun PassengerHomeScreen(
             } else {
                 items(trips, key = { it.id }) { tripUiModel ->
                     TripCard(
-                        driverName = "Driver",
-                        driverInitials = "D",
-                        driverRating = 5.0f,
+                        driverName = tripUiModel.driverName.ifBlank { "—" },
+                        driverInitials = tripUiModel.driverInitials.ifBlank { "?" },
+                        driverRating = tripUiModel.driverRating,
                         originName = tripUiModel.originName,
                         destinationName = tripUiModel.destName,
-                        departureTime = tripUiModel.departsAt,
+                        departureTime = tripUiModel.formattedDepartsAt,
                         tripModel = when (tripUiModel.model) {
                             TripModel.A -> BadgeType.ModelA
                             TripModel.B -> BadgeType.ModelB
                             TripModel.UNKNOWN -> BadgeType.Custom(
-                                label = "UNKNOWN",
+                                label = "Unknown",
                                 background = HopColors.surfaceElevated,
                                 contentColor = HopColors.authTextSecondary,
                             )
@@ -1134,7 +1134,7 @@ internal fun LocationPickerOverlay(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(HopColors.primaryLime.copy(alpha = 0.15f))
-                            .border(1.dp, HopColors.primaryLime, RoundedCornerShape(20.dp))
+                            .border(1.dp, HopColors.authAccent, RoundedCornerShape(20.dp))
                             .clickable {
                                 val addr = pinnedAddress.takeIf { it.isNotEmpty() }
                                 if (addr != null) onConfirm(addr)

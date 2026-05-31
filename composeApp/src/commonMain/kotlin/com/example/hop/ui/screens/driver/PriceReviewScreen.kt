@@ -305,7 +305,7 @@ private fun TripSummaryCard(
 }
 
 @Composable
-private fun SummaryRow(
+internal fun SummaryRow(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
@@ -329,7 +329,7 @@ private fun SummaryRow(
 }
 
 @Composable
-private fun PriceBreakdownCard(
+internal fun PriceBreakdownCard(
     distanceMetres: Int,
     seatsTotal: Int,
     priceResult: PricingEngine.PriceResult?,
@@ -451,7 +451,7 @@ private fun PriceRow(
  * Warning banner: "Price is set by the system and cannot be changed."
  */
 @Composable
-private fun SystemPriceWarning(modifier: Modifier = Modifier) {
+internal fun SystemPriceWarning(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
