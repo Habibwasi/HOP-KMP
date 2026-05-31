@@ -291,6 +291,7 @@ private fun TripSummaryCard(
                     .ifBlank { "—" },
             )
             SummaryRow(label = "Departure", value = modelADraft.departureTime.ifBlank { "—" })
+            SummaryRow(label = "Rolling window", value = "${modelADraft.windowDays} days")
         } else if (modelBDraft != null) {
             SummaryRow(label = "Date", value = modelBDraft.date.ifBlank { "—" })
             SummaryRow(label = "Departure", value = modelBDraft.departureTime.ifBlank { "—" })

@@ -88,6 +88,7 @@ model Trip {
   thresholdDeadline DateTime?
   distanceKm        Float?
   recurringDays     String[]
+  windowDays        Int       @default(30)
   isRecurring       Boolean   @default(false)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())

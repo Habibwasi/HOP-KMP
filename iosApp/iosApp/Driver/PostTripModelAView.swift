@@ -18,6 +18,8 @@ struct PostTripModelAView: View {
     @State private var origin:    String = ""
     @State private var dest:      String = ""
     @State private var time:      String = "08:00"
+    @State private var showTimePicker: Bool = false
+    @State private var windowDays: Int = 30
     @State private var seats:     Int    = 3
     @State private var selectedDays: Set<String> = ["MON", "TUE", "WED", "THU", "FRI"]
     @State private var locationPickerField: LocationPickerFieldA? = nil
@@ -82,7 +84,51 @@ struct PostTripModelAView: View {
                         }
                     }
 
-                    HopTextField(label: "Departure time (HH:mm)", placeholder: "08:00", text: $time, lightSurface: true)
+                    // Time picker row
+                    VStack(alignment: .leading, spacing: HopSpacing.xs) {
+                        Text("Departure time")
+                            .font(HopFont.labelSmall())
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                        Button { showTimePicker = true } label: {
+                            HStack {
+                                Text(time.isEmpty ? "Select time" : time)
+                                    .font(HopFont.bodyMedium())
+                                    .foregroundColor(time.isEmpty ? Color.hopAuthTextSecondary : Color.hopAuthTextPrimary)
+                                Spacer()
+                                Image(systemName: "clock")
+                                    .foregroundColor(Color.hopAuthTextSecondary)
+                            }
+                            .padding(HopSpacing.sm)
+                            .background(Color.hopCardSurfaceMuted)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    // Rolling window picker
+                    VStack(alignment: .leading, spacing: HopSpacing.xs) {
+                        Text("Rolling window")
+                            .font(HopFont.labelSmall())
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                        HStack(spacing: HopSpacing.xs) {
+                            ForEach([7, 14, 30, 60, 90], id: \.self) { days in
+                                let isSelected = windowDays == days
+                                Button { windowDays = days } label: {
+                                    Text("\(days)d")
+                                        .font(HopFont.labelMedium(weight: .semibold))
+                                        .foregroundColor(isSelected ? Color.hopSurface : Color.hopAuthTextPrimary)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, HopSpacing.xs)
+                                        .background(isSelected ? Color.hopPrimaryLime : Color.hopCardSurfaceMuted)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        Text("Trips are created \(windowDays) days ahead and auto-extended.")
+                            .font(HopFont.bodySmall())
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                    }
 
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Seats")
@@ -112,6 +158,7 @@ struct PostTripModelAView: View {
                             recurrenceDays: Array(selectedDays).sorted(),
                             departureTime: time,
                             seatsTotal: Int32(seats),
+                            windowDays: Int32(windowDays),
                             distanceMetres: 0  // enriched by DriverViewModel.submitModelADraft
                         )
                         wrapper.submitModelADraft(draft)
@@ -122,6 +169,9 @@ struct PostTripModelAView: View {
         }
         .onChange(of: origin) { triggerRouteCalcIfReady() }
         .onChange(of: dest)   { triggerRouteCalcIfReady() }
+        .sheet(isPresented: $showTimePicker) {
+            TimePickerSheet(time: $time, isPresented: $showTimePicker)
+        }
         .fullScreenCover(item: $locationPickerField) { field in
             LocationPickerOverlay(
                 title: field == .from ? "Where from?" : "Where to?",

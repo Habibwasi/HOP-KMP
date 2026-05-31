@@ -87,7 +87,7 @@ struct DriverHomeView: View {
                                 SkeletonCard()
                             }
                         }
-                    } else if wrapper.state.trips.filter({ $0.trip.status == TripStatus.active || $0.trip.status == TripStatus.confirmed }).isEmpty {
+                    } else if wrapper.state.trips.filter({ Self.isUpcomingHomeTrip($0) }).isEmpty {
                         EmptyTripsCard(
                             onPostTrip: {
                                 if hasDriverRole {
@@ -98,7 +98,7 @@ struct DriverHomeView: View {
                             }
                         )
                     } else {
-                        let upcomingTrips = wrapper.state.trips.filter { $0.trip.status == TripStatus.active || $0.trip.status == TripStatus.confirmed }
+                        let upcomingTrips = wrapper.state.trips.filter { Self.isUpcomingHomeTrip($0) }
                         VStack(spacing: HopSpacing.sm) {
                             ForEach(upcomingTrips, id: \.id) { trip in
                                 Button {
@@ -173,6 +173,19 @@ struct DriverHomeView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             withAnimation { if toast == message { toast = nil } }
         }
+    }
+
+    /// True if the trip is upcoming and should appear in the home My Trips widget.
+    private static func isUpcomingHomeTrip(_ trip: TripUiModel) -> Bool {
+        let isNotPast: Bool
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: trip.trip.departsAt) {
+            isNotPast = date > Date().addingTimeInterval(-2 * 3600)
+        } else {
+            isNotPast = false // parse failure → treat as past
+        }
+        return isNotPast && (trip.trip.status == TripStatus.active || trip.trip.status == TripStatus.confirmed)
     }
 }
 

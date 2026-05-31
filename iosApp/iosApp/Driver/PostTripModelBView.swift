@@ -19,6 +19,7 @@ struct PostTripModelBView: View {
     @State private var dest:         String = ""
     @State private var date:         String = ""    // YYYY-MM-DD
     @State private var time:         String = "08:00"
+    @State private var showTimePicker: Bool = false
     @State private var seats:        Int    = 3
     @State private var minThreshold: Int    = 2
     @State private var locationPickerField: LocationPickerFieldB? = nil
@@ -59,7 +60,26 @@ struct PostTripModelBView: View {
                     }
 
                     HopTextField(label: "Date (YYYY-MM-DD)", placeholder: "2026-05-20", text: $date, lightSurface: true)
-                    HopTextField(label: "Departure time (HH:mm)", placeholder: "08:00", text: $time, lightSurface: true)
+                    // Time picker row
+                    VStack(alignment: .leading, spacing: HopSpacing.xs) {
+                        Text("Departure time")
+                            .font(HopFont.labelSmall())
+                            .foregroundColor(Color.hopAuthTextSecondary)
+                        Button { showTimePicker = true } label: {
+                            HStack {
+                                Text(time.isEmpty ? "Select time" : time)
+                                    .font(HopFont.bodyMedium())
+                                    .foregroundColor(time.isEmpty ? Color.hopAuthTextSecondary : Color.hopAuthTextPrimary)
+                                Spacer()
+                                Image(systemName: "clock")
+                                    .foregroundColor(Color.hopAuthTextSecondary)
+                            }
+                            .padding(HopSpacing.sm)
+                            .background(Color.hopCardSurfaceMuted)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
 
                     VStack(alignment: .leading, spacing: HopSpacing.xs) {
                         Text("Total seats")
@@ -114,6 +134,9 @@ struct PostTripModelBView: View {
         }
         .onChange(of: origin) { triggerRouteCalcIfReady() }
         .onChange(of: dest)   { triggerRouteCalcIfReady() }
+        .sheet(isPresented: $showTimePicker) {
+            TimePickerSheet(time: $time, isPresented: $showTimePicker)
+        }
         .fullScreenCover(item: $locationPickerField) { field in
             LocationPickerOverlay(
                 title: field == .from ? "Where from?" : "Where to?",

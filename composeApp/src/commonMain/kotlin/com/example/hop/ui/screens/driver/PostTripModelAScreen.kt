@@ -27,6 +27,8 @@ import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -149,6 +151,7 @@ fun PostTripModelAScreen(
     val selectedDays = remember { mutableStateListOf<String>() }
     var departureTime by remember { mutableStateOf("08:00") }
     var seatsTotal by remember { mutableIntStateOf(1) }
+    var windowDays by remember { mutableIntStateOf(30) }
     var locationPickerField by remember { mutableStateOf<String?>(null) }
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -278,6 +281,39 @@ fun PostTripModelAScreen(
                 )
             }
 
+            // Rolling window section
+            FormSection(title = "Rolling Window") {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(HopSpacing.xs),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    listOf(7, 14, 30, 60, 90).forEach { days ->
+                        val selected = windowDays == days
+                        FilterChip(
+                            selected = selected,
+                            onClick = { windowDays = days },
+                            label = {
+                                Text(
+                                    text = "${days}d",
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = HopColors.primaryLime,
+                                selectedLabelColor = HopColors.surface,
+                            ),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(HopSpacing.xs))
+                Text(
+                    text = "Trips are created $windowDays days ahead and auto-extended.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = HopColors.authTextSecondary,
+                )
+            }
+
             Spacer(modifier = Modifier.height(HopSpacing.sm))
         }
 
@@ -302,6 +338,7 @@ fun PostTripModelAScreen(
                                 recurrenceDays = selectedDays.toList(),
                                 departureTime = departureTime,
                                 seatsTotal = seatsTotal,
+                                windowDays = windowDays,
                                 // distanceMetres and lat/lng are enriched by DriverViewModel.submitModelADraft
                                 distanceMetres = 0,
                             )

@@ -280,7 +280,7 @@ struct EditTripView: View {
 
 // MARK: — Time picker sheet ───────────────────────────────────────────────────
 
-private struct TimePickerSheet: View {
+struct TimePickerSheet: View {
     @Binding var time: String
     @Binding var isPresented: Bool
 

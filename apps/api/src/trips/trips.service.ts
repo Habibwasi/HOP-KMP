@@ -174,14 +174,15 @@ export class TripsService {
       distanceKm,
       isRecurring: dto.model === TripModel.A,
       recurringDays: dto.recurringDays ?? [],
+      windowDays: dto.windowDays ?? 30,
       minPassengers: dto.minPassengers,
       thresholdDeadline: dto.thresholdDeadline ? new Date(dto.thresholdDeadline) : null,
     }
 
-    // ── Model A: generate one trip instance per occurrence in 30-day window ──
+    // ── Model A: generate one trip instance per occurrence in driver-chosen window ──
     if (dto.model === TripModel.A) {
       const anchor = new Date(dto.departureAt)
-      const dates = buildRecurringDates(anchor, dto.recurringDays!, 30)
+      const dates = buildRecurringDates(anchor, dto.recurringDays!, dto.windowDays ?? 30)
 
       if (dates.length === 0) {
         throw new AppException(ApiErrorCode.NO_OCCURRENCES)
@@ -283,14 +284,13 @@ export class TripsService {
   }
 
   /**
-   * Extends the 30-day instance window for all active recurring (Model A) trips.
+   * Extends the rolling instance window for all active recurring (Model A) trips.
    * Called daily by the trips queue repeatable job.
    * Finds routes whose latest future instance is within the next 7 days and
-   * creates new instances to bring the window back to 30 days.
+   * creates new instances to bring the window back to each route's windowDays.
    */
   async extendRecurringWindow() {
     const now = new Date()
-    const horizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
     // Fetch all future recurring trips grouped by route key
     const futureTrips = await this.prisma.trip.findMany({
@@ -320,9 +320,12 @@ export class TripsService {
       const daysRemaining = (maxDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
       if (daysRemaining >= 7) continue
 
+      const tripWindowDays = (template as any).windowDays ?? 30
+      const horizon = new Date(now.getTime() + tripWindowDays * 24 * 60 * 60 * 1000)
+
       // Generate new dates from the day after maxDate up to horizon
       const extendAnchor = new Date(maxDate.getTime() + 24 * 60 * 60 * 1000)
-      const newDates = buildRecurringDates(extendAnchor, template.recurringDays, 30)
+      const newDates = buildRecurringDates(extendAnchor, template.recurringDays, tripWindowDays)
 
       if (newDates.length === 0) continue
 
@@ -343,6 +346,7 @@ export class TripsService {
           distanceKm: template.distanceKm,
           isRecurring: true,
           recurringDays: template.recurringDays,
+          windowDays: (template as any).windowDays ?? 30,
         }))
 
       if (newInstances.length > 0) {

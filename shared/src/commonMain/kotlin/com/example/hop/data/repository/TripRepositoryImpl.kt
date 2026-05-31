@@ -144,6 +144,7 @@ class TripRepositoryImpl(
                         minThreshold = request.minThreshold,
                         recurrenceDays = request.recurrenceDays,
                         thresholdDeadline = request.thresholdDeadline,
+                        windowDays = request.windowDays,
                     )
                 )
             }.body()

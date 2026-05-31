@@ -54,6 +54,13 @@ export class CreateTripDto {
   @IsString({ each: true })
   recurringDays?: string[]
 
+  // Model A only — rolling window in days; defaults to 30 if omitted
+  @IsOptional()
+  @IsInt()
+  @Min(7)
+  @Max(90)
+  windowDays?: number
+
   // Model B only
   @IsOptional()
   @IsInt()

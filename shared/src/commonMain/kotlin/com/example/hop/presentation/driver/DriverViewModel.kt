@@ -48,6 +48,8 @@ data class ModelADraft(
     /** "HH:mm" 24-hour format */
     val departureTime: String = "",
     val seatsTotal: Int = 1,
+    /** Rolling window in days — how far ahead trip instances are generated. Choices: 7, 14, 30, 60, 90. */
+    val windowDays: Int = 30,
     /** Metres — populated via Google Maps Directions API when the driver picks both addresses. */
     val distanceMetres: Int = 0,
 )
@@ -431,6 +433,7 @@ class DriverViewModel(
                     departsAt = "${today}T${modelADraft.departureTime}:00Z",
                     seatsTotal = modelADraft.seatsTotal,
                     recurrenceDays = modelADraft.recurrenceDays,
+                    windowDays = modelADraft.windowDays,
                 )
             }
             modelBDraft != null -> {

@@ -154,12 +154,12 @@ fun PostTripModelSelectScreen(
                 title = "Daily Commute",
                 modelLabel = "Model A",
                 description = "You drive the same route on recurring days — Mon to Fri. " +
-                    "The system creates a trip for each day in a 30-day rolling window. " +
+                    "The system creates a trip for each day in your chosen rolling window (7–90 days). " +
                     "Passengers book and pay instantly. " +
                     "The trip runs regardless of how many seats fill — you absorb the occupancy risk.",
                 bulletPoints = listOf(
                     "Confirmed bookings, immediate payment",
-                    "Auto-extends every rolling 30 days",
+                    "Auto-extends every rolling window period",
                     "Cancel individual days up to 2 h before departure",
                 ),
                 onClick = onSelectModelA,

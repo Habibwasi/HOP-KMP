@@ -45,6 +45,8 @@ data class PostTripRequest(
     val minThreshold: Int? = null,
     val thresholdDeadline: String? = null,
     val recurrenceDays: List<String>? = null,
+    /** Rolling window in days for Model A (7–90, default 30). Null means backend default. */
+    val windowDays: Int? = null,
 )
 
 data class UpdateTripRequest(

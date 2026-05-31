@@ -83,6 +83,7 @@ struct PriceReviewView: View {
                 seats:    seats,
                 distanceKm: dist / 1000,
                 threshold: nil,
+                windowDays: Int(a.windowDays),
                 pricePerSeatOere: Int(price.pricePerSeatOere)
             )
         }
@@ -98,6 +99,7 @@ struct PriceReviewView: View {
                 seats:    seats,
                 distanceKm: dist / 1000,
                 threshold: Int(b.minThreshold),
+                windowDays: nil,
                 pricePerSeatOere: Int(price.pricePerSeatOere)
             )
         }
@@ -112,6 +114,7 @@ private struct TripSummary {
     let seats:    Int
     let distanceKm: Int
     let threshold: Int?
+    let windowDays: Int?
     let pricePerSeatOere: Int
 }
 
@@ -152,6 +155,14 @@ private struct TripSummaryCard: View {
                 Text("\(summary.distanceKm) km")
                     .font(HopFont.bodyMedium())
                     .foregroundColor(Color.hopAuthTextSecondary)
+            }
+            if let w = summary.windowDays {
+                HStack(spacing: HopSpacing.xs) {
+                    Image(systemName: "calendar.badge.clock").foregroundColor(Color.hopAuthTextSecondary)
+                    Text("\(w)-day rolling window")
+                        .font(HopFont.bodyMedium())
+                        .foregroundColor(Color.hopAuthTextSecondary)
+                }
             }
         }
         .padding(HopSpacing.md)

@@ -92,6 +92,7 @@ fun EditTripRoute(
             when (effect) {
                 is EditTripEffect.NavigateToPriceReview -> onNavigateToPriceReview()
                 is EditTripEffect.NavigateBack -> onNavigateBack()
+                is EditTripEffect.NavigateToMyTrips -> Unit
                 is EditTripEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }

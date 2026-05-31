@@ -27,6 +27,8 @@ data class PostTripRequestDto(
     @SerialName("minPassengers") val minThreshold: Int? = null,
     @SerialName("recurringDays") val recurrenceDays: List<String>? = null,
     val thresholdDeadline: String? = null,
+    /** Rolling window in days for Model A. Null → backend default (30). */
+    val windowDays: Int? = null,
 )
 
 @Serializable

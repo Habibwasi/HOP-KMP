@@ -107,6 +107,9 @@ import com.example.hop.ui.theme.HopSpacing
 import com.example.hop.ui.theme.HopTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.hours
 import org.koin.compose.viewmodel.koinViewModel
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -359,7 +362,7 @@ fun DriverHomeScreen(
                     items(3) {
                         SkeletonBox(height = 120.dp, cornerRadius = 12.dp)
                     }
-                } else if (state.trips.none { it.status == TripStatus.ACTIVE || it.status == TripStatus.CONFIRMED }) {
+                } else if (state.trips.none { isUpcomingHomeTrip(it) }) {
                     item {
                         EmptyState(
                             headline = "Post your first trip to start earning",
@@ -370,7 +373,7 @@ fun DriverHomeScreen(
                     }
                 } else {
                     items(
-                        state.trips.filter { it.status == TripStatus.ACTIVE || it.status == TripStatus.CONFIRMED },
+                        state.trips.filter { isUpcomingHomeTrip(it) },
                         key = { it.id },
                     ) { tripUiModel ->
                         DriverTripCard(
@@ -881,6 +884,16 @@ private fun EarningsBannerPreview() {
             modifier = Modifier.padding(HopSpacing.md),
         )
     }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** True if the trip is upcoming and should appear in the home screen My Trips widget. */
+private fun isUpcomingHomeTrip(trip: com.example.hop.presentation.model.TripUiModel): Boolean {
+    val isNotPast = try {
+        Instant.parse(trip.departsAt) > Clock.System.now() - 2.hours
+    } catch (_: Exception) { false }
+    return isNotPast && (trip.status == TripStatus.ACTIVE || trip.status == TripStatus.CONFIRMED)
 }
 
 // ── Preview helpers ───────────────────────────────────────────────────────────
