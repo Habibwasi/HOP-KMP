@@ -220,6 +220,8 @@ fun MyTripsDriverScreen(
     var filterModel by remember { mutableStateOf<TripModel?>(null) }
     // Swipe-to-reveal: track which trip is pending delete confirmation
     var pendingDeleteTripId by remember { mutableStateOf<String?>(null) }
+    // Swipe-to-reveal: track which trip is pending stop-recurring confirmation
+    var pendingStopRecurringTripId by remember { mutableStateOf<String?>(null) }
 
     val filterDateStr = remember(filterDate) {
         filterDate?.let {
@@ -295,18 +297,22 @@ fun MyTripsDriverScreen(
                 selectedTab == 0 -> UpcomingDriverTripsContent(
                     trips = upcomingTrips,
                     isDeletingTripId = state.isDeletingTripId,
+                    isStoppingRecurringRouteId = state.isStoppingRecurringRouteId,
                     onTripClick = { tripId -> onEvent(DriverEvent.SelectTrip(tripId)) },
                     onPostTrip = { onEvent(DriverEvent.RequestPostTrip) },
                     onEditTrip = { tripId -> onEvent(DriverEvent.EditTrip(tripId)) },
                     onDeleteTrip = { tripId -> pendingDeleteTripId = tripId },
+                    onStopRecurring = { tripId -> pendingStopRecurringTripId = tripId },
                 )
                 else -> PastDriverTripsContent(
                     trips = pastTrips,
                     isDeletingTripId = state.isDeletingTripId,
+                    isStoppingRecurringRouteId = state.isStoppingRecurringRouteId,
                     onTripClick = { tripId -> onEvent(DriverEvent.SelectTrip(tripId)) },
                     onPostTrip = { onEvent(DriverEvent.RequestPostTrip) },
                     onEditTrip = { tripId -> onEvent(DriverEvent.EditTrip(tripId)) },
                     onDeleteTrip = { tripId -> pendingDeleteTripId = tripId },
+                    onStopRecurring = { tripId -> pendingStopRecurringTripId = tripId },
                 )
             }
         }
@@ -319,6 +325,17 @@ fun MyTripsDriverScreen(
                     pendingDeleteTripId = null
                 },
                 onDismiss = { pendingDeleteTripId = null },
+            )
+        }
+
+        // ── Stop recurring route confirmation dialog ───────────────────────────
+        if (pendingStopRecurringTripId != null) {
+            StopRecurringRouteConfirmDialog(
+                onConfirm = {
+                    onEvent(DriverEvent.StopRecurringRoute(pendingStopRecurringTripId!!))
+                    pendingStopRecurringTripId = null
+                },
+                onDismiss = { pendingStopRecurringTripId = null },
             )
         }
 
@@ -385,10 +402,12 @@ private fun DriverTripsLoadingIndicator(modifier: Modifier = Modifier) {
 private fun UpcomingDriverTripsContent(
     trips: List<TripUiModel>,
     isDeletingTripId: String?,
+    isStoppingRecurringRouteId: String?,
     onTripClick: (String) -> Unit,
     onPostTrip: () -> Unit,
     onEditTrip: (String) -> Unit,
     onDeleteTrip: (String) -> Unit,
+    onStopRecurring: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (trips.isEmpty()) {
@@ -405,9 +424,11 @@ private fun UpcomingDriverTripsContent(
             showThresholdBar = true,
             swipeActionsEnabled = true,
             isDeletingTripId = isDeletingTripId,
+            isStoppingRecurringRouteId = isStoppingRecurringRouteId,
             onTripClick = onTripClick,
             onEditTrip = onEditTrip,
             onDeleteTrip = onDeleteTrip,
+            onStopRecurring = onStopRecurring,
             modifier = modifier,
         )
     }
@@ -417,10 +438,12 @@ private fun UpcomingDriverTripsContent(
 private fun PastDriverTripsContent(
     trips: List<TripUiModel>,
     isDeletingTripId: String?,
+    isStoppingRecurringRouteId: String?,
     onTripClick: (String) -> Unit,
     onPostTrip: () -> Unit,
     onEditTrip: (String) -> Unit,
     onDeleteTrip: (String) -> Unit,
+    onStopRecurring: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (trips.isEmpty()) {
@@ -437,9 +460,11 @@ private fun PastDriverTripsContent(
             showThresholdBar = false,
             swipeActionsEnabled = false,
             isDeletingTripId = isDeletingTripId,
+            isStoppingRecurringRouteId = isStoppingRecurringRouteId,
             onTripClick = onTripClick,
             onEditTrip = onEditTrip,
             onDeleteTrip = onDeleteTrip,
+            onStopRecurring = onStopRecurring,
             modifier = modifier,
         )
     }
@@ -451,9 +476,11 @@ private fun DriverTripList(
     showThresholdBar: Boolean,
     swipeActionsEnabled: Boolean,
     isDeletingTripId: String?,
+    isStoppingRecurringRouteId: String?,
     onTripClick: (String) -> Unit,
     onEditTrip: (String) -> Unit,
     onDeleteTrip: (String) -> Unit,
+    onStopRecurring: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -468,17 +495,20 @@ private fun DriverTripList(
             // Swipe is only enabled on upcoming trips with no passengers booked
             val swipeEnabled = swipeActionsEnabled && tripUiModel.seatsBooked == 0 && !tripUiModel.isBroken
             val isDeleting = tripUiModel.id == isDeletingTripId
+            val isStopping = tripUiModel.id == isStoppingRecurringRouteId
             SwipeToRevealCard(
                 enabled = swipeEnabled,
+                isRecurring = tripUiModel.model == TripModel.A && tripUiModel.trip.recurrenceDays != null,
                 onEdit = { onEditTrip(tripUiModel.id) },
                 onDelete = { onDeleteTrip(tripUiModel.id) },
+                onStopRecurring = { onStopRecurring(tripUiModel.id) },
             ) {
                 DriverTripCard(
                     tripUiModel = tripUiModel,
                     showThresholdBar = showThresholdBar && tripUiModel.model == TripModel.B,
                     onClick = if (tripUiModel.isBroken) ({}) else ({ onTripClick(tripUiModel.id) }),
                     modifier = when {
-                        isDeleting -> Modifier.alpha(0.5f)
+                        isDeleting || isStopping -> Modifier.alpha(0.5f)
                         tripUiModel.isBroken -> Modifier.alpha(0.6f)
                         else -> Modifier
                     },
@@ -503,11 +533,13 @@ private fun DriverTripList(
 @Composable
 private fun SwipeToRevealCard(
     enabled: Boolean,
+    isRecurring: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onStopRecurring: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val revealWidthDp = 160.dp
+    val revealWidthDp = if (isRecurring) 240.dp else 160.dp
     val density = LocalDensity.current
     val revealWidthPx = with(density) { revealWidthDp.toPx() }
     val offsetX = remember { Animatable(0f) }
@@ -558,6 +590,40 @@ private fun SwipeToRevealCard(
                                 fontWeight = FontWeight.SemiBold,
                             ),
                         )
+                    }
+                }
+                // Stop recurring route action (only for Model A recurring trips)
+                if (isRecurring) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(Color(0xFFE65100))
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() },
+                            ) {
+                                scope.launch { offsetX.animateTo(0f, spring()) }
+                                onStopRecurring()
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Outlined.Repeat,
+                                contentDescription = "Stop recurring route",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Stop route",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                            )
+                        }
                     }
                 }
                 // Delete (cancel) action
@@ -645,6 +711,56 @@ private fun SwipeToRevealCard(
             )
         }
     }
+}
+
+// ── Stop recurring route confirmation dialog ────────────────────────────────────
+
+@Composable
+private fun StopRecurringRouteConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Stop recurring route?",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = HopColors.authTextPrimary,
+                ),
+            )
+        },
+        text = {
+            Text(
+                text = "This will cancel all upcoming trips on this route and stop the rolling window. Passengers will be refunded and notified. This cannot be undone.",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = HopColors.authTextSecondary,
+                ),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color(0xFFE65100),
+                ),
+            ) {
+                Text("Stop route", fontWeight = FontWeight.SemiBold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    "Keep route",
+                    color = HopColors.authTextSecondary,
+                )
+            }
+        },
+        containerColor = HopColors.cardSurface,
+        titleContentColor = HopColors.authTextPrimary,
+        textContentColor = HopColors.authTextSecondary,
+    )
 }
 
 // ── Delete confirmation dialog ─────────────────────────────────────────────────

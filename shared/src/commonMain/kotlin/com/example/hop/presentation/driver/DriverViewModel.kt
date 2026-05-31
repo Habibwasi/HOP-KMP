@@ -122,6 +122,8 @@ data class DriverUiState(
     val activeTripDetail: ActiveTripDetailUiState = ActiveTripDetailUiState(),
     /** Non-null while a DELETE call is in-flight for a specific trip. */
     val isDeletingTripId: String? = null,
+    /** Non-null while a stop-recurring call is in-flight for a specific trip. */
+    val isStoppingRecurringRouteId: String? = null,
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -148,6 +150,8 @@ sealed interface DriverEvent {
     data class DeleteTrip(val tripId: String) : DriverEvent
     /** DR-09 swipe-to-reveal edit a trip with no passengers. */
     data class EditTrip(val tripId: String) : DriverEvent
+    /** DR-09 stop recurring route — cancels all future instances and halts auto-extension. */
+    data class StopRecurringRoute(val tripId: String) : DriverEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -247,6 +251,7 @@ class DriverViewModel(
             is DriverEvent.TapEarningsBanner -> tapEarningsBanner()
             is DriverEvent.SaveCarDetails -> saveCarDetails(event.carDetails)
             is DriverEvent.DeleteTrip -> deleteTrip(event.tripId)
+            is DriverEvent.StopRecurringRoute -> stopRecurringRoute(event.tripId)
             is DriverEvent.EditTrip -> viewModelScope.launch {
                 _effect.send(DriverEffect.NavigateToEditTrip(event.tripId))
             }
@@ -616,6 +621,26 @@ class DriverViewModel(
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isDeletingTripId = null)
                     _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("cancelling the trip")))
+                }
+            }
+        }
+    }
+
+    private fun stopRecurringRoute(tripId: String) {
+        if (_state.value.isStoppingRecurringRouteId != null) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isStoppingRecurringRouteId = tripId)
+            when (val response = tripRepository.stopRecurringRoute(tripId)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(
+                        isStoppingRecurringRouteId = null,
+                        trips = _state.value.trips.filterNot { it.trip.recurrenceDays != null && it.id == tripId },
+                    )
+                    _effect.send(DriverEffect.ShowSnackbar("Recurring route stopped. No new trips will be created."))
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isStoppingRecurringRouteId = null)
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("stopping the recurring route")))
                 }
             }
         }

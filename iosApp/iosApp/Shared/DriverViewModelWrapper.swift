@@ -118,4 +118,8 @@ final class DriverViewModelWrapper: ObservableObject {
     func saveCarDetails(_ carDetails: CarDetails) {
         viewModel.onEvent(event: DriverEventSaveCarDetails(carDetails: carDetails))
     }
+
+    func stopRecurringRoute(tripId: String) {
+        viewModel.onEvent(event: DriverEventStopRecurringRoute(tripId: tripId))
+    }
 }

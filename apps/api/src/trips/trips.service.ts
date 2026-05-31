@@ -531,6 +531,46 @@ export class TripsService {
     })
   }
 
+  /**
+   * Stops a recurring (Model A) route entirely.
+   * Cancels every future instance that shares the same driver + origin + destination,
+   * refunds all passengers, and marks them isRecurring=false so the rolling-window
+   * extension job never recreates them.
+   */
+  async stopRecurring(tripId: string, userId: string) {
+    const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
+    if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
+    if (trip.driverId !== userId) throw new AppException(ApiErrorCode.NOT_YOUR_TRIP)
+    if (!trip.isRecurring) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
+
+    const now = new Date()
+    const futureInstances = await this.prisma.trip.findMany({
+      where: {
+        driverId: userId,
+        originAddress: trip.originAddress,
+        destAddress: trip.destAddress,
+        isRecurring: true,
+        departureAt: { gte: now },
+        status: { not: TripStatus.CANCELLED },
+      },
+    })
+
+    if (futureInstances.length > 0) {
+      const ids = futureInstances.map((t) => t.id)
+      await this.prisma.trip.updateMany({
+        where: { id: { in: ids } },
+        data: { status: TripStatus.CANCELLED, isActive: false, isRecurring: false },
+      })
+      for (const instance of futureInstances) {
+        await this.bookings.cancelAllForTrip(instance.id).catch((err) => {
+          this.logger.error(`[Trips] cancelAllForTrip failed for trip ${instance.id}: ${err?.message}`)
+        })
+      }
+    }
+
+    return { stopped: true, cancelledCount: futureInstances.length }
+  }
+
   async cancel(tripId: string, userId: string) {
     const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
     if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)

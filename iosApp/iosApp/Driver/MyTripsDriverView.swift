@@ -18,6 +18,7 @@ struct MyTripsDriverView: View {
     @State private var showDatePicker: Bool = false
     @State private var filterModel: DriverModelFilter? = nil
     @State private var pendingDeleteTripId: String? = nil
+    @State private var pendingStopRecurringTripId: String? = nil
 
     private enum Filter: String, CaseIterable {
         case upcoming = "Upcoming"
@@ -242,6 +243,14 @@ struct MyTripsDriverView: View {
                                         Label("Edit", systemImage: "pencil")
                                     }
                                     .tint(.blue)
+                                    if trip.model == .a && trip.trip.recurrenceDays != nil {
+                                        Button {
+                                            pendingStopRecurringTripId = trip.id
+                                        } label: {
+                                            Label("Stop route", systemImage: "stop.circle")
+                                        }
+                                        .tint(.orange)
+                                    }
                                     Button {
                                         pendingDeleteTripId = trip.id
                                     } label: {
@@ -274,6 +283,20 @@ struct MyTripsDriverView: View {
             Button("Cancel", role: .cancel) { pendingDeleteTripId = nil }
         } message: {
             Text("This trip will be permanently removed.")
+        }
+        .alert("Stop recurring route?", isPresented: Binding(
+            get: { pendingStopRecurringTripId != nil },
+            set: { if !$0 { pendingStopRecurringTripId = nil } }
+        )) {
+            Button("Stop route", role: .destructive) {
+                if let id = pendingStopRecurringTripId {
+                    wrapper.viewModel.onEvent(event: DriverEventStopRecurringRoute(tripId: id))
+                }
+                pendingStopRecurringTripId = nil
+            }
+            Button("Keep route", role: .cancel) { pendingStopRecurringTripId = nil }
+        } message: {
+            Text("This will cancel all upcoming trips on this route and stop auto-renewal. Passengers will be refunded. This cannot be undone.")
         }
     .safeAreaInset(edge: .top, spacing: 0) {
         DriverTopBar(title: "My Trips", onBack: onBack)

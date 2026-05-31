@@ -168,6 +168,12 @@ class TripRepositoryImpl(
         Unit
     }
 
+    // POST /trips/:id/stop-recurring — stops a Model A rolling window, cancels all future instances.
+    override suspend fun stopRecurringRoute(tripId: String): ApiResponse<Unit> = safeApiCall {
+        httpClient.post("trips/$tripId/stop-recurring")
+        Unit
+    }
+
     override suspend fun updateTrip(tripId: String, request: UpdateTripRequest): ApiResponse<Trip> {
         val dto = UpdateTripRequestDto(
             originAddress = request.originName,

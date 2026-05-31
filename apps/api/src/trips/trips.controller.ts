@@ -72,6 +72,12 @@ export class TripsController {
     return this.trips.update(id, req.user.id, dto)
   }
 
+  @Post(':id/stop-recurring')
+  @UseGuards(SupabaseGuard)
+  stopRecurring(@Param('id') id: string, @Req() req: any) {
+    return this.trips.stopRecurring(id, req.user.id)
+  }
+
   @Post(':id/complete')
   @UseGuards(SupabaseGuard)
   complete(@Param('id') id: string, @Req() req: any) {

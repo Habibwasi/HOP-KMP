@@ -24,6 +24,9 @@ interface TripRepository {
 
     suspend fun cancelTrip(tripId: String): ApiResponse<Unit>
 
+    /** Stops the rolling window for a Model A recurring route — cancels all future instances. */
+    suspend fun stopRecurringRoute(tripId: String): ApiResponse<Unit>
+
     /** Returns booked passenger summaries for a driver's active trip. */
     suspend fun getTripPassengers(tripId: String): ApiResponse<List<PassengerSummary>>
 
