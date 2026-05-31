@@ -129,7 +129,7 @@ fun EditTripPriceReviewRoute(
     LaunchedEffect(viewModel) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is EditTripEffect.NavigateBack -> onSaved()
+                is EditTripEffect.NavigateToMyTrips -> onSaved()
                 is EditTripEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
@@ -252,19 +252,27 @@ fun EditTripScreen(
                     val m = timePickerState.minute.toString().padStart(2, '0')
                     departureTime = "$h:$m"
                     showTimePicker = false
-                }) { Text("OK") }
+                }) { Text("OK", color = HopColors.authAccent) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text("Cancel", color = HopColors.authTextSecondary)
+                }
             },
+            containerColor = HopColors.cardSurface,
+            titleContentColor = HopColors.authTextPrimary,
             text = {
                 TimePicker(
                     state = timePickerState,
                     colors = TimePickerDefaults.colors(
                         clockDialColor = HopColors.authInputSurface,
+                        clockDialSelectedContentColor = Color.White,
+                        clockDialUnselectedContentColor = HopColors.authTextPrimary,
                         selectorColor = HopColors.authAccent,
                         timeSelectorSelectedContainerColor = HopColors.authAccent,
                         timeSelectorUnselectedContainerColor = HopColors.authInputSurface,
+                        timeSelectorSelectedContentColor = Color.White,
+                        timeSelectorUnselectedContentColor = HopColors.authTextPrimary,
                     ),
                 )
             },
@@ -583,11 +591,15 @@ private fun EditDatePickerRow(
                         onDateSelected(localDate.toString())
                     }
                     showPicker = false
-                }) { Text("OK") }
+                }) { Text("OK", color = HopColors.authAccent) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showPicker = false }) {
+                    Text("Cancel", color = HopColors.authTextSecondary)
+                }
             },
+            containerColor = HopColors.cardSurface,
+            titleContentColor = HopColors.authTextPrimary,
             text = {
                 @OptIn(ExperimentalMaterial3Api::class)
                 androidx.compose.material3.DatePicker(state = datePickerState)

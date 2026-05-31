@@ -198,7 +198,7 @@ private struct PriceBreakdownCard: View {
 
 // MARK: — SKAT warning ────────────────────────────────────────────────────────
 
-private struct SkatWarningCard: View {
+struct SkatWarningCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: HopSpacing.sm) {
             Image(systemName: "info.circle.fill")

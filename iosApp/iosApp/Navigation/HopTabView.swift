@@ -82,6 +82,7 @@ struct HopTabView: View {
                         onTripTapped: { tripId in navigate(.tripDetailActiveDriver(tripId: tripId)) },
                         onSettlementTapped: { tripId in navigate(.driverSettlement(tripId: tripId)) },
                         onPastTripTapped: { tripId in navigate(.pastTripDetailDriver(tripId: tripId)) },
+                        onNavigateToEditTrip: { tripId in navigate(.editTrip(tripId: tripId)) },
                         onBack: { selectedTab = .home }
                     )
                 } else {

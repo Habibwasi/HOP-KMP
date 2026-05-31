@@ -691,7 +691,9 @@ private fun DeleteTripConfirmDialog(
                 )
             }
         },
-        containerColor = HopColors.surface,
+        containerColor = HopColors.cardSurface,
+        titleContentColor = HopColors.authTextPrimary,
+        textContentColor = HopColors.authTextSecondary,
     )
 }
 

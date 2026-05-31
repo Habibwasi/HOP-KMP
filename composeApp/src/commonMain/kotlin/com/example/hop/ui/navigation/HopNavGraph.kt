@@ -478,18 +478,22 @@ fun HopNavGraph(
             )
         }
 
-        composable<HopRoutes.EditTrip> { backStackEntry ->
-            val route: HopRoutes.EditTrip = backStackEntry.toRoute()
+        composable<HopRoutes.EditTrip> { currentEntry ->
+            val route: HopRoutes.EditTrip = currentEntry.toRoute()
             EditTripRoute(
                 tripId = route.tripId,
                 onNavigateToPriceReview = {
                     navController.navigate(HopRoutes.EditTripPriceReview)
                 },
                 onNavigateBack = { navController.navigateUp() },
+                viewModel = koinViewModel(viewModelStoreOwner = currentEntry),
             )
         }
 
-        composable<HopRoutes.EditTripPriceReview> {
+        composable<HopRoutes.EditTripPriceReview> { currentEntry ->
+            val editTripEntry = remember(currentEntry) {
+                navController.getBackStackEntry<HopRoutes.EditTrip>()
+            }
             EditTripPriceReviewRoute(
                 onNavigateBack = { navController.navigateUp() },
                 onSaved = {
@@ -497,6 +501,7 @@ fun HopNavGraph(
                         popUpTo(HopRoutes.MyTripsDriver) { inclusive = true }
                     }
                 },
+                viewModel = koinViewModel(viewModelStoreOwner = editTripEntry),
             )
         }
 

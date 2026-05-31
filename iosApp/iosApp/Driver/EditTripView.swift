@@ -32,6 +32,38 @@ struct EditTripView: View {
     @State private var destError: String? = nil
 
     private var state: EditTripUiState { wrapper.state }
+    private var isModelB: Bool { state.trip?.model == TripModel.b }
+    private var showRouteSummary: Bool { !originName.isEmpty && !destName.isEmpty }
+
+    @ViewBuilder
+    private var timePickerSheet: some View {
+        TimePickerSheet(time: $departureTime, isPresented: $showTimePicker)
+    }
+
+    @ViewBuilder
+    private func locationPickerView(field: EditLocationPickerField) -> some View {
+        let title: String = field == .from ? "Where from?" : "Where to?"
+        let initial: String = field == .from ? originName : destName
+        LocationPickerOverlay(
+            title: title,
+            initialText: initial,
+            savedPlaces: [],
+            recentSearches: [],
+            onDismiss: { locationPickerField = nil },
+            onConfirm: { address in
+                if field == .from { originName = address; originError = nil }
+                else { destName = address; destError = nil }
+                locationPickerField = nil
+            },
+            onRouteConfirm: { origin, dest in
+                originName = origin; destName = dest
+                originError = nil; destError = nil
+                locationPickerField = nil
+            },
+            onRequestAddPlace: { locationPickerField = nil },
+            onDeleteRecentSearch: { _ in }
+        )
+    }
 
     var body: some View {
         let s = state
@@ -52,8 +84,6 @@ struct EditTripView: View {
                 }
             } else {
                 let trip = s.trip!
-                let isModelB = trip.model == TripModel.b
-
                 ScrollView {
                     VStack(alignment: .leading, spacing: HopSpacing.lg) {
 
@@ -78,7 +108,7 @@ struct EditTripView: View {
                             if let err = destError {
                                 Text(err).font(HopFont.labelSmall()).foregroundColor(.red)
                             }
-                            if !originName.isEmpty && !destName.isEmpty {
+                            if showRouteSummary {
                                 Spacer().frame(height: HopSpacing.sm)
                                 RouteSummaryRowView(
                                     isCalculating: s.isCalculatingRoute,
@@ -143,30 +173,8 @@ struct EditTripView: View {
                             originError = originName.isEmpty ? "Enter a departure location" : nil
                             destError = destName.isEmpty ? "Enter a destination" : nil
                             guard originError == nil, destError == nil else { return }
-
-                            let departsAt = buildDepartsAt(
-                                isModelB: isModelB,
-                                originalDepartsAt: trip.departsAt,
-                                date: selectedDate,
-                                time: departureTime
-                            )
-                            let draft = EditTripDraft(
-                                tripId: trip.id,
-                                model: trip.model,
-                                originName: originName.trimmingCharacters(in: .whitespaces),
-                                originLat: 0,
-                                originLng: 0,
-                                destName: destName.trimmingCharacters(in: .whitespaces),
-                                destLat: 0,
-                                destLng: 0,
-                                departsAt: departsAt,
-                                departureTime: departureTime,
-                                date: selectedDate,
-                                distanceMetres: Int32(s.routeDistanceMetres > 0
-                                    ? s.routeDistanceMetres
-                                    : trip.trip.distanceMetres),
-                                seatsTotal: trip.seatsTotal
-                            )
+                            guard let trip = s.trip else { return }
+                            let draft = makeDraft(trip: trip, s: s)
                             wrapper.submitDraft(draft: draft)
                         }
                     )
@@ -182,19 +190,9 @@ struct EditTripView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.backward")
-                        .foregroundColor(Color.hopAuthTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Edit Trip")
-                    .font(HopFont.title())
-                    .foregroundColor(Color.hopAuthTextPrimary)
-            }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            DriverTopBar(title: "Edit Trip", onBack: onBack)
+                .background(Color.hopBackground)
         }
         .task {
             wrapper.loadTrip(tripId: tripId)
@@ -229,33 +227,43 @@ struct EditTripView: View {
             }
         }
         .fullScreenCover(item: $locationPickerField) { field in
-            LocationPickerOverlay(
-                title: field == .from ? "Where from?" : "Where to?",
-                initialText: field == .from ? originName : destName,
-                savedPlaces: [],
-                recentSearches: [],
-                onDismiss: { locationPickerField = nil },
-                onConfirm: { address in
-                    if field == .from { originName = address; originError = nil }
-                    else { destName = address; destError = nil }
-                    locationPickerField = nil
-                },
-                onRouteConfirm: { origin, dest in
-                    originName = origin; destName = dest
-                    originError = nil; destError = nil
-                    locationPickerField = nil
-                },
-                onRequestAddPlace: { locationPickerField = nil }
-            )
+            locationPickerView(field: field)
         }
-        .sheet(isPresented: $showTimePicker) {
-            TimePickerSheet(time: $departureTime, isPresented: $showTimePicker)
-        }
+        .sheet(isPresented: $showTimePicker) { timePickerSheet }
     }
 
     private func recalculateIfNeeded() {
         guard !originName.isEmpty, !destName.isEmpty else { return }
         wrapper.calculateRoute(originName: originName, destName: destName)
+    }
+
+    private func makeDraft(trip: TripUiModel, s: EditTripUiState) -> EditTripDraft {
+        let departsAt = buildDepartsAt(
+            isModelB: isModelB,
+            originalDepartsAt: trip.departsAt,
+            date: selectedDate,
+            time: departureTime
+        )
+        let trimmedOrigin = originName.trimmingCharacters(in: .whitespaces)
+        let trimmedDest = destName.trimmingCharacters(in: .whitespaces)
+        let routeDist: Int32 = s.routeDistanceMetres
+        let fallbackDist: Int32 = trip.trip.distanceMetres
+        let resolvedDistance: Int32 = routeDist > 0 ? routeDist : fallbackDist
+        return EditTripDraft(
+            tripId: trip.id,
+            model: trip.model,
+            originName: trimmedOrigin,
+            originLat: 0,
+            originLng: 0,
+            destName: trimmedDest,
+            destLat: 0,
+            destLng: 0,
+            departsAt: departsAt,
+            departureTime: departureTime,
+            date: selectedDate,
+            distanceMetres: resolvedDistance,
+            seatsTotal: trip.seatsTotal
+        )
     }
 
     private func buildDepartsAt(isModelB: Bool, originalDepartsAt: String, date: String, time: String) -> String {
@@ -382,25 +390,17 @@ struct EditTripPriceReviewView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.backward")
-                        .foregroundColor(Color.hopAuthTextPrimary)
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Text("Review Changes")
-                    .font(HopFont.title())
-                    .foregroundColor(Color.hopAuthTextPrimary)
-            }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            DriverTopBar(title: "Review Changes", onBack: onBack)
+                .background(Color.hopBackground)
         }
         .task {
             for await effect in wrapper.effects {
                 switch effect {
-                case is EditTripEffectNavigateBack:
+                case is EditTripEffectNavigateToMyTrips:
                     onSaved()
+                case is EditTripEffectNavigateBack:
+                    onBack()
                 case let snack as EditTripEffectShowSnackbar:
                     withAnimation { toast = snack.message }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {

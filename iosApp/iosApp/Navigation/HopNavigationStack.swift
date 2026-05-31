@@ -241,12 +241,8 @@ struct HopNavigationStack: View {
         case .editTripPriceReview:
             EditTripPriceReviewView(
                 onSaved: {
-                    // Pop back to MyTripsDriver
-                    if let idx = path.firstIndex(of: .myTripsDriver) {
-                        path.removeLast(path.count - idx - 1)
-                    } else {
-                        popBack()
-                    }
+                    // Clear stack — myTripsDriver is the tab root, not in path
+                    path.removeAll()
                 },
                 onBack: popBack
             )

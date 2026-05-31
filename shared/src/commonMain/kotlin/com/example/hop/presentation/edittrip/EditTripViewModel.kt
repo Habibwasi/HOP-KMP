@@ -72,6 +72,7 @@ sealed interface EditTripEvent {
 sealed interface EditTripEffect {
     data object NavigateToPriceReview : EditTripEffect
     data object NavigateBack : EditTripEffect
+    data object NavigateToMyTrips : EditTripEffect
     data class ShowSnackbar(val message: String) : EditTripEffect
 }
 
@@ -175,7 +176,7 @@ class EditTripViewModel(
                 is ApiResponse.Success -> {
                     _state.value = _state.value.copy(isSaving = false, pendingDraft = null)
                     _effect.send(EditTripEffect.ShowSnackbar("Trip updated."))
-                    _effect.send(EditTripEffect.NavigateBack)
+                    _effect.send(EditTripEffect.NavigateToMyTrips)
                 }
                 is ApiResponse.Error -> {
                     _state.value = _state.value.copy(isSaving = false)
