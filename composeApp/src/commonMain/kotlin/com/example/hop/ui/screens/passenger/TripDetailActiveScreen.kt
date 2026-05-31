@@ -556,7 +556,7 @@ private fun CancelBookingDialog(
         },
         text = {
             Text(
-                text = "Are you sure you want to cancel this booking? Your refund will be processed automatically.",
+                text = "Are you sure you want to cancel this booking? Contact the driver via MobilePay to arrange any refund.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = HopColors.authTextSecondary,
             )

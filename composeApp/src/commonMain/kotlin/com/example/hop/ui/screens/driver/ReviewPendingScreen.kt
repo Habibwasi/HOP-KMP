@@ -160,7 +160,7 @@ fun ReviewPendingScreen(
             Spacer(Modifier.height(HopSpacing.sm))
 
             Text(
-                text = "You'll receive a notification once your driver account is approved. In the meantime, you can continue using Hop as a passenger.",
+                text = "You'll receive a notification once your driver account is approved. In the meantime, you can continue using Ridly as a passenger.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = HopColors.authTextSecondary,
                 textAlign = TextAlign.Center,

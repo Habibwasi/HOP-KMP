@@ -56,9 +56,9 @@ struct CancellationConfirmationView: View {
             let dkk = amount / 100
             let ore = amount % 100
             let s = ore == 0 ? "DKK \(dkk)" : String(format: "DKK %d,%02d", dkk, ore)
-            return "Your refund of \(s) is on its way."
+            return "Your booking was \(s). Contact the driver to arrange your refund via MobilePay."
         }
-        return "Your refund is on its way."
+        return "Contact the driver to arrange your refund directly via MobilePay."
     }
 }
 

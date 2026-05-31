@@ -88,9 +88,8 @@ fun CancellationConfirmationRoute(
  *
  * Stateless renderer. Shows:
  *  - Canvas-drawn animated red X icon
- *  - "Booking Cancelled" headline
- *  - "Your refund is on its way" with DKK amount
- *  - Model B note: "Payment hold will be released within 1-2 business days"
+ *  - "Booking cancelled" headline
+ *  - Message to contact the driver for a MobilePay refund
  *  - "Back to My Trips" primary button (clears PA-08 + PA-10 from back stack)
  */
 @Composable
@@ -140,8 +139,8 @@ fun CancellationConfirmationScreen(
                 val dkk = amountOere / 100
                 val ore = amountOere % 100
                 val amountStr = if (ore == 0) "DKK $dkk" else "DKK $dkk.${ore.toString().padStart(2, '0')}"
-                "Your refund of $amountStr is on its way."
-            } ?: "Your refund is on its way."
+                "Your booking was $amountStr. Contact the driver to arrange your refund via MobilePay."
+            } ?: "Contact the driver to arrange your refund directly via MobilePay."
             Text(
                 text = refundText,
                 style = MaterialTheme.typography.bodyLarge,
@@ -160,7 +159,7 @@ fun CancellationConfirmationScreen(
                         .padding(HopSpacing.md),
                 ) {
                     Text(
-                        text = "Payment hold will be released within 1-2 business days.",
+                        text = "Payment is arranged directly between you and the driver — contact them to return your payment via MobilePay.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = HopColors.authTextSecondary,
                         textAlign = TextAlign.Center,

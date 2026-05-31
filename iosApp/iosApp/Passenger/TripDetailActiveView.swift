@@ -92,7 +92,7 @@ struct TripDetailActiveView: View {
             }
             Button("Keep booking", role: .cancel) {}
         } message: {
-            Text("You can't undo this. Your seat will be released and refund processed.")
+            Text("You can't undo this. Your seat will be released. Contact the driver via MobilePay to arrange any refund.")
         }
         .onAppear {
             wrapper.startObserving { effect in

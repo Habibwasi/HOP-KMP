@@ -37,7 +37,7 @@ export class HelpCenterService {
       topic: 'Bookings',
       question: 'What happens if the driver cancels my booking?',
       answer:
-        'You will receive a push notification immediately if a driver cancels. Any payment already made via MobilePay is refunded within 1–3 business days. You can then search for another available trip.',
+        'You will receive a push notification immediately if a driver cancels. Payment is always handled directly between you and the driver via MobilePay, so contact the driver to arrange a refund if you have already paid. You can then search for another available trip.',
     },
     {
       id: 'bk-05',
@@ -53,21 +53,21 @@ export class HelpCenterService {
       topic: 'Payments & pricing',
       question: 'How does payment work?',
       answer:
-        'Payment is handled via MobilePay. After your trip is completed, the driver will send a MobilePay request for your share of the cost. You settle directly in the MobilePay app. Hop facilitates the price agreement but does not hold any funds.',
+        'Payment is always arranged directly between the passenger and driver — Ridly does not handle, process, or hold any money. After your trip, the driver will typically request payment via MobilePay. You settle directly with each other outside the app.',
     },
     {
       id: 'pay-02',
       topic: 'Payments & pricing',
       question: 'How is the trip price calculated?',
       answer:
-        'Drivers set their own price when posting a trip. The price shown is per seat. Hop suggests a fair price based on distance and current fuel costs, but the final price is always up to the driver.',
+        'Drivers set their own price when posting a trip. The price shown is per seat. Ridly suggests a fair price based on distance and current fuel costs, but the final price is always up to the driver.',
     },
     {
       id: 'pay-03',
       topic: 'Payments & pricing',
-      question: 'What is the Hop service fee?',
+      question: 'What is the Ridly service fee?',
       answer:
-        'Hop currently charges no platform fee to passengers. Drivers keep 100% of the agreed price. This may change in the future — any fees will be clearly communicated in advance.',
+        'Ridly currently charges no platform fee to passengers. Drivers keep 100% of the agreed price. This may change in the future — any fees will be clearly communicated in advance.',
     },
     {
       id: 'pay-04',
@@ -81,14 +81,14 @@ export class HelpCenterService {
       topic: 'Payments & pricing',
       question: 'Can I get a refund?',
       answer:
-        'Payments are made directly between users via MobilePay, so refunds are also handled directly. If the driver cancels or the trip does not take place, ask the driver to send a refund via MobilePay. Contact us at support@ridly.dk if you cannot resolve it.',
+        'Ridly does not process or hold any payments — all money moves directly between you and the driver. If a trip is cancelled or does not take place, contact the driver directly and ask them to return your payment via MobilePay. If you cannot resolve it, contact us at support@ridly.dk and we will help mediate.',
     },
 
     // ── Driver onboarding ────────────────────────────────────────────────────
     {
       id: 'dr-01',
       topic: 'Driver onboarding',
-      question: 'How do I become a driver on Hop?',
+      question: 'How do I become a driver on Ridly?',
       answer:
         'Switch to Driver mode on the home screen, then tap "Become a driver". Enter your car details (make, model, year, colour, and registration plate) and your MobilePay phone number. Your profile will be reviewed and activated within 24 hours.',
     },
@@ -121,9 +121,9 @@ export class HelpCenterService {
     {
       id: 'dr-05',
       topic: 'Driver onboarding',
-      question: 'Do I need a special licence to drive on Hop?',
+      question: 'Do I need a special licence to drive on Ridly?',
       answer:
-        'No special licence is needed — a standard Danish driving licence is sufficient. Hop is a carpooling platform, not a taxi or ride-hailing service. Drivers share costs with passengers for trips they were already planning to take.',
+        'No special licence is needed — a standard Danish driving licence is sufficient. Ridly is a carpooling platform, not a taxi or ride-hailing service. Drivers share costs with passengers for trips they were already planning to take.',
     },
     {
       id: 'dr-06',
@@ -141,7 +141,7 @@ export class HelpCenterService {
       answer:
         'Open My Trips and swipe left on any instance of the recurring route. Tap "Stop route" (the orange button). ' +
         'This cancels all upcoming trips on that route and stops the rolling window from creating new ones — no new instances will ever appear. ' +
-        'Any passengers who have booked future trips will be automatically refunded and notified. ' +
+        'Passengers with upcoming bookings will be notified. Since payment is always handled directly between you and your passengers, please arrange any refunds with them individually via MobilePay. ' +
         'If you only want to cancel a single day rather than the whole route, swipe left and tap "Cancel" instead.',
     },
 
@@ -193,7 +193,7 @@ export class HelpCenterService {
     {
       id: 'sf-03',
       topic: 'Safety & trust',
-      question: 'What safety measures does Hop have in place?',
+      question: 'What safety measures does Ridly have in place?',
       answer:
         'All users must verify their email. Drivers are reviewed before activation. Profiles show ratings and trip history. In-app chat lets you communicate without sharing personal numbers. If anything feels unsafe during a trip, trust your instincts and contact emergency services (112) first.',
     },
@@ -211,7 +211,7 @@ export class HelpCenterService {
       topic: 'App & technical issues',
       question: 'I am not receiving push notifications. What should I do?',
       answer:
-        'Go to your phone\'s Settings → Notifications → Hop and make sure notifications are enabled. Inside the app, go to Settings and check that "Push notifications" is toggled on. If the problem persists, log out and back in to re-register the notification token.',
+        'Go to your phone\'s Settings → Notifications → Ridly and make sure notifications are enabled. Inside the app, go to Settings and check that "Push notifications" is toggled on. If the problem persists, log out and back in to re-register the notification token.',
     },
     {
       id: 'tech-02',
@@ -225,14 +225,14 @@ export class HelpCenterService {
       topic: 'App & technical issues',
       question: 'Why can I not find any trips in my area?',
       answer:
-        'Hop is growing, so availability varies by region. Try widening your search by using nearby cities or being flexible with your departure date. You can also set up a Search Alert — we will notify you when a matching trip is posted.',
+        'Ridly is growing, so availability varies by region. Try widening your search by using nearby cities or being flexible with your departure date. You can also set up a Search Alert — we will notify you when a matching trip is posted.',
     },
     {
       id: 'tech-04',
       topic: 'App & technical issues',
       question: 'The map or location is not working correctly.',
       answer:
-        'Make sure Hop has permission to access your location in your phone\'s settings. If the wrong address appears, you can tap the search bar and type the address manually instead of using the detected location.',
+        'Make sure Ridly has permission to access your location in your phone\'s settings. If the wrong address appears, you can tap the search bar and type the address manually instead of using the detected location.',
     },
   ]
 

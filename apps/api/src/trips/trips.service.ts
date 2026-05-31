@@ -534,7 +534,7 @@ export class TripsService {
   /**
    * Stops a recurring (Model A) route entirely.
    * Cancels every future instance that shares the same driver + origin + destination,
-   * refunds all passengers, and marks them isRecurring=false so the rolling-window
+   * notifies all passengers, and marks them isRecurring=false so the rolling-window
    * extension job never recreates them.
    */
   async stopRecurring(tripId: string, userId: string) {
@@ -584,7 +584,7 @@ export class TripsService {
       data: { status: TripStatus.CANCELLED, isActive: false },
     })
 
-    // Cancel all active bookings and refund passengers
+    // Cancel all active bookings and notify passengers
     await this.bookings.cancelAllForTrip(tripId).catch((err) => {
       this.logger.error(`[Trips] cancelAllForTrip failed for trip ${tripId}: ${err?.message}`)
     })

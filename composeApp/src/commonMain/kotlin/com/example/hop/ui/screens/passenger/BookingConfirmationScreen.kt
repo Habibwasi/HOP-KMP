@@ -616,7 +616,7 @@ private fun ModelBNoticeCard(
         )
 
         Text(
-            text = "Payment is held until the trip is confirmed. You'll be refunded if the trip is cancelled.",
+            text = "Payment is arranged directly between you and the driver via MobilePay — Ridly does not hold or process any funds.",
             style = MaterialTheme.typography.bodySmall,
             color = HopColors.authTextSecondary,
         )
