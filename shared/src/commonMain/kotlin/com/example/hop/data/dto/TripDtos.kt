@@ -29,6 +29,18 @@ data class PostTripRequestDto(
     val thresholdDeadline: String? = null,
 )
 
+@Serializable
+data class UpdateTripRequestDto(
+    @SerialName("originAddress") val originAddress: String? = null,
+    val originLat: Double? = null,
+    val originLng: Double? = null,
+    @SerialName("destAddress") val destAddress: String? = null,
+    val destLat: Double? = null,
+    val destLng: Double? = null,
+    @SerialName("departureAt") val departsAt: String? = null,
+    val distanceMetres: Int? = null,
+)
+
 // ── Response bodies ───────────────────────────────────────────────────────────
 
 /** Minimal booking stub included by some trip endpoints to compute seatsBooked. */

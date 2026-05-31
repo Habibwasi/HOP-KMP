@@ -7,10 +7,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -31,10 +35,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -49,10 +57,12 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -60,14 +70,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -103,9 +117,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.mutableStateOf
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -119,6 +131,7 @@ import androidx.compose.runtime.mutableStateOf
  * Effect mapping:
  *  • [DriverEffect.NavigateToTripDetail]  → onNavigateToTripDetailActiveDriver
  *  • [DriverEffect.NavigateToPostTrip]    → onNavigateToPostTrip
+ *  • [DriverEffect.NavigateToEditTrip]    → onNavigateToEditTrip
  */
 @Composable
 fun MyTripsDriverRoute(
@@ -127,6 +140,7 @@ fun MyTripsDriverRoute(
     onNavigateToDriverSettlement: (tripId: String) -> Unit,
     onNavigateToPastTripDetail: (tripId: String) -> Unit,
     onNavigateToPostTrip: () -> Unit,
+    onNavigateToEditTrip: (tripId: String) -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToChat: () -> Unit,
     onNavigateToProfile: () -> Unit,
@@ -148,6 +162,7 @@ fun MyTripsDriverRoute(
                 is DriverEffect.NavigateToDriverSettlement -> onNavigateToDriverSettlement(effect.tripId)
                 is DriverEffect.NavigateToPastTripDetail -> onNavigateToPastTripDetail(effect.tripId)
                 is DriverEffect.NavigateToPostTrip -> onNavigateToPostTrip()
+                is DriverEffect.NavigateToEditTrip -> onNavigateToEditTrip(effect.tripId)
                 is DriverEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
@@ -203,6 +218,8 @@ fun MyTripsDriverScreen(
     val tabs = listOf("Upcoming", "Past")
     var filterDate by remember { mutableStateOf<Long?>(null) }
     var filterModel by remember { mutableStateOf<TripModel?>(null) }
+    // Swipe-to-reveal: track which trip is pending delete confirmation
+    var pendingDeleteTripId by remember { mutableStateOf<String?>(null) }
 
     val filterDateStr = remember(filterDate) {
         filterDate?.let {
@@ -277,15 +294,32 @@ fun MyTripsDriverScreen(
                 state.isLoading -> DriverTripsLoadingIndicator()
                 selectedTab == 0 -> UpcomingDriverTripsContent(
                     trips = upcomingTrips,
+                    isDeletingTripId = state.isDeletingTripId,
                     onTripClick = { tripId -> onEvent(DriverEvent.SelectTrip(tripId)) },
                     onPostTrip = { onEvent(DriverEvent.RequestPostTrip) },
+                    onEditTrip = { tripId -> onEvent(DriverEvent.EditTrip(tripId)) },
+                    onDeleteTrip = { tripId -> pendingDeleteTripId = tripId },
                 )
                 else -> PastDriverTripsContent(
                     trips = pastTrips,
+                    isDeletingTripId = state.isDeletingTripId,
                     onTripClick = { tripId -> onEvent(DriverEvent.SelectTrip(tripId)) },
                     onPostTrip = { onEvent(DriverEvent.RequestPostTrip) },
+                    onEditTrip = { tripId -> onEvent(DriverEvent.EditTrip(tripId)) },
+                    onDeleteTrip = { tripId -> pendingDeleteTripId = tripId },
                 )
             }
+        }
+
+        // ── Delete confirmation dialog ─────────────────────────────────────────
+        if (pendingDeleteTripId != null) {
+            DeleteTripConfirmDialog(
+                onConfirm = {
+                    onEvent(DriverEvent.DeleteTrip(pendingDeleteTripId!!))
+                    pendingDeleteTripId = null
+                },
+                onDismiss = { pendingDeleteTripId = null },
+            )
         }
 
         // ── Bottom nav ────────────────────────────────────────────────────────
@@ -350,8 +384,11 @@ private fun DriverTripsLoadingIndicator(modifier: Modifier = Modifier) {
 @Composable
 private fun UpcomingDriverTripsContent(
     trips: List<TripUiModel>,
+    isDeletingTripId: String?,
     onTripClick: (String) -> Unit,
     onPostTrip: () -> Unit,
+    onEditTrip: (String) -> Unit,
+    onDeleteTrip: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (trips.isEmpty()) {
@@ -366,7 +403,11 @@ private fun UpcomingDriverTripsContent(
         DriverTripList(
             trips = trips,
             showThresholdBar = true,
+            swipeActionsEnabled = true,
+            isDeletingTripId = isDeletingTripId,
             onTripClick = onTripClick,
+            onEditTrip = onEditTrip,
+            onDeleteTrip = onDeleteTrip,
             modifier = modifier,
         )
     }
@@ -375,8 +416,11 @@ private fun UpcomingDriverTripsContent(
 @Composable
 private fun PastDriverTripsContent(
     trips: List<TripUiModel>,
+    isDeletingTripId: String?,
     onTripClick: (String) -> Unit,
     onPostTrip: () -> Unit,
+    onEditTrip: (String) -> Unit,
+    onDeleteTrip: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (trips.isEmpty()) {
@@ -391,7 +435,11 @@ private fun PastDriverTripsContent(
         DriverTripList(
             trips = trips,
             showThresholdBar = false,
+            swipeActionsEnabled = false,
+            isDeletingTripId = isDeletingTripId,
             onTripClick = onTripClick,
+            onEditTrip = onEditTrip,
+            onDeleteTrip = onDeleteTrip,
             modifier = modifier,
         )
     }
@@ -401,7 +449,11 @@ private fun PastDriverTripsContent(
 private fun DriverTripList(
     trips: List<TripUiModel>,
     showThresholdBar: Boolean,
+    swipeActionsEnabled: Boolean,
+    isDeletingTripId: String?,
     onTripClick: (String) -> Unit,
+    onEditTrip: (String) -> Unit,
+    onDeleteTrip: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -413,16 +465,234 @@ private fun DriverTripList(
         verticalArrangement = Arrangement.spacedBy(HopSpacing.md),
     ) {
         items(trips, key = { it.id }) { tripUiModel ->
-            DriverTripCard(
-                tripUiModel = tripUiModel,
-                showThresholdBar = showThresholdBar && tripUiModel.model == TripModel.B,
-                onClick = if (tripUiModel.isBroken) ({}) else ({ onTripClick(tripUiModel.id) }),
-                modifier = if (tripUiModel.isBroken) Modifier.alpha(0.6f) else Modifier,
-            )
+            // Swipe is only enabled on upcoming trips with no passengers booked
+            val swipeEnabled = swipeActionsEnabled && tripUiModel.seatsBooked == 0 && !tripUiModel.isBroken
+            val isDeleting = tripUiModel.id == isDeletingTripId
+            SwipeToRevealCard(
+                enabled = swipeEnabled,
+                onEdit = { onEditTrip(tripUiModel.id) },
+                onDelete = { onDeleteTrip(tripUiModel.id) },
+            ) {
+                DriverTripCard(
+                    tripUiModel = tripUiModel,
+                    showThresholdBar = showThresholdBar && tripUiModel.model == TripModel.B,
+                    onClick = if (tripUiModel.isBroken) ({}) else ({ onTripClick(tripUiModel.id) }),
+                    modifier = when {
+                        isDeleting -> Modifier.alpha(0.5f)
+                        tripUiModel.isBroken -> Modifier.alpha(0.6f)
+                        else -> Modifier
+                    },
+                )
+            }
         }
 
         item { Spacer(modifier = Modifier.height(HopSpacing.md)) }
     }
+}
+
+// ── Swipe-to-reveal wrapper ────────────────────────────────────────────────────
+
+/**
+ * Wraps [content] with a swipe-left gesture that reveals Edit and Delete
+ * action buttons. Only active when [enabled] is true (i.e. no passengers
+ * are booked yet).
+ *
+ * Swipe right closes the panel. Tapping the revealed card area also closes
+ * it without navigating.
+ */
+@Composable
+private fun SwipeToRevealCard(
+    enabled: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val revealWidthDp = 160.dp
+    val density = LocalDensity.current
+    val revealWidthPx = with(density) { revealWidthDp.toPx() }
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .clipToBounds(),
+    ) {
+        // ── Reveal panel (behind the card) ────────────────────────────────────
+        if (enabled) {
+            Row(
+                modifier = Modifier
+                    .width(revealWidthDp)
+                    .fillMaxHeight()
+                    .align(Alignment.CenterEnd)
+                    .clip(RoundedCornerShape(12.dp)),
+            ) {
+                // Edit action
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(Color(0xFF1976D2))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                        ) {
+                            scope.launch { offsetX.animateTo(0f, spring()) }
+                            onEdit()
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = "Edit trip",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Edit",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        )
+                    }
+                }
+                // Delete (cancel) action
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(Color(0xFFD32F2F))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                        ) {
+                            scope.launch { offsetX.animateTo(0f, spring()) }
+                            onDelete()
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = "Cancel trip",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Cancel",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Card (in front, draggable) ─────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .pointerInput(enabled) {
+                    if (!enabled) return@pointerInput
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            scope.launch {
+                                val target = if (-offsetX.value > revealWidthPx / 2f) {
+                                    -revealWidthPx
+                                } else {
+                                    0f
+                                }
+                                offsetX.animateTo(
+                                    target,
+                                    spring(dampingRatio = 0.7f, stiffness = 400f),
+                                )
+                            }
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            scope.launch {
+                                val newOffset = (offsetX.value + dragAmount)
+                                    .coerceIn(-revealWidthPx, 0f)
+                                offsetX.snapTo(newOffset)
+                            }
+                        },
+                    )
+                },
+        ) {
+            content()
+        }
+
+        // ── Tap-to-close overlay (visible when panel is open) ─────────────────
+        if (enabled && offsetX.value < -8f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .matchParentSize()
+                    .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) {
+                        scope.launch { offsetX.animateTo(0f, spring()) }
+                    },
+            )
+        }
+    }
+}
+
+// ── Delete confirmation dialog ─────────────────────────────────────────────────
+
+@Composable
+private fun DeleteTripConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Cancel trip?",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = HopColors.authTextPrimary,
+                ),
+            )
+        },
+        text = {
+            Text(
+                text = "This will permanently cancel the trip. Any pending bookings will be cancelled and passengers notified.",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = HopColors.authTextSecondary,
+                ),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color(0xFFD32F2F),
+                ),
+            ) {
+                Text("Cancel trip", fontWeight = FontWeight.SemiBold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    "Keep trip",
+                    color = HopColors.authTextSecondary,
+                )
+            }
+        },
+        containerColor = HopColors.surface,
+    )
 }
 
 // ── Driver trip card ───────────────────────────────────────────────────────────

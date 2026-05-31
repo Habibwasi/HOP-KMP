@@ -26,6 +26,9 @@ interface TripRepository {
 
     /** Returns booked passenger summaries for a driver's active trip. */
     suspend fun getTripPassengers(tripId: String): ApiResponse<List<PassengerSummary>>
+
+    /** Updates an upcoming trip's route or departure time. */
+    suspend fun updateTrip(tripId: String, request: UpdateTripRequest): ApiResponse<Trip>
 }
 
 data class PostTripRequest(
@@ -42,4 +45,15 @@ data class PostTripRequest(
     val minThreshold: Int? = null,
     val thresholdDeadline: String? = null,
     val recurrenceDays: List<String>? = null,
+)
+
+data class UpdateTripRequest(
+    val originName: String? = null,
+    val originLat: Double? = null,
+    val originLng: Double? = null,
+    val destName: String? = null,
+    val destLat: Double? = null,
+    val destLng: Double? = null,
+    val departsAt: String? = null,
+    val distanceMetres: Int? = null,
 )

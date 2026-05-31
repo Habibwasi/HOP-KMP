@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { PricingService } from './pricing.service'
 import { CreateTripDto } from './dto/create-trip.dto'
 import { SearchTripsDto } from './dto/search-trips.dto'
+import { UpdateTripDto } from './dto/update-trip.dto'
 import { BookingStatus, TripModel, TripStatus } from '@prisma/client'
 import {
   SEARCH_ALERTS_QUEUE,
@@ -545,6 +546,78 @@ export class TripsService {
     })
 
     return { cancelled: true }
+  }
+
+  /**
+   * Update an upcoming trip's route or departure time.
+   * Only allowed when there are no confirmed or pending bookings (seatsBooked == 0).
+   */
+  async update(tripId: string, userId: string, dto: UpdateTripDto) {
+    const trip = await this.prisma.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        bookings: { where: { status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] } } },
+      },
+    })
+    if (!trip) throw new AppException(ApiErrorCode.TRIP_NOT_FOUND)
+    if (trip.driverId !== userId) throw new AppException(ApiErrorCode.NOT_YOUR_TRIP)
+    if (trip.status === TripStatus.CANCELLED || trip.status === TripStatus.COMPLETED) {
+      throw new AppException(ApiErrorCode.TRIP_NOT_ACTIVE_FOR_COMPLETE)
+    }
+
+    const seatsBooked = trip.bookings.reduce((sum, b) => sum + b.seats, 0)
+    if (seatsBooked > 0) {
+      throw new AppException(ApiErrorCode.TRIP_HAS_BOOKINGS)
+    }
+
+    const newOriginLat = dto.originLat ?? trip.originLat
+    const newOriginLng = dto.originLng ?? trip.originLng
+    const newDestLat = dto.destLat ?? trip.destLat
+    const newDestLng = dto.destLng ?? trip.destLng
+    const newOriginAddress = dto.originAddress ?? trip.originAddress
+    const newDestAddress = dto.destAddress ?? trip.destAddress
+    const newDepartureAt = dto.departureAt ? new Date(dto.departureAt) : trip.departureAt
+
+    const distanceKm = dto.distanceMetres
+      ? dto.distanceMetres / 1000
+      : (dto.originLat != null || dto.destLat != null)
+        ? this.pricing.calculateDistance(newOriginLat, newOriginLng, newDestLat, newDestLng)
+        : trip.distanceKm ?? 0
+    const pricePerSeat = this.pricing.calculatePricePerSeat(distanceKm, trip.seats)
+
+    const routeChanged =
+      dto.originLat != null || dto.originLng != null ||
+      dto.destLat != null || dto.destLng != null ||
+      dto.originAddress != null || dto.destAddress != null
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.trip.update({
+        where: { id: tripId },
+        data: {
+          originLat: newOriginLat,
+          originLng: newOriginLng,
+          originAddress: newOriginAddress,
+          destLat: newDestLat,
+          destLng: newDestLng,
+          destAddress: newDestAddress,
+          departureAt: newDepartureAt,
+          distanceKm,
+          pricePerSeat,
+        },
+        include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+      })
+      if (routeChanged) {
+        await tx.$executeRaw`
+          UPDATE "Trip"
+          SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${newOriginLng}, ${newOriginLat}), 4326)::extensions.geography,
+              dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${newDestLng},   ${newDestLat}),   4326)::extensions.geography
+          WHERE id = ${tripId}
+        `
+      }
+      return result
+    })
+
+    return updated
   }
 
   /**

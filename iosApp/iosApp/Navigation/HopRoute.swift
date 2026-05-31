@@ -86,6 +86,12 @@ enum HopRoute: Hashable {
     /// DR-09 My Trips (Driver)
     case myTripsDriver
 
+    /// DR-09b Edit Trip form
+    case editTrip(tripId: String)
+
+    /// DR-09c Edit Trip price review
+    case editTripPriceReview
+
     /// DR-10 Trip Detail Active (Driver)
     case tripDetailActiveDriver(tripId: String)
 

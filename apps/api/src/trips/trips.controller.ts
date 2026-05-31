@@ -14,6 +14,7 @@ import { SupabaseGuard } from '../auth/supabase.guard'
 import { TripsService } from './trips.service'
 import { CreateTripDto } from './dto/create-trip.dto'
 import { SearchTripsDto } from './dto/search-trips.dto'
+import { UpdateTripDto } from './dto/update-trip.dto'
 
 @Controller('trips')
 export class TripsController {
@@ -63,6 +64,12 @@ export class TripsController {
   @UseGuards(SupabaseGuard)
   cancel(@Param('id') id: string, @Req() req: any) {
     return this.trips.cancel(id, req.user.id)
+  }
+
+  @Patch(':id')
+  @UseGuards(SupabaseGuard)
+  update(@Param('id') id: string, @Req() req: any, @Body() dto: UpdateTripDto) {
+    return this.trips.update(id, req.user.id, dto)
   }
 
   @Post(':id/complete')

@@ -8,6 +8,7 @@ struct MyTripsDriverView: View {
     var onTripTapped: (String) -> Void
     var onSettlementTapped: (String) -> Void
     var onPastTripTapped: (String) -> Void
+    var onNavigateToEditTrip: (String) -> Void
     var onBack: () -> Void
 
     @StateObject  private var wrapper = DriverViewModelWrapper.shared
@@ -16,6 +17,7 @@ struct MyTripsDriverView: View {
     @State private var filterDate: Date? = nil
     @State private var showDatePicker: Bool = false
     @State private var filterModel: DriverModelFilter? = nil
+    @State private var pendingDeleteTripId: String? = nil
 
     private enum Filter: String, CaseIterable {
         case upcoming = "Upcoming"
@@ -230,6 +232,22 @@ struct MyTripsDriverView: View {
                                     DriverTripDetailRow(trip: trip)
                                 }
                                 .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    if selectedFilter == .upcoming && trip.trip.seatsBooked == 0 && !trip.isBroken {
+                                        Button {
+                                            onNavigateToEditTrip(trip.id)
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
+                                        .tint(.blue)
+                                        Button {
+                                            pendingDeleteTripId = trip.id
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                        .tint(.red)
+                                    }
+                                }
                             }
                         }
                         .padding(HopSpacing.md)
@@ -239,6 +257,20 @@ struct MyTripsDriverView: View {
         }
         .task {
             wrapper.loadDriverHome()
+        }
+        .alert("Delete Trip?", isPresented: Binding(
+            get: { pendingDeleteTripId != nil },
+            set: { if !$0 { pendingDeleteTripId = nil } }
+        )) {
+            Button("Delete", role: .destructive) {
+                if let id = pendingDeleteTripId {
+                    wrapper.viewModel.onEvent(event: DriverEventDeleteTrip(tripId: id))
+                }
+                pendingDeleteTripId = nil
+            }
+            Button("Cancel", role: .cancel) { pendingDeleteTripId = nil }
+        } message: {
+            Text("This trip will be permanently removed.")
         }
     .safeAreaInset(edge: .top, spacing: 0) {
         DriverTopBar(title: "My Trips", onBack: onBack)

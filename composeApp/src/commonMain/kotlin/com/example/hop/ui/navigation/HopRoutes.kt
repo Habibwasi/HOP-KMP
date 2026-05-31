@@ -133,6 +133,14 @@ sealed interface HopRoutes {
     @Serializable
     data object MyTripsDriver : HopRoutes
 
+    /** DR-09b — Edit trip form */
+    @Serializable
+    data class EditTrip(val tripId: String) : HopRoutes
+
+    /** DR-09c — Edit trip price review */
+    @Serializable
+    data object EditTripPriceReview : HopRoutes
+
     /** DR-10 */
     @Serializable
     data class TripDetailActiveDriver(val tripId: String) : HopRoutes

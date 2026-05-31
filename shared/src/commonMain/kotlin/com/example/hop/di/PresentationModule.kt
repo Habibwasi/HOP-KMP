@@ -5,6 +5,7 @@ import com.example.hop.presentation.booking.BookingViewModel
 import com.example.hop.presentation.profile.OtherProfileViewModel
 import com.example.hop.presentation.profile.OwnProfileViewModel
 import com.example.hop.presentation.driver.DriverViewModel
+import com.example.hop.presentation.edittrip.EditTripViewModel
 import com.example.hop.presentation.helpcenter.HelpCenterViewModel
 import com.example.hop.presentation.home.DriverAggregatesViewModel
 import com.example.hop.presentation.home.HomeStatsViewModel
@@ -50,4 +51,5 @@ val presentationModule = module {
     viewModelOf(::DriverAggregatesViewModel)
     viewModelOf(::SettlementViewModel)
     viewModelOf(::HelpCenterViewModel)
+    viewModelOf(::EditTripViewModel)
 }

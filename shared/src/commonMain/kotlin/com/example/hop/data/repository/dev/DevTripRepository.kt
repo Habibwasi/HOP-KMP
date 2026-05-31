@@ -125,6 +125,11 @@ class DevTripRepository : TripRepository {
 
     override suspend fun cancelTrip(tripId: String): ApiResponse<Unit> = ApiResponse.Success(Unit)
 
+    override suspend fun updateTrip(tripId: String, request: com.example.hop.domain.repository.UpdateTripRequest): ApiResponse<com.example.hop.domain.model.Trip> {
+        val existing = sampleTrips.firstOrNull() ?: return ApiResponse.Error(404, "Trip not found")
+        return ApiResponse.Success(existing)
+    }
+
     override suspend fun getTripPassengers(tripId: String): ApiResponse<List<PassengerSummary>> =
         ApiResponse.Success(
             listOf(

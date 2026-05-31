@@ -4,11 +4,13 @@ import com.example.hop.data.dto.ApiEnvelope
 import com.example.hop.data.dto.PassengerSummaryDto
 import com.example.hop.data.dto.PostTripRequestDto
 import com.example.hop.data.dto.TripDto
+import com.example.hop.data.dto.UpdateTripRequestDto
 import com.example.hop.data.dto.toDomain
 import com.example.hop.domain.model.PassengerSummary
 import com.example.hop.domain.model.Trip
 import com.example.hop.domain.repository.PostTripRequest
 import com.example.hop.domain.repository.TripRepository
+import com.example.hop.domain.repository.UpdateTripRequest
 import com.example.hop.network.ApiResponse
 import com.example.hop.network.safeApiCall
 import io.ktor.client.HttpClient
@@ -26,6 +28,8 @@ import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 
 class TripRepositoryImpl(
     private val httpClient: HttpClient,
@@ -161,6 +165,29 @@ class TripRepositoryImpl(
     override suspend fun cancelTrip(tripId: String): ApiResponse<Unit> = safeApiCall {
         httpClient.delete("trips/$tripId")
         Unit
+    }
+
+    override suspend fun updateTrip(tripId: String, request: UpdateTripRequest): ApiResponse<Trip> {
+        val dto = UpdateTripRequestDto(
+            originAddress = request.originName,
+            originLat = request.originLat,
+            originLng = request.originLng,
+            destAddress = request.destName,
+            destLat = request.destLat,
+            destLng = request.destLng,
+            departsAt = request.departsAt,
+            distanceMetres = request.distanceMetres,
+        )
+        val response = safeEnvelopeCall<TripDto> {
+            httpClient.patch("trips/$tripId") {
+                contentType(ContentType.Application.Json)
+                setBody(dto)
+            }.body()
+        }
+        return when (response) {
+            is ApiResponse.Success -> ApiResponse.Success(response.data.toDomain())
+            is ApiResponse.Error -> response
+        }
     }
 
     override suspend fun getTripPassengers(tripId: String): ApiResponse<List<PassengerSummary>> {

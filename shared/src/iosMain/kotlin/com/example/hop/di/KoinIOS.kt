@@ -7,6 +7,7 @@ import com.example.hop.presentation.cancellationconfirmation.CancellationConfirm
 import com.example.hop.presentation.chat.ChatViewModel
 import com.example.hop.presentation.chatlist.ChatListViewModel
 import com.example.hop.presentation.driver.DriverViewModel
+import com.example.hop.presentation.edittrip.EditTripViewModel
 import com.example.hop.presentation.home.DriverAggregatesViewModel
 import com.example.hop.presentation.home.HomeStatsViewModel
 import com.example.hop.presentation.home.SavedPlacesViewModel
@@ -85,6 +86,8 @@ fun getSettlementViewModel(): SettlementViewModel = KoinPlatform.getKoin().get()
 fun getHelpCenterViewModel(): HelpCenterViewModel = KoinPlatform.getKoin().get()
 
 fun getDriverAggregatesViewModel(): DriverAggregatesViewModel = KoinPlatform.getKoin().get()
+
+fun getEditTripViewModel(): EditTripViewModel = KoinPlatform.getKoin().get()
 
 /** Returns the active Supabase session access token. Used by ChatView to authenticate the WebSocket. */
 fun getAccessToken(): String? = KoinPlatform.getKoin().get<SupabaseClient>().auth.currentSessionOrNull()?.accessToken

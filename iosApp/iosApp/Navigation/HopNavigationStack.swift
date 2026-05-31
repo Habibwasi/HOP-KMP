@@ -227,6 +227,27 @@ struct HopNavigationStack: View {
                 onTripTapped: { tid in navigate(.tripDetailActiveDriver(tripId: tid)) },
                 onSettlementTapped: { tripId in navigate(.driverSettlement(tripId: tripId)) },
                 onPastTripTapped: { tripId in navigate(.pastTripDetailDriver(tripId: tripId)) },
+                onNavigateToEditTrip: { tripId in navigate(.editTrip(tripId: tripId)) },
+                onBack: popBack
+            )
+
+        case .editTrip(let tripId):
+            EditTripView(
+                tripId: tripId,
+                onNavigateToReview: { navigate(.editTripPriceReview) },
+                onBack: popBack
+            )
+
+        case .editTripPriceReview:
+            EditTripPriceReviewView(
+                onSaved: {
+                    // Pop back to MyTripsDriver
+                    if let idx = path.firstIndex(of: .myTripsDriver) {
+                        path.removeLast(path.count - idx - 1)
+                    } else {
+                        popBack()
+                    }
+                },
                 onBack: popBack
             )
 

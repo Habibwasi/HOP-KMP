@@ -118,6 +118,8 @@ data class DriverUiState(
     val routeDestLat: Double = 0.0,
     val routeDestLng: Double = 0.0,
     val activeTripDetail: ActiveTripDetailUiState = ActiveTripDetailUiState(),
+    /** Non-null while a DELETE call is in-flight for a specific trip. */
+    val isDeletingTripId: String? = null,
 )
 
 // ─ Events ─────────────────────────────────────────────────────────────────────
@@ -140,6 +142,10 @@ sealed interface DriverEvent {
     data class SelectTrip(val tripId: String) : DriverEvent
     data object TapEarningsBanner : DriverEvent
     data class SaveCarDetails(val carDetails: CarDetails) : DriverEvent
+    /** DR-09 swipe-to-reveal delete (cancel) a trip with no passengers. */
+    data class DeleteTrip(val tripId: String) : DriverEvent
+    /** DR-09 swipe-to-reveal edit a trip with no passengers. */
+    data class EditTrip(val tripId: String) : DriverEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -161,6 +167,7 @@ sealed interface DriverEffect {
     data object NavigateToLicenceUpload : DriverEffect
     data object NavigateToReviewPending : DriverEffect
     data object NavigateToHome : DriverEffect
+    data class NavigateToEditTrip(val tripId: String) : DriverEffect
 }
 
 // ─ Error message mapper ───────────────────────────────────────────────────────
@@ -237,6 +244,10 @@ class DriverViewModel(
             is DriverEvent.SelectTrip -> selectTrip(event.tripId)
             is DriverEvent.TapEarningsBanner -> tapEarningsBanner()
             is DriverEvent.SaveCarDetails -> saveCarDetails(event.carDetails)
+            is DriverEvent.DeleteTrip -> deleteTrip(event.tripId)
+            is DriverEvent.EditTrip -> viewModelScope.launch {
+                _effect.send(DriverEffect.NavigateToEditTrip(event.tripId))
+            }
         }
     }
 
@@ -583,6 +594,27 @@ class DriverViewModel(
     private fun tapEarningsBanner() {
         viewModelScope.launch {
             _effect.send(DriverEffect.NavigateToTaxDashboard)
+        }
+    }
+
+    private fun deleteTrip(tripId: String) {
+        // Guard: already in-flight for another trip
+        if (_state.value.isDeletingTripId != null) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isDeletingTripId = tripId)
+            when (val response = tripRepository.cancelTrip(tripId)) {
+                is ApiResponse.Success -> {
+                    _state.value = _state.value.copy(
+                        isDeletingTripId = null,
+                        trips = _state.value.trips.filterNot { it.id == tripId },
+                    )
+                    _effect.send(DriverEffect.ShowSnackbar("Trip cancelled."))
+                }
+                is ApiResponse.Error -> {
+                    _state.value = _state.value.copy(isDeletingTripId = null)
+                    _effect.send(DriverEffect.ShowSnackbar(response.toUserMessage("cancelling the trip")))
+                }
+            }
         }
     }
 

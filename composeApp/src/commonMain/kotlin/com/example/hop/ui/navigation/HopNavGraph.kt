@@ -40,6 +40,8 @@ import com.example.hop.ui.screens.settlement.PastTripDetailDriverRoute
 import com.example.hop.ui.screens.passenger.TripDetailActiveRoute
 import com.example.hop.ui.screens.passenger.TripDetailRoute
 import com.example.hop.ui.screens.passenger.RateDriverRoute
+import com.example.hop.ui.screens.driver.EditTripPriceReviewRoute
+import com.example.hop.ui.screens.driver.EditTripRoute
 import com.example.hop.ui.screens.driver.MyTripsDriverRoute
 import com.example.hop.ui.screens.driver.TripDetailActiveDriverRoute
 import com.example.hop.ui.screens.driver.MarkTripCompleteRoute
@@ -458,6 +460,9 @@ fun HopNavGraph(
                 onNavigateToPostTrip = {
                     navController.navigate(HopRoutes.PostTripModelSelect)
                 },
+                onNavigateToEditTrip = { tripId ->
+                    navController.navigate(HopRoutes.EditTrip(tripId))
+                },
                 onNavigateToHome = {
                     // popBackStack preserves the existing Home entry and its
                     // rememberSaveable state (DRIVER tab selected).
@@ -469,6 +474,28 @@ fun HopNavGraph(
                 },
                 onNavigateToProfile = {
                     navController.navigate(HopRoutes.Profile(userId = ""))
+                },
+            )
+        }
+
+        composable<HopRoutes.EditTrip> { backStackEntry ->
+            val route: HopRoutes.EditTrip = backStackEntry.toRoute()
+            EditTripRoute(
+                tripId = route.tripId,
+                onNavigateToPriceReview = {
+                    navController.navigate(HopRoutes.EditTripPriceReview)
+                },
+                onNavigateBack = { navController.navigateUp() },
+            )
+        }
+
+        composable<HopRoutes.EditTripPriceReview> {
+            EditTripPriceReviewRoute(
+                onNavigateBack = { navController.navigateUp() },
+                onSaved = {
+                    navController.navigate(HopRoutes.MyTripsDriver) {
+                        popUpTo(HopRoutes.MyTripsDriver) { inclusive = true }
+                    }
                 },
             )
         }

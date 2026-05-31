@@ -1,70 +1,183 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# Hop — Carpooling by Ridly
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
-
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
-
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
-
-### Build and Run Android Application
-
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
-
-### Build and Run iOS Application
-
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+Hop is a peer-to-peer carpooling platform for Android and iOS, built with Kotlin Multiplatform and a NestJS backend. Drivers post trips and passengers book seats, with payments handled directly via MobilePay.
 
 ---
-## Trip Data Layer — UNKNOWN Enum Handling (Option 4)
 
-**Pattern:** Keep broken trips visible, greyed-out, soft-logged.
+## Repository Structure
 
-**Implementation (3 steps):**
+```
+HOP-KMP/
+├── apps/api/          # NestJS backend (TypeScript, Prisma, PostgreSQL)
+├── composeApp/        # Android Compose Multiplatform UI
+├── iosApp/            # iOS SwiftUI app
+├── shared/            # KMP shared business logic (domain, data, ViewModels)
+└── infra/             # Deployment configuration
+```
 
-1. **Domain:** Add `fun Trip.isBroken() = status == UNKNOWN || model == UNKNOWN`
+### [`/apps/api`](./apps/api)
+NestJS REST + WebSocket backend.
 
-2. **ViewModel:** 
-   ```kotlin
-   val uiModels = result.data.toUiModels()  // Wraps in TripUiModel
-   uiModels.filter { it.isBroken }.forEach { logBrokenTrip(it) }
-   state = state.copy(trips = uiModels)  // Store wrapped models
-   ```
+| Module | Description |
+|---|---|
+| `auth` | Supabase JWT authentication |
+| `trips` | Trip creation, search, and lifecycle |
+| `bookings` | Booking requests and confirmations |
+| `settlements` | Post-trip payment settlement flows |
+| `ratings` | Passenger ↔ driver mutual ratings |
+| `chat` | Real-time messaging via Socket.IO |
+| `notifications` | Push notifications (BullMQ queue) |
+| `users` | Profile management |
+| `places` | Google Places autocomplete proxy |
+| `search-alerts` | Saved search alert subscriptions |
+| `help-center` | FAQ endpoint (public, no auth required) |
+| `admin` | Internal admin operations |
 
-3. **UI:** 
-   ```kotlin
-   val isEnabled = !tripUi.isBroken
-   Surface(
-       modifier = Modifier.alpha(if (isEnabled) 1f else 0.6f)
-           .clickable(enabled = isEnabled) { ... }
-   )
-   ```
+### [`/shared`](./shared/src/commonMain/kotlin/com/example/hop)
+KMP shared module consumed by both Android and iOS.
 
-**Why:** Observable (logs), recoverable (pull-refresh), version-safe (handles future enums), preserves user visibility.
+```
+shared/src/commonMain/
+├── domain/
+│   ├── model/          # Domain data classes
+│   └── repository/     # Repository interfaces
+├── data/
+│   ├── dto/            # API response DTOs
+│   └── repository/     # Ktor repository implementations
+├── presentation/       # MVI ViewModels (state / events / effects)
+└── di/                 # Koin modules (repository + presentation)
+```
 
-**Reference Files:** 
-- Template ViewModel: `shared/src/commonMain/kotlin/com/example/hop/presentation/trips/SearchTripsViewModel.kt`
-- Template UI: `shared/src/commonMain/kotlin/com/example/hop/ui/components/TripListItemOption4.kt`  
-- Wrapper Model: `shared/src/commonMain/kotlin/com/example/hop/presentation/model/TripUiModel.kt`
+### [`/composeApp`](./composeApp/src/commonMain/kotlin/com/example/hop/ui)
+Android UI in Compose Multiplatform with type-safe Navigation Compose.
+
+**Screens:**
+
+| Area | Screens |
+|---|---|
+| Auth | Onboarding, Sign Up, Login, Verify Email, Forgot Password, Set New Password |
+| Passenger | Home, Search Results, Trip Detail, Booking Confirmation, Booking Success, Active Trip, MobilePay Handoff, Rate Driver, Cancellation Confirmation |
+| Driver | Home, Post Trip (Model A / B / Select), Price Review, Car Details, MobilePay Setup, My Trips, Active Trip Detail, Mark Complete, Rate Passenger, Review Pending, Tax Dashboard, Tax Report Download |
+| Settlement | Passenger Settlement, Driver Settlement, Past Trip Detail |
+| Shared | Chat, Chat List, Notifications, Profile, Other Profile, Settings, Help Center, Privacy Policy, Terms of Service |
+
+### [`/iosApp`](./iosApp/iosApp)
+Native SwiftUI app. ViewModels are shared from KMP via `KoinIOS.kt` accessors and wrapped in `@MainActor ObservableObject` wrappers (`*ViewModelWrapper.swift`).
 
 ---
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Android UI | Compose Multiplatform 1.10.3 |
+| iOS UI | SwiftUI (NavigationStack) |
+| Shared logic | Kotlin Multiplatform, Kotlin 2.3.20 |
+| Networking | Ktor 3.1.3 |
+| Dependency injection | Koin |
+| Serialization | kotlinx.serialization 1.8.1 |
+| Async | kotlinx.coroutines 1.10.1 |
+| Backend | NestJS 11, TypeScript |
+| ORM | Prisma 7.7 + PostgreSQL |
+| Auth | Supabase |
+| Realtime | Socket.IO 4.8 |
+| Job queue | BullMQ |
+| Observability | Sentry (Android, iOS, API) |
+| Min Android SDK | 24 (Android 7.0) |
+| Target Android SDK | 36 |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Android Studio Meerkat or newer
+- Xcode 16+
+- Node.js 20+
+- PostgreSQL 15+
+- A Supabase project
+
+### Environment Setup
+
+**Backend** — copy and populate `apps/api/.env`:
+```env
+DATABASE_URL=postgresql://...
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_KEY=...
+GOOGLE_PLACES_API_KEY=...
+SENTRY_DSN=...
+```
+
+**Android** — `local.properties`:
+```
+MAPS_API_KEY=...
+SENTRY_DSN=...
+```
+
+**iOS** — `iosApp/Configuration/Config.xcconfig`:
+```
+SENTRY_DSN = ...
+```
+
+### Running the API
+
+```bash
+cd apps/api
+npm install
+npx prisma migrate deploy
+npm run start:dev
+```
+
+### Building the Android App
+
+```bash
+# Debug APK
+./gradlew :composeApp:assembleDebug
+
+# Release bundle (requires signing config in local.properties)
+./gradlew :composeApp:bundleRelease
+```
+
+### Building the iOS App
+
+Open `iosApp/iosApp.xcodeproj` in Xcode and run, or build from the terminal:
+
+```bash
+xcodebuild build \
+  -project iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -destination 'generic/platform=iOS'
+```
+
+> The KMP shared XCFramework is built automatically via the Gradle task `:shared:assembleSharedXCFramework`.
+
+---
+
+## Architecture
+
+The app follows MVI (Model-View-Intent) with a clean separation of concerns:
+
+```
+UI Layer  ──►  ViewModel (shared KMP)  ──►  Repository Interface
+                    │                              │
+              emits UiState                  Repository Impl (Ktor)
+              emits Effects                        │
+                                             NestJS API
+```
+
+- **State** — immutable data class; UI observes and renders it
+- **Events** — user actions sent into the ViewModel
+- **Effects** — one-shot side-effects (navigation, toasts, deep links)
+
+All API responses are wrapped in `{ "data": T }` by a global NestJS `TransformInterceptor`. The KMP layer unwraps them via `ApiEnvelope<T>` and `safeEnvelopeCall`.
+
+---
+
+## Learn More
+
+- [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)
+- [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/)
+- [NestJS](https://nestjs.com/)
+- [Ktor](https://ktor.io/)
+- [Koin](https://insert-koin.io/)
