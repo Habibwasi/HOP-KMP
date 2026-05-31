@@ -1184,10 +1184,11 @@ private fun TripsFilterBar(
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Trips that departed more than 2 hours ago are treated as past regardless of status. */
+/** Trips that departed more than 2 hours ago are treated as past regardless of status.
+ *  On parse failure the date is treated as past (safe default — unknown != upcoming). */
 private fun departsAtIsPast(departsAt: String): Boolean = try {
     Instant.parse(departsAt) < Clock.System.now() - 2.hours
-} catch (_: Exception) { false }
+} catch (_: Exception) { true }
 
 private fun TripUiModel.isUpcomingDriver(): Boolean {
     if (departsAtIsPast(departsAt)) return false

@@ -90,7 +90,7 @@ struct MyTripsDriverView: View {
         if let date = fallback.date(from: departsAt) {
             return date > now.addingTimeInterval(-2 * 3600)
         }
-        return true // parse failure — keep in upcoming to be safe
+        return false // parse failure — treat as past (safe default)
     }
 
     var body: some View {

@@ -692,8 +692,10 @@ export class TripsService {
   }
 
   async findByDriver(driverId: string) {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 30) // only return trips from the last 30 days onward
     return this.prisma.trip.findMany({
-      where: { driverId },
+      where: { driverId, departureAt: { gte: cutoff } },
       orderBy: { departureAt: 'asc' },
       include: {
         bookings: {
