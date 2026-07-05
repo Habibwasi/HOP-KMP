@@ -22,6 +22,9 @@ node_modules/
 # Firebase — contains API keys, never commit
 google-services.json
 
+# Release signing keystore — never commit
+*.jks
+
 # Exclude local embedded skill repo from source control
 kmp-compose-multiplatform-skill/
 iosApp/SentryLocal/Sentry.xcframework
