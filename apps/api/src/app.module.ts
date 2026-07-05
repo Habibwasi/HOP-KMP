@@ -20,9 +20,10 @@ import { ChatModule } from './chat/chat.module'
 import { HelpCenterModule } from './help-center/help-center.module'
 import { HealthController } from './health.controller'
 import { PrivacyController } from './privacy.controller'
+import { DeleteAccountController } from './delete-account.controller'
 
 @Module({
-  controllers: [HealthController, PrivacyController],
+  controllers: [HealthController, PrivacyController, DeleteAccountController],
   imports: [
     SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),

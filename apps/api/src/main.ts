@@ -58,7 +58,7 @@ async function bootstrap() {
   )
   app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalInterceptors(new TransformInterceptor())
-  app.setGlobalPrefix('api/v1', { exclude: ['privacy'] })
+  app.setGlobalPrefix('api/v1', { exclude: ['privacy', 'delete-account'] })
   const port = await resolvePort(Number(process.env.PORT ?? 3000))
   await app.listen(port)
   logger.log(`Hop API running on http://localhost:${port}/api/v1`)
