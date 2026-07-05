@@ -1,5 +1,5 @@
 import { Controller, Get, Res } from '@nestjs/common'
-import { Response } from 'express'
+import type { Response } from 'express'
 
 // Uses @Res() to write directly to the HTTP response and bypass the global
 // TransformInterceptor, which would otherwise wrap the HTML in {"data": "..."}.
