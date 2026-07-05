@@ -10,12 +10,13 @@ exports.NotificationsModule = void 0;
 const common_1 = require("@nestjs/common");
 const notifications_service_1 = require("./notifications.service");
 const notifications_controller_1 = require("./notifications.controller");
+const notification_cleanup_service_1 = require("./notification-cleanup.service");
 let NotificationsModule = class NotificationsModule {
 };
 exports.NotificationsModule = NotificationsModule;
 exports.NotificationsModule = NotificationsModule = __decorate([
     (0, common_1.Module)({
-        providers: [notifications_service_1.NotificationsService],
+        providers: [notifications_service_1.NotificationsService, notification_cleanup_service_1.NotificationCleanupService],
         controllers: [notifications_controller_1.NotificationsController],
         exports: [notifications_service_1.NotificationsService],
     })

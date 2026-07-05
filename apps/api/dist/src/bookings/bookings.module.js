@@ -13,6 +13,7 @@ const bookings_service_1 = require("./bookings.service");
 const bookings_controller_1 = require("./bookings.controller");
 const bookings_processor_1 = require("./bookings.processor");
 const notifications_module_1 = require("../notifications/notifications.module");
+const ratings_module_1 = require("../ratings/ratings.module");
 let BookingsModule = class BookingsModule {
 };
 exports.BookingsModule = BookingsModule;
@@ -21,6 +22,7 @@ exports.BookingsModule = BookingsModule = __decorate([
         imports: [
             bullmq_1.BullModule.registerQueue({ name: 'bookings' }),
             notifications_module_1.NotificationsModule,
+            ratings_module_1.RatingsModule,
         ],
         providers: [bookings_service_1.BookingsService, bookings_processor_1.BookingsProcessor],
         controllers: [bookings_controller_1.BookingsController],

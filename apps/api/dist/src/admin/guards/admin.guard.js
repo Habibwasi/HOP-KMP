@@ -8,11 +8,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminGuard = void 0;
 const common_1 = require("@nestjs/common");
+const app_exception_1 = require("../../common/errors/app-exception");
+const api_error_codes_1 = require("../../common/errors/api-error-codes");
 let AdminGuard = class AdminGuard {
     canActivate(context) {
         const req = context.switchToHttp().getRequest();
         if (!req.user?.isAdmin)
-            throw new common_1.ForbiddenException('Admin access required');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ADMIN_REQUIRED);
         return true;
     }
 };

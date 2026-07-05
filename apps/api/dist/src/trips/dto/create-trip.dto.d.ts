@@ -11,6 +11,7 @@ export declare class CreateTripDto {
     departureAt: string;
     seats: number;
     recurringDays?: string[];
+    windowDays?: number;
     minPassengers?: number;
     thresholdDeadline?: string;
 }

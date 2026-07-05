@@ -13,6 +13,8 @@ exports.PlacesService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 let PlacesService = class PlacesService {
     prisma;
     config;
@@ -48,9 +50,9 @@ let PlacesService = class PlacesService {
     async update(userId, id, dto) {
         const existing = await this.prisma.savedPlace.findUnique({ where: { id } });
         if (!existing)
-            throw new common_1.NotFoundException('Place not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.PLACE_NOT_FOUND);
         if (existing.userId !== userId)
-            throw new common_1.ForbiddenException();
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_YOUR_TRIP);
         return this.prisma.savedPlace.update({
             where: { id },
             data: {
@@ -65,48 +67,48 @@ let PlacesService = class PlacesService {
     async remove(userId, id) {
         const existing = await this.prisma.savedPlace.findUnique({ where: { id } });
         if (!existing)
-            throw new common_1.NotFoundException('Place not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.PLACE_NOT_FOUND);
         if (existing.userId !== userId)
-            throw new common_1.ForbiddenException();
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_YOUR_TRIP);
         await this.prisma.savedPlace.delete({ where: { id } });
         return { ok: true };
     }
     async geocode(address) {
-        const key = this.mapboxKey();
-        if (!key)
-            throw new common_1.BadRequestException('Geocoding is not configured on this server');
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${key}&limit=1`;
+        const token = this.mapboxToken();
+        if (!token)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.GEOCODING_NOT_CONFIGURED);
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1&types=address,place,poi`;
         const res = await fetch(url);
         if (!res.ok)
-            throw new common_1.BadRequestException('Geocoding request failed');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.GEOCODING_FAILED);
         const json = await res.json();
-        if (!json.features.length) {
-            throw new common_1.BadRequestException(`No geocoding result for: ${address}`);
+        if (!json.features?.length) {
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.GEOCODING_NO_RESULT, `No geocoding result for: ${address}`);
         }
         const [lng, lat] = json.features[0].center;
         return { lat, lng, formattedAddress: json.features[0].place_name };
     }
     async route(origin, dest) {
-        const key = this.mapboxKey();
-        if (!key)
-            throw new common_1.BadRequestException('Route calculation is not configured on this server');
+        const token = this.mapboxToken();
+        if (!token)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ROUTE_NOT_CONFIGURED);
         const cleanOrigin = origin?.trim();
         const cleanDest = dest?.trim();
         if (!cleanOrigin || !cleanDest) {
-            throw new common_1.BadRequestException('origin and dest are required');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ROUTE_PARAMS_MISSING);
         }
         const [originGeo, destGeo] = await Promise.all([
             this.geocode(cleanOrigin),
             this.geocode(cleanDest),
         ]);
         const coords = `${originGeo.lng},${originGeo.lat};${destGeo.lng},${destGeo.lat}`;
-        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?access_token=${key}&overview=false`;
+        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?access_token=${token}&overview=false&steps=false`;
         const res = await fetch(url);
         if (!res.ok)
-            throw new common_1.BadRequestException('Route calculation request failed');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ROUTE_NOT_CONFIGURED);
         const json = await res.json();
-        if (json.code !== 'Ok' || !json.routes.length) {
-            throw new common_1.BadRequestException(json.message ?? `No driving route found (Mapbox code: ${json.code})`);
+        if (json.code !== 'Ok' || !json.routes?.length) {
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ROUTE_PARAMS_MISSING);
         }
         return {
             distanceMetres: Math.round(json.routes[0].distance),
@@ -116,31 +118,7 @@ let PlacesService = class PlacesService {
             destLng: destGeo.lng,
         };
     }
-    async autocomplete(query) {
-        const key = this.mapboxKey();
-        if (!key)
-            return { suggestions: [] };
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
-            `?access_token=${key}&limit=5&types=place,locality,district,address`;
-        try {
-            const res = await fetch(url);
-            if (!res.ok)
-                return { suggestions: [] };
-            const json = await res.json();
-            return {
-                suggestions: json.features.map((f) => ({
-                    name: f.text,
-                    fullAddress: f.place_name,
-                    lat: f.center[1],
-                    lng: f.center[0],
-                })),
-            };
-        }
-        catch {
-            return { suggestions: [] };
-        }
-    }
-    mapboxKey() {
+    mapboxToken() {
         return this.config.get('MAPBOX_ACCESS_TOKEN');
     }
 };

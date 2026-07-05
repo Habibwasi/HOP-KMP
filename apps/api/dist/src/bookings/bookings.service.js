@@ -20,6 +20,8 @@ const bullmq_2 = require("bullmq");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const notifications_service_1 = require("../notifications/notifications.service");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 let BookingsService = BookingsService_1 = class BookingsService {
     prisma;
     bookingsQueue;
@@ -31,24 +33,27 @@ let BookingsService = BookingsService_1 = class BookingsService {
         this.notifications = notifications;
     }
     async create(passengerId, dto) {
-        return this.prisma.$transaction(async (tx) => {
+        const booking = await this.prisma.$transaction(async (tx) => {
             const trip = await tx.trip.findUnique({ where: { id: dto.tripId } });
             if (!trip)
-                throw new common_1.NotFoundException('Trip not found');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
             if (trip.status !== client_1.TripStatus.ACTIVE) {
-                throw new common_1.BadRequestException('Trip is not active');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_ACTIVE);
             }
             if (trip.driverId === passengerId) {
-                throw new common_1.BadRequestException('Cannot book your own trip');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.CANNOT_BOOK_OWN_TRIP);
             }
-            const confirmedBookings = await tx.booking.aggregate({
-                where: { tripId: dto.tripId, status: client_1.BookingStatus.CONFIRMED },
+            const activeBookings = await tx.booking.aggregate({
+                where: {
+                    tripId: dto.tripId,
+                    status: { in: [client_1.BookingStatus.CONFIRMED, client_1.BookingStatus.PENDING] },
+                },
                 _sum: { seats: true },
             });
-            const bookedSeats = confirmedBookings._sum.seats ?? 0;
+            const bookedSeats = activeBookings._sum.seats ?? 0;
             const available = trip.seats - bookedSeats;
             if (dto.seats > available) {
-                throw new common_1.ConflictException(`Only ${available} seat(s) available`);
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.INSUFFICIENT_SEATS, `Only ${available} seat(s) available`);
             }
             const existing = await tx.booking.findFirst({
                 where: {
@@ -58,7 +63,7 @@ let BookingsService = BookingsService_1 = class BookingsService {
                 },
             });
             if (existing)
-                throw new common_1.ConflictException('Already booked this trip');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ALREADY_BOOKED);
             const totalOere = trip.pricePerSeat * dto.seats;
             const booking = await tx.booking.create({
                 data: {
@@ -66,7 +71,7 @@ let BookingsService = BookingsService_1 = class BookingsService {
                     passengerId,
                     seats: dto.seats,
                     totalOere,
-                    status: client_1.BookingStatus.PENDING,
+                    status: trip.model === client_1.TripModel.A ? client_1.BookingStatus.CONFIRMED : client_1.BookingStatus.PENDING,
                 },
                 include: {
                     trip: { include: { driver: { select: { id: true, firstName: true, lastName: true } } } },
@@ -81,20 +86,46 @@ let BookingsService = BookingsService_1 = class BookingsService {
             }
             return booking;
         });
+        const passengerName = booking.passenger.firstName;
+        this.notifications
+            .sendToUser(booking.trip.driverId, 'New booking 🎉', `${passengerName} booked ${dto.seats} seat(s) on your trip`, { type: 'NEW_BOOKING', tripId: dto.tripId, bookingId: booking.id })
+            .catch(() => { });
+        this.prisma.notification.create({
+            data: {
+                userId: booking.trip.driverId,
+                type: 'NEW_BOOKING',
+                title: 'New booking 🎉',
+                body: `${passengerName} booked ${dto.seats} seat(s) on your trip`,
+                deepLinkId: booking.id,
+            },
+        }).catch(() => { });
+        return booking;
     }
-    async confirm(bookingId) {
-        const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+    async confirm(bookingId, driverId) {
+        const booking = await this.prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { trip: { select: { driverId: true } } },
+        });
         if (!booking)
-            throw new common_1.NotFoundException('Booking not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.BOOKING_NOT_FOUND);
+        if (booking.trip.driverId !== driverId)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.DRIVER_ONLY);
         if (booking.status === client_1.BookingStatus.CONFIRMED)
             return booking;
         if (booking.status !== client_1.BookingStatus.PENDING) {
-            throw new common_1.BadRequestException('Booking is not pending');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.BOOKING_NOT_PENDING);
         }
         return this.prisma.booking.update({
             where: { id: bookingId },
             data: { status: client_1.BookingStatus.CONFIRMED },
         });
+    }
+    async findByIdAuthorized(id, requesterId) {
+        const booking = await this.findById(id);
+        const isParty = booking.passengerId === requesterId || booking.trip.driverId === requesterId;
+        if (!isParty)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_A_PARTY);
+        return booking;
     }
     async cancel(bookingId, userId) {
         const booking = await this.prisma.booking.findUnique({
@@ -102,13 +133,13 @@ let BookingsService = BookingsService_1 = class BookingsService {
             include: { trip: true },
         });
         if (!booking)
-            throw new common_1.NotFoundException('Booking not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.BOOKING_NOT_FOUND);
         const isPassenger = booking.passengerId === userId;
         const isDriver = booking.trip.driverId === userId;
         if (!isPassenger && !isDriver)
-            throw new common_1.ForbiddenException('Not authorised');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_A_PARTY);
         if (booking.status === client_1.BookingStatus.CANCELLED) {
-            throw new common_1.BadRequestException('Already cancelled');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ALREADY_CANCELLED);
         }
         await this.prisma.booking.update({
             where: { id: bookingId },
@@ -134,7 +165,7 @@ let BookingsService = BookingsService_1 = class BookingsService {
             },
         });
         if (!booking)
-            throw new common_1.NotFoundException('Booking not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.BOOKING_NOT_FOUND);
         return booking;
     }
     async findActiveForPassenger(passengerId) {
@@ -165,6 +196,50 @@ let BookingsService = BookingsService_1 = class BookingsService {
             },
         });
     }
+    async findMyChats(userId) {
+        const [asPassenger, asDriver] = await Promise.all([
+            this.prisma.booking.findMany({
+                where: { passengerId: userId, status: { not: 'CANCELLED' } },
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    trip: {
+                        include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+                    },
+                },
+            }),
+            this.prisma.booking.findMany({
+                where: { trip: { driverId: userId }, status: { not: 'CANCELLED' } },
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    passenger: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+                    trip: true,
+                },
+            }),
+        ]);
+        const passengerChats = asPassenger.map((b) => ({
+            bookingId: b.id,
+            bookingStatus: b.status,
+            tripOrigin: b.trip.originAddress,
+            tripDest: b.trip.destAddress,
+            departureAt: b.trip.departureAt.toISOString(),
+            otherPartyId: b.trip.driver.id,
+            otherPartyName: `${b.trip.driver.firstName} ${b.trip.driver.lastName}`.trim(),
+            otherPartyAvatarUrl: b.trip.driver.avatarUrl ?? null,
+            myRole: 'PASSENGER',
+        }));
+        const driverChats = asDriver.map((b) => ({
+            bookingId: b.id,
+            bookingStatus: b.status,
+            tripOrigin: b.trip.originAddress,
+            tripDest: b.trip.destAddress,
+            departureAt: b.trip.departureAt.toISOString(),
+            otherPartyId: b.passenger.id,
+            otherPartyName: `${b.passenger.firstName} ${b.passenger.lastName}`.trim(),
+            otherPartyAvatarUrl: b.passenger.avatarUrl ?? null,
+            myRole: 'DRIVER',
+        }));
+        return [...passengerChats, ...driverChats].sort((a, b) => new Date(b.departureAt).getTime() - new Date(a.departureAt).getTime());
+    }
     async checkModelBThreshold(tripId) {
         const trip = await this.prisma.trip.findUnique({
             where: { id: tripId },
@@ -172,12 +247,16 @@ let BookingsService = BookingsService_1 = class BookingsService {
         });
         if (!trip || trip.status !== client_1.TripStatus.ACTIVE)
             return;
-        const confirmed = await this.prisma.booking.aggregate({
-            where: { tripId, status: client_1.BookingStatus.CONFIRMED },
+        const pending = await this.prisma.booking.aggregate({
+            where: { tripId, status: client_1.BookingStatus.PENDING },
             _sum: { seats: true },
         });
-        const bookedSeats = confirmed._sum.seats ?? 0;
-        if (bookedSeats >= (trip.minPassengers ?? 0)) {
+        const pendingSeats = pending._sum.seats ?? 0;
+        if (pendingSeats >= (trip.minPassengers ?? 0)) {
+            await this.prisma.booking.updateMany({
+                where: { tripId, status: client_1.BookingStatus.PENDING },
+                data: { status: client_1.BookingStatus.CONFIRMED },
+            });
             const confirmedBookings = await this.prisma.booking.findMany({
                 where: { tripId, status: client_1.BookingStatus.CONFIRMED },
                 select: { passengerId: true },

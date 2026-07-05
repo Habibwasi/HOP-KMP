@@ -11,14 +11,18 @@ const common_1 = require("@nestjs/common");
 const supabase_js_1 = require("@supabase/supabase-js");
 const config_1 = require("@nestjs/config");
 const prisma_module_1 = require("../prisma/prisma.module");
+const mail_module_1 = require("../mail/mail.module");
 const supabase_guard_1 = require("./supabase.guard");
+const auth_controller_1 = require("./auth.controller");
+const email_hook_controller_1 = require("./email-hook.controller");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [prisma_module_1.PrismaModule, mail_module_1.MailModule],
+        controllers: [auth_controller_1.AuthController, email_hook_controller_1.EmailHookController],
         providers: [
             {
                 provide: 'SUPABASE_CLIENT',

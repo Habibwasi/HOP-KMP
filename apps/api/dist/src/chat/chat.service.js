@@ -12,6 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 let ChatService = class ChatService {
     prisma;
     constructor(prisma) {
@@ -23,11 +25,11 @@ let ChatService = class ChatService {
             include: { trip: { select: { driverId: true } } },
         });
         if (!booking)
-            throw new common_1.NotFoundException('Booking not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.BOOKING_NOT_FOUND);
         const isPassenger = booking.passengerId === userId;
         const isDriver = booking.trip.driverId === userId;
         if (!isPassenger && !isDriver)
-            throw new common_1.ForbiddenException('Not a participant');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_A_PARTICIPANT);
     }
     async createMessage(bookingId, senderId, senderName, body) {
         return this.prisma.chatMessage.create({

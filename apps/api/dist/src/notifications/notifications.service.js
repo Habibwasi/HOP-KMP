@@ -164,8 +164,8 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             update: { userId },
         });
     }
-    async removeToken(token) {
-        return this.prisma.pushToken.deleteMany({ where: { token } });
+    async removeToken(token, userId) {
+        return this.prisma.pushToken.deleteMany({ where: { token, userId } });
     }
     async getForUser(userId) {
         return this.prisma.notification.findMany({

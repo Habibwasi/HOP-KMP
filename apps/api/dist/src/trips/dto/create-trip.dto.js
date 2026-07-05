@@ -24,6 +24,7 @@ class CreateTripDto {
     departureAt;
     seats;
     recurringDays;
+    windowDays;
     minPassengers;
     thresholdDeadline;
 }
@@ -79,6 +80,13 @@ __decorate([
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], CreateTripDto.prototype, "recurringDays", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(7),
+    (0, class_validator_1.Max)(90),
+    __metadata("design:type", Number)
+], CreateTripDto.prototype, "windowDays", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsInt)(),

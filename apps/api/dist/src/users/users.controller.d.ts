@@ -1,3 +1,4 @@
+import { OnModuleInit } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { UsersService } from './users.service';
 import { RatingsService } from '../ratings/ratings.service';
@@ -12,13 +13,14 @@ declare class PushTokenDto {
     token: string;
     platform: string;
 }
-export declare class UsersController {
+export declare class UsersController implements OnModuleInit {
     private users;
     private ratings;
     private notifications;
     private readonly supabase;
     private readonly logger;
     constructor(users: UsersService, ratings: RatingsService, notifications: NotificationsService, supabase: SupabaseClient);
+    onModuleInit(): Promise<void>;
     createProfile(req: any, dto: CreateProfileDto): Promise<{
         id: string;
         phone: string | null;
@@ -57,6 +59,25 @@ export declare class UsersController {
         completedTrips: number;
     }>;
     updateMe(req: any, dto: UpdateUserDto): Promise<{
+        id: string;
+        phone: string | null;
+        email: string | null;
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+        role: import("@prisma/client").$Enums.Role;
+        isVerified: boolean;
+        isBanned: boolean;
+        banExpiresAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        mobilepayNumber: string | null;
+        isAdmin: boolean;
+    }>;
+    uploadAvatar(req: any, file: {
+        buffer: Buffer;
+        mimetype: string;
+    } | undefined): Promise<{
         id: string;
         phone: string | null;
         email: string | null;

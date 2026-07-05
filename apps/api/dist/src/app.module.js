@@ -11,6 +11,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
+const setup_1 = require("@sentry/nestjs/setup");
 const config_1 = require("@nestjs/config");
 const bullmq_1 = require("@nestjs/bullmq");
 const schedule_1 = require("@nestjs/schedule");
@@ -28,14 +29,17 @@ const places_module_1 = require("./places/places.module");
 const search_history_module_1 = require("./search-history/search-history.module");
 const aggregates_module_1 = require("./aggregates/aggregates.module");
 const chat_module_1 = require("./chat/chat.module");
+const help_center_module_1 = require("./help-center/help-center.module");
 const health_controller_1 = require("./health.controller");
+const privacy_controller_1 = require("./privacy.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        controllers: [health_controller_1.HealthController],
+        controllers: [health_controller_1.HealthController, privacy_controller_1.PrivacyController],
         imports: [
+            setup_1.SentryModule.forRoot(),
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             schedule_1.ScheduleModule.forRoot(),
             bullmq_1.BullModule.forRootAsync({
@@ -71,6 +75,7 @@ exports.AppModule = AppModule = __decorate([
             search_history_module_1.SearchHistoryModule,
             aggregates_module_1.AggregatesModule,
             chat_module_1.ChatModule,
+            help_center_module_1.HelpCenterModule,
         ],
     })
 ], AppModule);

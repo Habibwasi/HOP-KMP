@@ -37,8 +37,8 @@ let NotificationsController = class NotificationsController {
     register(req, dto) {
         return this.notifications.registerToken(req.user.id, dto.token, dto.platform);
     }
-    remove(token) {
-        return this.notifications.removeToken(token);
+    remove(req, token) {
+        return this.notifications.removeToken(token, req.user.id);
     }
     getAll(req) {
         return this.notifications.getForUser(req.user.id);
@@ -61,9 +61,10 @@ __decorate([
 ], NotificationsController.prototype, "register", null);
 __decorate([
     (0, common_1.Delete)('token'),
-    __param(0, (0, common_1.Body)('token')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)('token')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "remove", null);
 __decorate([

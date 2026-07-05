@@ -18,6 +18,7 @@ const supabase_guard_1 = require("../auth/supabase.guard");
 const trips_service_1 = require("./trips.service");
 const create_trip_dto_1 = require("./dto/create-trip.dto");
 const search_trips_dto_1 = require("./dto/search-trips.dto");
+const update_trip_dto_1 = require("./dto/update-trip.dto");
 let TripsController = class TripsController {
     trips;
     constructor(trips) {
@@ -38,11 +39,20 @@ let TripsController = class TripsController {
     myTrips(req) {
         return this.trips.findByDriver(req.user.id);
     }
+    getTripPassengers(id, req) {
+        return this.trips.getTripPassengers(id, req.user.id);
+    }
     findOne(id) {
         return this.trips.findById(id);
     }
     cancel(id, req) {
         return this.trips.cancel(id, req.user.id);
+    }
+    update(id, req, dto) {
+        return this.trips.update(id, req.user.id, dto);
+    }
+    stopRecurring(id, req) {
+        return this.trips.stopRecurring(id, req.user.id);
     }
     complete(id, req) {
         return this.trips.complete(id, req.user.id);
@@ -90,6 +100,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TripsController.prototype, "myTrips", null);
 __decorate([
+    (0, common_1.Get)(':id/bookings'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], TripsController.prototype, "getTripPassengers", null);
+__decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -97,7 +116,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TripsController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Patch)(':id/cancel'),
+    (0, common_1.Delete)(':id'),
     (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Req)()),
@@ -106,7 +125,26 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TripsController.prototype, "cancel", null);
 __decorate([
-    (0, common_1.Patch)(':id/complete'),
+    (0, common_1.Patch)(':id'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, update_trip_dto_1.UpdateTripDto]),
+    __metadata("design:returntype", void 0)
+], TripsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Post)(':id/stop-recurring'),
+    (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], TripsController.prototype, "stopRecurring", null);
+__decorate([
+    (0, common_1.Post)(':id/complete'),
     (0, common_1.UseGuards)(supabase_guard_1.SupabaseGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Req)()),

@@ -12,6 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 let AdminService = class AdminService {
     prisma;
     constructor(prisma) {
@@ -38,7 +40,7 @@ let AdminService = class AdminService {
     async banUser(userId, durationDays) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user)
-            throw new common_1.NotFoundException('User not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.USER_NOT_FOUND);
         const banExpiresAt = durationDays === 'permanent'
             ? new Date('9999-12-31')
             : new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
@@ -71,7 +73,7 @@ let AdminService = class AdminService {
     async reviewLicence(licenceId, adminId, approved) {
         const licence = await this.prisma.driverLicence.findUnique({ where: { id: licenceId } });
         if (!licence)
-            throw new common_1.NotFoundException('Licence not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.LICENCE_NOT_FOUND);
         await this.prisma.driverLicence.update({
             where: { id: licenceId },
             data: {

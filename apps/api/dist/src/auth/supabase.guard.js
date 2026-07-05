@@ -17,6 +17,8 @@ exports.SupabaseGuard = void 0;
 const common_1 = require("@nestjs/common");
 const supabase_js_1 = require("@supabase/supabase-js");
 const prisma_service_1 = require("../prisma/prisma.service");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 let SupabaseGuard = SupabaseGuard_1 = class SupabaseGuard {
     supabase;
     prisma;
@@ -29,10 +31,10 @@ let SupabaseGuard = SupabaseGuard_1 = class SupabaseGuard {
         const request = context.switchToHttp().getRequest();
         const token = this.extractBearerToken(request);
         if (!token)
-            throw new common_1.UnauthorizedException();
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TOKEN_MISSING);
         const { data: { user: supabaseUser }, error, } = await this.supabase.auth.getUser(token);
         if (error || !supabaseUser)
-            throw new common_1.UnauthorizedException();
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TOKEN_INVALID);
         let user = await this.prisma.user.findUnique({ where: { id: supabaseUser.id } });
         if (!user) {
             const email = supabaseUser.email;
@@ -40,26 +42,23 @@ let SupabaseGuard = SupabaseGuard_1 = class SupabaseGuard {
                 const existingByEmail = await this.prisma.user.findUnique({ where: { email } });
                 if (existingByEmail) {
                     this.logger.log(`Migrating legacy user ${existingByEmail.id} → ${supabaseUser.id}`);
-                    user = await this.prisma.user.create({
-                        data: {
-                            id: supabaseUser.id,
-                            email: existingByEmail.email,
-                            phone: existingByEmail.phone,
-                            firstName: existingByEmail.firstName,
-                            lastName: existingByEmail.lastName,
-                            avatarUrl: existingByEmail.avatarUrl,
-                            role: existingByEmail.role,
-                            isVerified: existingByEmail.isVerified,
-                            isAdmin: existingByEmail.isAdmin,
-                        },
-                    });
+                    await this.prisma.$executeRaw `UPDATE "User" SET "id" = ${supabaseUser.id} WHERE "id" = ${existingByEmail.id}`;
+                    user = await this.prisma.user.findUniqueOrThrow({ where: { id: supabaseUser.id } });
                 }
             }
         }
         if (!user) {
             const meta = (supabaseUser.user_metadata ?? {});
-            const firstName = meta['firstName'] ?? meta['first_name'];
-            const lastName = meta['lastName'] ?? meta['last_name'];
+            const fullNameParts = (meta['full_name'] ?? '').trim().split(/\s+/);
+            const firstName = meta['firstName'] ??
+                meta['first_name'] ??
+                meta['given_name'] ??
+                (fullNameParts.length >= 1 ? fullNameParts[0] : undefined);
+            const lastName = meta['lastName'] ??
+                meta['last_name'] ??
+                meta['family_name'] ??
+                (fullNameParts.length >= 2 ? fullNameParts.slice(1).join(' ') : undefined);
+            const avatarUrl = meta['avatar_url'] ?? meta['picture'] ?? null;
             if (firstName && lastName) {
                 this.logger.log(`Auto-creating Prisma profile for Supabase user ${supabaseUser.id}`);
                 user = await this.prisma.user.upsert({
@@ -70,12 +69,13 @@ let SupabaseGuard = SupabaseGuard_1 = class SupabaseGuard {
                         phone: meta['phone'] ?? null,
                         firstName,
                         lastName,
+                        avatarUrl,
                     },
                     update: {},
                 });
             }
             else {
-                throw new common_1.UnauthorizedException('Profile not found. Please register again or contact support.');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.PROFILE_NOT_FOUND);
             }
         }
         if (user.isBanned) {
@@ -86,7 +86,7 @@ let SupabaseGuard = SupabaseGuard_1 = class SupabaseGuard {
                 });
             }
             else {
-                throw new common_1.UnauthorizedException('Account banned');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ACCOUNT_BANNED);
             }
         }
         request['user'] = user;

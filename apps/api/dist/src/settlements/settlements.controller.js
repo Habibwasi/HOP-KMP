@@ -22,11 +22,17 @@ let SettlementsController = class SettlementsController {
     constructor(settlements) {
         this.settlements = settlements;
     }
+    getForTrip(tripId, req) {
+        return this.settlements.getSettlementsForTrip(tripId, req.user.id);
+    }
     get(bookingId, req) {
         return this.settlements.getSettlement(bookingId, req.user.id);
     }
     markPaid(bookingId, req) {
         return this.settlements.markPassengerPaid(bookingId, req.user.id);
+    }
+    unmarkPaid(bookingId, req) {
+        return this.settlements.unmarkPaid(bookingId, req.user.id);
     }
     confirmReceived(bookingId, req) {
         return this.settlements.markDriverConfirmed(bookingId, req.user.id);
@@ -36,6 +42,14 @@ let SettlementsController = class SettlementsController {
     }
 };
 exports.SettlementsController = SettlementsController;
+__decorate([
+    (0, common_1.Get)('trip/:tripId'),
+    __param(0, (0, common_1.Param)('tripId')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], SettlementsController.prototype, "getForTrip", null);
 __decorate([
     (0, common_1.Get)(':bookingId'),
     __param(0, (0, common_1.Param)('bookingId')),
@@ -53,6 +67,15 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], SettlementsController.prototype, "markPaid", null);
+__decorate([
+    (0, common_1.Post)(':bookingId/unmark-paid'),
+    (0, common_1.HttpCode)(200),
+    __param(0, (0, common_1.Param)('bookingId')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], SettlementsController.prototype, "unmarkPaid", null);
 __decorate([
     (0, common_1.Post)(':bookingId/confirm-received'),
     (0, common_1.HttpCode)(200),

@@ -14,6 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AggregatesController = void 0;
 const common_1 = require("@nestjs/common");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 const supabase_guard_1 = require("../auth/supabase.guard");
 const aggregates_service_1 = require("./aggregates.service");
 let AggregatesController = class AggregatesController {
@@ -24,14 +26,14 @@ let AggregatesController = class AggregatesController {
     async driverEarningsSeries(req, daysStr) {
         const days = daysStr ? parseInt(daysStr, 10) : 7;
         if (isNaN(days) || days < 1 || days > 30) {
-            throw new common_1.BadRequestException('days must be between 1 and 30');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.INVALID_PARAM, 'days must be between 1 and 30');
         }
         return this.aggregates.getDriverEarningsSeries(req.user.id, days);
     }
     async popularRoutes(limitStr) {
         const limit = limitStr ? parseInt(limitStr, 10) : 5;
         if (isNaN(limit) || limit < 1 || limit > 50) {
-            throw new common_1.BadRequestException('limit must be between 1 and 50');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.INVALID_PARAM, 'limit must be between 1 and 50');
         }
         return this.aggregates.getPopularRoutes(limit);
     }

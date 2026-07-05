@@ -1,6 +1,7 @@
 import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { SearchTripsDto } from './dto/search-trips.dto';
+import { UpdateTripDto } from './dto/update-trip.dto';
 export declare class TripsController {
     private trips;
     constructor(trips: TripsService);
@@ -36,6 +37,36 @@ export declare class TripsController {
     }) | null>;
     search(dto: SearchTripsDto): Promise<{
         availableSeats: number;
+        bookedSeats: undefined;
+        id: string;
+        driverId: string;
+        model: string;
+        originLat: number;
+        originLng: number;
+        originAddress: string;
+        destLat: number;
+        destLng: number;
+        destAddress: string;
+        departureAt: Date;
+        seats: number;
+        pricePerSeat: number;
+        distanceKm: number | null;
+        status: string;
+        isActive: boolean;
+        isRecurring: boolean;
+        recurringDays: string[];
+        minPassengers: number | null;
+        thresholdDeadline: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        driver: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        };
+    }[] | {
+        availableSeats: number;
         bookings: undefined;
         driver: {
             id: string;
@@ -69,12 +100,8 @@ export declare class TripsController {
         bookings: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             status: import("@prisma/client").$Enums.BookingStatus;
-            passengerId: string;
             seats: number;
-            tripId: string;
-            totalOere: number;
         }[];
     } & {
         id: string;
@@ -99,16 +126,13 @@ export declare class TripsController {
         isRecurring: boolean;
         isActive: boolean;
     })[]>;
-    myTripsAsPassenger(req: any): Promise<({
+    myTripsAsPassenger(req: any): Promise<{
+        bookingId: string;
+        bookingStatus: import("@prisma/client").$Enums.BookingStatus;
         bookings: {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             status: import("@prisma/client").$Enums.BookingStatus;
-            passengerId: string;
             seats: number;
-            tripId: string;
-            totalOere: number;
         }[];
         driver: {
             id: string;
@@ -116,7 +140,6 @@ export declare class TripsController {
             lastName: string;
             avatarUrl: string | null;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -138,17 +161,13 @@ export declare class TripsController {
         recurringDays: string[];
         isRecurring: boolean;
         isActive: boolean;
-    })[]>;
+    }[]>;
     myTrips(req: any): Promise<({
         bookings: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             status: import("@prisma/client").$Enums.BookingStatus;
-            passengerId: string;
             seats: number;
-            tripId: string;
-            totalOere: number;
         }[];
     } & {
         id: string;
@@ -173,6 +192,14 @@ export declare class TripsController {
         isRecurring: boolean;
         isActive: boolean;
     })[]>;
+    getTripPassengers(id: string, req: any): Promise<{
+        bookingId: string;
+        passengerId: string;
+        fullName: string;
+        rating: number;
+        seats: number;
+        avatarUrl: string | null;
+    }[]>;
     findOne(id: string): Promise<{
         bookings: ({
             passenger: {
@@ -222,6 +249,40 @@ export declare class TripsController {
     }>;
     cancel(id: string, req: any): Promise<{
         cancelled: boolean;
+    }>;
+    update(id: string, req: any, dto: UpdateTripDto): Promise<{
+        driver: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        model: import("@prisma/client").$Enums.TripModel;
+        driverId: string;
+        status: import("@prisma/client").$Enums.TripStatus;
+        originLat: number;
+        originLng: number;
+        originAddress: string;
+        destLat: number;
+        destLng: number;
+        destAddress: string;
+        departureAt: Date;
+        seats: number;
+        pricePerSeat: number;
+        minPassengers: number | null;
+        thresholdDeadline: Date | null;
+        distanceKm: number | null;
+        recurringDays: string[];
+        isRecurring: boolean;
+        isActive: boolean;
+    }>;
+    stopRecurring(id: string, req: any): Promise<{
+        stopped: boolean;
+        cancelledCount: number;
     }>;
     complete(id: string, req: any): Promise<{
         completed: boolean;

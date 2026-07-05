@@ -15,6 +15,8 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const libphonenumber_js_1 = require("libphonenumber-js");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 let UsersService = UsersService_1 = class UsersService {
     prisma;
     logger = new common_1.Logger(UsersService_1.name);
@@ -33,20 +35,20 @@ let UsersService = UsersService_1 = class UsersService {
     async createProfile(supabaseId, data) {
         if (data.phone) {
             if (!(0, libphonenumber_js_1.isValidPhoneNumber)(data.phone)) {
-                throw new common_1.BadRequestException('Phone number must be in international format, e.g. +45 20 12 34 56');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.INVALID_PHONE);
             }
             data.phone = (0, libphonenumber_js_1.parsePhoneNumber)(data.phone).format('E.164');
         }
         if (data.phone) {
             const existing = await this.prisma.user.findUnique({ where: { phone: data.phone } });
             if (existing && existing.id !== supabaseId) {
-                throw new common_1.ConflictException('Phone number already in use');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.PHONE_TAKEN);
             }
         }
         if (data.email) {
             const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
             if (existing && existing.id !== supabaseId) {
-                throw new common_1.ConflictException('Email already in use');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.EMAIL_TAKEN);
             }
         }
         try {
@@ -70,7 +72,7 @@ let UsersService = UsersService_1 = class UsersService {
         catch (e) {
             if (e instanceof client_1.Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
                 const fields = e.meta?.target?.join(', ') ?? 'field';
-                throw new common_1.ConflictException(`${fields} already in use`);
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.FIELD_TAKEN, `${fields} already in use`);
             }
             throw e;
         }
@@ -85,6 +87,12 @@ let UsersService = UsersService_1 = class UsersService {
         return this.prisma.user.update({
             where: { id: userId },
             data,
+        });
+    }
+    async updateAvatarUrl(userId, avatarUrl) {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: { avatarUrl },
         });
     }
     async reportUser(reportedId, reporterId, reason) {

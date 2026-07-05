@@ -14,6 +14,7 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
 const CO2_KG_PER_TRIP = 4.2;
+const toLocalDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 let AggregatesService = class AggregatesService {
     prisma;
     constructor(prisma) {
@@ -25,19 +26,19 @@ let AggregatesService = class AggregatesService {
         since.setDate(since.getDate() - (days - 1));
         const bookings = await this.prisma.booking.findMany({
             where: {
-                status: client_1.BookingStatus.CONFIRMED,
+                status: { in: [client_1.BookingStatus.AWAITING_PAYMENT, client_1.BookingStatus.COMPLETED] },
                 trip: {
                     driverId,
                     status: client_1.TripStatus.COMPLETED,
+                    departureAt: { gte: since },
                 },
-                createdAt: { gte: since },
             },
-            select: { totalOere: true, createdAt: true },
+            select: { totalOere: true, trip: { select: { departureAt: true } } },
         });
         const dailyMap = new Map();
         let totalOere = 0;
         for (const b of bookings) {
-            const dateKey = b.createdAt.toISOString().split('T')[0];
+            const dateKey = toLocalDateKey(b.trip.departureAt);
             dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + b.totalOere);
             totalOere += b.totalOere;
         }
@@ -46,7 +47,7 @@ let AggregatesService = class AggregatesService {
             const d = new Date();
             d.setHours(0, 0, 0, 0);
             d.setDate(d.getDate() - i);
-            const key = d.toISOString().split('T')[0];
+            const key = toLocalDateKey(d);
             series.push({ date: key, earningsOere: dailyMap.get(key) ?? 0 });
         }
         return { series, totalOere };
@@ -55,7 +56,7 @@ let AggregatesService = class AggregatesService {
         const since = new Date();
         since.setDate(since.getDate() - 7);
         const trips = await this.prisma.trip.findMany({
-            where: { createdAt: { gte: since } },
+            where: { departureAt: { gte: since } },
             select: {
                 originAddress: true,
                 destAddress: true,
@@ -90,7 +91,7 @@ let AggregatesService = class AggregatesService {
         const since = new Date();
         since.setDate(since.getDate() - 7);
         const trips = await this.prisma.trip.findMany({
-            where: { createdAt: { gte: since } },
+            where: { departureAt: { gte: since } },
             orderBy: { createdAt: 'desc' },
             select: {
                 originAddress: true,

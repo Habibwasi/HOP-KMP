@@ -53,7 +53,47 @@ export declare class BookingsService {
         tripId: string;
         totalOere: number;
     }>;
-    confirm(bookingId: string): Promise<{
+    confirm(bookingId: string, driverId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.BookingStatus;
+        passengerId: string;
+        seats: number;
+        tripId: string;
+        totalOere: number;
+    }>;
+    findByIdAuthorized(id: string, requesterId: string): Promise<{
+        trip: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            model: import("@prisma/client").$Enums.TripModel;
+            driverId: string;
+            status: import("@prisma/client").$Enums.TripStatus;
+            originLat: number;
+            originLng: number;
+            originAddress: string;
+            destLat: number;
+            destLng: number;
+            destAddress: string;
+            departureAt: Date;
+            seats: number;
+            pricePerSeat: number;
+            minPassengers: number | null;
+            thresholdDeadline: Date | null;
+            distanceKm: number | null;
+            recurringDays: string[];
+            isRecurring: boolean;
+            isActive: boolean;
+        };
+        passenger: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        };
+    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -189,5 +229,16 @@ export declare class BookingsService {
         tripId: string;
         totalOere: number;
     })[]>;
+    findMyChats(userId: string): Promise<{
+        bookingId: string;
+        bookingStatus: import("@prisma/client").$Enums.BookingStatus;
+        tripOrigin: string;
+        tripDest: string;
+        departureAt: string;
+        otherPartyId: string;
+        otherPartyName: string;
+        otherPartyAvatarUrl: string | null;
+        myRole: string;
+    }[]>;
     checkModelBThreshold(tripId: string): Promise<void>;
 }

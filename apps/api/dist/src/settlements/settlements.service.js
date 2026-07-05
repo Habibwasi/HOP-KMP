@@ -39,7 +39,8 @@ let SettlementsService = class SettlementsService {
         const settlement = await this.prisma.rideSettlement.findUnique({ where: { bookingId } });
         if (!settlement)
             throw new common_1.NotFoundException('Settlement not available yet');
-        return settlement;
+        const booking = await this.prisma.booking.findUnique({ where: { id: bookingId }, select: { tripId: true } });
+        return { ...settlement, tripId: booking?.tripId ?? null };
     }
     async markPassengerPaid(bookingId, userId) {
         const { booking, isPassenger } = await this.assertParty(bookingId, userId);
@@ -106,8 +107,57 @@ let SettlementsService = class SettlementsService {
         });
         return updatedSettlement;
     }
+    async unmarkPaid(bookingId, userId) {
+        const { booking, isPassenger } = await this.assertParty(bookingId, userId);
+        if (!isPassenger)
+            throw new common_1.ForbiddenException('Only the passenger can unmark payment');
+        const settlement = await this.prisma.rideSettlement.findUnique({ where: { bookingId } });
+        if (!settlement)
+            throw new common_1.NotFoundException('Settlement not found');
+        if (!settlement.passengerPaidAt)
+            throw new common_1.BadRequestException('Payment has not been marked');
+        if (settlement.driverConfirmedAt)
+            throw new common_1.BadRequestException('Driver has already confirmed — cannot undo');
+        return this.prisma.rideSettlement.update({
+            where: { bookingId },
+            data: { passengerPaidAt: null },
+        });
+    }
+    async getSettlementsForTrip(tripId, userId) {
+        const trip = await this.prisma.trip.findUnique({
+            where: { id: tripId },
+            select: { driverId: true },
+        });
+        if (!trip)
+            throw new common_1.NotFoundException('Trip not found');
+        if (trip.driverId !== userId)
+            throw new common_1.ForbiddenException('Only the driver can view trip settlements');
+        const bookings = await this.prisma.booking.findMany({
+            where: { tripId, status: { not: 'CANCELLED' } },
+            include: {
+                passenger: { select: { firstName: true, lastName: true } },
+                settlement: {
+                    select: {
+                        passengerPaidAt: true,
+                        driverConfirmedAt: true,
+                        suggestedAmountOere: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+        return bookings.map((b) => ({
+            bookingId: b.id,
+            passengerFirstName: b.passenger.firstName,
+            passengerLastName: b.passenger.lastName,
+            suggestedAmountOere: b.settlement?.suggestedAmountOere ?? 0,
+            passengerPaidAt: b.settlement?.passengerPaidAt ?? null,
+            driverConfirmedAt: b.settlement?.driverConfirmedAt ?? null,
+            bookingStatus: b.status,
+        }));
+    }
     async dispute(bookingId, userId, reason) {
-        const { booking } = await this.assertParty(bookingId, userId);
+        const { booking, isPassenger } = await this.assertParty(bookingId, userId);
         if (booking.status !== client_1.BookingStatus.AWAITING_PAYMENT) {
             throw new common_1.BadRequestException('Booking is not awaiting payment');
         }
@@ -126,6 +176,26 @@ let SettlementsService = class SettlementsService {
                 data: { status: client_1.BookingStatus.DISPUTED },
             }),
         ]);
+        const notifyUserId = isPassenger ? booking.trip.driverId : booking.passengerId;
+        const title = 'Payment dispute raised';
+        const body = isPassenger
+            ? 'The passenger has raised a dispute for this trip payment.'
+            : 'The driver has raised a dispute for this trip payment.';
+        const recipientRole = isPassenger ? 'driver' : 'passenger';
+        await this.notifications.sendToUser(notifyUserId, title, body, {
+            type: 'PAYMENT_DISPUTED',
+            bookingId,
+            recipientRole,
+        }).catch(() => { });
+        await this.prisma.notification.create({
+            data: {
+                userId: notifyUserId,
+                type: 'PAYMENT_DISPUTED',
+                title,
+                body,
+                deepLinkId: bookingId,
+            },
+        });
         return updatedSettlement;
     }
 };

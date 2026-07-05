@@ -1,8 +1,14 @@
 import { BookingsService } from './bookings.service';
+import { RatingsService } from '../ratings/ratings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+declare class RateBookingDto {
+    stars: number;
+    comment?: string;
+}
 export declare class BookingsController {
     private bookings;
-    constructor(bookings: BookingsService);
+    private ratings;
+    constructor(bookings: BookingsService, ratings: RatingsService);
     create(req: any, dto: CreateBookingDto): Promise<{
         trip: {
             driver: {
@@ -130,7 +136,18 @@ export declare class BookingsController {
         tripId: string;
         totalOere: number;
     }) | null>;
-    findOne(id: string): Promise<{
+    myChats(req: any): Promise<{
+        bookingId: string;
+        bookingStatus: import("@prisma/client").$Enums.BookingStatus;
+        tripOrigin: string;
+        tripDest: string;
+        departureAt: string;
+        otherPartyId: string;
+        otherPartyName: string;
+        otherPartyAvatarUrl: string | null;
+        myRole: string;
+    }[]>;
+    findOne(id: string, req: any): Promise<{
         trip: {
             id: string;
             createdAt: Date;
@@ -173,4 +190,23 @@ export declare class BookingsController {
     cancel(id: string, req: any): Promise<{
         cancelled: boolean;
     }>;
+    confirm(id: string, req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.BookingStatus;
+        passengerId: string;
+        seats: number;
+        tripId: string;
+        totalOere: number;
+    }>;
+    rate(bookingId: string, req: any, body: RateBookingDto): Promise<{
+        id: string;
+        createdAt: Date;
+        rateeId: string;
+        score: number;
+        comment: string | null;
+        raterId: string;
+    }>;
 }
+export {};

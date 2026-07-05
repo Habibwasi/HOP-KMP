@@ -31,29 +31,32 @@ let ChatGateway = ChatGateway_1 = class ChatGateway {
         this.prisma = prisma;
         this.chatService = chatService;
     }
-    async handleConnection(client) {
-        const token = client.handshake.auth?.token ??
-            client.handshake.headers?.authorization?.replace(/^Bearer\s+/i, '');
-        if (!token) {
-            this.logger.warn(`[Chat] Rejected unauthenticated connection ${client.id}`);
-            client.disconnect(true);
-            return;
-        }
-        const { data: { user }, error } = await this.supabase.auth.getUser(token);
-        if (error || !user) {
-            this.logger.warn(`[Chat] Auth failed for connection ${client.id}: ${error?.message}`);
-            client.disconnect(true);
-            return;
-        }
-        const prismaUser = await this.prisma.user.findUnique({ where: { id: user.id } });
-        if (!prismaUser) {
-            client.disconnect(true);
-            return;
-        }
+    afterInit(server) {
+        server.use(async (socket, next) => {
+            const token = socket.handshake.auth?.token ??
+                socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, '');
+            if (!token) {
+                this.logger.warn(`[Chat] Rejected unauthenticated connection ${socket.id}`);
+                return next(new Error('Unauthorized'));
+            }
+            const { data: { user }, error } = await this.supabase.auth.getUser(token);
+            if (error || !user) {
+                this.logger.warn(`[Chat] Auth failed for connection ${socket.id}: ${error?.message}`);
+                return next(new Error('Unauthorized'));
+            }
+            const prismaUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+            if (!prismaUser) {
+                return next(new Error('Unauthorized'));
+            }
+            const sock = socket;
+            sock.userId = prismaUser.id;
+            sock.userFullName = `${prismaUser.firstName} ${prismaUser.lastName}`.trim();
+            next();
+        });
+    }
+    handleConnection(client) {
         const sock = client;
-        sock.userId = prismaUser.id;
-        sock.userFullName = `${prismaUser.firstName} ${prismaUser.lastName}`.trim();
-        this.logger.log(`[Chat] Connected: ${client.id} user=${prismaUser.id}`);
+        this.logger.log(`[Chat] Connected: ${client.id} user=${sock.userId}`);
     }
     handleDisconnect(client) {
         this.logger.log(`[Chat] Disconnected: ${client.id}`);
@@ -70,6 +73,8 @@ let ChatGateway = ChatGateway_1 = class ChatGateway {
         }
         await client.join(`booking:${payload.bookingId}`);
         this.logger.log(`[Chat] ${sock.userId} joined booking:${payload.bookingId}`);
+        const history = await this.chatService.getHistory(payload.bookingId, sock.userId);
+        client.emit('history', history);
         return { joined: payload.bookingId };
     }
     async handleMessage(client, payload) {
@@ -78,14 +83,12 @@ let ChatGateway = ChatGateway_1 = class ChatGateway {
             throw new websockets_1.WsException('Unauthorized');
         if (!payload.body?.trim())
             throw new websockets_1.WsException('Empty message');
-        try {
-            await this.chatService.assertParticipant(payload.bookingId, sock.userId);
-        }
-        catch {
+        if (!client.rooms.has(`booking:${payload.bookingId}`)) {
             throw new websockets_1.WsException('Not a participant of this booking');
         }
         const message = await this.chatService.createMessage(payload.bookingId, sock.userId, sock.userFullName, payload.body.trim());
-        this.server.to(`booking:${payload.bookingId}`).emit('message', message);
+        client.to(`booking:${payload.bookingId}`).emit('message', message);
+        client.emit('message', message);
         return { sent: true };
     }
     async handleHistory(client, payload) {
@@ -129,7 +132,7 @@ exports.ChatGateway = ChatGateway = ChatGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: '/chat',
         transports: ['websocket'],
-        cors: { origin: '*' },
+        cors: { origin: process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) ?? '*' },
     }),
     __param(0, (0, common_1.Inject)('SUPABASE_CLIENT')),
     __metadata("design:paramtypes", [supabase_js_1.SupabaseClient,

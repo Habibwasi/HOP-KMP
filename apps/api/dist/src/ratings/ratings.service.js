@@ -12,8 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RatingsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-const client_1 = require("@prisma/client");
-const RATING_WINDOW_HOURS = 48;
 let RatingsService = class RatingsService {
     prisma;
     constructor(prisma) {
@@ -27,10 +25,8 @@ let RatingsService = class RatingsService {
             where: { id: dto.tripId },
             include: {
                 bookings: {
-                    where: {
-                        status: client_1.BookingStatus.CONFIRMED,
-                        passengerId: raterId,
-                    },
+                    where: { passengerId: raterId },
+                    select: { passengerId: true },
                 },
             },
         });
@@ -41,10 +37,16 @@ let RatingsService = class RatingsService {
         if (!isDriver && !isPassenger) {
             throw new common_1.BadRequestException('You were not part of this trip');
         }
-        const windowEnd = new Date(trip.departureAt);
-        windowEnd.setHours(windowEnd.getHours() + RATING_WINDOW_HOURS);
-        if (new Date() > windowEnd) {
-            throw new common_1.BadRequestException('Rating window has closed (48 hours after departure)');
+        if (isDriver) {
+            const passengerIds = new Set(trip.bookings.map((b) => b.passengerId));
+            if (!passengerIds.has(dto.rateeId)) {
+                throw new common_1.ForbiddenException('You can only rate passengers on this trip');
+            }
+        }
+        else {
+            if (dto.rateeId !== trip.driverId) {
+                throw new common_1.ForbiddenException('You can only rate the driver of this trip');
+            }
         }
         const existing = await this.prisma.rating.findFirst({
             where: { raterId, rateeId: dto.rateeId },

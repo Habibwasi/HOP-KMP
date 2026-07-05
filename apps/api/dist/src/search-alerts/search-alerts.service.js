@@ -11,6 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchAlertsService = void 0;
 const common_1 = require("@nestjs/common");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 let SearchAlertsService = class SearchAlertsService {
@@ -30,7 +32,7 @@ let SearchAlertsService = class SearchAlertsService {
             },
         });
         if (existing)
-            throw new common_1.ConflictException('Alert already exists for this route');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ALERT_ALREADY_EXISTS);
         return this.prisma.searchAlert.create({
             data: {
                 userId,
@@ -49,9 +51,9 @@ let SearchAlertsService = class SearchAlertsService {
     async remove(userId, id) {
         const alert = await this.prisma.searchAlert.findUnique({ where: { id } });
         if (!alert)
-            throw new common_1.NotFoundException('Alert not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.ALERT_NOT_FOUND);
         if (alert.userId !== userId)
-            throw new common_1.ForbiddenException();
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_A_PARTY);
         await this.prisma.searchAlert.update({ where: { id }, data: { isActive: false } });
         return { ok: true };
     }

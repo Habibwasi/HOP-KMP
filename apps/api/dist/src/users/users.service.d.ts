@@ -19,6 +19,7 @@ export declare class UsersService {
         lastName?: string;
         mobilepayNumber?: string;
     }): Promise<User>;
+    updateAvatarUrl(userId: string, avatarUrl: string): Promise<User>;
     reportUser(reportedId: string, reporterId: string, reason: string): Promise<void>;
     getCarDetails(userId: string): Promise<{
         id: string;

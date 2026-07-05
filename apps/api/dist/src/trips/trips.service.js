@@ -15,6 +15,8 @@ var TripsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TripsService = void 0;
 const common_1 = require("@nestjs/common");
+const app_exception_1 = require("../common/errors/app-exception");
+const api_error_codes_1 = require("../common/errors/api-error-codes");
 const bullmq_1 = require("@nestjs/bullmq");
 const bullmq_2 = require("bullmq");
 const prisma_service_1 = require("../prisma/prisma.service");
@@ -97,24 +99,24 @@ let TripsService = TripsService_1 = class TripsService {
     async create(driverId, dto) {
         const driver = await this.prisma.user.findUnique({ where: { id: driverId } });
         if (!driver?.mobilepayNumber) {
-            throw new common_1.BadRequestException('Please add your MobilePay number in your profile before creating a trip');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.MOBILEPAY_MISSING);
         }
         if (dto.model === client_1.TripModel.B) {
             if (!dto.minPassengers) {
-                throw new common_1.BadRequestException('minPassengers is required for Model B trips');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.MODEL_B_MISSING_MIN_PASSENGERS);
             }
             if (!dto.thresholdDeadline) {
-                throw new common_1.BadRequestException('thresholdDeadline is required for Model B trips');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.MODEL_B_MISSING_DEADLINE);
             }
             const deadline = new Date(dto.thresholdDeadline);
             const departure = new Date(dto.departureAt);
             if (deadline >= departure) {
-                throw new common_1.BadRequestException('thresholdDeadline must be before departureAt');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.MODEL_B_DEADLINE_AFTER_DEPARTURE);
             }
         }
         if (dto.model === client_1.TripModel.A) {
             if (!dto.recurringDays || dto.recurringDays.length === 0) {
-                throw new common_1.BadRequestException('recurringDays is required for Model A trips');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.MODEL_A_MISSING_RECURRING_DAYS);
             }
         }
         const distanceKm = dto.distanceMetres
@@ -135,17 +137,27 @@ let TripsService = TripsService_1 = class TripsService {
             distanceKm,
             isRecurring: dto.model === client_1.TripModel.A,
             recurringDays: dto.recurringDays ?? [],
+            windowDays: dto.windowDays ?? 30,
             minPassengers: dto.minPassengers,
             thresholdDeadline: dto.thresholdDeadline ? new Date(dto.thresholdDeadline) : null,
         };
         if (dto.model === client_1.TripModel.A) {
             const anchor = new Date(dto.departureAt);
-            const dates = buildRecurringDates(anchor, dto.recurringDays, 30);
+            const dates = buildRecurringDates(anchor, dto.recurringDays, dto.windowDays ?? 30);
             if (dates.length === 0) {
-                throw new common_1.BadRequestException('No occurrences found in the next 30 days for the selected days');
+                throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NO_OCCURRENCES);
             }
             const instances = dates.map((d) => ({ ...baseData, departureAt: d }));
             await this.prisma.trip.createMany({ data: instances });
+            await this.prisma.$executeRaw `
+        UPDATE "Trip"
+        SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.originLng}, ${dto.originLat}), 4326)::extensions.geography,
+            dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.destLng},   ${dto.destLat}),   4326)::extensions.geography
+        WHERE "driverId" = ${driverId}
+          AND "originAddress" = ${dto.originAddress}
+          AND "destAddress"   = ${dto.destAddress}
+          AND origin_geo IS NULL
+      `;
             const firstTrip = await this.prisma.trip.findFirst({
                 where: {
                     driverId,
@@ -165,14 +177,26 @@ let TripsService = TripsService_1 = class TripsService {
                     destAddress: firstTrip.destAddress,
                 });
             }
+            else {
+                this.logger.error(`[TripsService] Model A trips created for driver ${driverId} but findFirst returned null — MATCH_ALERTS_JOB not queued.`);
+            }
             return firstTrip;
         }
-        const trip = await this.prisma.trip.create({
-            data: {
-                ...baseData,
-                departureAt: new Date(dto.departureAt),
-            },
-            include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+        const trip = await this.prisma.$transaction(async (tx) => {
+            const created = await tx.trip.create({
+                data: {
+                    ...baseData,
+                    departureAt: new Date(dto.departureAt),
+                },
+                include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+            });
+            await tx.$executeRaw `
+        UPDATE "Trip"
+        SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.originLng}, ${dto.originLat}), 4326)::extensions.geography,
+            dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.destLng},   ${dto.destLat}),   4326)::extensions.geography
+        WHERE id = ${created.id}
+      `;
+            return created;
         });
         await this.alertsQueue.add(search_alerts_processor_1.MATCH_ALERTS_JOB, {
             tripId: trip.id,
@@ -189,7 +213,6 @@ let TripsService = TripsService_1 = class TripsService {
     }
     async extendRecurringWindow() {
         const now = new Date();
-        const horizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         const futureTrips = await this.prisma.trip.findMany({
             where: {
                 isRecurring: true,
@@ -210,8 +233,10 @@ let TripsService = TripsService_1 = class TripsService {
             const daysRemaining = (maxDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000);
             if (daysRemaining >= 7)
                 continue;
+            const tripWindowDays = template.windowDays ?? 30;
+            const horizon = new Date(now.getTime() + tripWindowDays * 24 * 60 * 60 * 1000);
             const extendAnchor = new Date(maxDate.getTime() + 24 * 60 * 60 * 1000);
-            const newDates = buildRecurringDates(extendAnchor, template.recurringDays, 30);
+            const newDates = buildRecurringDates(extendAnchor, template.recurringDays, tripWindowDays);
             if (newDates.length === 0)
                 continue;
             const newInstances = newDates
@@ -231,9 +256,19 @@ let TripsService = TripsService_1 = class TripsService {
                 distanceKm: template.distanceKm,
                 isRecurring: true,
                 recurringDays: template.recurringDays,
+                windowDays: template.windowDays ?? 30,
             }));
             if (newInstances.length > 0) {
                 await this.prisma.trip.createMany({ data: newInstances, skipDuplicates: true });
+                await this.prisma.$executeRaw `
+          UPDATE "Trip"
+          SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${template.originLng}, ${template.originLat}), 4326)::extensions.geography,
+              dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${template.destLng},   ${template.destLat}),   4326)::extensions.geography
+          WHERE "driverId" = ${template.driverId}
+            AND "originAddress" = ${template.originAddress}
+            AND "destAddress"   = ${template.destAddress}
+            AND origin_geo IS NULL
+        `;
             }
         }
     }
@@ -249,6 +284,49 @@ let TripsService = TripsService_1 = class TripsService {
             dto.originLng != null &&
             dto.destLat != null &&
             dto.destLng != null;
+        if (useCoordinates) {
+            const radiusMetres = radiusKm * 1000;
+            const rows = await this.prisma.$queryRaw `
+        SELECT t.id, t."driverId", t.model,
+               t."originLat", t."originLng", t."originAddress",
+               t."destLat",   t."destLng",   t."destAddress",
+               t."departureAt", t.seats, t."pricePerSeat",
+               t."distanceKm", t.status, t."isActive",
+               t."isRecurring", t."recurringDays",
+               t."minPassengers", t."thresholdDeadline",
+               t."createdAt", t."updatedAt",
+               json_build_object(
+                 'id',        u.id,
+                 'firstName', u."firstName",
+                 'lastName',  u."lastName",
+                 'avatarUrl', u."avatarUrl"
+               ) AS driver,
+               COALESCE((
+                 SELECT SUM(b.seats)
+                 FROM "Booking" b
+                 WHERE b."tripId" = t.id AND b.status = 'CONFIRMED'
+               ), 0) AS "bookedSeats"
+        FROM "Trip" t
+        JOIN "User" u ON u.id = t."driverId"
+        WHERE t.status = 'ACTIVE'
+          AND t."departureAt" BETWEEN ${dayStart} AND ${dayEnd}
+          AND t.seats >= ${seats}
+          AND t.origin_geo IS NOT NULL
+          AND extensions.ST_DWithin(
+                t.origin_geo,
+                extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.originLng}, ${dto.originLat}), 4326)::extensions.geography,
+                ${radiusMetres}
+              )
+          AND extensions.ST_DWithin(
+                t.dest_geo,
+                extensions.ST_SetSRID(extensions.ST_MakePoint(${dto.destLng}, ${dto.destLat}), 4326)::extensions.geography,
+                ${radiusMetres}
+              )
+      `;
+            return rows
+                .filter((row) => (row.seats - Number(row.bookedSeats)) >= seats)
+                .map((row) => ({ ...row, availableSeats: row.seats - Number(row.bookedSeats), bookedSeats: undefined }));
+        }
         const where = {
             status: client_1.TripStatus.ACTIVE,
             departureAt: { gte: dayStart, lte: dayEnd },
@@ -265,11 +343,6 @@ let TripsService = TripsService_1 = class TripsService {
             .filter((trip) => {
             const bookedSeats = trip.bookings.reduce((sum, b) => sum + b.seats, 0);
             const availableSeats = trip.seats - bookedSeats;
-            if (useCoordinates) {
-                const originDist = this.pricing.calculateDistance(dto.originLat, dto.originLng, trip.originLat, trip.originLng);
-                const destDist = this.pricing.calculateDistance(dto.destLat, dto.destLng, trip.destLat, trip.destLng);
-                return originDist <= radiusKm && destDist <= radiusKm && availableSeats >= seats;
-            }
             return availableSeats >= seats &&
                 addressMatches(trip.originAddress, dto.origin) &&
                 addressMatches(trip.destAddress, dto.dest);
@@ -289,23 +362,94 @@ let TripsService = TripsService_1 = class TripsService {
             include: {
                 driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
                 bookings: {
-                    where: { status: 'CONFIRMED' },
+                    where: { status: { in: ['PENDING', 'CONFIRMED'] } },
                     include: { passenger: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
                 },
             },
         });
         if (!trip)
-            throw new common_1.NotFoundException('Trip not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
         return trip;
+    }
+    async getTripPassengers(tripId, driverId) {
+        const trip = await this.prisma.trip.findUnique({ where: { id: tripId } });
+        if (!trip)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
+        if (trip.driverId !== driverId)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_YOUR_TRIP);
+        const bookings = await this.prisma.booking.findMany({
+            where: {
+                tripId,
+                status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] },
+            },
+            include: {
+                passenger: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        avatarUrl: true,
+                        ratingsReceived: { select: { score: true } },
+                    },
+                },
+            },
+        });
+        return bookings.map((b) => {
+            const scores = b.passenger.ratingsReceived.map((r) => r.score);
+            const avgRating = scores.length > 0
+                ? Math.round((scores.reduce((s, r) => s + r, 0) / scores.length) * 10) / 10
+                : 0;
+            return {
+                bookingId: b.id,
+                passengerId: b.passenger.id,
+                fullName: `${b.passenger.firstName} ${b.passenger.lastName}`.trim(),
+                rating: avgRating,
+                seats: b.seats,
+                avatarUrl: b.passenger.avatarUrl ?? null,
+            };
+        });
+    }
+    async stopRecurring(tripId, userId) {
+        const trip = await this.prisma.trip.findUnique({ where: { id: tripId } });
+        if (!trip)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
+        if (trip.driverId !== userId)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_YOUR_TRIP);
+        if (!trip.isRecurring)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
+        const now = new Date();
+        const futureInstances = await this.prisma.trip.findMany({
+            where: {
+                driverId: userId,
+                originAddress: trip.originAddress,
+                destAddress: trip.destAddress,
+                isRecurring: true,
+                departureAt: { gte: now },
+                status: { not: client_1.TripStatus.CANCELLED },
+            },
+        });
+        if (futureInstances.length > 0) {
+            const ids = futureInstances.map((t) => t.id);
+            await this.prisma.trip.updateMany({
+                where: { id: { in: ids } },
+                data: { status: client_1.TripStatus.CANCELLED, isActive: false, isRecurring: false },
+            });
+            for (const instance of futureInstances) {
+                await this.bookings.cancelAllForTrip(instance.id).catch((err) => {
+                    this.logger.error(`[Trips] cancelAllForTrip failed for trip ${instance.id}: ${err?.message}`);
+                });
+            }
+        }
+        return { stopped: true, cancelledCount: futureInstances.length };
     }
     async cancel(tripId, userId) {
         const trip = await this.prisma.trip.findUnique({ where: { id: tripId } });
         if (!trip)
-            throw new common_1.NotFoundException('Trip not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
         if (trip.driverId !== userId)
-            throw new common_1.ForbiddenException('Not your trip');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_YOUR_TRIP);
         if (trip.status === client_1.TripStatus.CANCELLED) {
-            throw new common_1.BadRequestException('Trip already cancelled');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_ALREADY_CANCELLED);
         }
         await this.prisma.trip.update({
             where: { id: tripId },
@@ -316,26 +460,88 @@ let TripsService = TripsService_1 = class TripsService {
         });
         return { cancelled: true };
     }
+    async update(tripId, userId, dto) {
+        const trip = await this.prisma.trip.findUnique({
+            where: { id: tripId },
+            include: {
+                bookings: { where: { status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] } } },
+            },
+        });
+        if (!trip)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
+        if (trip.driverId !== userId)
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_YOUR_TRIP);
+        if (trip.status === client_1.TripStatus.CANCELLED || trip.status === client_1.TripStatus.COMPLETED) {
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_ACTIVE_FOR_COMPLETE);
+        }
+        const seatsBooked = trip.bookings.reduce((sum, b) => sum + b.seats, 0);
+        if (seatsBooked > 0) {
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_HAS_BOOKINGS);
+        }
+        const newOriginLat = dto.originLat ?? trip.originLat;
+        const newOriginLng = dto.originLng ?? trip.originLng;
+        const newDestLat = dto.destLat ?? trip.destLat;
+        const newDestLng = dto.destLng ?? trip.destLng;
+        const newOriginAddress = dto.originAddress ?? trip.originAddress;
+        const newDestAddress = dto.destAddress ?? trip.destAddress;
+        const newDepartureAt = dto.departureAt ? new Date(dto.departureAt) : trip.departureAt;
+        const distanceKm = dto.distanceMetres
+            ? dto.distanceMetres / 1000
+            : (dto.originLat != null || dto.destLat != null)
+                ? this.pricing.calculateDistance(newOriginLat, newOriginLng, newDestLat, newDestLng)
+                : trip.distanceKm ?? 0;
+        const pricePerSeat = this.pricing.calculatePricePerSeat(distanceKm, trip.seats);
+        const routeChanged = dto.originLat != null || dto.originLng != null ||
+            dto.destLat != null || dto.destLng != null ||
+            dto.originAddress != null || dto.destAddress != null;
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const result = await tx.trip.update({
+                where: { id: tripId },
+                data: {
+                    originLat: newOriginLat,
+                    originLng: newOriginLng,
+                    originAddress: newOriginAddress,
+                    destLat: newDestLat,
+                    destLng: newDestLng,
+                    destAddress: newDestAddress,
+                    departureAt: newDepartureAt,
+                    distanceKm,
+                    pricePerSeat,
+                },
+                include: { driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+            });
+            if (routeChanged) {
+                await tx.$executeRaw `
+          UPDATE "Trip"
+          SET origin_geo = extensions.ST_SetSRID(extensions.ST_MakePoint(${newOriginLng}, ${newOriginLat}), 4326)::extensions.geography,
+              dest_geo   = extensions.ST_SetSRID(extensions.ST_MakePoint(${newDestLng},   ${newDestLat}),   4326)::extensions.geography
+          WHERE id = ${tripId}
+        `;
+            }
+            return result;
+        });
+        return updated;
+    }
     async complete(tripId, userId) {
         const trip = await this.prisma.trip.findUnique({
             where: { id: tripId },
             include: {
                 driver: { select: { mobilepayNumber: true } },
-                bookings: { where: { status: client_1.BookingStatus.CONFIRMED } },
+                bookings: { where: { status: { in: [client_1.BookingStatus.PENDING, client_1.BookingStatus.CONFIRMED] } } },
             },
         });
         if (!trip)
-            throw new common_1.NotFoundException('Trip not found');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_FOUND);
         if (trip.driverId !== userId)
-            throw new common_1.ForbiddenException('Not your trip');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.NOT_YOUR_TRIP);
         if (!trip.driver.mobilepayNumber) {
-            throw new common_1.BadRequestException('Add your MobilePay number before completing a trip');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.MOBILEPAY_MISSING);
         }
         const driver = trip.driver;
         if (trip.status === client_1.TripStatus.COMPLETED)
             return { completed: true };
         if (trip.status !== client_1.TripStatus.ACTIVE) {
-            throw new common_1.BadRequestException('Trip must be ACTIVE to complete');
+            throw new app_exception_1.AppException(api_error_codes_1.ApiErrorCode.TRIP_NOT_ACTIVE_FOR_COMPLETE);
         }
         await this.prisma.trip.update({
             where: { id: tripId },
@@ -374,11 +580,16 @@ let TripsService = TripsService_1 = class TripsService {
         return { completed: true };
     }
     async findByDriver(driverId) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 30);
         return this.prisma.trip.findMany({
-            where: { driverId },
-            orderBy: { departureAt: 'desc' },
+            where: { driverId, departureAt: { gte: cutoff } },
+            orderBy: { departureAt: 'asc' },
             include: {
-                bookings: { where: { status: 'CONFIRMED' } },
+                bookings: {
+                    where: { status: { in: ['PENDING', 'CONFIRMED', 'AWAITING_PAYMENT', 'COMPLETED'] } },
+                    select: { id: true, seats: true, status: true, createdAt: true },
+                },
             },
         });
     }
@@ -389,13 +600,16 @@ let TripsService = TripsService_1 = class TripsService {
                 trip: {
                     include: {
                         driver: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-                        bookings: { where: { status: 'CONFIRMED' } },
+                        bookings: {
+                            where: { status: { in: ['PENDING', 'CONFIRMED', 'AWAITING_PAYMENT'] } },
+                            select: { id: true, seats: true, status: true },
+                        },
                     },
                 },
             },
             orderBy: { createdAt: 'desc' },
         });
-        return bookings.map((b) => b.trip);
+        return bookings.map((b) => ({ ...b.trip, bookingId: b.id, bookingStatus: b.status }));
     }
 };
 exports.TripsService = TripsService;

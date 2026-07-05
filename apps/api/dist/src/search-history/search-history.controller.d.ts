@@ -17,14 +17,14 @@ export declare class SearchHistoryController {
         lastUsedAt: Date;
         useCount: number;
     }[]>;
-    record(req: any, dto: RecordSearchDto): import("@prisma/client").Prisma.Prisma__RecentSearchClient<{
+    record(req: any, dto: RecordSearchDto): Promise<{
         id: string;
         userId: string;
         originLabel: string;
         destLabel: string;
         lastUsedAt: Date;
         useCount: number;
-    }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    }>;
     remove(req: any, id: string): Promise<{
         ok: boolean;
     }>;

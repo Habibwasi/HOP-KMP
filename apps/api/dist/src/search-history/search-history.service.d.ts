@@ -10,14 +10,15 @@ export declare class SearchHistoryService {
         lastUsedAt: Date;
         useCount: number;
     }[]>;
-    record(userId: string, originLabel: string, destLabel: string): import("@prisma/client").Prisma.Prisma__RecentSearchClient<{
+    private static readonly MAX_RECENT_SEARCHES;
+    record(userId: string, originLabel: string, destLabel: string): Promise<{
         id: string;
         userId: string;
         originLabel: string;
         destLabel: string;
         lastUsedAt: Date;
         useCount: number;
-    }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    }>;
     remove(userId: string, id: string): Promise<{
         ok: boolean;
     }>;
