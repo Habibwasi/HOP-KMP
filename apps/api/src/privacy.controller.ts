@@ -1,11 +1,14 @@
-import { Controller, Get, Header } from '@nestjs/common'
+import { Controller, Get, Res } from '@nestjs/common'
+import { Response } from 'express'
 
+// Uses @Res() to write directly to the HTTP response and bypass the global
+// TransformInterceptor, which would otherwise wrap the HTML in {"data": "..."}.
 @Controller('privacy')
 export class PrivacyController {
   @Get()
-  @Header('Content-Type', 'text/html; charset=utf-8')
-  getPrivacyPolicy(): string {
-    return `<!DOCTYPE html>
+  getPrivacyPolicy(@Res() res: Response): void {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8')
+    res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -79,6 +82,6 @@ export class PrivacyController {
   <p>If you have questions about this Privacy Policy, please contact us at:</p>
   <p>Ridly<br />Email: <a href="mailto:support@ridly.dk">support@ridly.dk</a><br />Website: <a href="https://ridly.dk">ridly.dk</a></p>
 </body>
-</html>`
+</html>`)
   }
 }
