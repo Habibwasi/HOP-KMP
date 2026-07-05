@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material3.AlertDialog
@@ -45,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -81,6 +83,7 @@ fun SettingsRoute(
     onNavigateToContactUs: () -> Unit,
     onNavigateToTermsOfService: () -> Unit,
     onNavigateToPrivacyPolicy: () -> Unit,
+    onDeleteAccount: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
@@ -97,6 +100,7 @@ fun SettingsRoute(
                 is SettingsEffect.NavigateToContactUs -> onNavigateToContactUs()
                 is SettingsEffect.NavigateToTermsOfService -> onNavigateToTermsOfService()
                 is SettingsEffect.NavigateToPrivacyPolicy -> onNavigateToPrivacyPolicy()
+                is SettingsEffect.OpenDeleteAccountEmail -> onDeleteAccount()
                 is SettingsEffect.Logout -> onLogout()
             }
         }
@@ -178,6 +182,13 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Lock,
                         label = "Change password",
                         onClick = { onEvent(SettingsEvent.ChangePasswordTapped) },
+                    )
+                    SettingsDivider()
+                    SettingsLinkRow(
+                        icon = Icons.Outlined.DeleteForever,
+                        label = "Delete account",
+                        onClick = { onEvent(SettingsEvent.DeleteAccountTapped) },
+                        tint = HopColors.error,
                     )
                 }
             }
@@ -315,6 +326,7 @@ private fun SettingsLinkRow(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    tint: Color = HopColors.authTextSecondary,
 ) {
     Row(
         modifier = modifier
@@ -328,19 +340,19 @@ private fun SettingsLinkRow(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = HopColors.authTextSecondary,
+            tint = tint,
             modifier = Modifier.size(20.dp),
         )
         Text(
             text = label,
-            color = HopColors.authTextPrimary,
+            color = tint,
             fontSize = 15.sp,
             modifier = Modifier.weight(1f),
         )
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
             contentDescription = null,
-            tint = HopColors.authTextSecondary,
+            tint = tint,
             modifier = Modifier.size(20.dp),
         )
     }

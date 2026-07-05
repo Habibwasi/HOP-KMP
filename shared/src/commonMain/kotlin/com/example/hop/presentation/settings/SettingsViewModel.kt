@@ -29,6 +29,7 @@ sealed interface SettingsEvent {
     data object ContactUsTapped : SettingsEvent
     data object TermsOfServiceTapped : SettingsEvent
     data object PrivacyPolicyTapped : SettingsEvent
+    data object DeleteAccountTapped : SettingsEvent
 }
 
 // ─ Effects ────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ sealed interface SettingsEffect {
     data object NavigateToContactUs : SettingsEffect
     data object NavigateToTermsOfService : SettingsEffect
     data object NavigateToPrivacyPolicy : SettingsEffect
+    data object OpenDeleteAccountEmail : SettingsEffect
     data object Logout : SettingsEffect
 }
 
@@ -81,6 +83,9 @@ class SettingsViewModel : ViewModel() {
             }
             is SettingsEvent.PrivacyPolicyTapped -> viewModelScope.launch {
                 _effect.send(SettingsEffect.NavigateToPrivacyPolicy)
+            }
+            is SettingsEvent.DeleteAccountTapped -> viewModelScope.launch {
+                _effect.send(SettingsEffect.OpenDeleteAccountEmail)
             }
         }
     }

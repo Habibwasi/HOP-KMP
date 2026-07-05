@@ -675,6 +675,7 @@ fun HopNavGraph(
                 onNavigateToContactUs = { uriHandler.openUri("mailto:support@ridly.dk") },
                 onNavigateToTermsOfService = { navController.navigate(HopRoutes.TermsOfService) },
                 onNavigateToPrivacyPolicy = { navController.navigate(HopRoutes.PrivacyPolicy) },
+                onDeleteAccount = { uriHandler.openUri("mailto:support@ridly.dk?subject=Account%20Deletion%20Request&body=Please%20delete%20my%20Hop%20account%20and%20all%20associated%20data.") },
                 onLogout = onLogout,
             )
         }
