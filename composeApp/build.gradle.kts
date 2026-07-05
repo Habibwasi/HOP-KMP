@@ -136,15 +136,20 @@ sentry {
     includeSourceContext = true
 }
 
-// Fix implicit dependency between Sentry's GenerateBundleIdTask and Compose
-// Multiplatform resource generator tasks. Without this, Gradle's task ordering
-// is non-deterministic and the build fails with a configuration error.
+// Fix implicit dependency between Sentry's tasks (GenerateBundleIdTask and
+// CollectSourcesTask) and the Compose Multiplatform resource generator tasks.
+// Without this, Gradle's task ordering is non-deterministic and the build fails
+// with a configuration-cache validation error on the generated resource dirs.
 afterEvaluate {
-    tasks.matching { it.name.startsWith("generateSentryBundleId") }.configureEach {
-        dependsOn(
-            tasks.matching { it.name == "generateResourceAccessorsForAndroidMain" },
-            tasks.matching { it.name == "generateActualResourceCollectorsForAndroidMain" }
-        )
+    val composeResourceTasks = listOf(
+        "generateResourceAccessorsForAndroidMain",
+        "generateActualResourceCollectorsForAndroidMain"
+    )
+    tasks.matching {
+        it.name.startsWith("generateSentryBundleId") ||
+            it.name.startsWith("sentryCollectSources")
+    }.configureEach {
+        dependsOn(tasks.matching { it.name in composeResourceTasks })
     }
 }
 
