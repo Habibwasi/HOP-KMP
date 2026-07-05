@@ -19,9 +19,10 @@ import { AggregatesModule } from './aggregates/aggregates.module'
 import { ChatModule } from './chat/chat.module'
 import { HelpCenterModule } from './help-center/help-center.module'
 import { HealthController } from './health.controller'
+import { PrivacyController } from './privacy.controller'
 
 @Module({
-  controllers: [HealthController],
+  controllers: [HealthController, PrivacyController],
   imports: [
     SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
