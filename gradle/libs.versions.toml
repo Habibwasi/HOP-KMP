@@ -31,6 +31,10 @@ maps-compose = "4.3.3"
 play-services-maps = "19.2.0"
 google-places = "4.1.0"
 coil = "3.1.0"
+roborazzi = "1.74.0"
+composable-preview-scanner = "0.9.3"
+robolectric = "4.17"
+androidx-compose-uiTest = "1.10.6"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -82,6 +86,14 @@ play-services-maps = { module = "com.google.android.gms:play-services-maps", ver
 google-places = { module = "com.google.android.libraries.places:places", version.ref = "google-places" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+# Screenshot tests (composeApp androidUnitTest) — renders @Preview functions
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-previewScannerSupport = { module = "io.github.takahirom.roborazzi:roborazzi-compose-preview-scanner-support", version.ref = "roborazzi" }
+composable-preview-scanner = { module = "io.github.sergio-sastre.ComposablePreviewScanner:android", version.ref = "composable-preview-scanner" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-compose-uiTest-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-compose-uiTest" }
+androidx-compose-uiTest-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose-uiTest" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
@@ -92,3 +104,4 @@ kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 googleServices = { id = "com.google.gms.google-services", version.ref = "google-services" }
 sentryAndroid = { id = "io.sentry.android.gradle", version.ref = "sentry-plugin" }
 skie = { id = "co.touchlab.skie", version.ref = "skie" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

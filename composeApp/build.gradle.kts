@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.googleServices)
     alias(libs.plugins.sentryAndroid)
+    alias(libs.plugins.roborazzi)
 }
 
 kotlin {
@@ -54,6 +55,15 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+        androidUnitTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.robolectric)
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.compose)
+            implementation(libs.roborazzi.previewScannerSupport)
+            implementation(libs.composable.preview.scanner)
+            implementation(libs.androidx.compose.uiTest.junit4)
         }
     }
 }
@@ -114,6 +124,12 @@ android {
             )
         }
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { it.systemProperties["robolectric.pixelCopyRenderMode"] = "hardware" }
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -122,6 +138,24 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.androidx.compose.uiTest.manifest)
+}
+
+// Screenshots of every @Preview, rendered on the JVM with Robolectric.
+//   ./gradlew :composeApp:recordRoborazziDebug   → composeApp/screenshots/*.png
+roborazzi {
+    outputDir.set(file("screenshots"))
+    generateComposePreviewRobolectricTests {
+        enable = true
+        packages = listOf("com.example.hop.ui")
+        includePrivatePreviews = true
+        robolectricConfig = mapOf(
+            "sdk" to "[35]",
+            "qualifiers" to "RobolectricDeviceQualifiers.Pixel5",
+            // Skip the real Application (it starts Koin, Sentry, Firebase) — previews need none of it.
+            "application" to "android.app.Application::class",
+        )
+    }
 }
 
 sentry {
