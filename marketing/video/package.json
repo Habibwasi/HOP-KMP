@@ -1,0 +1,13 @@
+{
+  "name": "hop-motion-video",
+  "private": true,
+  "description": "Landing-page product film for Hop, rendered from HTML with headless Chrome.",
+  "scripts": {
+    "render": "node render.js",
+    "stills": "node render.js --stills"
+  },
+  "dependencies": {
+    "ffmpeg-static": "5.2.0",
+    "puppeteer-core": "23.11.1"
+  }
+}
