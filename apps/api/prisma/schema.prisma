@@ -307,3 +307,32 @@ model UserReport {
   @@index([reportedId])
   @@index([reporterId])
 }
+
+enum WaitlistRole {
+  PASSENGER
+  DRIVER
+  BOTH
+}
+
+/**
+ * Pre-launch waitlist signup from the ridly.dk landing page.
+ * Double opt-in: a row only counts once `confirmedAt` is set.
+ * `token` is used for both the confirm and the unsubscribe link.
+ */
+model WaitlistSignup {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  role          WaitlistRole
+  origin        String?
+  dest          String?
+  locale        String       @default("da")
+  source        String?
+  token         String       @unique
+  consentAt     DateTime
+  confirmSentAt DateTime?
+  confirmedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([confirmedAt])
+}

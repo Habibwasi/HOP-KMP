@@ -18,6 +18,7 @@ import { SearchHistoryModule } from './search-history/search-history.module'
 import { AggregatesModule } from './aggregates/aggregates.module'
 import { ChatModule } from './chat/chat.module'
 import { HelpCenterModule } from './help-center/help-center.module'
+import { WaitlistModule } from './waitlist/waitlist.module'
 import { HealthController } from './health.controller'
 import { PrivacyController } from './privacy.controller'
 import { DeleteAccountController } from './delete-account.controller'
@@ -62,6 +63,7 @@ import { DeleteAccountController } from './delete-account.controller'
     AggregatesModule,
     ChatModule,
     HelpCenterModule,
+    WaitlistModule,
   ],
 })
 export class AppModule {}

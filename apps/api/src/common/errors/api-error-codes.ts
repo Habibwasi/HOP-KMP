@@ -55,6 +55,9 @@ export enum ApiErrorCode {
   EMAIL_TAKEN = 'EMAIL_TAKEN',
   FIELD_TAKEN = 'FIELD_TAKEN',
 
+  // ── Rate limiting ─────────────────────────────────────────────────────────
+  TOO_MANY_REQUESTS = 'TOO_MANY_REQUESTS',
+
   // ── Server ──────────────────────────────────────────────────────────────────
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   DANGLING_AUTH_USER = 'DANGLING_AUTH_USER',
