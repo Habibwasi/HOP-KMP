@@ -1,0 +1,95 @@
+---
+import type { Dict } from '../i18n/da'
+
+interface Props {
+  t: Dict
+  id: string
+  source: string
+}
+
+const { t, id, source } = Astro.props
+const f = t.form
+const launched = import.meta.env.PUBLIC_LAUNCHED === 'true'
+const appStore = import.meta.env.PUBLIC_APP_STORE_URL
+const playStore = import.meta.env.PUBLIC_PLAY_STORE_URL
+const privacyHref = 'https://hop.ridly.dk/privacy'
+---
+
+{launched ? (
+  <div class="stores">
+    <p class="stores__title">{f.launchedTitle}</p>
+    <div class="stores__row">
+      {appStore && <a class="store" href={appStore}>App Store</a>}
+      {playStore && <a class="store" href={playStore}>Google Play</a>}
+    </div>
+  </div>
+) : (
+  <form class="wl" data-waitlist data-source={source} novalidate>
+    <div class="wl__field">
+      <label for={`${id}-email`}>{f.emailLabel}</label>
+      <input
+        id={`${id}-email`}
+        name="email"
+        type="email"
+        autocomplete="email"
+        inputmode="email"
+        placeholder={f.emailPlaceholder}
+        required
+      />
+    </div>
+
+    <fieldset class="wl__roles">
+      <legend>{f.roleLegend}</legend>
+      <div class="seg">
+        {(['PASSENGER', 'DRIVER', 'BOTH'] as const).map((role, i) => (
+          <label class="seg__opt">
+            <input type="radio" name="role" value={role} checked={i === 0} />
+            <span>{f.roles[role]}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="wl__route">
+      <legend>
+        {f.routeLegend} <span class="muted">({f.routeOptional})</span>
+      </legend>
+      <div class="wl__pair">
+        <div class="wl__field wl__field--pin">
+          <label for={`${id}-from`} class="sr-only">{f.from}</label>
+          <span class="pin pin--from" aria-hidden="true"></span>
+          <input id={`${id}-from`} name="origin" maxlength="80" placeholder={f.fromPlaceholder} autocomplete="off" />
+        </div>
+        <div class="wl__field wl__field--pin">
+          <label for={`${id}-to`} class="sr-only">{f.to}</label>
+          <span class="pin pin--to" aria-hidden="true"></span>
+          <input id={`${id}-to`} name="dest" maxlength="80" placeholder={f.toPlaceholder} autocomplete="off" />
+        </div>
+      </div>
+      <p class="hint">{f.routeHint}</p>
+    </fieldset>
+
+    <div class="hp" aria-hidden="true">
+      <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+    </div>
+
+    <label class="wl__consent">
+      <input type="checkbox" name="consent" required />
+      <span>
+        {f.consent} <a href={privacyHref} target="_blank" rel="noopener">{f.privacy}</a>
+      </span>
+    </label>
+
+    <button class="btn btn--lime" type="submit" data-label={f.submit} data-sending={f.sending}>
+      {f.submit}
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+    </button>
+
+    <p class="wl__status" role="status" aria-live="polite"
+      data-success={f.success}
+      data-err-email={f.errors.email}
+      data-err-consent={f.errors.consent}
+      data-err-rate={f.errors.rate}
+      data-err-generic={f.errors.generic}></p>
+  </form>
+)}

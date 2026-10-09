@@ -1,0 +1,316 @@
+---
+import Base from '../layouts/Base.astro'
+import WaitlistForm from './WaitlistForm.astro'
+import type { Dict } from '../i18n/da'
+
+interface Props {
+  t: Dict
+}
+
+const { t } = Astro.props
+const launched = import.meta.env.PUBLIC_LAUNCHED === 'true'
+const weekdays = t.lang === 'da' ? ['M', 'T', 'O', 'T', 'F', 'L', 'S'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+// Approximate road distances; the app prices from the real route.
+const routes = [
+  { label: 'Roskilde → København', labelEn: 'Roskilde → Copenhagen', km: 35, seats: 3 },
+  { label: 'Odense → København', labelEn: 'Odense → Copenhagen', km: 165, seats: 3 },
+  { label: 'København → Aarhus', labelEn: 'Copenhagen → Aarhus', km: 300, seats: 2 },
+  { label: 'Aarhus → Aalborg', labelEn: 'Aarhus → Aalborg', km: 120, seats: 3 },
+]
+
+const trustIcons = [
+  '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/>',
+  '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
+  '<circle cx="12" cy="9" r="3.5"/><path d="M5 20c1.2-3.5 4-5 7-5s5.8 1.5 7 5"/>',
+  '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
+]
+---
+
+<Base t={t}>
+  <a class="skip" href="#join">{t.nav.cta}</a>
+
+  <div class="banner" data-banner hidden>
+    <p data-banner-text
+      data-confirmed={t.banner.confirmed}
+      data-removed={t.banner.removed}
+      data-invalid={t.banner.invalid}></p>
+    <button type="button" data-banner-close aria-label={t.banner.close}>×</button>
+  </div>
+
+  <header class="top">
+    <a class="wordmark" href={t.path} aria-label="Ridly">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg></span>
+      ridly
+    </a>
+    <nav class="top__nav" aria-label="Primary">
+      <a href="#how">{t.nav.how}</a>
+      <a href="#price">{t.nav.price}</a>
+      <a href="#trust">{t.nav.trust}</a>
+      <a href="#faq">{t.nav.faq}</a>
+    </nav>
+    <div class="top__end">
+      <a class="lang" href={t.nav.switchHref} hreflang={t.nav.switchLang} lang={t.nav.switchLang}>
+        <span class:list={{ on: t.lang === 'da' }}>DA</span>
+        <span class:list={{ on: t.lang === 'en' }}>EN</span>
+        <span class="sr-only">{t.nav.switchLabel}</span>
+      </a>
+      <a class="btn btn--ghost btn--sm" href="#join">{t.nav.cta}</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero" id="join">
+      <div class="hero__sky" aria-hidden="true"></div>
+      <div class="hero__inner">
+        <div class="hero__copy">
+          <p class="eyebrow load" style="--d:0"><span class="pulse"></span>{t.hero.eyebrow}</p>
+          <h1 class="display load" style="--d:1">
+            <span>{t.hero.title[0]}</span>
+            <span class="lime">{t.hero.title[1]}</span>
+          </h1>
+          <p class="lede load" style="--d:2">{t.hero.lede}</p>
+          <div class="card card--form load" style="--d:3">
+            <WaitlistForm t={t} id="hero" source="landing-hero" />
+          </div>
+        </div>
+
+        <div class="hero__route" aria-label={t.hero.cardsLabel} role="img">
+          <svg class="route" viewBox="0 0 400 620" preserveAspectRatio="none" aria-hidden="true">
+            <path class="route__glow" d="M70 20 C 340 90, 360 230, 200 300 S 40 480, 320 600" />
+            <path class="route__line" d="M70 20 C 340 90, 360 230, 200 300 S 40 480, 320 600" pathLength="1" />
+          </svg>
+          <span class="node node--a" aria-hidden="true"></span>
+          <span class="node node--b" aria-hidden="true"></span>
+          {t.trips.map((trip, i) => (
+            <article class={`trip trip--${i}`} aria-hidden="true">
+              <div class="trip__route">
+                <span>{trip.from}</span>
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                <span>{trip.to}</span>
+              </div>
+              <p class="trip__meta">{trip.meta}</p>
+              <div class="trip__foot">
+                <span>{trip.seats}</span>
+                <strong>{trip.price}</strong>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+      <svg class="skyline" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 120V92h60V70h18v22h40V60l14-20 14 20v32h70V78h50V96h46V30l6-26 6 26v66h60V74h22l20-22 20 22h30v24h80V62h40v36h50V48l10-14 10 14v50h60V80h46v-18h20v18h50V96h70V54l16-24 16 24v42h60V76h40v22h54V64h30v34h70V84h60v-30l8-18 8 18v42h50V90h66V72h24v26h42V120z" />
+      </svg>
+    </section>
+
+    <div class="rail-wrap">
+      <div class="rail" aria-hidden="true"><span class="rail__fill"></span></div>
+
+      <!-- HOW -->
+      <section class="stop" id="how">
+        <p class="stop__tag">{t.how.stop}</p>
+        <div class="stop__head reveal">
+          <h2 class="h2">{t.how.title}</h2>
+          <p class="sub">{t.how.lede}</p>
+        </div>
+        <div class="tabs reveal" data-tabs>
+          <div class="toggle" role="tablist" aria-label={t.how.title}>
+            <button role="tab" id="tab-p" aria-controls="panel-p" aria-selected="true">{t.how.tabs.passenger}</button>
+            <button role="tab" id="tab-d" aria-controls="panel-d" aria-selected="false" tabindex="-1">{t.how.tabs.driver}</button>
+            <span class="toggle__thumb" aria-hidden="true"></span>
+          </div>
+          <ol class="steps" id="panel-p" role="tabpanel" aria-labelledby="tab-p">
+            {t.how.passenger.map((s, i) => (
+              <li><span class="steps__n">0{i + 1}</span><h3>{s.title}</h3><p>{s.body}</p></li>
+            ))}
+          </ol>
+          <ol class="steps" id="panel-d" role="tabpanel" aria-labelledby="tab-d" hidden>
+            {t.how.driver.map((s, i) => (
+              <li><span class="steps__n">0{i + 1}</span><h3>{s.title}</h3><p>{s.body}</p></li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <!-- MODELS -->
+      <section class="stop" id="models">
+        <p class="stop__tag">{t.models.stop}</p>
+        <h2 class="h2 reveal">{t.models.title}</h2>
+        <div class="models">
+          <article class="model reveal">
+            <span class="chip chip--blue">{t.models.commute.tag}</span>
+            <h3>{t.models.commute.title}</h3>
+            <div class="week" aria-hidden="true">
+              {Array.from({ length: 21 }).map((_, i) => (
+                <span class:list={['week__d', { on: i % 7 < 5 }]} style={`--i:${i}`}>{weekdays[i % 7]}</span>
+              ))}
+            </div>
+            <ul class="ticks">{t.models.commute.points.map((p) => <li>{p}</li>)}</ul>
+          </article>
+          <article class="model reveal">
+            <span class="chip chip--lime">{t.models.longTrip.tag}</span>
+            <h3>{t.models.longTrip.title}</h3>
+            <div class="threshold" aria-hidden="true">
+              <div class="threshold__bar"><span></span><i class="threshold__min"></i></div>
+              <div class="threshold__seats">
+                <span class="on"></span><span class="on"></span><span class="on"></span><span></span>
+              </div>
+            </div>
+            <ul class="ticks">{t.models.longTrip.points.map((p) => <li>{p}</li>)}</ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- PRICE -->
+      <section class="stop" id="price">
+        <p class="stop__tag">{t.price.stop}</p>
+        <div class="price">
+          <div class="price__copy reveal">
+            <h2 class="h2">{t.price.title}</h2>
+            <p class="sub">{t.price.lede}</p>
+            <p class="formula" aria-hidden="true">
+              <span>km</span> × <span class="lime">2,28 kr</span> ÷ <span>{t.price.seatsLabel.toLowerCase()}</span>
+            </p>
+          </div>
+          <div class="calc card reveal" data-calc data-locale={t.lang === 'da' ? 'da-DK' : 'en-GB'}>
+            <fieldset>
+              <legend class="calc__label">{t.price.routeLabel}</legend>
+              <div class="chips">
+                {routes.map((r, i) => (
+                  <button type="button" class="chipbtn" data-km={r.km} data-seats={r.seats} aria-pressed={i === 2 ? 'true' : 'false'}>
+                    {t.lang === 'da' ? r.label : r.labelEn}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <label class="calc__label" for="km">
+              {t.price.kmLabel} <output data-km-out>300 km</output>
+            </label>
+            <input id="km" type="range" min="5" max="450" step="5" value="300" data-km />
+            <fieldset>
+              <legend class="calc__label">{t.price.seatsLabel}</legend>
+              <div class="seg seg--seats">
+                {[1, 2, 3, 4].map((n) => (
+                  <label class="seg__opt"><input type="radio" name="seats" value={n} checked={n === 2} /><span>{n}</span></label>
+                ))}
+              </div>
+            </fieldset>
+            <div class="calc__out">
+              <p><strong data-per-seat>342,00 kr.</strong> <span>{t.price.perSeat}</span></p>
+              <p class="muted">{t.price.total}: <span data-total>684,00 kr.</span></p>
+            </div>
+            <p class="hint">{t.price.note}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRUST -->
+      <section class="stop" id="trust">
+        <p class="stop__tag">{t.trust.stop}</p>
+        <h2 class="h2 reveal">{t.trust.title}</h2>
+        <ul class="trust">
+          {t.trust.items.map((item, i) => (
+            <li class="reveal" style={`--d:${i}`}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" set:html={trustIcons[i]} />
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <!-- TAX -->
+      <section class="stop" id="tax">
+        <p class="stop__tag">{t.tax.stop}</p>
+        <div class="tax">
+          <div class="reveal">
+            <p class="eyebrow eyebrow--plain">{t.tax.eyebrow}</p>
+            <h2 class="h2">{t.tax.title}</h2>
+            <p class="sub">{t.tax.body}</p>
+          </div>
+          <figure class="taxcard reveal">
+            <figcaption>
+              <span>{t.tax.month}</span>
+              <span class="taxcard__sample">{t.tax.sample}</span>
+            </figcaption>
+            <p class="taxcard__label">{t.tax.estimate}</p>
+            <p class="taxcard__big">{t.tax.estimateValue}</p>
+            <dl>
+              {t.tax.rows.map(([k, v]) => (<div><dt>{k}</dt><dd>{v}</dd></div>))}
+            </dl>
+            <span class="taxcard__btn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+              {t.tax.download}
+            </span>
+            <p class="taxcard__note">{t.tax.disclaimer}</p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- FILM -->
+      <section class="stop" id="film">
+        <p class="stop__tag">{t.film.stop}</p>
+        <div class="stop__head reveal">
+          <h2 class="h2">{t.film.title}</h2>
+          <p class="sub">{t.film.lede}</p>
+        </div>
+        <div class="film reveal">
+          <video controls preload="none" playsinline poster="/media/ridly-film-poster.jpg" aria-label={t.film.title}>
+            <source src="/media/ridly-film-720p.mp4" type="video/mp4" />
+            <track kind="captions" src="/media/ridly-film.vtt" srclang="en" label="English" default />
+          </video>
+        </div>
+        <p class="hint">{t.film.captions}</p>
+      </section>
+
+      <!-- FAQ -->
+      <section class="stop" id="faq">
+        <p class="stop__tag">{t.faq.stop}</p>
+        <h2 class="h2 reveal">{t.faq.title}</h2>
+        <div class="faq">
+          {t.faq.items.map((item) => (
+            <details class="reveal">
+              <summary>{item.q}<span aria-hidden="true"></span></summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+    </div>
+
+    <!-- FINAL -->
+    <section class="final" id="join-final">
+      <span class="final__pin" aria-hidden="true"></span>
+      <div class="final__inner reveal">
+        <h2 class="display display--sm">{t.final.title}</h2>
+        <p class="lede">{t.final.lede}</p>
+        {!launched && (
+          <div class="card card--form">
+            <WaitlistForm t={t} id="final" source="landing-final" />
+          </div>
+        )}
+        {launched && <WaitlistForm t={t} id="final" source="landing-final" />}
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot__brand">
+      <span class="wordmark wordmark--lg">ridly</span>
+      <p>{t.footer.tagline}</p>
+    </div>
+    <nav class="foot__links" aria-label="Footer">
+      <a href="https://hop.ridly.dk/privacy">{t.footer.privacy}</a>
+      <a href="https://hop.ridly.dk/delete-account">{t.footer.deleteAccount}</a>
+      <a href="mailto:support@ridly.dk">{t.footer.contact}: support@ridly.dk</a>
+      <a href={t.nav.switchHref} hreflang={t.nav.switchLang} lang={t.nav.switchLang}>{t.nav.switchLabel}</a>
+    </nav>
+    <p class="foot__copy">© {new Date().getFullYear()} Ridly</p>
+  </footer>
+
+  <script>
+    import '../scripts/main.ts'
+  </script>
+</Base>
