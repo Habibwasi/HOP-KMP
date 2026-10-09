@@ -31,3 +31,4 @@ iosApp/SentryLocal/Sentry.xcframework
 
 # Raw Roborazzi renders (README copies live in docs/screenshots)
 composeApp/screenshots/
+__pycache__/
