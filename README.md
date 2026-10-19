@@ -1,6 +1,5 @@
-# Hop — Carpooling by Ridly
-
-Hop is a peer-to-peer carpooling platform for Android and iOS, built with Kotlin Multiplatform and a NestJS backend. Drivers post trips and passengers book seats, with payments handled directly via MobilePay.
+# Carpooling by Ridly
+ peer-to-peer carpooling platform for Android and iOS, built with Kotlin Multiplatform and a NestJS backend. Drivers post trips and passengers book seats, with payments handled directly via MobilePay.
 
 ---
 
